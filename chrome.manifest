@@ -1,0 +1,4 @@
+content EEEcontent content/
+overlay chrome://calendar/content/calendarCreation.xul chrome://EEEcontent/content/calendarCreation.xul
+
+
