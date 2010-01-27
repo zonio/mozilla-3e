@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE overlay [
+    <!ENTITY % lightningDTD SYSTEM "chrome://lightning/locale/lightning.dtd">
+    <!ENTITY % preferencesDTD SYSTEM "chrome://calendar/locale/preferences/preferences.dtd">
+    %lightningDTD;
+    %preferencesDTD;
+]>
+
+<!-- TODO use JS to get our tab into the original <tabs> -->
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <tabbox id="calPreferencesTabbox">
+        <tabs>
+            <tab id="calPreferencesTab3e" label="3e calendar" />
+        </tabs>
+        <tabpanels>
+            <tabpanel><button label="Click me"/></tabpanel>
+        </tabpanels>
+    </tabbox>
+
+</overlay>

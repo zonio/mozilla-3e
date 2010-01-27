@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://calendar/locale/calendar.dtd">
+
+<!-- TODO accesskey, observer... handling however it's done -->
+<overlay id="calendar-list-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+    <popupset id="calendar-popupset">
+        <popup id="list-calendars-context-menu"
+               onpopupshowing="return calendarListSetupContextMenu(event);">
+             <menuitem id="list-calendars-context-subscribe"
+                       label="Subscribe calendar"
+                       insertafter="list-calendars-context-delete" />
+        </popup>
+    </popupset>
+</overlay>

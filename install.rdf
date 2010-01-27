@@ -5,12 +5,12 @@
   <RDF:Description RDF:about="rdf:#$SmSlK"
                    em:id="{3550f703-e582-4d05-9a08-453d09bdfdc6}"
                    em:minVersion="2.0"
-                   em:maxVersion="3.0b3" />
+                   em:maxVersion="3.01" />
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}"
                    em:name="Provider for 3E Calendar"
                    em:version="0.0.2pre1"
-                   em:creator="Jan Kratina"
+                   em:creator="Jan Kratina, Ales Tamchyna"
                    em:description="Allows interaction with 3E Calendar system.">
     <em:targetApplication RDF:resource="rdf:#$SmSlK"/>
   </RDF:Description>
