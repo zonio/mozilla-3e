@@ -2,15 +2,19 @@
 
 <!DOCTYPE overlay SYSTEM "chrome://calendar/locale/calendar.dtd">
 
+
 <!-- TODO accesskey, observer... handling however it's done -->
 <overlay id="calendar-list-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+<script type="application/javascript"
+        src="chrome://EEEcontent/content/3eCalendarSubscribeDialog.js"/>
+
     <popupset id="calendar-popupset">
-        <popup id="list-calendars-context-menu"
-               onpopupshowing="return calendarListSetupContextMenu(event);">
+        <popup id="list-calendars-context-menu">
              <menuitem id="list-calendars-context-subscribe"
                        label="Subscribe calendar"
+                       oncommand="open3eCalendarSubscribeDialog();"
                        insertafter="list-calendars-context-delete" />
         </popup>
     </popupset>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE dialog >
+
+<dialog id="3e-calendar-subscribe-dialog">
+
+<button label="Click me!!" />
+
+</dialog>
