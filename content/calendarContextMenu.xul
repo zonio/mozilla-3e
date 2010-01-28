@@ -3,7 +3,7 @@
 <!DOCTYPE overlay SYSTEM "chrome://calendar/locale/calendar.dtd">
 
 
-<!-- TODO accesskey, observer... handling however it's done -->
+<!-- TODO accesskey, limit displaying subscription option to 3e cals -->
 <overlay id="calendar-list-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -13,7 +13,7 @@
     <popupset id="calendar-popupset">
         <popup id="list-calendars-context-menu">
              <menuitem id="list-calendars-context-subscribe"
-                       label="Subscribe calendar"
+                       label="Subscribe Calendar"
                        oncommand="open3eCalendarSubscribeDialog();"
                        insertafter="list-calendars-context-delete" />
         </popup>
