@@ -7,7 +7,11 @@
 
 
 <overlay id="calendarCreation" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    
+    <script type="application/javascript"
+        src="chrome://EEEcontent/content/calendarCreation.js"/>
+
     <radiogroup id="calendar-format">
-        <radio value="3e" label="3E Calendar"/>
+        <radio value="3e" label="3E Calendar" onclick="view3eSettings();" />
     </radiogroup>
 </overlay>
