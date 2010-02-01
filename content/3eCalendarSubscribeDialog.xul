@@ -36,7 +36,7 @@
                            persist="width" ordinal="1"/>  
                   </treecols>  
                   <treechildren>  
-                    <treeitem container="true">  
+                    <treeitem container="true" open="true">  
                       <treerow>  
                         <treecell label="Alice &lt;alice@example.com>"/>  
                       </treerow>  
