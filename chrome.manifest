@@ -2,4 +2,5 @@ content EEEcontent content/
 overlay chrome://calendar/content/calendarCreation.xul chrome://EEEcontent/content/calendarCreation.xul
 overlay chrome://lightning/content/messenger-overlay-preferences.xul chrome://EEEcontent/content/3ePreferences.xul
 overlay chrome://calendar/content/calendar-calendars-list.xul chrome://EEEcontent/content/calendarContextMenu.xul
+overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://EEEcontent/content/calendarProperties.xul
 

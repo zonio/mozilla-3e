@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
+
+<!DOCTYPE overlay
+[
+    <!ENTITY % dtd1 SYSTEM "chrome://calendar/locale/global.dtd" > %dtd1;
+    <!ENTITY % dtd2 SYSTEM "chrome://calendar/locale/calendar.dtd" > %dtd2;
+]>
+
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <dialog id="calendar-properties-dialog-2">
+        <grid id="calendar-properties-grid">
+          <columns>
+            <column/>
+            <column flex="1"/>
+          </columns>
+          <rows id="calendar-properties-rows">
+            <row id="calendar-uri-row" align="center" hidden="true">
+            </row>
+            <row id="calendar-permissions-row" align="center"
+                 insertafter="calendar-color-row">
+                 <label value="Permissions:" />
+                 <vbox>
+                 <tree id="calendar-permissions-tree" hidecolumnpicker="true" seltype="single"
+                    class="tree"  
+                    rows="5">  
+                  <treecols id="calendar-permissions-tree-cols">  
+                  <treecol id="calendar-permissions-tree-user-col" primary="true" flex="4"
+                           label="User"  
+                           persist="width" />  
+                  <treecol id="calendar-permissions-tree-permissions-col" primary="true" flex="1"
+                           label="Permissions"  
+                           persist="width" />  
+                  </treecols>  
+                  <treechildren>  
+                    <treeitem>  
+                      <treerow>  
+                        <treecell label="Alice &lt;alice@example.com>"/>  
+                        <treecell label="(read)" />  
+                      </treerow>  
+                   </treeitem>  
+                    <treeitem>  
+                      <treerow>  
+                        <treecell label="Bob &lt;bob@example.com>"/>  
+                        <treecell label="(write)" />  
+                      </treerow>  
+                   </treeitem>  
+                  </treechildren>  
+                 </tree>
+                 <hbox>
+                     <button label="Add" />
+                     <button label="Remove" />
+                 </hbox>
+                 </vbox>
+            </row>
+            <row id="calendar-type-row" align="center"
+                 insertafter="calendar-color-row">
+                 <label value="Calendar Type:" />
+                 <radiogroup>
+                    <radio label="Private" />
+                    <radio label="Public" />
+                    <radio label="Shared" />
+                 </radiogroup>
+            </row>
+          </rows>
+        </grid>
+    </dialog>
+</overlay>
