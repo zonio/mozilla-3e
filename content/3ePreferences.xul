@@ -8,12 +8,48 @@
 
 <!-- TODO use JS to get our tab into the original <tabs> -->
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-    <tabbox id="calPreferencesTabbox">
+    <tabbox id="calPreferencesTabbox" flex="1">
         <tabs>
             <tab id="calPreferencesTab3e" label="3e calendar" />
         </tabs>
-        <tabpanels>
-            <tabpanel><button label="Click me"/></tabpanel>
+        <tabpanels flex="1">
+            <tabpanel orient="vertical">
+              <vbox>
+                <caption label="Accounts" />
+                <separator class="groove" />
+                <label value="Enable remote calendars for these accounts:" />
+                <tree id="account-settings-tree" hidecolumnpicker="true" seltype="single"
+                    class="tree"  
+                    rows="5">  
+                  <treecols id="account-settings-tree-cols">  
+                  <treecol id="account-settings-tree-account-col" primary="true" flex="3"
+                           label="Account"  
+                           persist="width" />  
+                  <treecol id="account-settings-tree-enabled-col" primary="true" flex="1"
+                           label="Enabled"  
+                           persist="width" />  
+                  </treecols>  
+                  <treechildren>  
+                    <treeitem>  
+                      <treerow>  
+                        <treecell label="Alice &lt;alice@example.com>"/>  
+                        <treecell label="(false)" />  
+                      </treerow>  
+                   </treeitem>  
+                    <treeitem>  
+                      <treerow>  
+                        <treecell label="Bob &lt;bob@example.com>"/>  
+                        <treecell label="(false)" />  
+                      </treerow>  
+                   </treeitem>  
+                  </treechildren>  
+                </tree>
+                <separator />
+                <caption label="Calendar availability" />
+                <separator class="groove" />
+                <checkbox label="Automatically show available calendars" />
+              </vbox>
+            </tabpanel>
         </tabpanels>
     </tabbox>
 
