@@ -1,5 +1,4 @@
-function view3eSettings
-{
-    // todo
-    dump("called view3eSettings");
+function view3eSettings {
+  //TODO
+  console.log("called view3eSettings");
 }

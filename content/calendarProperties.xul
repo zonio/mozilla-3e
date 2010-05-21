@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
 
-<!DOCTYPE overlay
-[
-    <!ENTITY % dtd1 SYSTEM "chrome://calendar/locale/global.dtd" > %dtd1;
-    <!ENTITY % dtd2 SYSTEM "chrome://calendar/locale/calendar.dtd" > %dtd2;
+<!DOCTYPE overlay [
+  <!ENTITY % globalDTD SYSTEM "chrome://calendar/locale/global.dtd">
+  <!ENTITY % calendarDTD SYSTEM "chrome://calendar/locale/calendar.dtd">
+  %globalDTD;
+  %calendarDTD;
 ]>
 
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">

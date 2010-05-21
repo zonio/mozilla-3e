@@ -1,56 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE overlay [
-    <!ENTITY % lightningDTD SYSTEM "chrome://lightning/locale/lightning.dtd">
-    <!ENTITY % preferencesDTD SYSTEM "chrome://calendar/locale/preferences/preferences.dtd">
-    %lightningDTD;
-    %preferencesDTD;
+<!DOCTYPE prefwindow [
+  <!ENTITY % cal3ePreferencesDTD SYSTEM "chrome://calendar3e/locale/preferences.dtd">
+  %cal3ePreferencesDTD;
 ]>
 
-<!-- TODO use JS to get our tab into the original <tabs> -->
-<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-    <tabbox id="calPreferencesTabbox" flex="1">
-        <tabs>
-            <tab id="calPreferencesTab3e" label="3e calendar" />
-        </tabs>
-        <tabpanels flex="1">
-            <tabpanel orient="vertical">
-              <vbox>
-                <caption label="Accounts" />
-                <separator class="groove" />
-                <label value="Enable remote calendars for these accounts:" />
-                <tree id="account-settings-tree" hidecolumnpicker="true" seltype="single"
-                    class="tree"  
-                    rows="5">  
-                  <treecols id="account-settings-tree-cols">  
-                  <treecol id="account-settings-tree-account-col" primary="true" flex="3"
-                           label="Account"  
-                           persist="width" />  
-                  <treecol id="account-settings-tree-enabled-col" primary="true" flex="1"
-                           label="Enabled"  
-                           persist="width" />  
-                  </treecols>  
-                  <treechildren>  
-                    <treeitem>  
-                      <treerow>  
-                        <treecell label="Alice &lt;alice@example.com>"/>  
-                        <treecell label="(false)" />  
-                      </treerow>  
-                   </treeitem>  
-                    <treeitem>  
-                      <treerow>  
-                        <treecell label="Bob &lt;bob@example.com>"/>  
-                        <treecell label="(false)" />  
-                      </treerow>  
-                   </treeitem>  
-                  </treechildren>  
-                </tree>
-                <separator />
-                <caption label="Calendar availability" />
-                <separator class="groove" />
-                <checkbox label="Automatically show available calendars" />
-              </vbox>
-            </tabpanel>
-        </tabpanels>
-    </tabbox>
+<prefwindow xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-</overlay>
+  <script type="application/x-javascript"
+          src="chrome://calendar3e/content/3ePreferences.js"/>
+
+  <stringbundle id="cal3e-bundlePreferences"
+                src="chrome://calendar3e/locale/preferences.properties"/>
+
+  <prefpane id="cal3e-preferencesPane">
+    <preferences>
+      <preference id="cal3e-accounts" name="cal3e.accounts" type="string"/>
+    </preferences>
+
+    <groupbox>
+      <caption label="&cal3ePrefpane.caption;"/>
+      <label value="&cal3eEnabledAccounts.label;"/>
+      <tree flex="1" id="cal3e-accounts-tree" seltype="single"
+            hidecolumnpicker="true">
+        <treecols>
+          <treecol id="cal3e-accounts-tree-col-name" flex="3"
+                   primary="true"/>
+          <treecol id="cal3e-accounts-tree-col-enable" flex="1"
+                   type="checkbox" editable="true"/>
+        </treecols>
+        <treechildren id="cal3e-accounts-tree-children"/>
+      </tree>
+    </groupbox>
+
+  </prefpane>
+
+</prefwindow>

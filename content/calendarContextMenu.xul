@@ -2,20 +2,20 @@
 
 <!DOCTYPE overlay SYSTEM "chrome://calendar/locale/calendar.dtd">
 
-
 <!-- TODO accesskey, limit displaying subscription option to 3e cals -->
 <overlay id="calendar-list-overlay"
-         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-<script type="application/javascript"
-        src="chrome://EEEcontent/content/3eCalendarSubscribeDialog.js"/>
+  <popupset id="calendar-popupset">
+    <popup id="list-calendars-context-menu">
+      <menuitem id="list-calendars-context-subscribe"
+        label="Subscribe Calendar"
+        insertafter="list-calendars-context-delete"
+        oncommand="open3eCalendarSubscribeDialog();"/>
+    </popup>
+  </popupset>
 
-    <popupset id="calendar-popupset">
-        <popup id="list-calendars-context-menu">
-             <menuitem id="list-calendars-context-subscribe"
-                       label="Subscribe Calendar"
-                       oncommand="open3eCalendarSubscribeDialog();"
-                       insertafter="list-calendars-context-delete" />
-        </popup>
-    </popupset>
+ <script type="application/javascript"
+   src="chrome://calendar3e/content/3eCalendarSubscribeDialog.js"/>
+
 </overlay>

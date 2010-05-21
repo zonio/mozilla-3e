@@ -3,69 +3,69 @@
 
 <!-- TODO handlers, logic -->
 <dialog id="3e-calendar-subscribe-dialog"
-        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        title="Subscribe Calendar"
-        buttons="accept,cancel" >
-    
-    <grid>
-        <columns>
-            <column flex="1"/>
-            <column flex="3"/>
-        </columns>
-        <rows>
-            <row>
-                <label value="Account:"/>
-                <menulist>
-                    <menupopup>
-                    <menuitem label="Jane Doe &lt;jane.doe@domain.net>" selected="true"/>
-                    </menupopup>
-                </menulist>
-            </row>
-            <row>
-                <label value="Search:"/>
-                <textbox id="search-pattern" />
-            </row>
-            <row>
-                <spacer flex="1" />
-                <tree id="calendars-tree" flex="3" hidecolumnpicker="true" seltype="single"
-                    class="tree"  
-                    rows="5">  
-                  <treecols id="calendars-tree-cols">  
-                  <treecol id="calendar-tree-calendar-col" primary="true" flex="3"
-                           label="Calendars"  
-                           persist="width" ordinal="1"/>  
-                  </treecols>  
-                  <treechildren>  
-                    <treeitem container="true" open="true">  
-                      <treerow>  
-                        <treecell label="Alice &lt;alice@example.com>"/>  
-                      </treerow>  
-                      <treechildren>  
-                        <treeitem>  
-                          <treerow>  
-                            <treecell label="Personal"/>  
-                          </treerow>  
-                          <treerow>  
-                            <treecell label="Work"/>  
-                          </treerow>  
-                        </treeitem>  
-                      </treechildren>  
-                    </treeitem>  
-                    <treeitem container="true" open="true">  
-                      <treerow>  
-                        <treecell label="Bob &lt;bob@example.com>"/>  
-                      </treerow>  
-                      <treechildren>  
-                        <treeitem>  
-                          <treerow>  
-                            <treecell label="Sample Calendar"/>  
-                          </treerow>  
-                        </treeitem>  
-                      </treechildren>  
-                    </treeitem>  
-                  </treechildren>  
-                </tree>  
-            </row>
-        </rows>
-    </grid>
+  title="Subscribe Calendar"
+  buttons="accept,cancel"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <grid>
+    <columns>
+      <column flex="1"/>
+      <column flex="3"/>
+    </columns>
+    <rows>
+      <row>
+        <label value="Account:"/>
+        <menulist>
+          <menupopup>
+          <menuitem label="Jane Doe &lt;jane.doe@domain.net>" selected="true"/>
+          </menupopup>
+        </menulist>
+      </row>
+      <row>
+        <label value="Search:"/>
+        <textbox id="search-pattern" />
+      </row>
+      <row>
+        <spacer flex="1" />
+        <tree id="calendars-tree" flex="3" hidecolumnpicker="true" seltype="single"
+          class="tree"  
+          rows="5">  
+          <treecols id="calendars-tree-cols">  
+          <treecol id="calendar-tree-calendar-col" primary="true" flex="3"
+               label="Calendars"  
+               persist="width" ordinal="1"/>  
+          </treecols>  
+          <treechildren>  
+          <treeitem container="true" open="true">  
+            <treerow>  
+            <treecell label="Alice &lt;alice@example.com>"/>  
+            </treerow>  
+            <treechildren>  
+            <treeitem>  
+              <treerow>  
+              <treecell label="Personal"/>  
+              </treerow>  
+              <treerow>  
+              <treecell label="Work"/>  
+              </treerow>  
+            </treeitem>  
+            </treechildren>  
+          </treeitem>  
+          <treeitem container="true" open="true">  
+            <treerow>  
+            <treecell label="Bob &lt;bob@example.com>"/>  
+            </treerow>  
+            <treechildren>  
+            <treeitem>  
+              <treerow>  
+              <treecell label="Sample Calendar"/>  
+              </treerow>  
+            </treeitem>  
+            </treechildren>  
+          </treeitem>  
+          </treechildren>  
+        </tree>  
+      </row>
+    </rows>
+  </grid>
 </dialog>

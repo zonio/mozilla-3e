@@ -1,6 +1,6 @@
-content EEEcontent content/
-overlay chrome://calendar/content/calendarCreation.xul chrome://EEEcontent/content/calendarCreation.xul
-overlay chrome://lightning/content/messenger-overlay-preferences.xul chrome://EEEcontent/content/3ePreferences.xul
-overlay chrome://calendar/content/calendar-calendars-list.xul chrome://EEEcontent/content/calendarContextMenu.xul
-overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://EEEcontent/content/calendarProperties.xul
+content calendar3e       content/
+locale  calendar3e en-US locale/en-US/
 
+overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
+overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
+overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul

@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE dialog 
-[
-    <!ENTITY % dtd1 SYSTEM "chrome://calendar/locale/calendarCreation.dtd" > %dtd1;
-    <!ENTITY % dtd2 SYSTEM "chrome://calendar/locale/calendar.dtd" > %dtd2;
+<!DOCTYPE dialog [
+  <!ENTITY % creationDTD SYSTEM "chrome://calendar/locale/calendarCreation.dtd">
+  <!ENTITY % calendarDTD SYSTEM "chrome://calendar/locale/calendar.dtd">
+  %creationDTD;
+  %calendarDTD;
 ]>
 
-
 <overlay id="calendarCreation" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-    
-    <script type="application/javascript"
-        src="chrome://EEEcontent/content/calendarCreation.js"/>
 
-    <radiogroup id="calendar-format">
-        <radio value="3e" label="3E Calendar" onclick="view3eSettings();" />
-    </radiogroup>
+  <radiogroup id="calendar-format">
+    <radio value="3e" label="3E Calendar" onclick="view3eSettings();" />
+  </radiogroup>
+
+  <script type="application/javascript"
+    src="chrome://calendar3e/content/calendarCreation.js"/>
+
 </overlay>

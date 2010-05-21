@@ -1,17 +1,24 @@
 <?xml version="1.0"?>
-<RDF:RDF xmlns:em="http://www.mozilla.org/2004/em-rdf#"
-         xmlns:NC="http://home.netscape.com/NC-rdf#"
-         xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <RDF:Description RDF:about="rdf:#$SmSlK"
-                   em:id="{3550f703-e582-4d05-9a08-453d09bdfdc6}"
-                   em:minVersion="2.0"
-                   em:maxVersion="3.01" />
-  <RDF:Description RDF:about="urn:mozilla:install-manifest"
-                   em:id="{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}"
-                   em:name="Provider for 3E Calendar"
-                   em:version="0.0.2pre1"
-                   em:creator="Jan Kratina, Ales Tamchyna"
-                   em:description="Allows interaction with 3E Calendar system.">
-    <em:targetApplication RDF:resource="rdf:#$SmSlK"/>
-  </RDF:Description>
-</RDF:RDF>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}</em:id>
+    <em:name>Provider for 3E Calendar</em:name>
+    <em:version>0.0.2pre1</em:version>
+    <em:description>Allows interaction with 3E Calendar system.</em:description>
+    <em:creator>Jan Kratina, Aleš Tamchyna</em:creator>
+    <em:type>2</em:type>
+    <em:optionsURL>chrome://calendar3e/content/3ePreferences.xul</em:optionsURL>
+
+    <em:targetApplication>
+      <Description>
+	<em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
+	<em:minVersion>2.0</em:minVersion>
+	<em:maxVersion>3.0.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+  </Description>
+</RDF>
