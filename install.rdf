@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}</em:id>
     <em:name>Provider for 3E Calendar</em:name>
-    <em:version>0.0.2pre1</em:version>
+    <em:version>0.0.2pre2</em:version>
     <em:description>Allows interaction with 3E Calendar system.</em:description>
     <em:creator>Jan Kratina, Aleš Tamchyna</em:creator>
     <em:type>2</em:type>
