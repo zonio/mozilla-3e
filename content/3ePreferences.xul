@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/css" href="chrome://calendar3e/skin/3ePreferences.css"?>
 <!DOCTYPE prefwindow [
   <!ENTITY % cal3ePreferencesDTD SYSTEM "chrome://calendar3e/locale/preferences.dtd">
   %cal3ePreferencesDTD;
@@ -10,27 +11,20 @@
           src="chrome://calendar3e/content/3ePreferences.js"/>
 
   <stringbundle id="cal3e-bundlePreferences"
-                src="chrome://calendar3e/locale/preferences.properties"/>
+      src="chrome://calendar3e/locale/preferences.properties"/>
 
   <prefpane id="cal3e-preferencesPane">
-    <preferences>
-      <preference id="cal3e-accounts" name="cal3e.accounts" type="string"/>
-    </preferences>
 
-    <groupbox>
-      <caption label="&cal3ePrefpane.caption;"/>
-      <label value="&cal3eEnabledAccounts.label;"/>
-      <tree flex="1" id="cal3e-accounts-tree" seltype="single"
-            hidecolumnpicker="true">
-        <treecols>
-          <treecol id="cal3e-accounts-tree-col-name" flex="3"
-                   primary="true"/>
-          <treecol id="cal3e-accounts-tree-col-enable" flex="1"
-                   type="checkbox" editable="true"/>
-        </treecols>
-        <treechildren id="cal3e-accounts-tree-children"/>
-      </tree>
-    </groupbox>
+    <label value="&cal3eEnabledAccounts.label;"/>
+    <tree flex="1" id="cal3e-accounts-tree" rows="4"
+          seltype="single" hidecolumnpicker="true" editable="true">
+      <treecols>
+        <treecol id="cal3e-accounts-tree-col-name" flex="3"/>
+        <treecol id="cal3e-accounts-tree-col-enable" flex="1"
+                 type="checkbox" editable="true"/>
+      </treecols>
+      <treechildren id="cal3e-accounts-tree-children"/>
+    </tree>
 
   </prefpane>
 

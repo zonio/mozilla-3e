@@ -1,5 +1,6 @@
-content calendar3e       content/
-locale  calendar3e en-US locale/en-US/
+content calendar3e             content/
+locale  calendar3e en-US       locale/en-US/
+skin    calendar3e classic/1.0 skin/
 
 overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
