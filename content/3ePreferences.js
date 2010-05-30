@@ -19,7 +19,7 @@ CalPrefs.initialize = function () {
   var console = Cc["@mozilla.org/consoleservice;1"].getService(
       Ci.nsIConsoleService
     );
-  this.console = console;
+  this._console = console;
 
   var mgr = Components.classes["@mozilla.org/messenger/account-manager;1"]
                       .getService(Ci.nsIMsgAccountManager);
@@ -92,6 +92,7 @@ CalPrefs._fillAccountsTable = function () {
     var accountName = document.createElement('treecell');
     accountName.setAttribute('value', identity.key);
     accountName.setAttribute('label', identity.identityName);
+    accountName.setAttribute('editable', 'false');
     var accountEnabled = document.createElement('treecell'),
         enabled = identity.getBoolAttribute(this.constructor.EEE_ENABLED_KEY);
     accountEnabled.setAttribute('value', enabled ? 'true' : 'false');
