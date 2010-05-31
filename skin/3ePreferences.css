@@ -1,0 +1,8 @@
+treechildren::-moz-tree-image(cal3e-accounts-tree-col-enable) {
+  -moz-margin-end: 2px;
+  list-style-image: url("chrome://messenger/skin/icons/dot.png");
+}
+
+treechildren::-moz-tree-image(cal3e-accounts-tree-col-enable, subscribed) {
+  list-style-image: url("chrome://messenger/skin/icons/check.png");
+}

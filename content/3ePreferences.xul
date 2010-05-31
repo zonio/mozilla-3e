@@ -5,7 +5,7 @@
   %cal3ePreferencesDTD;
 ]>
 
-<prefwindow xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script type="application/x-javascript"
           src="chrome://calendar3e/content/3ePreferences.js"/>
@@ -13,19 +13,20 @@
   <stringbundle id="cal3e-bundlePreferences"
       src="chrome://calendar3e/locale/preferences.properties"/>
 
-  <prefpane id="cal3e-preferencesPane">
+  <hbox flex="1">
+    <vbox style="width: 300px">
 
-    <label value="&cal3eEnabledAccounts.label;"/>
-    <tree flex="1" id="cal3e-accounts-tree" rows="4"
-          seltype="single" hidecolumnpicker="true" editable="true">
-      <treecols>
-        <treecol id="cal3e-accounts-tree-col-name" flex="3"/>
-        <treecol id="cal3e-accounts-tree-col-enable" flex="1"
-                 type="checkbox" editable="true"/>
-      </treecols>
-      <treechildren id="cal3e-accounts-tree-children"/>
-    </tree>
+      <label value="&cal3eEnabledAccounts.label;"/>
+      <tree flex="1" id="cal3e-accounts-tree" rows="4"
+            seltype="single" hidecolumnpicker="true"> 
+        <treecols>
+          <treecol id="cal3e-accounts-tree-col-name" flex="3"/>
+          <treecol id="cal3e-accounts-tree-col-enable" flex="1"/>
+        </treecols>
+        <treechildren id="cal3e-accounts-tree-children"/>
+      </tree>
 
-  </prefpane>
+    </vbox>
+  </hbox>
 
-</prefwindow>
+</dialog>

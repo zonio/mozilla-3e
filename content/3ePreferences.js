@@ -83,22 +83,26 @@ CalPrefs._fillAccountsTable = function () {
     tree.removeChild(tree.firstChild);
   }
   var calPrefs = this;
-  tree.addEventListener('change', function (evt) {
-      calPrefs._eeeEnabledDidChange(evt);
-    }, false);
+  var handler = function (evt) {
+    calPrefs._eeeEnabledDidChange(evt);
+  };
+  tree.addEventListener('keypress', handler, false);
+  tree.addEventListener('click', handler, false);
   for each (var account in this._accounts) {
     var identity = account.defaultIdentity;
 
-    var accountName = document.createElement('treecell');
-    accountName.setAttribute('value', identity.key);
-    accountName.setAttribute('label', identity.identityName);
-    accountName.setAttribute('editable', 'false');
-    var accountEnabled = document.createElement('treecell'),
+    var identityName = document.createElement('treecell');
+    identityName.setAttribute('value', identity.key);
+    identityName.setAttribute('label', identity.identityName);
+    var identityEnabled = document.createElement('treecell'),
         enabled = identity.getBoolAttribute(this.constructor.EEE_ENABLED_KEY);
-    accountEnabled.setAttribute('value', enabled ? 'true' : 'false');
+    identityEnabled.setAttribute(
+        'properties',
+        enabled ? 'enabled' : 'not-enabled'
+      );
     var treerow = document.createElement('treerow');
-    treerow.appendChild(accountName);
-    treerow.appendChild(accountEnabled);
+    treerow.appendChild(identityName);
+    treerow.appendChild(identityEnabled);
     var treeitem = document.createElement('treeitem');
     treeitem.appendChild(treerow);
     tree.appendChild(treeitem);
