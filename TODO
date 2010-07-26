@@ -1,3 +1,4 @@
 * Replace 3e configuration dialog with solution from IMAP folder subscription
 * Check 3e calendar UI
 * Check 3e protocol implementation
+* Proper file headers

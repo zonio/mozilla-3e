@@ -16,6 +16,8 @@
   </popupset>
 
  <script type="application/javascript"
+   src="chrome://calendar3e/content/calI3ECalendar.js"/>
+ <script type="application/javascript"
    src="chrome://calendar3e/content/3eCalendarSubscribeDialog.js"/>
 
 </overlay>

@@ -1,149 +1,8 @@
-Components.utils.import ("resource://calendar/modules/calProviderUtils.jsm");
-Components.utils.import ("resource://calendar/modules/calUtils.jsm");
-
-function cal3EClient (aUri, aUser, aPass) {
-  this.mUser = aUser;
-  this.mPass = aPass;
-  this.mUri = aUri;
-}
-
-cal3EClient.prototype = {
-  mUser: null,
-  mPass: null,
-  mUri: null,
-  tReq: null,
-  tOK: null,
-  tError:null,
-  /* prepareXML
-   * aName - method name
-   * aParams - list of parameters
-   * return - generated XML string
-   */
-  prepareXML:function eee_prepareXML (aName, aParams) {
-    aObject = "<methodCall><methodName>ESClient." + aName.toString () + "</methodName><params>";
-    for (var paramIndex in aParams) {
-      var param = aParams[paramIndex];
-      aObject += "<param><value>" + param.toString () + "</value></param>";
-    }
-    aObject += "</params></methodCall>";
-    return aObject;
-  },
-  /* rpcCall
-   * aName - called method name
-   * aParams - called method params array
-   * aOK - function called when no error aOK(XML response object)
-   * aError - function called when error occcured:
-   *          1-21 = EEE server errors
-   *          0 - Connection error
-   *          1xx-5xx = http error
-   */
-  rpcCall:function eee_rpcCall (aName, aParams, aOK, aError) {
-    var aObject = this.prepareXML (aName, aParams);
-    var ioService = Components.classes["@mozilla.org/network/io-service;1"].getService (Components.interfaces.nsIIOService);
-
-    aUri = ioService.newURI (this.mUri, null, null);
-    this.tReq = aObject;
-    this.tOK = aOK;
-    this.tError = aError;
-    let httpchannel = cal.prepHttpChannel (aUri, aObject, "text/xml", null);
-    httpchannel.requestMethod = "POST";
-
-    cal.sendHttpRequest (cal.createStreamLoader (), httpchannel, this);
-  },
-  /* onStreamComplete - called when http transaction is completed
-   */
-  onStreamComplete:function eee_onComplete (aLoader, aContext, aStatus, aResultLength,
-			     aResult) {
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
-    // First test aStatus != 0 means connection error
-    if (aStatus != 0) {
-      this.tError (0, "Could not connect to server.");
-      return;
-    }
-    let request = aLoader.request.QueryInterface (Components.interfaces.nsIHttpChannel);
-
-    // Second test http response 
-    if (request.responseStatus != 200) {
-      this.tError (request.responseStatus, request.responseStatusText);
-      return;
-    }
-
-    let str = cal.convertByteArray (aResult, aResultLength);
-    let responseXML = cal.safeNewXML (str);
-    var fault = 0;
-
-    // Check error state
-    try {
-      fault = responseXML.fault.value.struct.member[0].value.int;
-    } catch (e) {
-    }
-    if (fault == 1) {
-      // call ESClient.authenticate and send request again
-      var aListener = { };
-      var pthis = this;
-      aListener.onStreamComplete = function onStreamComplete (aLoader, aContext, aStatus,
-				     aResultLength, aResult) {
-        var ioService = Components.classes["@mozilla.org/network/io-service;1"].getService(Components.interfaces.nsIIOService);
-        // First test aStatus != 0 means connection error
-        if (aStatus != 0) {
-          pthis.tError (0, "Could not connect to server.");
-          return;
-        }
-        let request = aLoader.request.QueryInterface (Components.interfaces.nsIHttpChannel);
-
-        // Second test http response 
-        if (request.responseStatus != 200) {
-          pthis.tError (request.responseStatus,request.responseStatusText);
-          return;
-        }
-
-        let str = cal.convertByteArray (aResult, aResultLength);
-        let responseXML = cal.safeNewXML (str);
-        var fault = 0;
-        try {
-	  fault = responseXML.fault.value.struct.member[0].value.int;
-        } catch (e) {
-	}
-	if (fault > 0) {
-          pthis.tError (fault,responseXML.fault.value.struct.member[1].value);
-          return;
-        }
-
-        aUri = ioService.newURI (pthis.mUri, null, null);
-        let httpchannel = cal.prepHttpChannel (aUri, pthis.tReq, "text/xml", null);
-        httpchannel.requestMethod = "POST";
-        let str = cal.convertByteArray (aResult, aResultLength);
-
-        cal.sendHttpRequest (cal.createStreamLoader (), httpchannel, pthis);
-
-      };
-      var params = Array ();
-      params[0] = this.mUser;
-      params[1] = this.mPass;
-      var aObject = this.prepareXML ("authenticate", params);
-      var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-                      .getService (Components.interfaces.nsIIOService);
-
-      aUri = ioService.newURI (this.mUri, null, null);
-      let httpchannel = cal.prepHttpChannel (aUri, aObject, "text/xml", null);
-      httpchannel.requestMethod = "POST";
-      cal.sendHttpRequest (cal.createStreamLoader (), httpchannel,aListener);
-      return;
-    }
-    if (fault > 0) {
-      this.tError (fault, responseXML.fault.value.struct.member[1].value);
-      return;
-    }
-    this.tOK (responseXML);
-  }
-};
-
-
 //
-// cal3EItipTransport() - contructor 
+// cal3eItipTransport() - contructor
 //
 
-function cal3EItipTransport(aCalendar) {
+function cal3eItipTransport(aCalendar) {
   this.mCalendar = aCalendar;
     var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
 
@@ -151,9 +10,9 @@ function cal3EItipTransport(aCalendar) {
 
 }
 
-cal3EItipTransport.prototype = {
+cal3eItipTransport.prototype = {
   mCalendar:null,
- 
+
   get defaultIdentity eee_getIdentity() {
     return this.mCalendar.mServerUser;
   },
@@ -244,24 +103,24 @@ cal3EItipTransport.prototype = {
   }
 };
 
-// 
-// cal3EProvider() - constructor
 //
-function cal3ECalendar () {
+// cal3eProvider() - constructor
+//
+function cal3eCalendar () {
   this.initProviderBase ();
   this.mLocalCacheTime = null;
   this.mLocalCache = null;
   getFreeBusyService().addProvider(this);
-  this.mItip = new cal3EItipTransport(this);
+  this.mItip = new cal3eItipTransport(this);
 }
 
 const calIFreeBusyInterval = Components.interfaces.calIFreeBusyInterval;
 
-cal3ECalendar.prototype = {
+cal3eCalendar.prototype = {
   __proto__:cal.ProviderBase.prototype,
   // nsISupport interface
   QueryInterface:function eee_QueryInterface (aIID) {
-    return doQueryInterface (this, cal3ECalendar.prototype, aIID,
+    return doQueryInterface (this, cal3eCalendar.prototype, aIID,
 			     [Components.interfaces.calICalendarProvider,
 			      Components.interfaces.calIFreeBusyProvider,
 			      Components.interfaces.calIItipTransport,
@@ -292,15 +151,15 @@ cal3ECalendar.prototype = {
   },
   // defined uri provided by user
   mUri: null,
-  mServerUri: null, 
-  mServerUser: null, 
-  mServerPass: null, 
-  mServerCalendar: null, 
-  mLocalCache: null, 
+  mServerUri: null,
+  mServerUser: null,
+  mServerPass: null,
+  mServerCalendar: null,
+  mLocalCache: null,
   mLocalCacheTime: null,
   get uri eee_get_uri () {
     return this.mUri;
-  }, 
+  },
   set uri eee_set_uri (aUri) {
     this.mUri = aUri;
     var tUri = Components.classes["@mozilla.org/network/standard-url;1"].getService (Components.interfaces.nsIURI);
@@ -365,7 +224,7 @@ cal3ECalendar.prototype = {
     return this.__proto__.__proto__.getProperty.apply (this, arguments);
   },
   prepareSerializedItem:function eee_prepareSerialiedItem (aItem) {
-    // Serialize item 
+    // Serialize item
     var serialized = cal.getSerializedItem (aItem);
  //   var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
 
@@ -430,7 +289,7 @@ cal3ECalendar.prototype = {
       return;
     }
     aItem.calendar = this;
-    var rpc = new cal3EClient (this.mServerUri, this.mServerUser, this.mServerPass);
+    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var pthis = this;
     var aok = function adopt_aok (xml) {
       pthis.notifyOperationComplete (aListener,
@@ -475,7 +334,7 @@ cal3ECalendar.prototype = {
 				    "ID for modifyItem doesn't exist or is null");
       return;
     }
-    var rpc = new cal3EClient (this.mServerUri, this.mServerUser, this.mServerPass);
+    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var pthis = this;
     var aok = function adopt_aok (xml) {
       pthis.notifyOperationComplete (aListener,
@@ -519,7 +378,7 @@ cal3ECalendar.prototype = {
       return;
     }
 
-    var rpc = new cal3EClient (this.mServerUri, this.mServerUser, this.mServerPass);
+    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var pthis = this;
     var aok = function adopt_aok (xml) {
       pthis.notifyOperationComplete (aListener,
@@ -590,11 +449,11 @@ cal3ECalendar.prototype = {
                                      null);
 
   },
-  /* 
+  /*
    * updateCache - downloads differences from server
    * cbOk - callback when no error occured
    * cbError - callback when error occured
-   * cbParams - array of parameters 
+   * cbParams - array of parameters
    */
   updateCache: function eee_updateCache(cbOk,cbError) {
     var filter = "NOT deleted()";
@@ -607,7 +466,7 @@ cal3ECalendar.prototype = {
       // New start - download calendar from server
       this.mLocalCache = {};
     }
-    var rpc = new cal3EClient (this.mServerUri, this.mServerUser, this.mServerPass);
+    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var pthis = this;
     var aok = function aok (aXML) {
       let value = aXML.params.param.value[0];
@@ -638,7 +497,7 @@ cal3ECalendar.prototype = {
     params[1] = filter;
     rpc.rpcCall ("queryObjects", params, aok, aerror);
     return;
-    
+
 
   },
   // void getItems( in unsigned long aItemFilter, in unsigned long aCount,
@@ -715,7 +574,7 @@ cal3ECalendar.prototype = {
 
         item.calendar = acalendar;
         if (itemReturnOccurrences && item.recurrenceInfo) {
-          var occurrences = item.recurrenceInfo.getOccurrences (aRangeStart, aRangeEnd, 
+          var occurrences = item.recurrenceInfo.getOccurrences (aRangeStart, aRangeEnd,
 							      aCount ? aCount - itemsFound.length : 0, {} );
           if (wantUnrespondedInvitations) {
             occurrences = occurrences.filter (checkUnrespondedInvitation);
@@ -725,7 +584,7 @@ cal3ECalendar.prototype = {
           }
           itemsFound = itemsFound.concat (occurrences);
         } else {
-  	  if ((!wantUnrespondedInvitations || checkUnrespondedInvitation (item)) && 
+  	  if ((!wantUnrespondedInvitations || checkUnrespondedInvitation (item)) &&
               (isEvent_ || checkCompleted(item)) && checkIfInRange (item, aRangeStart, aRangeEnd)) {
             // This needs fixing for recurring items, e.g. DTSTART of parent may occur before aRangeStart.
             // This will be changed with bug 416975.
@@ -779,13 +638,13 @@ cal3ECalendar.prototype = {
     var bRangeStart = aRangeStart.getInTimezone(timezoneUTC).toString().replace(/\//g,"-").substring(0,19);
     var bRangeEnd = aRangeEnd.getInTimezone(timezoneUTC).toString().replace(/\//g,"-").substring(0,19);
 
-    var rpc = new cal3EClient (this.mServerUri, this.mServerUser, this.mServerPass);
+    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var pthis = this;
     var fbOK = function eee_fbOK(aXML) {
       var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
 
  //     aConsoleService.logStringMessage ("getFreeBusyIntervals() ++ " + value);a
-      var value = aXML.params.param[0].value;   
+      var value = aXML.params.param[0].value;
       // find lines starting with FREEBUSY
 
       var lines = value.split("\n");
@@ -801,7 +660,7 @@ cal3ECalendar.prototype = {
           case "BUSY": fbType = calIFreeBusyInterval.BUSY;break;
           case "BUSY-UNAVIABLE": fbType = calIFreeBusyInterval.BUSY_UNAVIABLE;break;
           case "BUSY-TENTATIVE": fbType = calIFreeBusyInterval.BUSY_TENTATIVE;break;
-          } 
+          }
 
           let begin = cal.createDateTime(times[0]);
           let end;
@@ -865,8 +724,8 @@ cal3ECalendar.prototype = {
     methodProp.value = aItipItem.responseMethod;
     serializer.addProperty(methodProp);
     var calText = serializer.serializeToString();
-    
-    var rpc = new cal3EClient (this.mServerUri, this.mServerUser, this.mServerPass);
+
+    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var aok = function aok (aXML) { // OK -> message delivered to server
     };
     var aerror = function aError(eNo, eText) {
@@ -885,4 +744,3 @@ cal3ECalendar.prototype = {
     return;
   }
 };
-

@@ -1,5 +1,5 @@
 // nsIFactory
-const cal3ECalendarFactory = {
+const cal3eCalendarFactory = {
   QueryInterface: function (aIID) {
     if (!aIID.equals(Components.interfaces.nsISupports) &&
       !aIID.equals(Components.interfaces.nsIFactory)) {
@@ -11,7 +11,7 @@ const cal3ECalendarFactory = {
   createInstance: function (outer, iid) {
     if (outer != null)
       throw Components.results.NS_ERROR_NO_AGGREGATION;
-    return (new cal3ECalendar()).QueryInterface(iid);
+    return (new cal3eCalendar()).QueryInterface(iid);
   }
 };
 
@@ -19,7 +19,7 @@ const cal3ECalendarFactory = {
  **** module registration
  ****/
 
-var cal3ECalendarModule = {
+var cal3eCalendarModule = {
 
   mCID: Components.ID("{20d220ec-818d-43be-8969-5a03b7757d3d}"),
   mContractID: "@mozilla.org/calendar/calendar;1?type=3e",
@@ -34,9 +34,9 @@ var cal3ECalendarModule = {
     Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
     cal.loadScripts(["calUtils.js"], this.__parent__);
 
-    let thisDir = __LOCATION__.parent.parent.clone();
-    thisDir.append("js");
-    cal.loadScripts(["calI3ECalendar.js"],this.__parent__,thisDir);
+    let jsDir = __LOCATION__.parent.parent.clone();
+    jsDir.append("js");
+    cal.loadScripts(["cal3eCalendar.js"], this.__parent__, jsDir);
 
     this.mUtilsLoaded = true;
   },
@@ -46,7 +46,7 @@ var cal3ECalendarModule = {
     compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
     compMgr.registerFactoryLocation(
         this.mCID,
-        "Calendar 3E provider",
+        "Calendar 3e provider",
         this.mContractID,
         fileSpec,
         location,
@@ -55,7 +55,6 @@ var cal3ECalendarModule = {
   },
 
   getClassObject: function (compMgr, cid, iid) {
-
     if (!cid.equals(this.mCID))
       throw Components.results.NS_ERROR_NO_INTERFACE;
 
@@ -64,7 +63,7 @@ var cal3ECalendarModule = {
 
     this.loadUtils();
 
-    return cal3ECalendarFactory;
+    return cal3eCalendarFactory;
   },
 
   canUnload: function(compMgr) {
@@ -73,5 +72,5 @@ var cal3ECalendarModule = {
 };
 
 function NSGetModule(compMgr, fileSpec) {
-  return cal3ECalendarModule;
+  return cal3eCalendarModule;
 }
