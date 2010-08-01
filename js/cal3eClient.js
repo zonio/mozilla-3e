@@ -1,5 +1,10 @@
 EXPORTED_SYMBOLS = ["cal3eClient"];
 
+Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
+
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+
 /**
  * Representation of EEE method to call.
  *
@@ -12,7 +17,9 @@ EXPORTED_SYMBOLS = ["cal3eClient"];
  * @see cal3eMethodStack
  */
 function cal3eMethod(cal3eInterface, methodName) {
-  this._params     = [];
+  this._params = [];
+  this.setInterface(cal3eInterface)
+      .setMethodName(methodName);
 }
 
 cal3eMethod.prototype = {
@@ -452,32 +459,12 @@ cal3eMethodStack.prototype = {
 /**
  * Simplifies EEE method execution by server resolution and stacking necessary
  * mehotds to convenient operations.
+ *
+ * @param identity used to resolve how to connect to server
  */
-function cal3eClient() {
+function cal3eClient(identity) {
+  this.setIdentity(identity);
 }
-
-var cal3eClientClassInfo = {
-    getInterfaces: function (count) {
-        const ifaces = [
-            Components.interfaces.nsISupports,
-            Components.interfaces.cal3eIEeeClient,
-            Components.interfaces.nsIClassInfo
-        ];
-        count.value = ifaces.length;
-        return ifaces;
-    },
-
-    getHelperForLanguage: function (language) {
-        return null;
-    },
-
-    contractID: "@zonio.net/3e/client;1",
-    classDescription: "Calendar 3e Client",
-    classID: Components.ID("{a6284d90-8d30-11df-a4ee-0800200c9a66}"),
-    implementationLanguage: Components.interfaces.nsIProgrammingLanguage.JAVASCRIPT,
-    flags: Components.interfaces.nsIClassInfo.THREADSAFE
-};
-
 
 cal3eClient.prototype = {
 
@@ -511,8 +498,8 @@ cal3eClient.prototype = {
     //XXX development
     var host = "localhost";
     var url = "https://" + host + ":" + port + "/RPC2";
-    var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-      .getService(Components.interfaces.nsIIOService);
+    var ioService = Cc["@mozilla.org/network/io-service;1"]
+      .getService(Ci.nsIIOService);
     this._uri = ioService.newURI(url, null, null);
     this._methodStack = new cal3eMethodStack(this._uri);
   },

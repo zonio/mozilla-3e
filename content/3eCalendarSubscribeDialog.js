@@ -45,7 +45,7 @@ Calendar3e.loadCalendars = function (evt) {
   var identity = accounts[0].defaultIdentity;
 
   var client = new cal3eClient(identity);
-  client.getCalendars("match_owner('filip.zrust@zonio.net')", {
+  client.getCalendars("match_owner('" + identity.email + "')", {
     onSuccess: function (calendars, methodStack) {
       var idx = -1,
           length = calendars.length,
