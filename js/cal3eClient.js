@@ -1,3 +1,5 @@
+EXPORTED_SYMBOLS = ["cal3eClient"];
+
 /**
  * Representation of EEE method to call.
  *
