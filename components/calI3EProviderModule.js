@@ -47,14 +47,10 @@ var cal3eCalendarModule = {
           .getService(Components.interfaces.nsIExtensionManager);
       var file = em.getInstallLocation(cal3eExtensionId)
           .getItemFile(cal3eExtensionId, "install.rdf");
-      var extensionDir = file.parent.clone();
-      extensionDir.append("js");
-
-      var aliasFile = Components.classes["@mozilla.org/file/local;1"]
-          .createInstance(Components.interfaces.nsILocalFile);
-      aliasFile.initWithPath(extensionDir.path);
-      var aliasUri = ioService.newFileURI(aliasFile);
-      resourceProtocol.setSubstitution(calendar3eResource, aliasUri);
+      var resourceDir = file.parent.clone();
+      resourceDir.append("js");
+      var resourceDirUri = ioService.newFileURI(resourceDir);
+      resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
     }
     Components.utils.import("resource://" + calendar3eResource + "/cal3eCalendar.js");
 

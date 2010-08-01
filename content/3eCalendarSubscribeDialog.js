@@ -1,31 +1,27 @@
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+
 var calendar3eResource = "calendar3e";
-var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-    .getService(Components.interfaces.nsIIOService);
+var ioService = Cc["@mozilla.org/network/io-service;1"]
+    .getService(Ci.nsIIOService);
 var resourceProtocol = ioService.getProtocolHandler("resource")
-    .QueryInterface(Components.interfaces.nsIResProtocolHandler);
+    .QueryInterface(Ci.nsIResProtocolHandler);
 if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
   var cal3eExtensionId = "{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}";
   var em = Components.classes["@mozilla.org/extensions/manager;1"]
-      .getService(Components.interfaces.nsIExtensionManager);
+      .getService(Ci.nsIExtensionManager);
   var file = em.getInstallLocation(cal3eExtensionId)
       .getItemFile(cal3eExtensionId, "install.rdf");
-  var extensionDir = file.parent.clone();
-  extensionDir.append("js");
-
-  var aliasFile = Components.classes["@mozilla.org/file/local;1"]
-      .createInstance(Components.interfaces.nsILocalFile);
-  aliasFile.initWithPath(extensionDir.path);
-  var aliasUri = ioService.newFileURI(aliasFile);
-  resourceProtocol.setSubstitution(calendar3eResource, aliasUri);
+  var resourceDir = file.parent.clone();
+  resourceDir.append("js");
+  var resourceDirUri = ioService.newFileURI(resourceDir);
+  resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
 }
 Components.utils.import("resource://" + calendar3eResource + "/cal3eClient.js");
 
 function open3eCalendarSubscribeDialog() {
   window.openDialog("chrome://calendar3e/content/3eCalendarSubscribeDialog.xul");
 }
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
 
 if ('undefined' === typeof Calendar3e) {
   var Calendar3e = {};
