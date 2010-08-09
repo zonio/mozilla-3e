@@ -515,9 +515,7 @@ cal3eClient.prototype = {
    *  execution and not remembered here
    */
   executeMethodStack: function cal3eClient_execute(listener) {
-    this._listener = (null !== listener) && (listener instanceof Object) ?
-      listener :
-      null ;
+    this._listener = (null !== listener) ? listener : null ;
     this._methodStack.execute(this);
     this._methodStack = new cal3eMethodStack(this._uri);
     return this;
