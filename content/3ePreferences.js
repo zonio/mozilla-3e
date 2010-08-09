@@ -117,15 +117,32 @@ CalPrefs._fillAccountsTable = function () {
  */
 CalPrefs._eeeEnabledDidChange = function (evt) {
   var enabledCell = evt.target;
-  if (('treecell' != enabledCell.tagName) &&
-      ('checkbox' != enabledCell.getAttribute('type'))) {
+
+  if ((0 != evt.button) ||
+      ('treechildren' != evt.originalTarget.localName)) {
     return;
   }
-  var enabled = 'true' === enabledCell.getAttribute('value') ? true : false ;
+  var row = {}, col = {}, childElt = {},
+      tree = document.getElementById('cal3e-accounts-tree');
+  tree.treeBoxObject.getCellAt(evt.clientX, evt.clientY, row, col, childElt);
+  if ((row.value == -1) || (row.value > tree.view.rowCount-1)) {
+    return;
+  }
 
-  var identityCell = enabledCell.previousSibling,
+  if ((('cal3e-accounts-tree-col-enable' != col.value.id) ||
+      (2 == evt.detail)) &&
+      (('cal3e-accounts-tree-col-enable' == col.value.id) ||
+      (2 != evt.detail))) {
+    return;
+  }
+  var identityNameColumn = col.value.getPrevious() || col.value,
+      treeView = tree.view;
+  var identityKey = treeView.getCellValue(row.value, identityNameColumn),
       mgr = this._accountsManager,
-      identity = mgr.getIdentity(identityCell.getAttribute('value'));
+      identity = mgr.getIdentity(identityKey);
+
+  var enabled = !identity.getBoolAttribute(this.constructor.EEE_ENABLED_KEY);
+  treeView.setCellValue(row.value, identityNameColumn.getNext(), 'true');
   identity.setBoolAttribute(this.constructor.EEE_ENABLED_KEY, enabled);
 }
 
