@@ -30,7 +30,8 @@ Calendar3e.loadCalendars = function (evt) {
   var console = Cc["@mozilla.org/consoleservice;1"].getService(
       Ci.nsIConsoleService
     );
-  var cal3eModule = Cc["@mozilla.org/calendar/calendar;1?type=3e"];
+  var caledarManager = Cc["@mozilla.org/calendar/manager;1"]
+    .getService(Ci.calICalendarManager);
 
   var mgr = Cc["@mozilla.org/messenger/account-manager;1"]
               .getService(Ci.nsIMsgAccountManager);
@@ -49,10 +50,16 @@ Calendar3e.loadCalendars = function (evt) {
     onSuccess: function (calendars, methodStack) {
       var idx = -1,
           length = calendars.length,
-          calendar;
+          calendar, calendarUri, calendar3e;
       if (0 < length) {
         while (++idx < length) {
           calendar = calendars[idx];
+          calendarUri = ioService.newURI("eee://" + identity.email + "/" + calendar.name);
+          console.logStringMessage("3e URI: " + calendarUri.spec);
+          calendar3e = calendarManager.createCalendar(
+            '3e', calendarUri
+          );
+          calendarManager.registerCalendar(calendar3e);
           console.logStringMessage("Calendars: " + calendar.name);
         }
       } else {

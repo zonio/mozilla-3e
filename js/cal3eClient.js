@@ -1,4 +1,6 @@
-EXPORTED_SYMBOLS = ["cal3eClient"];
+EXPORTED_SYMBOLS = [
+  "cal3eClient", "cal3eMethodStack", "cal3eMethod", "cal3eMethodResponse"
+];
 
 Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
 
