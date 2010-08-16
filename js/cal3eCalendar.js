@@ -1,3 +1,8 @@
+EXPORTED_SYMBOLS = [
+  "cal3eCalendar"
+];
+Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
+
 //
 // cal3eItipTransport() - contructor
 //

@@ -1,10 +1,15 @@
-// nsIFactory
-const cal3eCalendarFactory = {
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+
+
+const calEeeProtocolFactory = {
+
   QueryInterface: function (aIID) {
-    if (!aIID.equals(Components.interfaces.nsISupports) &&
-      !aIID.equals(Components.interfaces.nsIFactory)) {
+    if (!aIID.equals(Ci.nsISupports) &&
+        !aIID.equals(Ci.nsIFactory)) {
       throw Components.results.NS_ERROR_NO_INTERFACE;
     }
+
     return this;
   },
 
@@ -13,38 +18,34 @@ const cal3eCalendarFactory = {
       throw Components.results.NS_ERROR_NO_AGGREGATION;
     }
 
-    return (new cal3eCalendar()).QueryInterface(iid);
+    return (new calEeeProtocol()).QueryInterface(iid);
   }
-};
 
-/****
- **** module registration
- ****/
+}
 
-var cal3eCalendarModule = {
 
-  mCID: Components.ID("{20d220ec-818d-43be-8969-5a03b7757d3d}"),
-  mContractID: "@mozilla.org/calendar/calendar;1?type=3e",
+var calEeeProtocolModule = {
 
-  mUtilsLoaded: false,
-  loadUtils: function cICM_loadUtils() {
-    if (this.mUtilsLoaded) {
+  cid: Components.ID("{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}"),
+  contractId: "@mozilla.org/network/protocol;1?name=eee",
+
+  _utilsLoaded: false,
+  _loadUtils: function () {
+    if (this._utilsLoaded) {
       return;
     }
 
     Components.utils.import("resource://calendar/modules/calUtils.jsm");
-    Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
-    cal.loadScripts(["calUtils.js"], this.__parent__);
 
     var calendar3eResource = "calendar3e";
-    var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-        .getService(Components.interfaces.nsIIOService);
+    var ioService = Cc["@mozilla.org/network/io-service;1"]
+        .getService(Ci.nsIIOService);
     var resourceProtocol = ioService.getProtocolHandler("resource")
-        .QueryInterface(Components.interfaces.nsIResProtocolHandler);
+        .QueryInterface(Ci.nsIResProtocolHandler);
     if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
       var cal3eExtensionId = "{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}";
-      var em = Components.classes["@mozilla.org/extensions/manager;1"]
-          .getService(Components.interfaces.nsIExtensionManager);
+      var em = Cc["@mozilla.org/extensions/manager;1"]
+          .getService(Ci.nsIExtensionManager);
       var file = em.getInstallLocation(cal3eExtensionId)
           .getItemFile(cal3eExtensionId, "install.rdf");
       var resourceDir = file.parent.clone();
@@ -52,18 +53,17 @@ var cal3eCalendarModule = {
       var resourceDirUri = ioService.newFileURI(resourceDir);
       resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
     }
-    Components.utils.import("resource://" + calendar3eResource + "/cal3eCalendar.js");
+    Components.utils.import("resource://" + calendar3eResource + "/calEeeProtocol.js");
 
-    this.mUtilsLoaded = true;
+    this._utilsLoaded = true;
   },
 
   registerSelf: function (compMgr, fileSpec, location, type) {
-
-    compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
+    compMgr = compMgr.QueryInterface(Ci.nsIComponentRegistrar);
     compMgr.registerFactoryLocation(
-        this.mCID,
+        this.cid,
         "Calendar 3e provider",
-        this.mContractID,
+        this.contractId,
         fileSpec,
         location,
         type
@@ -71,22 +71,24 @@ var cal3eCalendarModule = {
   },
 
   getClassObject: function (compMgr, cid, iid) {
-    if (!cid.equals(this.mCID))
+    if (!cid.equals(this.cid)) {
       throw Components.results.NS_ERROR_NO_INTERFACE;
-
-    if (!iid.equals(Components.interfaces.nsIFactory))
+    }
+    if (!iid.equals(Ci.nsIFactory)) {
       throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+    }
+    this._loadUtils();
 
-    this.loadUtils();
-
-    return cal3eCalendarFactory;
+    return calEeeProtocolFactory;
   },
 
   canUnload: function(compMgr) {
     return true;
   }
-};
+
+}
+
 
 function NSGetModule(compMgr, fileSpec) {
-  return cal3eCalendarModule;
+  return calEeeProtocolModule;
 }

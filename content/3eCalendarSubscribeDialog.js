@@ -59,6 +59,7 @@ Calendar3e.loadCalendars = function (evt) {
           calendar3e = calendarManager.createCalendar(
             '3e', calendarUri
           );
+          calendar3e.id = calendar.name;
           calendarManager.registerCalendar(calendar3e);
           console.logStringMessage("Calendars: " + calendar.name);
         }
