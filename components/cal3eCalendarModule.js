@@ -1,10 +1,12 @@
+const Cr = Components.results;
+
 // nsIFactory
 const cal3eCalendarFactory = {
 
   QueryInterface: function (aIID) {
     if (!aIID.equals(Components.interfaces.nsISupports) &&
         !aIID.equals(Components.interfaces.nsIFactory)) {
-      throw Components.results.NS_ERROR_NO_INTERFACE;
+      throw Cr.NS_ERROR_NO_INTERFACE;
     }
 
     return this;
@@ -12,7 +14,7 @@ const cal3eCalendarFactory = {
 
   createInstance: function (outer, iid) {
     if (null !== outer) {
-      throw Components.results.NS_ERROR_NO_AGGREGATION;
+      throw Cr.NS_ERROR_NO_AGGREGATION;
     }
 
     return (new cal3eCalendar()).QueryInterface(iid);
@@ -36,10 +38,6 @@ var cal3eCalendarModule = {
       return;
     }
 
-    Components.utils.import("resource://calendar/modules/calUtils.jsm");
-    Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
-    cal.loadScripts(["calUtils.js"], this.__parent__);
-
     var calendar3eResource = "calendar3e";
     var ioService = Components.classes["@mozilla.org/network/io-service;1"]
         .getService(Components.interfaces.nsIIOService);
@@ -56,7 +54,7 @@ var cal3eCalendarModule = {
       var resourceDirUri = ioService.newFileURI(resourceDir);
       resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
     }
-    Components.utils.import("resource://" + calendar3eResource + "/cal3eCalendar.js");
+    Components.utils.import("resource://" + calendar3eResource + "/cal3eCalendar.js", this.__parent__);
 
     this._utilsLoaded = true;
   },
@@ -75,10 +73,10 @@ var cal3eCalendarModule = {
 
   getClassObject: function (compMgr, cid, iid) {
     if (!cid.equals(this.cid)) {
-      throw Components.results.NS_ERROR_NO_INTERFACE;
+      throw Cr.NS_ERROR_NO_INTERFACE;
     }
     if (!iid.equals(Components.interfaces.nsIFactory)) {
-      throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
     this._loadUtils();
 

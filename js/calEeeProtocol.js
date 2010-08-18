@@ -4,8 +4,9 @@ EXPORTED_SYMBOLS = [
 
 Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
 
-const Cc = Components.classes;
 const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cr = Components.results;
 
 
 function calEeeProtocol() {
@@ -16,7 +17,7 @@ calEeeProtocol.prototype = {
   QueryInterface: function(iid) {
     if (!iid.equals(Ci.nsIProtocolHandler) &&
         !iid.equals(Ci.nsISupports)) {
-      throw new Components.results.NS_ERROR_NO_INTERFACE;
+      throw new Cr.NS_ERROR_NO_INTERFACE;
     }
 
     return this;
@@ -34,12 +35,16 @@ calEeeProtocol.prototype = {
     var uri = Cc['@mozilla.org/network/simple-uri;1'].createInstance(Ci.nsIURI);
     //TODO some checks?
     uri.spec = spec;
+
     return uri;
   },
 
   eeeToHttpUri: function(eeeUri) {
-    var spec = eeeUri.spec;
     //TODO resolve hostname
+    var httpUri = Cc['@mozilla.org/network/simple-uri;1'].createInstance(Ci.nsIURI);
+    httpUri.spec = 'http://localhost:4444/RPC2';
+
+    return httpUri;
   },
 
   newChannel: function(uri) {

@@ -1,7 +1,13 @@
+Components.utils.import("resource://calendar/modules/calUtils.jsm");
+Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
+cal.loadScripts(["calUtils.js"], this);
+
+Components.utils.import("resource://calendar3e/cal3eClient.js");
+
+
 EXPORTED_SYMBOLS = [
   "cal3eCalendar"
 ];
-Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
 
 //
 // cal3eItipTransport() - contructor
@@ -115,8 +121,8 @@ function cal3eCalendar () {
   this.initProviderBase ();
   this.mLocalCacheTime = null;
   this.mLocalCache = null;
-  getFreeBusyService().addProvider(this);
-  this.mItip = new cal3eItipTransport(this);
+  //getFreeBusyService().addProvider(this);
+  //this.mItip = new cal3eItipTransport(this);
 }
 
 const calIFreeBusyInterval = Components.interfaces.calIFreeBusyInterval;
