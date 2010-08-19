@@ -1,9 +1,29 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Mozilla 3e Calendar Extension
+ * Copyright © 2010  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+Components.utils.import("resource://calendar3e/cal3eClient.js");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
 cal.loadScripts(["calUtils.js"], this);
 
-Components.utils.import("resource://calendar3e/cal3eClient.js");
-
+const Cc = Components.classes;
+const Ci = Components.interfaces;
 
 EXPORTED_SYMBOLS = [
   "cal3eCalendar"
@@ -15,7 +35,7 @@ EXPORTED_SYMBOLS = [
 
 function cal3eItipTransport(aCalendar) {
   this.mCalendar = aCalendar;
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
     aConsoleService.logStringMessage ("itip() ++ ");
 
@@ -45,7 +65,7 @@ cal3eItipTransport.prototype = {
   },
 
   sendItems: function  eee_sendItems(aCount,aRecipients,aItipItem) {
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
     aConsoleService.logStringMessage ("sendItems() ++ ");
     var item = aItipItem.getItemList({})[0];
@@ -80,7 +100,7 @@ cal3eItipTransport.prototype = {
         break;
       case 'REPLY': {
         // Get my participation status
-        var att = (calInstanceOf(aItipItem.targetCalendar, Components.interfaces.calISchedulingSupport)
+        var att = (calInstanceOf(aItipItem.targetCalendar, Ci.calISchedulingSupport)
                                ? aItipItem.targetCalendar.getInvitedAttendee(item) : null);
         if (!att && aItipItem.identity) {
           att = item.getAttendeeById("mailto:" + aItipItem.identity);
@@ -107,7 +127,7 @@ cal3eItipTransport.prototype = {
         break;
       }
     }
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
     aConsoleService.logStringMessage ("sendItems() ++ " + aSubject +" ++++" + aBody );
 
@@ -125,18 +145,18 @@ function cal3eCalendar () {
   //this.mItip = new cal3eItipTransport(this);
 }
 
-const calIFreeBusyInterval = Components.interfaces.calIFreeBusyInterval;
+const calIFreeBusyInterval = Ci.calIFreeBusyInterval;
 
 cal3eCalendar.prototype = {
   __proto__:cal.ProviderBase.prototype,
   // nsISupport interface
   QueryInterface:function eee_QueryInterface (aIID) {
     return doQueryInterface (this, cal3eCalendar.prototype, aIID,
-			     [Components.interfaces.calICalendarProvider,
-			      Components.interfaces.calIFreeBusyProvider,
-			      Components.interfaces.calIItipTransport,
-			   //   Components.interfaces.calISchedulingSupport,
-			      Components.interfaces.calICalendar]);
+			     [Ci.calICalendarProvider,
+			      Ci.calIFreeBusyProvider,
+			      Ci.calIItipTransport,
+                              //Ci.calISchedulingSupport,
+			      Ci.calICalendar]);
   },
   // calICalendar
   get type eee_get_type () {
@@ -173,7 +193,7 @@ cal3eCalendar.prototype = {
   },
   set uri eee_set_uri (aUri) {
     this.mUri = aUri;
-    var tUri = Components.classes["@mozilla.org/network/standard-url;1"].getService (Components.interfaces.nsIURI);
+    var tUri = Cc["@mozilla.org/network/standard-url;1"].getService (Ci.nsIURI);
     tUri.spec = aUri.spec;
 
     if (aUri != null) {
@@ -191,7 +211,7 @@ cal3eCalendar.prototype = {
   mTitle: null,
   mColor: null,
   setProperty:function eee_setProperty (aName,aValue) {
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
     aConsoleService.logStringMessage ("setProperty() - " + this.mUri.spec + ", " + aName + " = " + aValue);
     switch (aName) {
@@ -204,7 +224,7 @@ cal3eCalendar.prototype = {
       }
   },
   getProperty:function eee_getProperty (aName) {
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
     if(aName == "itip.transport") {
       aConsoleService.logStringMessage ("sendItems() ++ " + aName);
       return this;
@@ -237,7 +257,7 @@ cal3eCalendar.prototype = {
   prepareSerializedItem:function eee_prepareSerialiedItem (aItem) {
     // Serialize item
     var serialized = cal.getSerializedItem (aItem);
- //   var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+ //   var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
    // aConsoleService.logStringMessage ("prepareSerializedItem() - " + serialized);
     // convert dtstart and dtend to UTC
@@ -294,7 +314,7 @@ cal3eCalendar.prototype = {
 
     if (aItem.id == null) {
       this.notifyOperationComplete (aListener,Components.results.NS_ERROR_FAILURE,
-                                    Components.interfaces.calIOperationListener.ADD,
+                                    Ci.calIOperationListener.ADD,
                                     aItem.id,
 				    "Can't set ID on non-mutable item to addItem");
       return;
@@ -305,7 +325,7 @@ cal3eCalendar.prototype = {
     var aok = function adopt_aok (xml) {
       pthis.notifyOperationComplete (aListener,
 				     Components.results.NS_OK,
-				     Components.interfaces.
+				     Ci.
 				     calIOperationListener.ADD,
 				     aItem.id,
 				     aItem);
@@ -316,7 +336,7 @@ cal3eCalendar.prototype = {
     var aerror = function adopt_aerror (eno, text) {
       pthis.notifyOperationComplete (aListener,
 				     Components.results.NS_ERROR_FAILURE,
-				     Components.interfaces.
+				     Ci.
 				     calIOperationListener.ADD,
 				     aItem.id,
 				     "Server returned error status: " + text);
@@ -339,7 +359,7 @@ cal3eCalendar.prototype = {
     if (aNewItem.id == null) {
       this.notifyOperationComplete (aListener,
                                     Components.results.NS_ERROR_FAILURE,
-				    Components.interfaces.
+				    Ci.
 				    calIOperationListener.MODIFY,
 				    aNewItem.id,
 				    "ID for modifyItem doesn't exist or is null");
@@ -350,7 +370,7 @@ cal3eCalendar.prototype = {
     var aok = function adopt_aok (xml) {
       pthis.notifyOperationComplete (aListener,
 				     Components.results.NS_OK,
-				     Components.interfaces.
+				     Ci.
 				     calIOperationListener.MODIFY,
 				     aNewItem.id,
 				     aNewItem);
@@ -361,7 +381,7 @@ cal3eCalendar.prototype = {
     var aerror = function adopt_aerror (eno, text) {
       pthis.notifyOperationComplete (aListener,
 				     Components.results.NS_ERROR_FAILURE,
-				     Components.interfaces.
+				     Ci.
 				     calIOperationListener.MODIFY,
 				     aNewItem.id,
 				     "Server returned error status: " + text);
@@ -383,7 +403,7 @@ cal3eCalendar.prototype = {
     if (aItem.id == null) {
       this.notifyOperationComplete (aListener,
  		                    Components.results.NS_ERROR_FAILURE,
-				    Components.interfaces.
+				    Ci.
 				    calIOperationListener.DELETE, aItem.id,
 				    "ID doesn't exist for deleteItem");
       return;
@@ -394,7 +414,7 @@ cal3eCalendar.prototype = {
     var aok = function adopt_aok (xml) {
       pthis.notifyOperationComplete (aListener,
 				     Components.results.NS_OK,
-				     Components.interfaces.
+				     Ci.
 				     calIOperationListener.DELETE,
 				     aItem.id,
 				     aItem);
@@ -405,7 +425,7 @@ cal3eCalendar.prototype = {
     var aerror = function adopt_aerror (eno, text) {
       pthis.notifyOperationComplete (aListener,
 				     Components.results.NS_ERROR_FAILURE,
-				     Components.interfaces.
+				     Ci.
 				     calIOperationListener.DELETE,
 				     aItem.id,
 				     "Server returned error status" + text);
@@ -426,7 +446,7 @@ cal3eCalendar.prototype = {
             // querying by id is a valid use case, even if no item is returned:
             this.notifyOperationComplete(aListener,
                                          Components.results.NS_OK,
-                                         Components.interfaces.calIOperationListener.GET,
+                                         Ci.calIOperationListener.GET,
                                          aId,
                                          null);
             return;
@@ -436,13 +456,13 @@ cal3eCalendar.prototype = {
         var iid = null;
 
         if (isEvent(item)) {
-            iid = Components.interfaces.calIEvent;
+            iid = Ci.calIEvent;
         } else if (isToDo(item)) {
-            iid = Components.interfaces.calITodo;
+            iid = Ci.calITodo;
         } else {
             this.notifyOperationComplete(aListener,
                                          Components.results.NS_ERROR_FAILURE,
-                                         Components.interfaces.calIOperationListener.GET,
+                                         Ci.calIOperationListener.GET,
                                          aId,
                                          "Can't deduce item type based on QI");
             return;
@@ -455,7 +475,7 @@ cal3eCalendar.prototype = {
 
         this.notifyOperationComplete(aListener,
                                      Components.results.NS_OK,
-                                     Components.interfaces.calIOperationListener.GET,
+                                     Ci.calIOperationListener.GET,
                                      aId,
                                      null);
 
@@ -481,7 +501,7 @@ cal3eCalendar.prototype = {
     var pthis = this;
     var aok = function aok (aXML) {
       let value = aXML.params.param.value[0];
-      var parser = Components.classes["@mozilla.org/calendar/ics-parser;1"].createInstance (Components.interfaces.calIIcsParser);
+      var parser = Cc["@mozilla.org/calendar/ics-parser;1"].createInstance (Ci.calIIcsParser);
       parser.parseString (value, null);
       var mItems = parser.getItems ({});
 
@@ -518,8 +538,8 @@ cal3eCalendar.prototype = {
   getItems:function eee_getItems (aItemFilter, aCount, aRangeStart, aRangeEnd, aListener) {
     if (!aListener)
       return;
-    const calICalendar = Components.interfaces.calICalendar;
-    const calIRecurrenceInfo = Components.interfaces.calIRecurrenceInfo;
+    const calICalendar = Ci.calICalendar;
+    const calIRecurrenceInfo = Ci.calIRecurrenceInfo;
 
     var wantUnrespondedInvitations = ((aItemFilter & calICalendar.ITEM_FILTER_REQUEST_NEEDS_ACTION) != 0);
     wantUnrespondedInvitations = false;
@@ -529,7 +549,7 @@ cal3eCalendar.prototype = {
       var att = superCal.getInvitedAttendee (item);
       return (att && (att.participationStatus == "NEEDS-ACTION"));
     }
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
     aConsoleService.logStringMessage ("getItems() " + aItemFilter);
 
     var wantEvents =
@@ -539,7 +559,7 @@ cal3eCalendar.prototype = {
 	// bail.
 	this.notifyOperationComplete (aListener,
 				      Components.results.NS_ERROR_FAILURE,
-				      Components.interfaces.
+				      Ci.
 				      calIOperationListener.GET, null,
 				      "Bad aItemFilter passed to getItems");
 	return;
@@ -563,11 +583,11 @@ cal3eCalendar.prototype = {
     var typeIID = null;
     if (itemReturnOccurrences)
       {
-	typeIID = Components.interfaces.calIItemBase;
+	typeIID = Ci.calIItemBase;
       }
     else
       {
-	typeIID = Components.interfaces.calIEvent;
+	typeIID = Ci.calIEvent;
       }
 
     aRangeStart = ensureDateTime (aRangeStart);
@@ -608,12 +628,12 @@ cal3eCalendar.prototype = {
       }
       aListener.onGetResult (acalendar,
   			   Components.results.NS_OK,
-			   Components.interfaces.calIEvent,
+			   Ci.calIEvent,
 			   null, itemsFound.length, itemsFound);
 
       acalendar.notifyOperationComplete (aListener,
 				       Components.results.NS_OK,
-				       Components.interfaces.
+				       Ci.
 				       calIOperationListener.GET, null, null);
     };
     this.updateCache(cbOk,null);
@@ -628,7 +648,7 @@ cal3eCalendar.prototype = {
   },
   getFreeBusyIntervals: function eee_getFreeBusyIntervals(
         aCalId, aRangeStart, aRangeEnd, aBusyTypes, aListener) {
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
     aConsoleService.logStringMessage ("getFreeBusyIntervals() - " + aCalId + " " + aBusyTypes);
 
@@ -652,7 +672,7 @@ cal3eCalendar.prototype = {
     var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
     var pthis = this;
     var fbOK = function eee_fbOK(aXML) {
-      var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+      var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
  //     aConsoleService.logStringMessage ("getFreeBusyIntervals() ++ " + value);a
       var value = aXML.params.param[0].value;
@@ -700,7 +720,7 @@ cal3eCalendar.prototype = {
     return;
   },
 /*  canNotify: function eee_canNotify(aMethod, aItem) {
-    var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService (Components.interfaces.nsIConsoleService);
+    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
     aConsoleService.logStringMessage ("canNotify() ++ " + aMethod + " "  + cal.getSerializedItem(aItem));
     return true;
@@ -728,8 +748,8 @@ cal3eCalendar.prototype = {
 
   sendItems: function  eee_sendItems(aCount,aRecipients,aItipItem) {
     var itemList = aItipItem.getItemList({});
-    var serializer = Components.classes["@mozilla.org/calendar/ics-serializer;1"]
-                                       .createInstance(Components.interfaces.calIIcsSerializer);
+    var serializer = Cc["@mozilla.org/calendar/ics-serializer;1"]
+                                       .createInstance(Ci.calIIcsSerializer);
     serializer.addItems(itemList, itemList.length);
     var methodProp = getIcsService().createIcalProperty("METHOD");
     methodProp.value = aItipItem.responseMethod;

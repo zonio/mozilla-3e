@@ -1,5 +1,25 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Mozilla 3e Calendar Extension
+ * Copyright © 2010  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 const Ci = Components.interfaces;
 const Cc = Components.classes;
+const Cr = Components.results;
 
 
 const calEeeProtocolFactory = {
@@ -7,7 +27,7 @@ const calEeeProtocolFactory = {
   QueryInterface: function (aIID) {
     if (!aIID.equals(Ci.nsISupports) &&
         !aIID.equals(Ci.nsIFactory)) {
-      throw Components.results.NS_ERROR_NO_INTERFACE;
+      throw Cr.NS_ERROR_NO_INTERFACE;
     }
 
     return this;
@@ -15,7 +35,7 @@ const calEeeProtocolFactory = {
 
   createInstance: function (outer, iid) {
     if (null !== outer) {
-      throw Components.results.NS_ERROR_NO_AGGREGATION;
+      throw Cr.NS_ERROR_NO_AGGREGATION;
     }
 
     return (new calEeeProtocol()).QueryInterface(iid);
@@ -72,10 +92,10 @@ var calEeeProtocolModule = {
 
   getClassObject: function (compMgr, cid, iid) {
     if (!cid.equals(this.cid)) {
-      throw Components.results.NS_ERROR_NO_INTERFACE;
+      throw Cr.NS_ERROR_NO_INTERFACE;
     }
     if (!iid.equals(Ci.nsIFactory)) {
-      throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
     this._loadUtils();
 
