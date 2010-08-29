@@ -10,7 +10,7 @@
     <em:description>Allows interaction with 3E Calendar system.</em:description>
     <em:creator>Jan Kratina, Aleš Tamchyna</em:creator>
     <em:type>2</em:type>
-    <em:optionsURL>chrome://calendar3e/content/3ePreferences.xul</em:optionsURL>
+    <em:optionsURL>chrome://calendar3e/content/cal3ePreferences.xul</em:optionsURL>
 
     <em:targetApplication>
       <Description>

@@ -17,5 +17,5 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!ENTITY cal3ePrefpane.caption "3e Calendar">
-<!ENTITY cal3eEnabledAccounts.label "Enable remote 3e calendar on account.">
+<!ENTITY cal3ePreferences.title "3e Calendaring Accounts">
+<!ENTITY cal3eEnabledAccounts.label "Selected accounts to enable 3e calendaring features:">

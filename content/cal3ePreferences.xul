@@ -20,17 +20,23 @@
 
 <?xml-stylesheet type="text/css" href="chrome://calendar3e/skin/3ePreferences.css"?>
 <!DOCTYPE prefwindow [
-  <!ENTITY % cal3ePreferencesDTD SYSTEM "chrome://calendar3e/locale/preferences.dtd">
+  <!ENTITY % cal3ePreferencesDTD SYSTEM "chrome://calendar3e/locale/cal3ePreferences.dtd">
   %cal3ePreferencesDTD;
 ]>
 
-<dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  id="cal3e-preferences"
+  title="&cal3ePreferences.title;"
+  button="accept,cancel"
+  onload="Calendar3e.Preferences.onLoad()"
+  onunload="Calendar3e.Preferences.onUnload()"
+  ondialogaccept="return Calendar3e.Preferences.onAccept()">
 
   <script type="application/x-javascript"
-          src="chrome://calendar3e/content/3ePreferences.js"/>
+          src="chrome://calendar3e/content/cal3ePreferences.js"/>
 
   <stringbundle id="cal3e-bundlePreferences"
-      src="chrome://calendar3e/locale/preferences.properties"/>
+      src="chrome://calendar3e/locale/cal3ePreferences.properties"/>
 
   <hbox flex="1">
     <vbox style="width: 300px">
