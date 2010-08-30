@@ -46,9 +46,13 @@ Calendar3e.Preferences = function () {
     );
   this._console = console;
 
-  this._loadAccounts();
-  this._loadStatuses();
-  this._fillAccountsTable();
+  var mgr = Cc["@mozilla.org/messenger/account-manager;1"].getService(
+      Ci.nsIMsgAccountManager
+    );
+  mgr.addIncomingServerListener(this);
+  this._accountsManager = mgr;
+
+  this._accountsDidChange();
 }
 
 /**
@@ -62,12 +66,19 @@ Calendar3e.Preferences.EEE_ENABLED_KEY = 'eee_enabled';
 Calendar3e.Preferences.prototype = {
 
   /**
-   * Thunderbird's account manager.
+   * Thunderbird's error console.
    *
    * @type nsIConsoleService
    * @todo replace by Log4Moz
    */
   _console: undefined,
+
+  /**
+   * Thunderbird's account manager.
+   *
+   * @type nsIMsgAccountManager
+   */
+  _accountsManager: undefined,
 
   /**
    * Map of identities and their 3e calendaring features statuses.
@@ -139,9 +150,7 @@ Calendar3e.Preferences.prototype = {
    * Loads accounts currently registred in Thunderbird.
    */
   _loadAccounts: function () {
-    var mgr = Cc["@mozilla.org/messenger/account-manager;1"].getService(
-        Ci.nsIMsgAccountManager
-      );
+    var mgr = this._accountsManager;
 
     var accounts = [
       a for each (a in fixIterator(mgr.accounts, Ci.nsIMsgAccount))
@@ -212,16 +221,82 @@ Calendar3e.Preferences.prototype = {
     }
   },
 
+  /**
+   * Initializes map of identities and their status of enabled 3e calendaring
+   * features.
+   *
+   * Already set identities are skipped. This can occur when accounts change.
+   */
   _loadStatuses: function () {
     var map = this._identityStatusMap,
         account, identity, enabled;
     for each (account in this._accounts) {
       identity = account.defaultIdentity;
+      if ('undefined' !== typeof map[identity.key]) {
+        continue;
+      }
+
       enabled = identity.getBoolAttribute(
           Calendar3e.Preferences.EEE_ENABLED_KEY
         );
       map[identity.key] = enabled;
     }
+  },
+
+  /**
+   * Reloads accounts, whether they have enabled 3e calendaring features and
+   * rebuilds preferences table with them.
+   */
+  _accountsDidChange: function () {
+    this._loadAccounts();
+    this._loadStatuses();
+    this._fillAccountsTable();
+  },
+
+  /**
+   * Notifies this preference handler that accounts probably changed.
+   *
+   * Implemented according to nsIIncomingServerListener.
+   *
+   * @param {nsIMsgIncomingServer} server
+   */
+  onServerLoaded: function (server) {
+    this._accountsDidChange();
+  },
+
+  /**
+   * Notifies this preference handler that accounts probably changed.
+   *
+   * Implemented according to nsIIncomingServerListener.
+   *
+   * @param {nsIMsgIncomingServer} server
+   */
+  onServerUnloaded: function (server) {
+    this._accountsDidChange();
+  },
+
+  /**
+   * Notifies this preference handler that accounts parameters probably
+   * changed and their representation should be rebuild.
+   *
+   * Implemented according to nsIIncomingServerListener.
+   *
+   * @param {nsIMsgIncomingServer} server
+   */
+  onServerChanged: function (server) {
+    this._fillAccountsTable();
+  },
+
+  /**
+   * Releases resources used by preferences handler.
+   *
+   * Client code should assude that this method gets called.
+   *
+   * @todo is this necessary?
+   */
+  finalize: function () {
+    var mgr = this._accountsManager;
+    mgr.removeIncomingServerListener(this);
   }
 
 };
@@ -237,5 +312,6 @@ Calendar3e.Preferences.onAccept = function () {
   return true;
 }
 Calendar3e.Preferences.onUnload = function () {
+  prefs.finalize();
   prefs = null;
 }
