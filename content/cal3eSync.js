@@ -48,6 +48,12 @@ if ('undefined' === typeof Calendar3e) {
   var Calendar3e = {};
 }
 
+/**
+ * Calendar synchronization provider.
+ *
+ * @todo parametrized timeout
+ * @todo different interval for each account/client
+ */
 Calendar3e.Sync = function () {
   var console = Cc["@mozilla.org/consoleservice;1"].getService(
       Ci.nsIConsoleService
@@ -106,6 +112,10 @@ Calendar3e.Sync.prototype = {
    */
   _syncId: undefined,
 
+  /**
+   * Loads calendars for every account and then synchronizes them with what
+   * is currently registered.
+   */
   loadCalendars: function () {
     var console = this._console,
         calendarManager = this._calendarManager;
@@ -152,6 +162,11 @@ Calendar3e.Sync.prototype = {
     }
   },
 
+  /**
+   * Synchronizes given calendars with already registered calendars.
+   *
+   * @param {Array} calendars array of cal3eCalendar
+   */
   syncCalendars: function (calendars) {
     var console = this._console,
         calendarManager = this._calendarManager,
