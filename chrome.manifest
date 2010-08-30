@@ -23,6 +23,7 @@ skin     calendar3e   classic/1.0 skin/
 # Loaded dynamically because it is Needed before chrome registration
 #resource calendar3e               js/
 
+overlay chrome://lightning/content/messenger-overlay-toolbar.xul chrome://calendar3e/content/cal3eSync.xul
 overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
 overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul

@@ -496,6 +496,15 @@ cal3eClient.prototype = {
   _autoExecute: true,
 
   /**
+   * Returns 3e client identity.
+   *
+   * @return
+   */
+  get identity cal3eClient_get_identity() {
+    return this._identity;
+  },
+
+  /**
    * Returns EEE interface name.
    *
    * @return <code>"ESClient"</code>

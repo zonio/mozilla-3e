@@ -50,7 +50,7 @@ Calendar3e.Preferences = function () {
       Ci.nsIMsgAccountManager
     );
   mgr.addIncomingServerListener(this);
-  this._accountsManager = mgr;
+  this._accountManager = mgr;
 
   this._accountsDidChange();
 }
@@ -78,7 +78,7 @@ Calendar3e.Preferences.prototype = {
    *
    * @type nsIMsgAccountManager
    */
-  _accountsManager: undefined,
+  _accountManager: undefined,
 
   /**
    * Map of identities and their 3e calendaring features statuses.
@@ -150,7 +150,7 @@ Calendar3e.Preferences.prototype = {
    * Loads accounts currently registred in Thunderbird.
    */
   _loadAccounts: function () {
-    var mgr = this._accountsManager;
+    var mgr = this._accountManager;
 
     var accounts = [
       a for each (a in fixIterator(mgr.accounts, Ci.nsIMsgAccount))
@@ -295,7 +295,7 @@ Calendar3e.Preferences.prototype = {
    * @todo is this necessary?
    */
   finalize: function () {
-    var mgr = this._accountsManager;
+    var mgr = this._accountManager;
     mgr.removeIncomingServerListener(this);
   }
 
