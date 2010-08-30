@@ -126,10 +126,12 @@ Calendar3e.Preferences.prototype = {
     var map = this._identityStatusMap,
         status = !map[identityKey];
     map[identityKey] = status;
-    treeView.getCellProperties(
-        row.value,
-        identityNameColumn.getNext(),
-        [ status ? 'enabled' : 'not-enabled' ]
+    var rows = tree.getElementsByTagName('treerow'),
+        identityRow = rows[row.value],
+        identityEnabledCell = identityRow.lastElementChild;
+    identityEnabledCell.setAttribute(
+        'properties',
+        status ? 'enabled' : 'not-enabled'
       );
   },
 
