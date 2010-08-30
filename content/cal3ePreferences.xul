@@ -19,7 +19,7 @@
    - ***** END LICENSE BLOCK ***** -->
 
 <?xml-stylesheet type="text/css" href="chrome://calendar3e/skin/cal3ePreferences.css"?>
-<!DOCTYPE prefwindow [
+<!DOCTYPE dialog [
   <!ENTITY % cal3ePreferencesDTD SYSTEM "chrome://calendar3e/locale/cal3ePreferences.dtd">
   %cal3ePreferencesDTD;
 ]>
