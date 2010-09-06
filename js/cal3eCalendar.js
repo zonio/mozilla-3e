@@ -153,6 +153,10 @@ cal3eCalendar.prototype = {
    * Initializes 3e Client for this calendar.
    */
   _init3eCalendar: function cal3e_init3eCalendar() {
+    var accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
+      .getService(Ci.nsIMsgAccountManager);
+    accountManager.addIncomingServerListener(this);
+    
     var client = new cal3eClient();
   },
 

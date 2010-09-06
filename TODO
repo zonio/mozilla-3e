@@ -2,3 +2,4 @@
  * Check 3e protocol implementation
  * 3e client as a component
  * eee scheme URI handler
+ * ICS parser a serializer pro cal3eCalendar
