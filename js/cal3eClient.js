@@ -374,7 +374,7 @@ cal3eMethodStack.prototype = {
     var console = Cc["@mozilla.org/consoleservice;1"].getService(
       Ci.nsIConsoleService
     );
-    console.logStringMessage("Sending: " + xml);
+    //console.logStringMessage("Sending: " + xml);
     this._executedMethodIdx = methodIndex;
     cal.sendHttpRequest(cal.createStreamLoader(), httpChannel, this);
   },
@@ -469,7 +469,7 @@ cal3eMethodStack.prototype = {
       return;
     }
 
-    this._console.logStringMessage("Received: " + responseXml);
+    //this._console.logStringMessage("Received: " + responseXml);
 
     // continue with next method call
     this._executeNext();
@@ -611,6 +611,65 @@ cal3eClient.prototype = {
       .addParam(query); // query
     this._methodStack
       .addMethod(getCalendarsMethod);
+    if (execute) {
+      this.executeMethodStack(listener);
+    }
+    return this;
+  },
+
+  /**
+   * Calls {@link authenticate} and <code>ESClient.queryObjects</code> on
+   * given calendar.
+   *
+   * @param calendar calendar queried calendar
+   * @param from beginning date of the date range, can be null
+   * @param to last date of the date range, can be null
+   * @param listener
+   * @param execute if defined, overrides auto execute setting
+   * @return receiver
+   */
+  queryObjects: function cal3eClient_queryObjects(calendar, from, to,
+      listener, execute) {
+    execute = undefined === execute ? this._autoExecute : execute ;
+    this.authenticate(null, false);
+    var queryObjectsMethod = new cal3eMethod(this, 'getItems');
+
+    var query = '', date;
+    if (null !== from) {
+      date = new Date(from.nativeTime / 1000);
+      query += "date_from('" +
+           date.getUTCFullYear() + '-' +
+          (date.getUTCMonth() + 1) + '-' +
+           date.getUTCDate() + ' ' +
+           date.getUTCHours() + ':' +
+           date.getUTCMinutes() + ':' +
+           date.getUTCSeconds()
+        "')";
+    }
+    if (null !== to) {
+      if ('' !== query) {
+        query += ' AND ';
+      }
+      date = new Date(to.nativeTime / 1000);
+      query += "date_to('" +
+           date.getUTCFullYear() + '-' +
+          (date.getUTCMonth() + 1) + '-' +
+           date.getUTCDate() + ' ' +
+           date.getUTCHours() + ':' +
+           date.getUTCMinutes() + ':' +
+           date.getUTCSeconds()
+      "')";
+    }
+    if ('' !== query) {
+      query += ' AND ';
+    }
+    query += "NOT deleted())";
+    
+    queryObjectsMethod
+      .addParam(calendar.calspec)
+      .addParam(query);
+    this._methodStack
+      .addMethod(queryObjectsMethod);
     if (execute) {
       this.executeMethodStack(listener);
     }

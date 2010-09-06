@@ -63,7 +63,7 @@ var calEeeProtocolModule = {
     var resourceProtocol = ioService.getProtocolHandler("resource")
         .QueryInterface(Ci.nsIResProtocolHandler);
     if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
-      var cal3eExtensionId = "{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}";
+      var cal3eExtensionId = "calendar3e@zonio.net";
       var em = Cc["@mozilla.org/extensions/manager;1"]
           .getService(Ci.nsIExtensionManager);
       var file = em.getInstallLocation(cal3eExtensionId)

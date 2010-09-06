@@ -26,7 +26,7 @@ var ioService = Cc["@mozilla.org/network/io-service;1"]
 var resourceProtocol = ioService.getProtocolHandler("resource")
     .QueryInterface(Ci.nsIResProtocolHandler);
 if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
-  var cal3eExtensionId = "{a62ef8ec-5fdc-40c2-873c-223b8a6925cc}";
+  var cal3eExtensionId = "calendar3e@zonio.net";
   var em = Components.classes["@mozilla.org/extensions/manager;1"]
       .getService(Ci.nsIExtensionManager);
   var file = em.getInstallLocation(cal3eExtensionId)
@@ -128,25 +128,42 @@ Calendar3e.Sync.prototype = {
       calSync = this;
       client.getCalendars("match_owner('" + client.identity.email + "')", {
         onSuccess: function (calendars, methodStack) {
-          var calendars3e = [],
+          var calendars3e = [], calendarProperties = [],
               idx = -1,
               length = calendars.length,
-              calendar, calendarUri, calendar3e;
+              calendar, calendarUri, calendar3e,
+              properties;
           if (0 < length) {
             while (++idx < length) {
+              properties = {
+                name: null,
+                color: null
+              };
               calendar = calendars[idx];
               calendarUri = ioService.newURI("eee://" + client.identity.email + "/" + calendar.name, null, null);
-              console.logStringMessage("3e URI: " + calendarUri.spec);
               calendar3e = calendarManager.createCalendar(
                 '3e', calendarUri
               );
-              calendar3e.name = calendar.name;
+              for each (var attr in calendar.attrs) {
+                switch (attr.name) {
+                case 'title':
+                  properties.name = attr.value;
+                  break;
+                case 'color':
+                  properties.color = attr.value;
+                  break;
+                }
+              }
+              if (null === properties.name) {
+                properties.name = calendar.name;
+              }
               calendars3e.push(calendar3e);
+              calendarProperties.push(properties);
             }
           } else {
             console.logStringMessage("No calendars retrieved.");
           }
-          calSync.syncCalendars(calendars3e);
+          calSync.syncCalendars(calendars3e, calendarProperties);
         },
         onError: function (methodStack) {
           console.logStringMessage("Number of methods: " + methodStack._methods.length);
@@ -167,7 +184,7 @@ Calendar3e.Sync.prototype = {
    *
    * @param {Array} calendars array of cal3eCalendar
    */
-  syncCalendars: function (calendars) {
+  syncCalendars: function (calendars, properties) {
     var console = this._console,
         calendarManager = this._calendarManager,
         currentCalendars = calendarManager.getCalendars({});
@@ -187,10 +204,19 @@ Calendar3e.Sync.prototype = {
       return isNew;
     });
 
-    var calendar;
-    for each (calendar in newCalendars) {
+    var idx = calendars.length,
+        calendar, props;
+    while (idx--) {
+      calendar = calendars[idx];
+      props = properties[idx];
       calendarManager.registerCalendar(calendar);
-      console.logStringMessage("Calendars: " + calendar.name);
+      console.logStringMessage("Calendar name: " + props.name);
+      console.logStringMessage("Calendar color: " + props.color);
+      calendar.name = props.name;
+      if (null !== props.color) {
+        calendar.setProperty('color', props.color);
+      }
+      console.logStringMessage("New calendar: " + calendar.name);
     }
   },
 
@@ -269,7 +295,7 @@ Calendar3e.Sync.prototype = {
     function sync() {
       calSync.loadCalendars();
     }
-    window.setInterval(sync, 15000);
+    //window.setInterval(sync, 15000);
   }
 
 }

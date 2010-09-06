@@ -24,6 +24,7 @@ cal.loadScripts(["calUtils.js"], this);
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+const Cr = Components.results;
 
 EXPORTED_SYMBOLS = [
   "cal3eCalendar"
@@ -134,644 +135,163 @@ cal3eItipTransport.prototype = {
   }
 };
 
-//
-// cal3eProvider() - constructor
-//
-function cal3eCalendar () {
-  this.initProviderBase ();
-  this.mLocalCacheTime = null;
-  this.mLocalCache = null;
-  //getFreeBusyService().addProvider(this);
-  //this.mItip = new cal3eItipTransport(this);
+/**
+ * Implementation of 3e calendar.
+ */
+function cal3eCalendar() {
+  this.initProviderBase();
+  this._init3eCalendar();
 }
 
 const calIFreeBusyInterval = Ci.calIFreeBusyInterval;
 
 cal3eCalendar.prototype = {
-  __proto__:cal.ProviderBase.prototype,
-  // nsISupport interface
-  QueryInterface:function eee_QueryInterface (aIID) {
-    return doQueryInterface (this, cal3eCalendar.prototype, aIID,
-			     [Ci.calICalendarProvider,
-			      Ci.calIFreeBusyProvider,
-			      Ci.calIItipTransport,
-                              //Ci.calISchedulingSupport,
-			      Ci.calICalendar]);
+
+  __proto__: cal.ProviderBase.prototype,
+  
+  /**
+   * Initializes 3e Client for this calendar.
+   */
+  _init3eCalendar: function cal3e_init3eCalendar() {
+    var client = new cal3eClient();
   },
-  // calICalendar
-  get type eee_get_type () {
-    return "3e";
+
+  /**
+   * Returns identifier of 3e calendar type.
+   * 
+   * @returns {String}
+   */
+  get type cal3e_getType() {
+    return '3e';
   },
- // mDisabled:true,
-  mItip:null,
-  get name eee_getName () {
-    return this.mTitle;
+
+  /**
+   * Returns identifier of defining extension of this calendar.
+   *
+   * @returns {String}
+   */
+  get providerID cal3e_getProviderId() {
+    return "calendar3e@zonio.net";
   },
-  set name eee_setName (v) {
-    this.mTitle = v;
-  },
-  get color eee_getColor () {
-    return this.mColor;
-  },
-  set color cGC_setColor (v) {
-    this.mColor = v;
-  },
-  mCalendarUserAddress:null,
-  get canRefresh eee_get_canRefresh () {
+
+  /**
+   * Makes this calendar refreshalbe
+   *
+   * @returns {Boolean} always true
+   */
+  get canRefresh cal3e_canRefresh() {
     return true;
   },
-  // defined uri provided by user
-  mUri: null,
-  mServerUri: null,
-  mServerUser: null,
-  mServerPass: null,
-  mServerCalendar: null,
-  mLocalCache: null,
-  mLocalCacheTime: null,
-  get uri eee_get_uri () {
-    return this.mUri;
-  },
-  set uri eee_set_uri (aUri) {
-    this.mUri = aUri;
-    var tUri = Cc["@mozilla.org/network/standard-url;1"].getService (Ci.nsIURI);
-    tUri.spec = aUri.spec;
 
-    if (aUri != null) {
-      this.mServerUser = tUri.username + "@" + tUri.host;
-      this.mServerPass = tUri.password;
-      this.mServerUri = "https://" + tUri.host + ":" + (tUri.port == -1 ? "4444" : tUri.port) + "/";
-      this.mServerCalendar = tUri.path.substring (1);
-    }
-    this.mTitle = this.mServerCalendar;
-    return aUri;
+  get calspec cal3e_calspec() {
+    //TODO implementation
+    return 'filip.zrust@zonio.net:work';
   },
-  get transientProperties eee_get_transientProperties () {
-    return true;
-  },
-  mTitle: null,
-  mColor: null,
-  setProperty:function eee_setProperty (aName,aValue) {
-    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
 
-    aConsoleService.logStringMessage ("setProperty() - " + this.mUri.spec + ", " + aName + " = " + aValue);
-    switch (aName) {
-      case "name":
-	this.mTitle = aValue;
-	return;
-      case "color":
-	this.mColor = aValue;
-	return;
-      }
-  },
-  getProperty:function eee_getProperty (aName) {
-    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
-    if(aName == "itip.transport") {
-      aConsoleService.logStringMessage ("sendItems() ++ " + aName);
-      return this;
-    }
-    switch (aName) {
-      case "organizerId": {
-        if(this.mServerUser) {
-          return this.mServerUser;
-        }
-        break;
-      }
-      case "capabilities.tasks.supported":
-      case "capabilities.timezones.floating.supported":
-	return false;
-      case "capabilities.attachments.supported":
-      case "capabilities.privacy.supported":
-      case "itip.transport":
-	return false;
-      case "requiresNetwork":
-      case "capabilities.events.supported":
-      case "capabilities.timezones.UTC.supported":
-	return true;
-      case "name":
-	return this.mTitle;
-      case "color":
-	return this.mColor;
-      }
-    return this.__proto__.__proto__.getProperty.apply (this, arguments);
-  },
-  prepareSerializedItem:function eee_prepareSerialiedItem (aItem) {
-    // Serialize item
-    var serialized = cal.getSerializedItem (aItem);
- //   var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
+  _color: null,
 
-   // aConsoleService.logStringMessage ("prepareSerializedItem() - " + serialized);
-    // convert dtstart and dtend to UTC
-    var timezoneUTC = aItem.startDate.timezone.provider.UTC;
-    var startDate = aItem.startDate.getInTimezone (timezoneUTC);
-    var text = startDate.toString ();
-    var dtstart = "DTSTART:" + text.substr (0, 4) + text.substr (5, 2) + text.substr (8, 2) +
-                  "T" + text.substr (11, 2) + text.substr (14, 2) + text.substr (17, 2) + "Z";
-    var endDate = aItem.endDate.getInTimezone (timezoneUTC);
-    var text = endDate.toString ();
-    var dtend = "DTEND:" + text.substr (0, 4) + text.substr (5, 2) + text.substr (8, 2) +
-                "T" + text.substr (11, 2) + text.substr (14, 2) + text.substr (17, 2) + "Z";
-
-    // clean parts rejected by server
-    var split = serialized.search ("BEGIN:VEVENT");
-    var xevent = serialized.substring (split);
-    xevent = xevent.replace (/DTSTART;TZID.*/, dtstart);
-    xevent = xevent.replace (/DTEND;TZID.*/, dtend);
-    var ret = xevent.replace (/END:VCALENDAR/, "");
-    return ret;
-  },
   /**
-   * addItem()
-   * we actually use doAdoptItem()
+   * Returns calendar's color.
    *
-   * @param aItem       item to add
-   * @param aListener   listener for method completion
+   * Color is formatted in HTML's #RRGGBB.
+   *
+   * @returns {String}
    */
-  addItem:function eee_addItem (aItem, aListener) {
-    var newItem = aItem.clone ();
-    return this.doAdoptItem (newItem, aListener, false);
+  get color cal3e_getColor() {
+    //TODO call getCalendarAttributes
+    return this._color;
   },
+
   /**
-   * adoptItem()
-   * we actually use doAdoptItem()
+   * Sets calendar's color.
    *
-   * @param aItem       item to check
-   * @param aListener   listener for method completion
+   * @param {String} color formatted in HTML's #RRGGBB
    */
-  adoptItem:function eee_adoptItem (aItem, aListener) {
-    return this.doAdoptItem (aItem, aListener, false);
+  set color cal3e_setColor(color) {
+    //TODO call setCalendarAttribute
+    this._color = color;
   },
+  
+  addItem: function cal3e_addItem(item, listener) {
+    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  adoptItem: function cal3e_adoptItem(item, listener) {
+    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  modifyItem: function cal3e_adoptItem(item, listener) {
+    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  deleteItem: function cal3e_adoptItem(item, listener) {
+    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  getItem: function cal3e_adoptItem(id, listener) {
+    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
   /**
-   * Performs the actual addition of the item to CalDAV store
+   * Returns ordered calendar items according to given constraints.
    *
-   * @param aItem       item to add
-   * @param aListener   listener for method completion
-   * @param aIgnoreEtag ignore item etag
+   * @param {Numeric} itemFilter bites combined from several settings
    */
-  doAdoptItem:function eee_doAdoptItem (aItem, aListener, aIgnoreEtag) {
-    if (aItem.id == null && aItem.isMutable) {
-      aItem.id = getUUID ();
+  getItems: function cal3e_getItems(itemFilter, count, rangeStart, rangeEnd,
+      listener) {
+    var console = Cc["@mozilla.org/consoleservice;1"]
+      .getService(Ci.nsIConsoleService);
+
+    var wantEvents = ((itemFilter &
+      Ci.calICalendar.ITEM_FILTER_TYPE_EVENT) != 0);
+    var wantInvitations = ((itemFilter &
+      Ci.calICalendar.ITEM_FILTER_REQUEST_NEEDS_ACTION) != 0);
+
+    if (!wantEvents) {
+      // Events are not wanted, nothing to do.
+    	this.notifyOperationComplete(
+    	  listener,
+    	  Cr.NS_OK,
+    		Ci.calIOperationListener.GET, null,
+    		"Bad item filter passed to getItems"
+    	);
+    	return;
     }
 
-    if (aItem.id == null) {
-      this.notifyOperationComplete (aListener,Components.results.NS_ERROR_FAILURE,
-                                    Ci.calIOperationListener.ADD,
-                                    aItem.id,
-				    "Can't set ID on non-mutable item to addItem");
-      return;
-    }
-    aItem.calendar = this;
-    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
-    var pthis = this;
-    var aok = function adopt_aok (xml) {
-      pthis.notifyOperationComplete (aListener,
-				     Components.results.NS_OK,
-				     Ci.
-				     calIOperationListener.ADD,
-				     aItem.id,
-				     aItem);
-      pthis.mLocalCache[aItem.id] = aItem.clone();
-      pthis.observers.notify ("onAddItem",[aItem]);
-      return;
-    };
-    var aerror = function adopt_aerror (eno, text) {
-      pthis.notifyOperationComplete (aListener,
-				     Components.results.NS_ERROR_FAILURE,
-				     Ci.
-				     calIOperationListener.ADD,
-				     aItem.id,
-				     "Server returned error status: " + text);
-      return;
-    };
+    rangeStart = ensureDateTime(rangeStart);
+    rangeEnd = ensureDateTime(rangeEnd);
 
-    var params = Array ();
-    params[0] = this.mServerCalendar;
-    params[1] = this.prepareSerializedItem (aItem);
-    rpc.rpcCall ("addObject", params, aok, aerror);
-  },
-  /**
-   * modifyItem(); required by calICalendar.idl
-   * we actually use doModifyItem()
-   *
-   * @param aItem       item to check
-   * @param aListener   listener for method completion
-   */
-  modifyItem:function eee_modifyItem (aNewItem, aOldItem, aListener) {
-    if (aNewItem.id == null) {
-      this.notifyOperationComplete (aListener,
-                                    Components.results.NS_ERROR_FAILURE,
-				    Ci.
-				    calIOperationListener.MODIFY,
-				    aNewItem.id,
-				    "ID for modifyItem doesn't exist or is null");
-      return;
-    }
-    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
-    var pthis = this;
-    var aok = function adopt_aok (xml) {
-      pthis.notifyOperationComplete (aListener,
-				     Components.results.NS_OK,
-				     Ci.
-				     calIOperationListener.MODIFY,
-				     aNewItem.id,
-				     aNewItem);
-      pthis.mLocalCache[aNewItem.id] = aNewItem.clone();
-      pthis.observers.notify ("onModifyItem",[aNewItem, aOldItem]);
-      return;
-    };
-    var aerror = function adopt_aerror (eno, text) {
-      pthis.notifyOperationComplete (aListener,
-				     Components.results.NS_ERROR_FAILURE,
-				     Ci.
-				     calIOperationListener.MODIFY,
-				     aNewItem.id,
-				     "Server returned error status: " + text);
-      return;
-    };
+    client.queryObjects(this, rangeStart, rangeEnd, {
+      onSuccess: function (items, methodStack) {
+        console.logStringMessage("Ha!");
+      },
+      onError: function (methodStack) {
+        console.logStringMessage("Number of methods: " + methodStack._methods.length);
+        console.logStringMessage("Number of responses: " + methodStack._responses.length);
+        if (null !== methodStack._errorResponse) {
+          console.logStringMessage("Error response: " +
+            methodStack._errorResponse.responseStatus + " " +
+            methodStack._errorResponse.responseStatusText);
 
-    var params = Array ();
-    params[0] = this.mServerCalendar;
-    params[1] = this.prepareSerializedItem (aNewItem);
-    rpc.rpcCall ("updateObject", params, aok, aerror);
-  },
-  /**
-   * deleteItem(); required by calICalendar.idl
-   *
-   * @param aItem       item to delete
-   * @param aListener   listener for method completion
-   */
-  deleteItem:function eee_deleteItem (aItem, aListener) {
-    if (aItem.id == null) {
-      this.notifyOperationComplete (aListener,
- 		                    Components.results.NS_ERROR_FAILURE,
-				    Ci.
-				    calIOperationListener.DELETE, aItem.id,
-				    "ID doesn't exist for deleteItem");
-      return;
-    }
-
-    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
-    var pthis = this;
-    var aok = function adopt_aok (xml) {
-      pthis.notifyOperationComplete (aListener,
-				     Components.results.NS_OK,
-				     Ci.
-				     calIOperationListener.DELETE,
-				     aItem.id,
-				     aItem);
-      delete pthis.mLocalCache[aItem.id];
-      pthis.observers.notify ("onDeleteItem",[aItem]);
-      return;
-    };
-    var aerror = function adopt_aerror (eno, text) {
-      pthis.notifyOperationComplete (aListener,
-				     Components.results.NS_ERROR_FAILURE,
-				     Ci.
-				     calIOperationListener.DELETE,
-				     aItem.id,
-				     "Server returned error status" + text);
-      return;
-    };
-
-    var params = Array ();
-    params[0] = this.mServerCalendar;
-    params[1] = aItem.id;
-    rpc.rpcCall ("deleteObject", params, aok, aerror);
-  },
-  // void getItem( in string id, in calIOperationListener aListener );
-  getItem:function eee_getItem (aId, aListener) {
-        if (!aListener)
-            return;
-
-        if (aId == null || this.mLocalCache[aId] == null) {
-            // querying by id is a valid use case, even if no item is returned:
-            this.notifyOperationComplete(aListener,
-                                         Components.results.NS_OK,
-                                         Ci.calIOperationListener.GET,
-                                         aId,
-                                         null);
-            return;
+            var items = [];
+            listener.onGetResult(
+              this.superCalendar,
+              Cr.NS_OK,
+              Ci.calIEvent,
+              null,
+              items.length, items
+            );
         }
-
-        var item = this.mLocalCache[aId];
-        var iid = null;
-
-        if (isEvent(item)) {
-            iid = Ci.calIEvent;
-        } else if (isToDo(item)) {
-            iid = Ci.calITodo;
-        } else {
-            this.notifyOperationComplete(aListener,
-                                         Components.results.NS_ERROR_FAILURE,
-                                         Ci.calIOperationListener.GET,
-                                         aId,
-                                         "Can't deduce item type based on QI");
-            return;
-        }
-
-        aListener.onGetResult (this.superCalendar,
-                               Components.results.NS_OK,
-                               iid,
-                               null, 1, [item]);
-
-        this.notifyOperationComplete(aListener,
-                                     Components.results.NS_OK,
-                                     Ci.calIOperationListener.GET,
-                                     aId,
-                                     null);
-
+        console.logStringMessage("ESClient.queryObjects don' work");
+      }
+    });
   },
-  /*
-   * updateCache - downloads differences from server
-   * cbOk - callback when no error occured
-   * cbError - callback when error occured
-   * cbParams - array of parameters
-   */
-  updateCache: function eee_updateCache(cbOk,cbError) {
-    var filter = "NOT deleted()";
-    if(this.mLocalCacheTime != null) {
-      // prepare filter according to DTSTAMP date
-      var timezoneUTC = this.mLocalCacheTime.timezone.provider.UTC;
-      var tLocalCacheTime = this.mLocalCacheTime.getInTimezone(timezoneUTC);
-      filter = "date_from('"+tLocalCacheTime.toString().replace(/\//g,"-").substring(0,19) + "') AND " + filter;
-    } else {
-      // New start - download calendar from server
-      this.mLocalCache = {};
-    }
-    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
-    var pthis = this;
-    var aok = function aok (aXML) {
-      let value = aXML.params.param.value[0];
-      var parser = Cc["@mozilla.org/calendar/ics-parser;1"].createInstance (Ci.calIIcsParser);
-      parser.parseString (value, null);
-      var mItems = parser.getItems ({});
 
-      for (var itemIndex in mItems) {
-        var item = mItems[itemIndex];
-        item.calendar = pthis;
-        pthis.mLocalCache[item.id] = item;
-        // check for newest item for next update
-        if(pthis.mLocalCacheTime == null) {
-          pthis.mLocalCacheTime = item.stampTime.clone();
-        } else {
-          if(pthis.mLocalCacheTime.nativeTime < item.stampTime.nativeTime) {
-            pthis.mLocalCacheTime = item.stampTime.clone();
-          }
-        }
-      }
-      cbOk();
-    };
-    var aerror = function aError(eNo, eText) {
-      cbError(eNo,eText);
-    };
-    var params = Array ();
-    params[0] = this.mServerCalendar;
-    params[1] = filter;
-    rpc.rpcCall ("queryObjects", params, aok, aerror);
-    return;
-
-
-  },
-  // void getItems( in unsigned long aItemFilter, in unsigned long aCount,
-  //                in calIDateTime aRangeStart, in calIDateTime aRangeEnd,
-  //                in calIOperationListener aListener );
-  // * gets data from localy cached calendar
-  getItems:function eee_getItems (aItemFilter, aCount, aRangeStart, aRangeEnd, aListener) {
-    if (!aListener)
-      return;
-    const calICalendar = Ci.calICalendar;
-    const calIRecurrenceInfo = Ci.calIRecurrenceInfo;
-
-    var wantUnrespondedInvitations = ((aItemFilter & calICalendar.ITEM_FILTER_REQUEST_NEEDS_ACTION) != 0);
-    wantUnrespondedInvitations = false;
-    var superCal;
-    function checkUnrespondedInvitation (item)
-    {
-      var att = superCal.getInvitedAttendee (item);
-      return (att && (att.participationStatus == "NEEDS-ACTION"));
-    }
-    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
-    aConsoleService.logStringMessage ("getItems() " + aItemFilter);
-
-    var wantEvents =
-      ((aItemFilter & calICalendar.ITEM_FILTER_TYPE_EVENT) != 0);
-    if (!wantEvents)
-      {
-	// bail.
-	this.notifyOperationComplete (aListener,
-				      Components.results.NS_ERROR_FAILURE,
-				      Ci.
-				      calIOperationListener.GET, null,
-				      "Bad aItemFilter passed to getItems");
-	return;
-      }
-
-    var itemCompletedFilter =
-      ((aItemFilter & calICalendar.ITEM_FILTER_COMPLETED_YES) != 0);
-    var itemNotCompletedFilter =
-      ((aItemFilter & calICalendar.ITEM_FILTER_COMPLETED_NO) != 0);
-    function checkCompleted (item)
-    {
-      return (item.
-	      isCompleted ? itemCompletedFilter : itemNotCompletedFilter);
-    }
-
-    // return occurrences?
-    var itemReturnOccurrences =
-      ((aItemFilter & calICalendar.ITEM_FILTER_CLASS_OCCURRENCES) != 0);
-
-    // figure out the return interface type
-    var typeIID = null;
-    if (itemReturnOccurrences)
-      {
-	typeIID = Ci.calIItemBase;
-      }
-    else
-      {
-	typeIID = Ci.calIEvent;
-      }
-
-    aRangeStart = ensureDateTime (aRangeStart);
-    aRangeEnd = ensureDateTime (aRangeEnd);
-
-    // update local cache and find corresponding items
-
-    var acalendar = this;
-    var pthis = this;
-    var cbOk = function getItmes_cbOk() {
-      var itemsFound = Array ();
-      for (var itemIndex in pthis.mLocalCache) {
-        var item = pthis.mLocalCache[itemIndex];
-        var isEvent_ = isEvent (item);
-
-        item.calendar = acalendar;
-        if (itemReturnOccurrences && item.recurrenceInfo) {
-          var occurrences = item.recurrenceInfo.getOccurrences (aRangeStart, aRangeEnd,
-							      aCount ? aCount - itemsFound.length : 0, {} );
-          if (wantUnrespondedInvitations) {
-            occurrences = occurrences.filter (checkUnrespondedInvitation);
-          }
-          if (!isEvent_) {
-            occurrences = occurrences.filter (checkCompleted);
-          }
-          itemsFound = itemsFound.concat (occurrences);
-        } else {
-  	  if ((!wantUnrespondedInvitations || checkUnrespondedInvitation (item)) &&
-              (isEvent_ || checkCompleted(item)) && checkIfInRange (item, aRangeStart, aRangeEnd)) {
-            // This needs fixing for recurring items, e.g. DTSTART of parent may occur before aRangeStart.
-            // This will be changed with bug 416975.
-            itemsFound.push (item);
-          }
-        }
-        if (aCount && itemsFound.length >= aCount) {
-          break;
-        }
-      }
-      aListener.onGetResult (acalendar,
-  			   Components.results.NS_OK,
-			   Ci.calIEvent,
-			   null, itemsFound.length, itemsFound);
-
-      acalendar.notifyOperationComplete (aListener,
-				       Components.results.NS_OK,
-				       Ci.
-				       calIOperationListener.GET, null, null);
-    };
-    this.updateCache(cbOk,null);
-  },
   /* 
-   * refresh - call onLoad on observers
+   * Refreshes this calendar by notifying its observer.
    */
-  refresh:function eee_refresh () {
-      // issue new localCache fill and reload data
-      this.mLocalCacheTime = null;
-      this.observers.notify ("onLoad",[this]);
-  },
-  getFreeBusyIntervals: function eee_getFreeBusyIntervals(
-        aCalId, aRangeStart, aRangeEnd, aBusyTypes, aListener) {
-    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
-
-    aConsoleService.logStringMessage ("getFreeBusyIntervals() - " + aCalId + " " + aBusyTypes);
-
-    var aCalIdParts = aCalId.split(":");
-    aCalIdParts[0] = aCalIdParts[0].toLowerCase();
-
-    if (aCalIdParts[0] != "mailto" ) {
-       aListener.onResult(null, null);
-       return;
-     }
-
-    var bAttendee = aCalIdParts[1];
-
-    aRangeStart = ensureDateTime (aRangeStart);
-    aRangeEnd = ensureDateTime (aRangeEnd);
-
-    var timezoneUTC = this.mLocalCacheTime.timezone.provider.UTC;
-    var bRangeStart = aRangeStart.getInTimezone(timezoneUTC).toString().replace(/\//g,"-").substring(0,19);
-    var bRangeEnd = aRangeEnd.getInTimezone(timezoneUTC).toString().replace(/\//g,"-").substring(0,19);
-
-    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
-    var pthis = this;
-    var fbOK = function eee_fbOK(aXML) {
-      var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
-
- //     aConsoleService.logStringMessage ("getFreeBusyIntervals() ++ " + value);a
-      var value = aXML.params.param[0].value;
-      // find lines starting with FREEBUSY
-
-      var lines = value.split("\n");
-      var periodsToReturn = [];
-      for( var iter in lines) {
-        if (lines[iter].substring(0,8) == "FREEBUSY") {
-          var parts = lines[iter].split(":");
-          var type = parts[0].split("=")[1]; // type BUSY,FREE,BUSY-UNAVIABLE,BUSY-TENTATIVE
-          var times = parts[1].split("/");
-	  let fbType = calIFreeBusyInterval.UNKNOWN;
-          switch(type) {
-          case "FREE": fbType = calIFreeBusyInterval.FREE;break;
-          case "BUSY": fbType = calIFreeBusyInterval.BUSY;break;
-          case "BUSY-UNAVIABLE": fbType = calIFreeBusyInterval.BUSY_UNAVIABLE;break;
-          case "BUSY-TENTATIVE": fbType = calIFreeBusyInterval.BUSY_TENTATIVE;break;
-          }
-
-          let begin = cal.createDateTime(times[0]);
-          let end;
-          if (times[1].charAt(0) == "P") { // this is a duration
-            end = begin.clone();
-            end.addDuration(cal.createDuration(times[1]))
-          } else {
-            // This is a date string
-            end = cal.createDateTime(times[1]);
-          }
-          interval = new cal.FreeBusyInterval(aCalId,fbType,begin,end);
-          periodsToReturn.push(interval);
-        }
-      }
-      aListener.onResult(null, periodsToReturn);
-    };
-    var fbError = function fbError(eno,etext) {
-
-    };
-    var params = Array ();
-    params[0] = bAttendee;
-    params[1] = bRangeStart;
-    params[2] = bRangeEnd;
-    params[3] = "BEGIN:VTIMEZONE\nEND:VTIMEZONE";
-    rpc.rpcCall ("freeBusy", params, fbOK, fbError);
-    return;
-  },
-/*  canNotify: function eee_canNotify(aMethod, aItem) {
-    var aConsoleService = Cc["@mozilla.org/consoleservice;1"].getService (Ci.nsIConsoleService);
-
-    aConsoleService.logStringMessage ("canNotify() ++ " + aMethod + " "  + cal.getSerializedItem(aItem));
-    return true;
-  },*/
-
-//
-// calIItipTransport implementation
-//
-  get defaultIdentity eee_getIdentity() {
-    return this.mServerUser;
-  },
-
-  get scheme eee_getScheme() {
-    return "mailto";
-  },
-
-  mUserAddress: null,
-  get senderAddress eee_getAddress() {
-    return this.mUserAddress || this.mCalendar.mServerUser;
-  },
-
-  set senderAddress eee_setAddress(value) {
-    this.mUserAddress = value;
-  },
-
-  sendItems: function  eee_sendItems(aCount,aRecipients,aItipItem) {
-    var itemList = aItipItem.getItemList({});
-    var serializer = Cc["@mozilla.org/calendar/ics-serializer;1"]
-                                       .createInstance(Ci.calIIcsSerializer);
-    serializer.addItems(itemList, itemList.length);
-    var methodProp = getIcsService().createIcalProperty("METHOD");
-    methodProp.value = aItipItem.responseMethod;
-    serializer.addProperty(methodProp);
-    var calText = serializer.serializeToString();
-
-    var rpc = new cal3eClient (this.mServerUri, this.mServerUser, this.mServerPass);
-    var aok = function aok (aXML) { // OK -> message delivered to server
-    };
-    var aerror = function aError(eNo, eText) {
-    };
-
-    var params = Array ();
-    var param0 = "<array><data>";
-    var rec = aRecipients.toString().split(",");
-    for(aIndex in rec) {
-      param0 = param0 + "<value><string>" + rec[aIndex] + "</string></value>";
-    }
-    param0 = param0 + "</data></array>";
-    params[0] = param0;
-    params[1] = calText;
-    rpc.rpcCall ("sendMessage", params, aok, aerror);
-    return;
+  refresh:function cal3e_refresh () {
+    this.observers.notify("onLoad", [this]);
   }
+
 };
