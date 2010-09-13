@@ -141,6 +141,7 @@ Calendar3e.Sync.prototype = {
               };
               calendar = calendars[idx];
               calendarUri = ioService.newURI("eee://" + client.identity.email + "/" + calendar.name, null, null);
+              console.logStringMessage("Calendar Sync: " + calendarUri.spec);
               calendar3e = calendarManager.createCalendar(
                 '3e', calendarUri
               );

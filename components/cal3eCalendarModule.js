@@ -20,6 +20,7 @@
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cr = Components.results;
+const Cu = Components.utils;
 
 // nsIFactory
 const cal3eCalendarFactory = {
@@ -75,7 +76,7 @@ var cal3eCalendarModule = {
       var resourceDirUri = ioService.newFileURI(resourceDir);
       resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
     }
-    Components.utils.import("resource://" + calendar3eResource + "/cal3eCalendar.js", this.__parent__);
+    Cu.import("resource://" + calendar3eResource + "/cal3eCalendar.js", this.__parent__);
 
     this._utilsLoaded = true;
   },

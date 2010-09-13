@@ -374,7 +374,7 @@ cal3eMethodStack.prototype = {
     var console = Cc["@mozilla.org/consoleservice;1"].getService(
       Ci.nsIConsoleService
     );
-    //console.logStringMessage("Sending: " + xml);
+    console.logStringMessage("Sending: " + xml);
     this._executedMethodIdx = methodIndex;
     cal.sendHttpRequest(cal.createStreamLoader(), httpChannel, this);
   },
@@ -632,18 +632,26 @@ cal3eClient.prototype = {
       listener, execute) {
     execute = undefined === execute ? this._autoExecute : execute ;
     this.authenticate(null, false);
-    var queryObjectsMethod = new cal3eMethod(this, 'getItems');
+    var queryObjectsMethod = new cal3eMethod(this, 'queryObjects');
+    
+    function zeropad (s, l) {
+      s = s.toString(); // force it to a string
+      while (s.length < l) {
+        s = '0' + s;
+      }
+      return s;
+    }
 
     var query = '', date;
     if (null !== from) {
       date = new Date(from.nativeTime / 1000);
       query += "date_from('" +
-           date.getUTCFullYear() + '-' +
-          (date.getUTCMonth() + 1) + '-' +
-           date.getUTCDate() + ' ' +
-           date.getUTCHours() + ':' +
-           date.getUTCMinutes() + ':' +
-           date.getUTCSeconds()
+          zeropad(date.getUTCFullYear(), 4) + '-' +
+          zeropad(date.getUTCMonth() + 1, 2) + '-' +
+          zeropad(date.getUTCDate(), 2) + ' ' +
+          zeropad(date.getUTCHours(), 2) + ':' +
+          zeropad(date.getUTCMinutes(), 2) + ':' +
+          zeropad(date.getUTCSeconds(), 2) +
         "')";
     }
     if (null !== to) {
@@ -652,18 +660,18 @@ cal3eClient.prototype = {
       }
       date = new Date(to.nativeTime / 1000);
       query += "date_to('" +
-           date.getUTCFullYear() + '-' +
-          (date.getUTCMonth() + 1) + '-' +
-           date.getUTCDate() + ' ' +
-           date.getUTCHours() + ':' +
-           date.getUTCMinutes() + ':' +
-           date.getUTCSeconds()
+          zeropad(date.getUTCFullYear(), 4) + '-' +
+          zeropad(date.getUTCMonth() + 1, 2) + '-' +
+          zeropad(date.getUTCDate(), 2) + ' ' +
+          zeropad(date.getUTCHours(), 2) + ':' +
+          zeropad(date.getUTCMinutes(), 2) + ':' +
+          zeropad(date.getUTCSeconds(), 2) +
       "')";
     }
     if ('' !== query) {
       query += ' AND ';
     }
-    query += "NOT deleted())";
+    query += "NOT deleted()";
     
     queryObjectsMethod
       .addParam(calendar.calspec)

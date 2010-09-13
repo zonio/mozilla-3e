@@ -17,14 +17,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/cal3eClient.js");
-Components.utils.import("resource://calendar/modules/calUtils.jsm");
-Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
-cal.loadScripts(["calUtils.js"], this);
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
+const Cu = Components.utils;
+
+Cu.import("resource://calendar3e/cal3eClient.js");
+Cu.import("resource://calendar/modules/calUtils.jsm");
+Cu.import("resource://calendar/modules/calProviderUtils.jsm");
+Cu.import("resource:///modules/iteratorUtils.jsm");
+
+cal.loadScripts(["calUtils.js"], this);
 
 EXPORTED_SYMBOLS = [
   "cal3eCalendar"
@@ -140,7 +143,6 @@ cal3eItipTransport.prototype = {
  */
 function cal3eCalendar() {
   this.initProviderBase();
-  this._init3eCalendar();
 }
 
 const calIFreeBusyInterval = Ci.calIFreeBusyInterval;
@@ -148,16 +150,56 @@ const calIFreeBusyInterval = Ci.calIFreeBusyInterval;
 cal3eCalendar.prototype = {
 
   __proto__: cal.ProviderBase.prototype,
+
+  _client: null,
   
   /**
    * Initializes 3e Client for this calendar.
    */
   _init3eCalendar: function cal3e_init3eCalendar() {
+    var uriSpec = this._uri.spec,
+        uriParts = uriSpec.split('/', 4),
+        user3e = uriParts[2];
     var accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
       .getService(Ci.nsIMsgAccountManager);
-    accountManager.addIncomingServerListener(this);
-    
-    var client = new cal3eClient();
+
+    var identities = [
+      i for each (i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity))
+    ];
+    var idx = identities.length,
+        identity = null;
+    while (idx--) {
+      if (identities[idx].getBoolAttribute('eee_enabled') &&
+          (user3e == identities[idx].email)) {
+        identity = identities[idx];
+        break;
+      }
+    }
+
+    if (null === identity) {
+      this._client = null;
+      throw new Error("No identity found for 3e user '" + user3e + "'");
+    }
+    var client = new cal3eClient(identity);
+    this._client = client;
+  },
+
+  _uri: null,
+
+  /**
+   * 
+   */
+  set uri cal3e_setUri(uri) {
+    var console = Cc["@mozilla.org/consoleservice;1"].getService(
+      Ci.nsIConsoleService
+    );
+    this._uri = uri;
+    this._init3eCalendar();
+    return uri;
+  },
+
+  get uri cal3e_getUri() {
+    return this._uri;
   },
 
   /**
@@ -188,8 +230,11 @@ cal3eCalendar.prototype = {
   },
 
   get calspec cal3e_calspec() {
-    //TODO implementation
-    return 'filip.zrust@zonio.net:work';
+    var uriSpec = this._uri.spec,
+        uriParts = uriSpec.split('/', 5),
+        user3e = uriParts[2],
+        calname = uriParts[4] || uriParts[3];
+    return user3e + ":" + calname;
   },
 
   _color: null,
@@ -265,6 +310,7 @@ cal3eCalendar.prototype = {
     rangeStart = ensureDateTime(rangeStart);
     rangeEnd = ensureDateTime(rangeEnd);
 
+    var client = this._client;
     client.queryObjects(this, rangeStart, rangeEnd, {
       onSuccess: function (items, methodStack) {
         console.logStringMessage("Ha!");
