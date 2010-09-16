@@ -310,10 +310,35 @@ cal3eCalendar.prototype = {
     rangeStart = ensureDateTime(rangeStart);
     rangeEnd = ensureDateTime(rangeEnd);
 
-    var client = this._client;
+    var client = this._client,
+        calendar = this;
     client.queryObjects(this, rangeStart, rangeEnd, {
-      onSuccess: function (items, methodStack) {
-        console.logStringMessage("Ha!");
+      onSuccess: function (rawItems, methodStack) {
+        console.logStringMessage("Items: " + rawItems);
+        var parser = calendar._getIcsParser();
+        try {
+          parser.parseString(rawItems);          
+        } catch (e) {
+          console.logStringMessage("Error while parsing: " + e);
+        }
+        
+        var items = parser.getItems(),
+            idx = items.length, item;
+        while (idx--) {
+          item = items[idx];
+          item.calendar = this.superCalendar;
+          listener.onGetResult(this.superCalendar,
+                               Cr.NS_OK,
+                               Ci.calIEvent,
+                               null,
+                               1,
+                               [item]);
+        }
+        this.notifyOperationComplete(listener,
+                                     Cr.NS_OK,
+                                     Ci.calIOperationListener.GET,
+                                     null,
+                                     null);
       },
       onError: function (methodStack) {
         console.logStringMessage("Number of methods: " + methodStack._methods.length);
@@ -322,17 +347,13 @@ cal3eCalendar.prototype = {
           console.logStringMessage("Error response: " +
             methodStack._errorResponse.responseStatus + " " +
             methodStack._errorResponse.responseStatusText);
-
-            var items = [];
-            listener.onGetResult(
-              this.superCalendar,
-              Cr.NS_OK,
-              Ci.calIEvent,
-              null,
-              items.length, items
-            );
         }
         console.logStringMessage("ESClient.queryObjects don' work");
+        this.notifyOperationComplete(listener,
+                                     Cr.NS_ERROR_FAILURE,
+                                     Ci.calIOperationListener.GET,
+                                     null,
+                                     "See the Error Console");
       }
     });
   },
@@ -342,6 +363,16 @@ cal3eCalendar.prototype = {
    */
   refresh:function cal3e_refresh () {
     this.observers.notify("onLoad", [this]);
+  },
+  
+  _icsParser: null,
+  _getIcsParser: function cal3e_getIcsParser() {
+    if (null === this._icsParser) {
+      this._icsParser = Components.classes["@mozilla.org/calendar/ics-parser;1"]
+          .createInstance(Components.interfaces.calIIcsParser);
+    }
+    
+    return this._icsParser;
   }
 
 };
