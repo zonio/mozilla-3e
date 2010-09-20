@@ -469,7 +469,7 @@ cal3eMethodStack.prototype = {
       return;
     }
 
-    //this._console.logStringMessage("Received: " + responseXml);
+    this._console.logStringMessage("Received: " + responseXml);
 
     // continue with next method call
     this._executeNext();

@@ -322,23 +322,20 @@ cal3eCalendar.prototype = {
           console.logStringMessage("Error while parsing: " + e);
         }
         
-        var items = parser.getItems(),
-            idx = items.length, item;
-        while (idx--) {
-          item = items[idx];
-          item.calendar = this.superCalendar;
-          listener.onGetResult(this.superCalendar,
-                               Cr.NS_OK,
-                               Ci.calIEvent,
-                               null,
-                               1,
-                               [item]);
-        }
-        this.notifyOperationComplete(listener,
-                                     Cr.NS_OK,
-                                     Ci.calIOperationListener.GET,
-                                     null,
-                                     null);
+        var items = parser.getItems({});
+        console.logStringMessage("Number of items: " + items.length);
+        listener.onGetResult(calendar,
+                             Cr.NS_OK,
+                             Ci.calIEvent,
+                             null,
+                             items.length,
+                             items);
+
+        calendar.notifyOperationComplete(listener,
+                                         Cr.NS_OK,
+                                         Ci.calIOperationListener.GET,
+                                         null,
+                                         null);
       },
       onError: function (methodStack) {
         console.logStringMessage("Number of methods: " + methodStack._methods.length);
@@ -349,11 +346,11 @@ cal3eCalendar.prototype = {
             methodStack._errorResponse.responseStatusText);
         }
         console.logStringMessage("ESClient.queryObjects don' work");
-        this.notifyOperationComplete(listener,
-                                     Cr.NS_ERROR_FAILURE,
-                                     Ci.calIOperationListener.GET,
-                                     null,
-                                     "See the Error Console");
+        calendar.notifyOperationComplete(listener,
+                                         Cr.NS_ERROR_FAILURE,
+                                         Ci.calIOperationListener.GET,
+                                         null,
+                                         "See the Error Console");
       }
     });
   },
