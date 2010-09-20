@@ -374,7 +374,6 @@ cal3eMethodStack.prototype = {
     var console = Cc["@mozilla.org/consoleservice;1"].getService(
       Ci.nsIConsoleService
     );
-    console.logStringMessage("Sending: " + xml);
     this._executedMethodIdx = methodIndex;
     cal.sendHttpRequest(cal.createStreamLoader(), httpChannel, this);
   },
@@ -428,9 +427,6 @@ cal3eMethodStack.prototype = {
   onStreamComplete: function cal3eMethodStack_onStreamComplete(loader, context, status, resultLength, result) {
     var httpChannel = context.QueryInterface(Ci.nsIHttpChannel);
     if (!httpChannel.requestSucceeded) {
-      this._console.logStringMessage("HTTP error: " +
-          httpChannel.responseStatus + " " +
-          httpChannel.responseStatusText);
       if (null === this._errorResponse) {
         this._errorResponse = httpChannel;
         this.notify();
@@ -445,14 +441,9 @@ cal3eMethodStack.prototype = {
     try {
       response = cal3eMethodResponse.fromXml(responseXml);
     } catch (error) {
-      this._console.logStringMessage(error);
       response = null;
     }
     if (null === response) {
-      this._console.logStringMessage("XML-RPC error: " +
-          httpChannel.responseStatus + " " +
-          httpChannel.responseStatusText + "\n" +
-          xmlString);
       if (null === this._errorResponse) {
         this._errorResponse = httpChannel;
         this.notify();
@@ -462,14 +453,9 @@ cal3eMethodStack.prototype = {
     var methodIndex = this._executedMethodIdx;
     this._responses[methodIndex] = response;
     if (response.isError()) {
-      this._console.logStringMessage("3e error: " +
-          response.responseStatus + " " +
-          httpChannel.responseStatusText);
       this.notify();
       return;
     }
-
-    this._console.logStringMessage("Received: " + responseXml);
 
     // continue with next method call
     this._executeNext();

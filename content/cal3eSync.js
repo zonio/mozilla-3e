@@ -141,7 +141,6 @@ Calendar3e.Sync.prototype = {
               };
               calendar = calendars[idx];
               calendarUri = ioService.newURI("eee://" + client.identity.email + "/" + calendar.name, null, null);
-              console.logStringMessage("Calendar Sync: " + calendarUri.spec);
               calendar3e = calendarManager.createCalendar(
                 '3e', calendarUri
               );
@@ -162,20 +161,10 @@ Calendar3e.Sync.prototype = {
               calendarProperties.push(properties);
             }
           } else {
-            console.logStringMessage("No calendars retrieved.");
           }
           calSync.syncCalendars(calendars3e, calendarProperties);
         },
-        onError: function (methodStack) {
-          console.logStringMessage("Number of methods: " + methodStack._methods.length);
-          console.logStringMessage("Number of responses: " + methodStack._responses.length);
-          if (null !== methodStack._errorResponse) {
-            console.logStringMessage("Error response: " +
-              methodStack._errorResponse.responseStatus + " " +
-              methodStack._errorResponse.responseStatusText);
-          }
-          console.logStringMessage("Don' work");
-        }
+        onError: function (methodStack) { }
       });
     }
   },
@@ -211,13 +200,10 @@ Calendar3e.Sync.prototype = {
       calendar = calendars[idx];
       props = properties[idx];
       calendarManager.registerCalendar(calendar);
-      console.logStringMessage("Calendar name: " + props.name);
-      console.logStringMessage("Calendar color: " + props.color);
       calendar.name = props.name;
       if (null !== props.color) {
         calendar.setProperty('color', props.color);
       }
-      console.logStringMessage("New calendar: " + calendar.name);
     }
   },
 

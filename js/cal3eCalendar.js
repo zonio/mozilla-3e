@@ -233,14 +233,6 @@ cal3eCalendar.prototype = {
                                          null);
       },
       onError: function (methodStack) {
-        console.logStringMessage("Number of methods: " + methodStack._methods.length);
-        console.logStringMessage("Number of responses: " + methodStack._responses.length);
-        if (null !== methodStack._errorResponse) {
-          console.logStringMessage("Error response: " +
-            methodStack._errorResponse.responseStatus + " " +
-            methodStack._errorResponse.responseStatusText);
-        }
-        console.logStringMessage("ESClient.queryObjects don' work");
         calendar.notifyOperationComplete(listener,
                                          Cr.NS_ERROR_FAILURE,
                                          Ci.calIOperationListener.GET,
