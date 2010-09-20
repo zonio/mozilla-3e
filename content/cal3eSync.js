@@ -71,7 +71,6 @@ Calendar3e.Sync = function () {
   this._calendarManager = calendarManager;
 
   this._initClients();
-  this._startSync();
 }
 
 Calendar3e.Sync.prototype = {
@@ -277,12 +276,12 @@ Calendar3e.Sync.prototype = {
    */
   onServerChanged: function (server) { },
 
-  _startSync: function () {
+  startSync: function () {
     var calSync = this;
     function sync() {
       calSync.loadCalendars();
     }
-    //window.setInterval(sync, 15000);
+    window.setInterval(sync, 15000);
   }
 
 }
@@ -290,7 +289,7 @@ Calendar3e.Sync.prototype = {
 var sync;
 Calendar3e.Sync.onLoad = function () {
   sync = new Calendar3e.Sync();
-  sync.loadCalendars();
+  //sync.loadCalendars();
 }
 
 window.addEventListener('load', Calendar3e.Sync.onLoad, false);
