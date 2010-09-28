@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * ***** END LICENSE BLOCK ***** */
+ 
+#include "nsISupports.idl"
+#include "nsIMsgIdentity.idl"
+#include "calICalendar.idl"
+#include "calEeeIMethodQueue.idl"
 
 /**
  * Builder of {@link calEeeIMethodQueue} with main client-side user oriented
@@ -28,19 +33,19 @@
  * argument to every method call
  */
 [scriptable, uuid(2b0c345d-30d7-4097-a1ab-25fc1f0accb8)]
-interface calEeeIClient: calIOperation {
+interface calEeeIClient: nsISupports {
 
     /**
-     * Identity used to authorization.
+     * Identity used for authorization.
      */
-    readonly attribute nsIMsgIdentity identity;
+    attribute nsIMsgIdentity identity;
 
     /**
      * Authorizes identity aqainst EEE server.
      *
      * @param listener object which gets notified after methods call is
      * finished
-     * @return method queue with method being called on the server
+     * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue authorize(in calIOperationListener listener);
 
@@ -51,6 +56,7 @@ interface calEeeIClient: calIOperation {
      * finished
      * @param query criteria for calendars to return specified in EEE query
      * language
+     * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue getCalendars(
         in calIOperationListener listener,
@@ -68,13 +74,13 @@ interface calEeeIClient: calIOperation {
      * @param to datatime to which objects are listed
      * @param query criteria for calendars to return specified in EEE query
      * language
-     * @return method queue with method being called on the server
+     * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue queryObjects(
-        in calIOperationListener listener
+        in calIOperationListener listener,
         in calICalendar calendar,
-        PRTime from,
-        PRTime to,
+        in PRTime from,
+        in PRTime to,
         in AString query
     );
 
