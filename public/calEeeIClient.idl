@@ -1,0 +1,81 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Mozilla 3e Calendar Extension
+ * Copyright © 2010  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+/**
+ * Builder of {@link calEeeIMethodQueue} with main client-side user oriented
+ * methods queued.
+ *
+ * This mainly means that authorization is performed and method according to
+ * the one called on an instance is called on the server.
+ *
+ * @todo consider client being a service - identity will be passed as an
+ * argument to every method call
+ */
+[scriptable, uuid(2b0c345d-30d7-4097-a1ab-25fc1f0accb8)]
+interface calEeeIClient: calIOperation {
+
+    /**
+     * Identity used to authorization.
+     */
+    readonly attribute nsIMsgIdentity identity;
+
+    /**
+     * Authorizes identity aqainst EEE server.
+     *
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @return method queue with method being called on the server
+     */
+    calEeeIMethodQueue authorize(in calIOperationListener listener);
+
+    /**
+     * Retrieves calendars matching given query.
+     *
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param query criteria for calendars to return specified in EEE query
+     * language
+     */
+    calEeeIMethodQueue getCalendars(
+        in calIOperationListener listener,
+        in AString query
+    );
+
+    /**
+     * Retrieves calendar objects within given date and time range and
+     * matching given query.
+     *
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar which get queried for items (e.g. events)
+     * @param from datetime from which objects are listed
+     * @param to datatime to which objects are listed
+     * @param query criteria for calendars to return specified in EEE query
+     * language
+     * @return method queue with method being called on the server
+     */
+    calEeeIMethodQueue queryObjects(
+        in calIOperationListener listener
+        in calICalendar calendar,
+        PRTime from,
+        PRTime to,
+        in AString query
+    );
+
+};
