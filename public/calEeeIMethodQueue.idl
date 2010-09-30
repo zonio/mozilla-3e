@@ -1,0 +1,73 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Mozilla 3e Calendar Extension
+ * Copyright © 2010  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+#include "calIOperation.idl"
+#include "nsIURI.idl"
+
+/**
+ * Queue holding methods to be called on EEE server and their responses.
+ *
+ * @todo other fault related data
+ */
+[scriptable, uuid(070c60dd-1b8a-44ea-ab9c-ebec966e6b4e)]
+interface calEeeIMethodQueue: calIOperation {
+
+    /**
+     * EEE server URI for XML-RPC.
+     *
+     * @throws NS_ERROR_IN_PROGRESS if called after method calls have already
+     * been executed
+     */
+    attribute nsIURI serverUri;
+
+    /**
+     * Last repsonse send by the server to method calls.
+     *
+     * @throws NS_ERROR_NOT_AVAILABLE if called before all methods have been
+     * called
+     */
+    readonly attribute nsISupports lastResponse;
+
+    /**
+     * Puts a method to the end of this queue with its parameters.
+     *
+     * @param methodName fully specified EEE method name
+     * @param length number of arguments passed to the method
+     * @param parameters method parameters themselves
+     * @return receiver
+     * @throws NS_ERROR_IN_PROGRESS if called after method calls have already
+     * been executed
+     */
+    calEeeIMethodQueue enqueueMethod(
+        in ACString methodName,
+        in PRUint32 length,
+        [array, size_is(length)] in nsISupports parameters
+    );
+
+    /**
+     * Executes calling of queued methods on EEE server.
+     *
+     * @param listener gets notified when methods execution finishes.
+     * @return receiver
+     * @throws NS_ERROR_IN_PROGRESS if called after method calls have already
+     * been executed
+     */
+    calEeeIMethodQueue execute(in calIGenericOperationListener listener);
+
+};

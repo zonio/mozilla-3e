@@ -27,7 +27,9 @@
  * methods queued.
  *
  * This mainly means that authorization is performed and method according to
- * the one called on an instance is called on the server.
+ * the one called on an instance is called on the server. Also ensures that
+ * given operation listener is called after the final response from the server
+ * is received.
  *
  * @todo consider client being a service - identity will be passed as an
  * argument to every method call
