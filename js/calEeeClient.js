@@ -20,6 +20,9 @@
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cr = Components.result;
+const Cu = Components.utils;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 EXPORTED_SYMBOLS = [
   "calEeeClient"
@@ -35,7 +38,7 @@ calEeeClient.prototype = {
   // XPCOMUtils definition
   classDescription: "EEE client simplifying server method calls to " +
                     "prepared operations",
-  classID: Component.ID("738411ac-e702-4e7e-86b6-be1ca113c853"),
+  classID: Component.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
   contractID: "@zonio.net/calendar3e/client;1",
 
   QueryInterface: XPCOMUtils.generateQI([

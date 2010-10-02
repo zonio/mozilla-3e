@@ -17,6 +17,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cr = Components.result;
+const Cu = Components.utils;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
 EXPORTED_SYMBOLS = [
   "calEeeMethodQueue"
 ];
@@ -47,7 +54,7 @@ calEeeMethodQueue.prototype = {
 
   // XPCOMUtils definition
   classDescription: "Queue for methods to be executed on the EEE server.",
-  classID: Component.ID("e2b342d0-6119-43d0-8fc6-6116876d2fdb"),
+  classID: Component.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
   contractID: "@zonio.net/calendar3e/method-queue;1",
 
   QueryInterface: XPCOMUtils.generateQI([

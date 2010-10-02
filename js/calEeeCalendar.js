@@ -22,128 +22,112 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-Cu.import("resource://calendar3e/cal3eClient.js");
 Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource:///modules/iteratorUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 cal.loadScripts(["calUtils.js"], this);
 
 EXPORTED_SYMBOLS = [
-  "cal3eCalendar"
+  "calEeeCalendar"
 ];
 
 /**
- * Implementation of 3e calendar.
+ * Implementation of EEE calendar.
+ *
+ * @augments cal.ProviderBase
  */
-function cal3eCalendar() {
+function calEeeCalendar() {
   this.initProviderBase();
+  this._client = Cc["@zonio.net/calendar3e/client;1"].
+      createInstance(Ci.calEeeIClient);
 }
 
-const calIFreeBusyInterval = Ci.calIFreeBusyInterval;
+calEeeCalendar.prototype = {
 
-cal3eCalendar.prototype = {
+  // XPCOMUtils definition
+  classDescription: "EEE calendar provider",
+  classID: Component.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
+  contractID: "@mozilla.org/calendar/calendar;1?type=eee",
 
   __proto__: cal.ProviderBase.prototype,
-
-  _client: null,
   
   /**
-   * Initializes 3e Client for this calendar.
+   * Sets EEE client identity based on calendar's {@link uri}.
    */
-  _init3eCalendar: function cal3e_init3eCalendar() {
+  _setupClient: function calEee_setupClient() {
     var uriSpec = this._uri.spec,
         uriParts = uriSpec.split('/', 4),
-        user3e = uriParts[2];
-    var accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
-      .getService(Ci.nsIMsgAccountManager);
+        eeeUser = uriParts[2];
+    var accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
+        getService(Ci.nsIMsgAccountManager);
 
-    var identities = [
-      i for each (i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity))
-    ];
+    var identities = [i for each (
+        i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity)
+    )];
     var idx = identities.length,
         identity = null;
     while (idx--) {
       if (identities[idx].getBoolAttribute('eee_enabled') &&
-          (user3e == identities[idx].email)) {
+          (eeeUser == identities[idx].email)) {
         identity = identities[idx];
         break;
       }
     }
-
-    if (null === identity) {
-      this._client = null;
-      throw new Error("No identity found for 3e user '" + user3e + "'");
-    }
-    var client = new cal3eClient(identity);
-    this._client = client;
+    this._client.identity = identity;
   },
 
-  _uri: null,
-
-  /**
-   * 
-   */
-  set uri cal3e_setUri(uri) {
-    var console = Cc["@mozilla.org/consoleservice;1"].getService(
-      Ci.nsIConsoleService
-    );
+  set uri calEee_setUri(uri) {
     this._uri = uri;
-    this._init3eCalendar();
+    this._setupClient();
+
     return uri;
   },
 
-  get uri cal3e_getUri() {
+  get uri calEee_getUri() {
     return this._uri;
   },
 
   /**
-   * Returns identifier of 3e calendar type.
+   * Identifier of EEE calendar type.
    * 
-   * @returns {String}
+   * @property {String}
    */
-  get type cal3e_getType() {
-    return '3e';
+  get type calEee_getType() {
+    return 'eee';
   },
 
   /**
-   * Returns identifier of defining extension of this calendar.
+   * Identifier of defining extension of this calendar.
    *
-   * @returns {String}
+   * @property {String}
    */
-  get providerID cal3e_getProviderId() {
+  get providerID calEee_getProviderId() {
     return "calendar3e@zonio.net";
   },
 
   /**
-   * Makes this calendar refreshalbe
+   * Indicator that this calendar is refreshable.
    *
-   * @returns {Boolean} always true
+   * @property {Boolean} always true
    */
-  get canRefresh cal3e_canRefresh() {
+  get canRefresh calEee_canRefresh() {
     return true;
   },
 
-  get calspec cal3e_calspec() {
+  /**
+   * Unique calendar identifier in EEE domain.
+   *
+   * @property {String}
+   */
+  get calspec calEee_calspec() {
     var uriSpec = this._uri.spec,
         uriParts = uriSpec.split('/', 5),
-        user3e = uriParts[2],
+        eeeUser = uriParts[2],
         calname = uriParts[4] || uriParts[3];
-    return user3e + ":" + calname;
-  },
 
-  _color: null,
-
-  /**
-   * Returns calendar's color.
-   *
-   * Color is formatted in HTML's #RRGGBB.
-   *
-   * @returns {String}
-   */
-  get color cal3e_getColor() {
-    //TODO call getCalendarAttributes
-    return this._color;
+    return eeeUser + ":" + calname;
   },
 
   /**
@@ -151,40 +135,47 @@ cal3eCalendar.prototype = {
    *
    * @param {String} color formatted in HTML's #RRGGBB
    */
-  set color cal3e_setColor(color) {
+  set color calEee_setColor(color) {
     //TODO call setCalendarAttribute
     this._color = color;
   },
-  
-  addItem: function cal3e_addItem(item, listener) {
-    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
-
-  adoptItem: function cal3e_adoptItem(item, listener) {
-    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
-
-  modifyItem: function cal3e_adoptItem(item, listener) {
-    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
-
-  deleteItem: function cal3e_adoptItem(item, listener) {
-    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
-
-  getItem: function cal3e_adoptItem(id, listener) {
-    throw new Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
 
   /**
-   * Returns ordered calendar items according to given constraints.
+   * Returns calendar's color.
    *
-   * @param {Numeric} itemFilter bites combined from several settings
+   * Color is formatted in HTML's #RRGGBB.
+   *
+   * @property {String}
    */
-  getItems: function cal3e_getItems(itemFilter, count, rangeStart, rangeEnd,
+  get color calEee_getColor() {
+    //TODO call getCalendarAttributes
+    return this._color;
+  },
+  
+  addItem: function calEee_addItem(item, listener) {
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  adoptItem: function calEee_adoptItem(item, listener) {
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  modifyItem: function calEee_adoptItem(item, listener) {
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  deleteItem: function calEee_adoptItem(item, listener) {
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  getItem: function calEee_adoptItem(id, listener) {
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
       listener) {
-    var console = Cc["@mozilla.org/consoleservice;1"]
-      .getService(Ci.nsIConsoleService);
+    var console = Cc["@mozilla.org/consoleservice;1"].
+        getService(Ci.nsIConsoleService);
 
     var wantEvents = ((itemFilter &
       Ci.calICalendar.ITEM_FILTER_TYPE_EVENT) != 0);
@@ -193,70 +184,75 @@ cal3eCalendar.prototype = {
 
     if (!wantEvents) {
       // Events are not wanted, nothing to do.
-    	this.notifyOperationComplete(
-    	  listener,
-    	  Cr.NS_OK,
-    		Ci.calIOperationListener.GET, null,
-    		"Bad item filter passed to getItems"
-    	);
-    	return;
+      this.notifyOperationComplete(
+        listener,
+        Cr.NS_OK,
+        Ci.calIOperationListener.GET, null,
+        "Bad item filter passed to getItems"
+      );
+      return;
     }
 
-    rangeStart = ensureDateTime(rangeStart);
-    rangeEnd = ensureDateTime(rangeEnd);
+    var calendar = this,
+        clientListener = {
+          QueryInterface: XPCOMUtils.generateQI([
+            Ci.calIGenericOperationListener
+          ]),
 
-    var client = this._client,
-        calendar = this;
-    client.queryObjects(this, rangeStart, rangeEnd, {
-      onSuccess: function (rawItems, methodStack) {
-        console.logStringMessage("Items: " + rawItems);
-        var parser = calendar._getIcsParser();
-        try {
-          parser.parseString(rawItems);          
-        } catch (e) {
-          console.logStringMessage("Error while parsing: " + e);
-        }
-        
-        var items = parser.getItems({});
-        console.logStringMessage("Number of items: " + items.length);
-        listener.onGetResult(calendar,
-                             Cr.NS_OK,
-                             Ci.calIEvent,
-                             null,
-                             items.length,
-                             items);
+          onResult: function calEee_getItems_onResult(methodQueue, result) {
+            if (Cr.NS_OK !== methodQueue.status) {
+              calendar.notifyOperationComplete(
+                listener,
+                methodQueue.status,
+                Ci.calIOperationListener.GET,
+                null,
+                "Objects retrieval from EEE server failed");
+              return;
+            }
 
-        calendar.notifyOperationComplete(listener,
-                                         Cr.NS_OK,
-                                         Ci.calIOperationListener.GET,
-                                         null,
-                                         null);
-      },
-      onError: function (methodStack) {
-        calendar.notifyOperationComplete(listener,
-                                         Cr.NS_ERROR_FAILURE,
-                                         Ci.calIOperationListener.GET,
-                                         null,
-                                         "See the Error Console");
-      }
-    });
+            console.logStringMessage("Items: " + rawItems);
+            var parser = calendar._getIcsParser();
+            try {
+              parser.parseString(rawItems);          
+            } catch (e) {
+              console.logStringMessage("Error while parsing: " + e);
+            }
+
+            var items = parser.getItems({});
+            console.logStringMessage("Number of items: " + items.length);
+            listener.onGetResult(calendar,
+                                 Cr.NS_OK,
+                                 Ci.calIEvent,
+                                 null,
+                                 items.length,
+                                 items);
+
+            calendar.notifyOperationComplete(listener,
+                                             Cr.NS_OK,
+                                             Ci.calIOperationListener.GET,
+                                             null,
+                                             null);
+          }
+        };
+
+    return this._client.queryObjects(clientListener, rangeStart, rangeEnd);
   },
 
-  /* 
-   * Refreshes this calendar by notifying its observer.
+  /**
+   * Refreshes this calendar by notifying its observer.
    */
-  refresh:function cal3e_refresh () {
+  refresh: function calEee_refresh() {
     this.observers.notify("onLoad", [this]);
   },
-  
+
   _icsParser: null,
-  _getIcsParser: function cal3e_getIcsParser() {
+  _getIcsParser: function calEee_getIcsParser() {
     if (null === this._icsParser) {
-      this._icsParser = Components.classes["@mozilla.org/calendar/ics-parser;1"]
-          .createInstance(Components.interfaces.calIIcsParser);
+      this._icsParser = Cc["@mozilla.org/calendar/ics-parser;1"].
+          createInstance(Ci.calIIcsParser);
     }
     
     return this._icsParser;
   }
 
-};
+}
