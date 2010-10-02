@@ -37,10 +37,11 @@ interface calEeeIMethodQueue: calIOperation {
     attribute nsIURI serverUri;
 
     /**
-     * Last repsonse send by the server to method calls.
+     * Last repsonse from successful method call returned by the EEE server.
      *
-     * @throws NS_ERROR_NOT_AVAILABLE if called before all methods have been
-     * called
+     * @throws NS_ERROR_NOT_AVAILABLE if called before the first server
+     * response to method calls has been returned fro the server
+     * @todo nsIVariant
      */
     readonly attribute nsISupports lastResponse;
 
@@ -61,12 +62,13 @@ interface calEeeIMethodQueue: calIOperation {
     );
 
     /**
-     * Executes calling of queued methods on EEE server.
+     * Executes queue of queued methods on EEE server.
      *
      * @param listener gets notified when methods execution finishes.
      * @return receiver
      * @throws NS_ERROR_IN_PROGRESS if called after method calls have already
      * been executed
+     * @throws NS_ERROR_NOT_INITIALIZED if called with no server URI set
      */
     calEeeIMethodQueue execute(in calIGenericOperationListener listener);
 
