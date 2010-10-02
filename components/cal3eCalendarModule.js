@@ -22,96 +22,40 @@ const Cc = Components.classes;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-// nsIFactory
-const cal3eCalendarFactory = {
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-  QueryInterface: function (aIID) {
-    if (!aIID.equals(Ci.nsISupports) &&
-        !aIID.equals(Ci.nsIFactory)) {
-      throw Cr.NS_ERROR_NO_INTERFACE;
-    }
-
-    return this;
-  },
-
-  createInstance: function (outer, iid) {
-    if (null !== outer) {
-      throw Cr.NS_ERROR_NO_AGGREGATION;
-    }
-
-    return (new cal3eCalendar()).QueryInterface(iid);
-  }
-
+// dynamically register resource space for 3e calendar provider which is
+// needed because this code is executed before chrome registration
+// (registering records from chrome.manifest)
+var calendar3eResource = "calendar3e";
+var ioService = Cc["@mozilla.org/network/io-service;1"].
+    getService(Ci.nsIIOService);
+var resourceProtocol = ioService.getProtocolHandler("resource").
+    QueryInterface(Ci.nsIResProtocolHandler);
+if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
+  var cal3eExtensionId = "calendar3e@zonio.net";
+  var em = Cc["@mozilla.org/extensions/manager;1"].
+      getService(Ci.nsIExtensionManager);
+  var file = em.getInstallLocation(cal3eExtensionId).
+      getItemFile(cal3eExtensionId, "install.rdf");
+  var resourceDir = file.parent.clone().append("js");
+  var resourceDirUri = ioService.newFileURI(resourceDir);
+  resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
 }
 
+/** @see calEeeClient */
+Cu.import("resource://" + calendar3eResource + "/calEeeClient.js");
+/** @see calEeeMethodQueue */
+Cu.import("resource://" + calendar3eResource + "/calEeeMethodQueue.js");
+/** @see calEeeCalendar */
+Cu.import("resource://" + calendar3eResource + "/calEeeCalendar.js");
 
-/****
- **** module registration
- ****/
-
-var cal3eCalendarModule = {
-
-  cid: Components.ID("{20d220ec-818d-43be-8969-5a03b7757d3d}"),
-  contractId: "@mozilla.org/calendar/calendar;1?type=3e",
-
-  _utilsLoaded: false,
-  _loadUtils: function () {
-    if (this._utilsLoaded) {
-      return;
-    }
-
-    var calendar3eResource = "calendar3e";
-    var ioService = Cc["@mozilla.org/network/io-service;1"]
-        .getService(Ci.nsIIOService);
-    var resourceProtocol = ioService.getProtocolHandler("resource")
-        .QueryInterface(Ci.nsIResProtocolHandler);
-    if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
-      var cal3eExtensionId = "calendar3e@zonio.net";
-      var em = Cc["@mozilla.org/extensions/manager;1"]
-          .getService(Ci.nsIExtensionManager);
-      var file = em.getInstallLocation(cal3eExtensionId)
-          .getItemFile(cal3eExtensionId, "install.rdf");
-      var resourceDir = file.parent.clone();
-      resourceDir.append("js");
-      var resourceDirUri = ioService.newFileURI(resourceDir);
-      resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
-    }
-    Cu.import("resource://" + calendar3eResource + "/cal3eCalendar.js", this.__parent__);
-
-    this._utilsLoaded = true;
-  },
-
-  registerSelf: function (compMgr, fileSpec, location, type) {
-    compMgr = compMgr.QueryInterface(Ci.nsIComponentRegistrar);
-    compMgr.registerFactoryLocation(
-        this.cid,
-        "Calendar 3e provider",
-        this.contractId,
-        fileSpec,
-        location,
-        type
-      );
-  },
-
-  getClassObject: function (compMgr, cid, iid) {
-    if (!cid.equals(this.cid)) {
-      throw Cr.NS_ERROR_NO_INTERFACE;
-    }
-    if (!iid.equals(Ci.nsIFactory)) {
-      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-    }
-    this._loadUtils();
-
-    return cal3eCalendarFactory;
-  },
-
-  canUnload: function(compMgr) {
-    return true;
-  }
-
-}
-
+var components = [
+  calEeeClient,
+  calEeeMethodQueue,
+  calEeeCalendar
+];
 
 function NSGetModule(compMgr, fileSpec) {
-  return cal3eCalendarModule;
+  return XPCOMUtils.generateModule(components);
 }
