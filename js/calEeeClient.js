@@ -19,52 +19,38 @@
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
+const Cr = Components.result;
 
 EXPORTED_SYMBOLS = [
-  "cal3eClient"
+  "calEeeClient"
 ];
 
 /**
- * Simplifies EEE method execution by server resolution and stacking necessary
- * mehotds to convenient operations.
- *
- * @param identity used to resolve how to connect to server
+ * EEE client simplifying server method calls to prepared operations.
  */
-function cal3eClient() {}
+function calEeeClient() {}
 
-cal3eClient.prototype = {
+calEeeClient.prototype = {
 
-  _interfaceName: 'ESClient',
+  // XPCOMUtils definition
+  classDescription: "EEE client simplifying server method calls to " +
+                    "prepared operations",
+  classID: Component.ID("738411ac-e702-4e7e-86b6-be1ca113c853"),
+  contractID: "@zonio.net/calendar3e/client;1",
 
-  _identity: null,
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.calEeeIClient,
+    Ci.calIGenericOperationListener
+  ]),
 
-  _autoExecute: true,
-
-  /**
-   * Returns 3e client identity.
-   *
-   * @return
-   */
-  get identity cal3eClient_get_identity() {
-    return this._identity;
-  },
+  _interface_name: 'ESClient',
 
   /**
-   * Returns EEE interface name.
+   * Sets identity used for authorization.
    *
-   * @return <code>"ESClient"</code>
+   * @param {nsIMsqIdentity} identity used to resolve how to connect to server
    */
-  get interfaceName cal3eClient_get_interfaceName() {
-    return this._interfaceName;
-  },
-
-  /**
-   * Sets identity which is used with this client.
-   *
-   * @param identity used to resolve how to connect to server
-   * @return receiver
-   */
-  setIdentity: function cal3eClient_set_identity(identity) {
+  set identity calEeeClient_set_identitity(identity) {
     this._identity = identity;
     var username = identity.email;
     //TODO DNS resolve
@@ -73,160 +59,189 @@ cal3eClient.prototype = {
     //XXX development
     var host = "localhost";
     var url = "https://" + host + ":" + port + "/RPC2";
-    var ioService = Cc["@mozilla.org/network/io-service;1"]
-      .getService(Ci.nsIIOService);
+    var ioService = Cc["@mozilla.org/network/io-service;1"].
+        getService(Ci.nsIIOService);
     this._uri = ioService.newURI(url, null, null);
-    this._methodStack = new cal3eMethodStack(this._uri);
   },
 
   /**
-   * Executes current method stack and prepares new one.
+   * Identity used for authorization.
    *
-   * @param listener
-   * @return receiver
-   * @todo listener should be server as context parameter to method stack
-   *  execution and not remembered here
+   * @property {nsIMsqIdentity}
    */
-  executeMethodStack: function cal3eClient_execute(listener) {
-    this._listener = (null !== listener) ? listener : null ;
-    this._methodStack.execute(this);
-    this._methodStack = new cal3eMethodStack(this._uri);
-    return this;
+  get identity calEeeClient_get_identity() {
+    return this._identity;
   },
 
   /**
-   * Calls appropriate listener's methods according to method stack state.
+   * Prepares new method queue for operation on EEE server.
    *
-   * @param methodStack
-   * @see executeMethodStack
+   * @returns {calEeeIMethodQueue}
    */
-  methodStackDidChange: function cal3eClient_methodStackDidChange(methodStack) {
-    var success = methodStack.areResponsesSuccessful(),
-        listener = this._listener;
-    if (success &&
-        (null !== listener) && ('function' === typeof listener.onSuccess)) {
-      listener.onSuccess.call(listener, methodStack.lastResponse.value, methodStack);
-    } else if ((null !== listener) && ('function' === typeof listener.onError)) {
-      listener.onError.call(listener, methodStack);
+  _prepareMethodQueue: function calEeeClient_prepareMethodQueue() {
+    var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"].
+        createInstance(Ci.calEeeIMethodQueue);
+    methodQueue.serverUri = this._uri;
+
+    return methodQueue;
+  },
+
+  /**
+   * Conveniently enqueues method and its parameters to method queue.
+   *
+   * @param {calEeeIMethodQueue} methodQueue
+   * @param {String} methodName
+   * @param {nsIVariant} var_args method parameters
+   */
+  _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue, methodName,
+      var_args) {
+    var parameters = arguments.slice(2);
+    methodQueue.enqueueMethod(this._interface_name + "." + methodName,
+                              parameters.length, parameters);
+  },
+
+  /**
+   * Notified listener if method queue has finished execution of methods.
+   *
+   * @param {calEeeIMethodQueue} methodQueue
+   * @param {Array} context
+   * @todo custom listener with transformation of XML-RPC response to
+   * specialized Mozilla instances
+   */
+  onResult: function calEeeClient_onResult(methodQueue, context) {
+    var methodQueue = methodQueue.QueryInterface(Ci.calEeeIMethodQueue),
+        listener = context[0].QueryInterface(Ci.calIGenericOperationListener),
+        methodName = context[1];
+
+    if (!methodQueue.isPending) {
+      listener.onResult(methodQueue, methodQueue.lastResponse);
     }
   },
 
   /**
    * Calls <code>ESClient.authenticate</code> with credentials retrieved from
-   * client's identity.
+   * {@link identity}.
    *
-   * @param listener
-   * @param execute if defined, overrides auto execute setting
-   * @return receiver
+   * @param {calIGenericOperationListener} listener
+   * @return {calEeeIMethodQueue} method queue with authenticate being
+   * executed on the server
+   * @throws {NS_ERROR_NOT_INITIALIZED} if called with no identity set
    */
-  authenticate: function cal3eClient_authenticate(listener, execute) {
-    if (null === this._identity) {
-      throw new Error("Identity must be set");
+  authenticate: function cal3eClient_authenticate(listener) {
+    var methodQueue = this._prepareMethodQueue();
+    this._enqueueAuthenticate(methodQueue);
+    this.execute(this);
+
+    return methodQueue;
+  },
+
+  _enqueueAuthenticate: function calEeeClient_enqueueAuthenticate(
+      methodQueue) {
+    if ('undefined' === typeof this._identity) {
+      throw Cr.NS_ERROR_NOT_INITIALIZED;
     }
-    execute = undefined === execute ? this._autoExecute : execute ;
-    var authenticateMethod = new cal3eMethod(this, 'authenticate');
+
     //TODO password manager
     var password = "qwe";
-    authenticateMethod
-      .addParam(this._identity.email) // username
-      .addParam(password); // password
-    this._methodStack
-      .addMethod(authenticateMethod);
-    if (execute) {
-      this.executeMethodStack(listener);
-    }
-    return this;
+
+    this._enqueueMethod('authenticate', this._identity.email, password);
   },
 
   /**
-   * Calls {@link authenticate} and <code>ESClient.getCalendars</code> with
-   * given query.
+   * Retrieves calendars matching given query and available to current
+   * {@link identity}.
    *
-   * @param query string according EEE query specification and specification of
-   *  getCalendars method
-   * @param listener
-   * @param execute if defined, overrides auto execute setting
-   * @return receiver
+   * @param {calIGenericOperationListener} listener
+   * @param {String} query definition according to specification of EEE query
+   * language and getCalendars method
+   * @return {calEeeIMethodQueue} method queue with getCalendars being
+   * executed on the server
+   * @see authenticate
    */
-  getCalendars: function cal3eClient_getCalendars(query, listener, execute) {
-    execute = undefined === execute ? this._autoExecute : execute ;
-    this.authenticate(null, false);
-    var getCalendarsMethod = new cal3eMethod(this, 'getCalendars');
-    getCalendarsMethod
-      .addParam(query); // query
-    this._methodStack
-      .addMethod(getCalendarsMethod);
-    if (execute) {
-      this.executeMethodStack(listener);
-    }
-    return this;
+  getCalendars: function cal3eClient_getCalendars(listener, query) {
+    var methodQueue = this._prepareMethodQueue();
+    this._enqueueAuthenticate(methodQueue);
+    this._enqueueGetCalendars(methodQueue, query);
+    this.execute(this);
+
+    return methodQueue;
+  },
+
+  _enqueueGetCalendars: function calEeeClient_enqueueGetCalendars(
+      methodQueue, query) {
+    this._enqueueMethod('getCalendars', query);
   },
 
   /**
-   * Calls {@link authenticate} and <code>ESClient.queryObjects</code> on
-   * given calendar.
+   * Retrieves objects from given calendar and in given date-time range.
    *
-   * @param calendar calendar queried calendar
-   * @param from beginning date of the date range, can be null
-   * @param to last date of the date range, can be null
-   * @param listener
-   * @param execute if defined, overrides auto execute setting
-   * @return receiver
+   * @param {calIGenericOperationListener} listener
+   * @param {calICalendar} calendar queried calendar
+   * @param {Number} from beggining of the range as a UNIX timestamp
+   * @param {Number} from end of the range as a UNIX timestamp
+   * @return {calEeeIMethodQueue} method queue with queryObjects being
+   * executed on the server
+   * @see authenticate
    */
-  queryObjects: function cal3eClient_queryObjects(calendar, from, to,
-      listener, execute) {
-    execute = undefined === execute ? this._autoExecute : execute ;
-    this.authenticate(null, false);
-    var queryObjectsMethod = new cal3eMethod(this, 'queryObjects');
-    
-    function zeropad (s, l) {
-      s = s.toString(); // force it to a string
-      while (s.length < l) {
-        s = '0' + s;
-      }
-      return s;
-    }
+  queryObjects: function cal3eClient_queryObjects(listener, calendar, from,
+      to) {
+    var methodQueue = this._prepareMethodQueue();
+    this._enqueueAuthenticate(methodQueue);
+    this._enqueueQueryObjects(methodQueue, calendar, query, from, to);
+    this.execute(this);
 
-    var query = '', date;
+    return methodQueue;
+  },
+
+  _enqueueQueryObjects: function(methodQueue, calendar, from, to) {
+    var query = "";
     if (null !== from) {
-      date = new Date(from.nativeTime / 1000);
-      query += "date_from('" +
-          zeropad(date.getUTCFullYear(), 4) + '-' +
-          zeropad(date.getUTCMonth() + 1, 2) + '-' +
-          zeropad(date.getUTCDate(), 2) + ' ' +
-          zeropad(date.getUTCHours(), 2) + ':' +
-          zeropad(date.getUTCMinutes(), 2) + ':' +
-          zeropad(date.getUTCSeconds(), 2) +
-        "')";
+      query += "date_from('" + xpcomToEeeDate(from) + "')";
     }
     if (null !== to) {
       if ('' !== query) {
         query += ' AND ';
       }
-      date = new Date(to.nativeTime / 1000);
-      query += "date_to('" +
-          zeropad(date.getUTCFullYear(), 4) + '-' +
-          zeropad(date.getUTCMonth() + 1, 2) + '-' +
-          zeropad(date.getUTCDate(), 2) + ' ' +
-          zeropad(date.getUTCHours(), 2) + ':' +
-          zeropad(date.getUTCMinutes(), 2) + ':' +
-          zeropad(date.getUTCSeconds(), 2) +
-      "')";
+      query += "date_to('" + xpcomToEeeDate(to) + "')";
     }
     if ('' !== query) {
       query += ' AND ';
     }
     query += "NOT deleted()";
     
-    queryObjectsMethod
-      .addParam(calendar.calspec)
-      .addParam(query);
-    this._methodStack
-      .addMethod(queryObjectsMethod);
-    if (execute) {
-      this.executeMethodStack(listener);
-    }
-    return this;
+    this._enqueueMethod('queryObjects', calendar.calspec, query);
   }
 
+}
+
+/**
+ * Converts XPCOM date which is UNIX timestamp to date formatted according to
+ * EEE specification which is <code>yyyy-MM-dd HH:mm:ss</code> as defined in
+ * ISO 8601 in UTC timezone.
+ *
+ * This is not covered by ISO8601DateUtils.
+ *
+ * @param {Number} xpcomDate UNIX timestamp
+ * @returns {String} <code>yyyy-MM-dd HH:mm:ss</code> ISO 8601
+ */
+function xpcomToEeeDate(xpcomDate) {
+  function zeropad(number, length) {
+    var string = "" + number;
+    while (string.length < length) {
+      string = '0' + s;
+    }
+
+    return string;
+  }
+
+  var jsDate = new Date(xpcomDate * 1000),
+      eeeDate = "";
+  eeeDate += zeropad(jsDate.getUTCFullYear(), 4) + '-' +
+             zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
+             zeropad(jsDate.getUTCDate(), 2) + ' ' +
+             zeropad(jsDate.getUTCHours(), 2) + ':' +
+             zeropad(jsDate.getUTCMinutes(), 2) + ':' +
+             zeropad(jsDate.getUTCSeconds(), 2);
+
+  return eeeDate;
 }

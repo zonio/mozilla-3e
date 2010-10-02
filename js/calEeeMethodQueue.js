@@ -28,7 +28,7 @@ EXPORTED_SYMBOLS = [
  * notifies listener registered during execution and then is leaved read-only
  * state without.
  *
- * Read-only state can be reset by {@see cancel()} method but queued method
+ * Read-only state can be reset by {@see cancel} method but queued method
  * stays.
  *
  * This queue uses old Mozilla's XML-RPC client which was removed from Mozilla
@@ -52,7 +52,7 @@ calEeeMethodQueue.prototype = {
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeIMethodQueue,
-    nsIXmlRpcClientListener
+    Ci.nsIXmlRpcClientListener
   ]),
 
   /**
@@ -98,6 +98,7 @@ calEeeMethodQueue.prototype = {
   cancel: function calEeeMq_cancel() {
     this._executing = false;
     this._server = null;
+    this._lastResponse = undefined;
   },
 
   /**
@@ -135,7 +136,7 @@ calEeeMethodQueue.prototype = {
    * called
    */
   get lastResponse calEeeMq_get_lastResponse() {
-    if (Cr.NS_OK !== this._status) {
+    if ('undefined' === typeof this._lastResponse) {
       throw Cr.NS_ERROR_NOT_AVAILABLE;
     }
 
@@ -173,13 +174,14 @@ calEeeMethodQueue.prototype = {
    * Executes queue of queued methods on EEE server.
    *
    * @param {calIGenericOperationListener} listener gets notified when methods
-   * execution finishes.
+   * execution finishes
+   * @param {Object} context passed to the listener along with method name
    * @returns {calEeeMethodQueue} receiver
    * @throws {NS_ERROR_IN_PROGRESS} if called after method calls have already
    * been executed
    * @throws {NS_ERROR_NOT_INITIALIZED} if called with no server URI set
    */
-  execute: function calEeeMq_execute(listener) {
+  execute: function calEeeMq_execute(listener, context) {
     if (this._executing) {
       throw Cr.NS_ERROR_IN_PROGRESS;
     }
@@ -193,6 +195,7 @@ calEeeMethodQueue.prototype = {
     this._executing = true;
     this._server = server;
     this._listener = listener;
+    this._context = context;
     this._methodIdx = 0;
     this._executeNext();
   },
@@ -211,6 +214,9 @@ calEeeMethodQueue.prototype = {
    * Notifies listener that method was called on the server and continues
    * in method execution or finishes if there are no left.
    *
+   * Listener receives name of executed method and a context it registers
+   * during execution.
+   *
    * @param {nsIXmlRpcClient} server XML-RPC client
    * @param {String} methodName name of method successfully called
    * @param {nsISupports} result result returned by the method call
@@ -224,11 +230,11 @@ calEeeMethodQueue.prototype = {
     this._methodIdx += 1;
     this._lastResponse = result;
     if (this._methods.length > this._methodIdx) {
-      this._listener.onResult(this, methodName);
+      this._listener.onResult(this, [methodName, this._context]);
       this._executeNext();
     } else {
       this._pending = false;
-      this._listener.onResult(this, methodName);
+      this._listener.onResult(this, [methodName, this._context]);
     }
   },
 
@@ -248,7 +254,7 @@ calEeeMethodQueue.prototype = {
     this._lastResponse = null;
     this._pending = false;
     this._status = Cr.NS_ERROR_FAILURE;
-    this._listener.onResult(this, methodName);
+    this._listener.onResult(this, [methodName, this._context]);
   },
 
   /**
@@ -268,7 +274,7 @@ calEeeMethodQueue.prototype = {
     this._lastResponse = null;
     this._pending = false;
     this._status = status;
-    this._listener.onResult(this, methodName);
+    this._listener.onResult(this, [methodName, this._context]);
   }
 
 };

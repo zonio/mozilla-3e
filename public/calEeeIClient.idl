@@ -43,13 +43,14 @@ interface calEeeIClient: nsISupports {
     attribute nsIMsgIdentity identity;
 
     /**
-     * Authorizes identity aqainst EEE server.
+     * Authenticates identity aqainst EEE server.
      *
      * @param listener object which gets notified after methods call is
      * finished
      * @return method queue with methods being called on the server
+     * @throws NS_ERROR_NOT_INITIALIZED if called with no identity set
      */
-    calEeeIMethodQueue authorize(in calIOperationListener listener);
+    calEeeIMethodQueue authenticate(in calIGenericOperationListener listener);
 
     /**
      * Retrieves calendars matching given query.
@@ -61,7 +62,7 @@ interface calEeeIClient: nsISupports {
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue getCalendars(
-        in calIOperationListener listener,
+        in calIGenericOperationListener listener,
         in AString query
     );
 
@@ -74,16 +75,13 @@ interface calEeeIClient: nsISupports {
      * @param calendar calendar which get queried for items (e.g. events)
      * @param from datetime from which objects are listed
      * @param to datatime to which objects are listed
-     * @param query criteria for calendars to return specified in EEE query
-     * language
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue queryObjects(
-        in calIOperationListener listener,
+        in calIGenericOperationListener listener,
         in calICalendar calendar,
         in PRTime from,
-        in PRTime to,
-        in AString query
+        in PRTime to
     );
 
 };
