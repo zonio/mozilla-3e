@@ -20,24 +20,6 @@
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
-var calendar3eResource = "calendar3e";
-var ioService = Cc["@mozilla.org/network/io-service;1"]
-    .getService(Ci.nsIIOService);
-var resourceProtocol = ioService.getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-if (!resourceProtocol.hasSubstitution(calendar3eResource)) {
-  var cal3eExtensionId = "calendar3e@zonio.net";
-  var em = Components.classes["@mozilla.org/extensions/manager;1"]
-      .getService(Ci.nsIExtensionManager);
-  var file = em.getInstallLocation(cal3eExtensionId)
-      .getItemFile(cal3eExtensionId, "install.rdf");
-  var resourceDir = file.parent.clone();
-  resourceDir.append("js");
-  var resourceDirUri = ioService.newFileURI(resourceDir);
-  resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
-}
-Components.utils.import("resource://" + calendar3eResource + "/cal3eClient.js");
-
 /**
  * Top-level 3e calendar provider namespace.
  *
@@ -223,11 +205,14 @@ Calendar3e.Sync.prototype = {
              a.defaultIdentity.getBoolAttribute('eee_enabled');
     });
 
+    var clientClass = Cc["@zonio.net/calendar3e/client;1"];
     var map = this._identityClientMap,
-        account, identity;
+        account, client, identity;
     for each (account in enabledAccounts) {
       identity = account.defaultIdentity;
-      map[identity.key] = new cal3eClient(identity);
+      client = clientClass.createInstance(Ci.calEeeIClient);
+      client.identity = identity;
+      map[identity.key] = client;
     }
   },
 

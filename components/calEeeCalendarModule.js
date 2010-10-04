@@ -56,6 +56,4 @@ var components = [
   calEeeCalendar
 ];
 
-function NSGetModule(compMgr, fileSpec) {
-  return XPCOMUtils.generateModule(components);
-}
+XPCOMUtils.generateNSGetModule(components);

@@ -38,7 +38,7 @@ calEeeClient.prototype = {
   // XPCOMUtils definition
   classDescription: "EEE client simplifying server method calls to " +
                     "prepared operations",
-  classID: Component.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
+  classID: Components.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
   contractID: "@zonio.net/calendar3e/client;1",
 
   QueryInterface: XPCOMUtils.generateQI([
@@ -60,7 +60,7 @@ calEeeClient.prototype = {
     var host = username.substring(username.indexOf("@") + 1),
         port = 4444;
     //XXX development
-    var host = "localhost";
+    host = "localhost";
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
         getService(Ci.nsIIOService);
@@ -190,7 +190,7 @@ calEeeClient.prototype = {
       to) {
     var methodQueue = this._prepareMethodQueue();
     this._enqueueAuthenticate(methodQueue);
-    this._enqueueQueryObjects(methodQueue, calendar, query, from, to);
+    this._enqueueQueryObjects(methodQueue, calendar, from, to);
     this.execute(this);
 
     return methodQueue;
@@ -215,7 +215,7 @@ calEeeClient.prototype = {
     this._enqueueMethod('queryObjects', calendar.calspec, query);
   }
 
-}
+};
 
 /**
  * Converts XPCOM date which is UNIX timestamp to date formatted according to
@@ -231,7 +231,7 @@ function xpcomToEeeDate(xpcomDate) {
   function zeropad(number, length) {
     var string = "" + number;
     while (string.length < length) {
-      string = '0' + s;
+      string = '0' + string;
     }
 
     return string;
