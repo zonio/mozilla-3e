@@ -18,9 +18,11 @@
  * ***** END LICENSE BLOCK ***** */
  
 #include "nsISupports.idl"
-#include "nsIMsgIdentity.idl"
-#include "calICalendar.idl"
-#include "calEeeIMethodQueue.idl"
+
+interface nsIMsgIdentity;
+interface calICalendar;
+interface calIGenericOperationListener;
+interface calEeeIMethodQueue;
 
 /**
  * Builder of {@link calEeeIMethodQueue} with main client-side user oriented

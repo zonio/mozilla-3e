@@ -18,7 +18,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "calIOperation.idl"
-#include "nsIURI.idl"
+
+interface nsIURI;
 
 /**
  * Queue holding methods to be called on EEE server and their responses.
