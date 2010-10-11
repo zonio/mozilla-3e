@@ -63,7 +63,7 @@ var calEeeClassInfo = {
 
     classDescription: "EEE calendar provider",
     contractID: "@mozilla.org/calendar/calendar;1?type=eee",
-    classID: Component.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
+    classID: Components.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeCalendar",
     flags: 0
@@ -148,7 +148,7 @@ var calEeeCalendarModule = {
     componentManager = componentManager.QueryInterface(
       Ci.nsIComponentRegistrar);
 
-    for each (var component in g_classInfo) {
+    for each (var component in calEeeClassInfo) {
       componentManager.registerFactoryLocation(
           component.classID,
           component.classDescription,
@@ -191,7 +191,7 @@ var calEeeCalendarModule = {
 
     this._loadUtils();
 
-    for each (var component in g_classInfo) {
+    for each (var component in calEeeClassInfo) {
       if (aCID.equals(component.classID)) {
         return this.makeFactoryFor(eval(component.constructor));
       }
