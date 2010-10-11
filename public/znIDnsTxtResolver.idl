@@ -1,0 +1,39 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Mozilla 3e Calendar Extension
+ * Copyright © 2010  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+ 
+#include "nsISupports.idl"
+
+interface nsIVariant;
+
+/**
+ * Simple resolver of DNS TXT recods.
+ */
+[scriptable, uuid(2f0564e9-8143-4c4d-acae-dc7227d27472)]
+interface znIDnsTxtResolver: nsISupports {
+
+    /**
+     * Retrieves TXT records for given domain.
+     *
+     * @param domain name of the domain whose TXT records will be returned
+     * @param count number of records retrieved
+     * @return TXT records
+     */
+    void resolve(in AString domain, out unsigned long count, [retval, array, size_is(count)] out nsIVariant result);
+
+};
