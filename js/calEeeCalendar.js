@@ -46,11 +46,6 @@ function calEeeCalendar() {
 
 calEeeCalendar.prototype = {
 
-  // XPCOMUtils definition
-  classDescription: "EEE calendar provider",
-  classID: Component.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
-  contractID: "@mozilla.org/calendar/calendar;1?type=eee",
-
   __proto__: cal.ProviderBase.prototype,
   
   /**
