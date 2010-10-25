@@ -17,7 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-function view3eSettings {
+function viewEeeSettings {
   //TODO
-  console.log("called view3eSettings");
 }

@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
@@ -32,6 +33,7 @@ cal.loadScripts(["calUtils.js"], this);
 EXPORTED_SYMBOLS = [
   "calEeeCalendar"
 ];
+ */
 
 /**
  * Implementation of EEE calendar.

@@ -80,7 +80,7 @@ Calendar3e.Sync.prototype = {
   _calendarManager: undefined,
 
   /**
-   * Maps identities with their 3e clients.
+   * Maps identities with their EEE clients.
    *
    * @type Object
    */
@@ -109,10 +109,10 @@ Calendar3e.Sync.prototype = {
       calSync = this;
       client.getCalendars("match_owner('" + client.identity.email + "')", {
         onSuccess: function (calendars, methodStack) {
-          var calendars3e = [], calendarProperties = [],
+          var calendarsEee = [], calendarProperties = [],
               idx = -1,
               length = calendars.length,
-              calendar, calendarUri, calendar3e,
+              calendar, calendarUri, calendarEee,
               properties;
           if (0 < length) {
             while (++idx < length) {
@@ -122,8 +122,8 @@ Calendar3e.Sync.prototype = {
               };
               calendar = calendars[idx];
               calendarUri = ioService.newURI("eee://" + client.identity.email + "/" + calendar.name, null, null);
-              calendar3e = calendarManager.createCalendar(
-                '3e', calendarUri
+              calendarEee = calendarManager.createCalendar(
+                'eee', calendarUri
               );
               for each (var attr in calendar.attrs) {
                 switch (attr.name) {
@@ -138,12 +138,12 @@ Calendar3e.Sync.prototype = {
               if (null === properties.name) {
                 properties.name = calendar.name;
               }
-              calendars3e.push(calendar3e);
+              calendarsEee.push(calendarEee);
               calendarProperties.push(properties);
             }
           } else {
           }
-          calSync.syncCalendars(calendars3e, calendarProperties);
+          calSync.syncCalendars(calendarsEee, calendarProperties);
         },
         onError: function (methodStack) { }
       });
@@ -153,7 +153,7 @@ Calendar3e.Sync.prototype = {
   /**
    * Synchronizes given calendars with already registered calendars.
    *
-   * @param {Array} calendars array of cal3eCalendar
+   * @param {Array} calendars array of calEeeCalendar
    */
   syncCalendars: function (calendars, properties) {
     var console = this._console,
@@ -161,7 +161,7 @@ Calendar3e.Sync.prototype = {
         currentCalendars = calendarManager.getCalendars({});
 
     currentCalendars = currentCalendars.filter(function (c) {
-      return '3e' == c.type;
+      return 'eee' == c.type;
     });
     var newCalendars = calendars.filter(function (c) {
       var isNew = true, current;
@@ -217,7 +217,7 @@ Calendar3e.Sync.prototype = {
   },
 
   /**
-   * Adds new 3e client according to added server.
+   * Adds new EEE client according to added server.
    *
    * Implemented according to nsIIncomingServerListener.
    *
@@ -230,12 +230,15 @@ Calendar3e.Sync.prototype = {
       return
     }
 
-    var identity = accounts.defaultIdentity;
-    this._identityClientMap[identity.key] = new cal3eClient(identity);
+    var identity = accounts.defaultIdentity,
+	client = Cc["@zonio.net/calendar3e/client;1"].createInstance(
+	    Ci.calEeeIClient);
+    client.identity = identity;
+    this._identityClientMap[identity.key] = client;
   },
 
   /**
-   * Removes 3e client according to given server.
+   * Removes EEE client according to given server.
    *
    * Implemented according to nsIIncomingServerListener.
    *

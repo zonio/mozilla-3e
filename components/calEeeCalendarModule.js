@@ -127,8 +127,11 @@ var calEeeCalendarModule = {
     Cu.import("resource://calendar/modules/calUtils.jsm");
     Cu.import("resource://calendar/modules/calProviderUtils.jsm");
     Cu.import("resource://calendar/modules/calAuthUtils.jsm");
+    Cu.import("resource:///modules/iteratorUtils.jsm");
+    Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     cal.loadScripts(["calUtils.js"], this.__parent__);
-
+    
+    /*
     // dynamically register resource space for 3e calendar provider which is
     // needed because this code is executed before chrome registration
     // (registering records from chrome.manifest)
@@ -152,6 +155,15 @@ var calEeeCalendarModule = {
     Cu.import("resource://" + calendar3eResource + "/calEeeProtocol.js", this.__parent__);
     Cu.import("resource://" + calendar3eResource + "/calEeeCalendar.js", this.__parent__);
     Cu.import("resource://" + calendar3eResource + "/calEeeMethodQueue.js", this.__parent__);
+     */
+
+    // Now load EEE extension scripts. Note that unintuitively,
+    // __LOCATION__.parent == . We expect to find the subscripts in ./../js
+    var jsDir = __LOCATION__.parent.parent.clone();
+    jsDir.append("js");
+    cal.loadScripts(["calEeeClient.js", "calEeeProtocol.js",
+		     "calEeeCalendar.js", "calEeeMethodQueue.js"],
+		    this.__parent__, jsDir);
 
     this._utilsLoaded = true;
   },

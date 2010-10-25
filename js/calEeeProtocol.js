@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;
@@ -26,6 +27,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 EXPORTED_SYMBOLS = [
   "calEeeProtocol"
 ];
+ */
 
 
 function calEeeProtocol() {

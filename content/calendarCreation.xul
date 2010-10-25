@@ -28,7 +28,7 @@
 <overlay id="calendarCreation" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <radiogroup id="calendar-format">
-    <radio value="3e" label="3E Calendar" onclick="view3eSettings();" />
+    <radio value="eee" label="EEE Calendar" onclick="viewEeeSettings();" />
   </radiogroup>
 
   <script type="application/javascript"

@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cr = Components.result;
@@ -27,6 +28,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 EXPORTED_SYMBOLS = [
   "calEeeMethodQueue"
 ];
+ */
 
 /**
  * Queue holding methods to be called on EEE server and their responses.
