@@ -22,6 +22,8 @@ const Cc = Components.classes;
 const Cr = Components.result;
 const Cu = Components.utils;
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
 EXPORTED_SYMBOLS = [
   "calEeeClient"
 ];
@@ -32,6 +34,11 @@ EXPORTED_SYMBOLS = [
 function calEeeClient() {}
 
 calEeeClient.prototype = {
+
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.calEeeIClient,
+    Ci.calIGenericOperationListener
+  ]),
 
   _interface_name: 'ESClient',
 

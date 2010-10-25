@@ -22,6 +22,8 @@ const Cc = Components.classes;
 const Cr = Components.result;
 const Cu = Components.utils;
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
 EXPORTED_SYMBOLS = [
   "calEeeMethodQueue"
 ];
@@ -49,6 +51,11 @@ function calEeeMethodQueue() {
 }
 
 calEeeMethodQueue.prototype = {
+
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.calEeeIMethodQueue,
+    Ci.nsIXmlRpcClientListener
+  ]),
 
   /**
    * Identifier of this method queue.

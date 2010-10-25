@@ -47,6 +47,28 @@ var calEeeClassInfo = {
     flags: 0
   },
 
+  calEeeProtocol: {
+    getInterfaces: function cI_cal3eProtocol_getInterfaces(count) {
+      var interfaces = [
+        Ci.nsIProtocolHandler,
+        Ci.nsIClassInfo
+      ];
+      count.value = interfaces.length;
+      return interfaces;
+    },
+
+    getHelperForLanguage: function cI_cal3eProtocol_getHelperForLanguage(language) {
+      return null;
+    },
+
+    classDescription: "EEE protocol handler",
+    contractID: "@mozilla.org/network/protocol;1?name=eee",
+    classID: Components.ID("{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}"),
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    constructor: "calEeeProtocol",
+    flags: 0
+  },
+
   calEeeCalendar: {
     getInterfaces: function cI_cal3eCalendar_getInterfaces(count) {
       var interfaces = [
@@ -126,9 +148,10 @@ var calEeeCalendarModule = {
       resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
     }
 
-    Cu.import("resource://" + calendar3eResource + "calEeeClient.js", this.__parent__);
-    Cu.import("resource://" + calendar3eResource + "calEeeCalendar.js", this.__parent__);
-    Cu.import("resource://" + calendar3eResource + "calEeeMethodQueue.js", this.__parent__);
+    Cu.import("resource://" + calendar3eResource + "/calEeeClient.js", this.__parent__);
+    Cu.import("resource://" + calendar3eResource + "/calEeeProtocol.js", this.__parent__);
+    Cu.import("resource://" + calendar3eResource + "/calEeeCalendar.js", this.__parent__);
+    Cu.import("resource://" + calendar3eResource + "/calEeeMethodQueue.js", this.__parent__);
 
     this._utilsLoaded = true;
   },
@@ -206,5 +229,5 @@ var calEeeCalendarModule = {
 };
 
 function NSGetModule(componentManager, fileSpec) {
-    return calEeeCalendarModule;
+  return calEeeCalendarModule;
 }

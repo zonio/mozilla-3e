@@ -17,11 +17,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar/modules/calProviderUtils.jsm");
-
 const Ci = Components.interfaces;
 const Cc = Components.classes;
-const Cr = Components.results;
+const Cu = Components.utils;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 EXPORTED_SYMBOLS = [
   "calEeeProtocol"
@@ -33,14 +33,9 @@ function calEeeProtocol() {
 
 calEeeProtocol.prototype = {
 
-  QueryInterface: function(iid) {
-    if (!iid.equals(Ci.nsIProtocolHandler) &&
-        !iid.equals(Ci.nsISupports)) {
-      throw new Cr.NS_ERROR_NO_INTERFACE;
-    }
-
-    return this;
-  },
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.nsIProtocolHandler
+  ]),
 
   scheme: 'eee',
 
