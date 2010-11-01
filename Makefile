@@ -17,7 +17,16 @@
 #
 # ***** END LICENSE BLOCK ***** */
 
+ifndef XULRUNNER_SDK
+  XULRUNNER_SDK=./xulrunner-sdk
+endif
+ifndef TB_SRC
+  TB_SRC=./comm-1.9.2
+endif
+
 mozilla-plugin: all
 all:
 	rm -f 3E-Calendar.xpi
+	${XULRUNNER_SDK}/bin/xpidl -I ${XULRUNNER_SDK}/idl -I ${TB_SRC}/calendar/base/public -w -v -o ./components/calEeeModule -m typelib ./public/calEeeI*.idl
+	${XULRUNNER_SDK}/bin/xpidl -I ${XULRUNNER_SDK}/idl -w -v -o ./components/nsXmlRpc -m typelib ./public/nsI*.idl
 	zip -r 3E-Calendar.xpi chrome.manifest components content install.rdf js locale skin
