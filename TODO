@@ -1,6 +1,12 @@
- * Git test2
- * Check 3e calendar UI
- * Check 3e protocol implementation
- * 3e client as a component
- * eee scheme URI handler
- * ICS parser a serializer pro cal3eCalendar
+* Finish transition of fundamental classes (calendar, client, method
+  stack and 3rd party classes) and code which uses them to Mozilla
+  component system
+* Handling 3e account configuration changes (load user's calendars)
+* Synchronize user's calendars from time to time
+* Calendar events CRUD operations
+** Integration with Mozilla Calendar (ICS parsers and other build-in
+   helpers)
+** Client methods
+** Proper UI overload (current implementation breaks whole Lightning
+   functionality)
+* Other calendaring and scheduling operations
