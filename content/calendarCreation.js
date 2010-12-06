@@ -30,16 +30,19 @@ var cal3eCreation = {};
 cal3eCreation.selectionChanged = function selectionChanged() {
   var calendarFormat = document.getElementById('calendar-format'),
       calendarUri = document.getElementById('calendar-uri');
+
   if ('3e' == calendarFormat.value) {
-    cal3eCreation._originalUri = calendarUri.value;
+    cal3eCreation._originalUri = calendarUri.value || "";
     calendarUri.parentNode.hidden = 'true';
-    calendarUri.value = 'eee://';
+    calendarUri.value = "eee://";
   } else {
-    if (cal3eCreation._originalUri) {
-      calendarUri.value = cal3eCreation._originalUri;
-    }
+    calendarUri.value = cal3eCreation._originalUri;
     calendarUri.parentNode.removeAttribute('hidden');
   }
+
+  var commandEvent = document.createEvent('Event');
+  commandEvent.initEvent('command', true, true);
+  calendarUri.dispatchEvent(commandEvent);
 };
 
 /**
