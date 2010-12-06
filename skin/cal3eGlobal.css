@@ -17,11 +17,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+treechildren::-moz-tree-checkbox,
 treechildren::-moz-tree-image(not-enabled) {
   -moz-margin-end: 2px;
   list-style-image: url("chrome://messenger/skin/icons/dot.png");
 }
-
+treechildren::-moz-tree-checkbox(checked),
 treechildren::-moz-tree-image(enabled) {
   list-style-image: url("chrome://messenger/skin/icons/check.png");
 }
