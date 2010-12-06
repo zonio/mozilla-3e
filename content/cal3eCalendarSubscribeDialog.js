@@ -18,5 +18,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 function open3eCalendarSubscribeDialog() {
-  window.openDialog("chrome://calendar3e/content/cal3eCalendarSubscribeDialog.xul");
+  openDialog("chrome://calendar3e/content/cal3eCalendarSubscribeDialog.xul",
+             "cal3eSubscribe", "chrome,titlebar,modal,resizable");
 }

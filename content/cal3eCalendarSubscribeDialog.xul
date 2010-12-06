@@ -18,72 +18,80 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
+<?xml-stylesheet type="text/css" href="chrome://global/skin/"?>
+<!DOCTYPE dialog SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
 
-<!-- TODO handlers, logic -->
-<dialog id="3e-calendar-subscribe-dialog"
-  title="Subscribe Calendar"
-  buttons="accept,cancel"
-  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<dialog
+    id="calendar3e-subscribe-dialog"
+    title="&cal3eCalendarSubscribe.title;"
+    buttons="accept,cancel"
+    windowtype="Calendar3e:SubscribeDialog"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <grid>
+  <grid id="calendar3e-subscribe-grid">
     <columns>
+      <column/>
       <column flex="1"/>
-      <column flex="3"/>
     </columns>
-    <rows>
-      <row>
-        <label value="Account:"/>
-        <menulist>
-          <menupopup>
-          <menuitem label="Jane Doe &lt;jane.doe@domain.net>" selected="true"/>
+    <rows id="calendar3e-subscribe-rows">
+      <row id="calendar3e-account-row" align="center">
+        <label control="account-menulist"
+               value="&cal3eCalendarSubscribe.account.label;"/>
+        <menulist id="account-menulist">
+          <menupopup id="account-menupopup">
+            <menuitem value="bob.davis@mycompany.com"
+                      label="Bob Davis &lt;bob.davis@mycompany.com>"/>
+            <menuitem value="jane.doe@domain.net"
+                      label="Jane Doe &lt;jane.doe@domain.net>"/>
           </menupopup>
         </menulist>
       </row>
-      <row>
-        <label value="Search:"/>
-        <textbox id="search-pattern" />
+      <row id="calendar3e-search-row" align="center">
+        <label control="search-pattern"
+               value="&cal3eCalendarSubscribe.account.label;"/>
+        <textbox id="search-pattern"/>
       </row>
       <row>
-        <spacer flex="1" />
-        <tree id="calendars-tree" flex="3" hidecolumnpicker="true" seltype="single"
-          class="tree"  
-          rows="5">  
+        <spacer/>
+        <tree id="calendars-tree" hidecolumnpicker="true" class="tree"
+              rows="6">
           <treecols id="calendars-tree-cols">  
-          <treecol id="calendar-tree-calendar-col" primary="true" flex="3"
-               label="Calendars"  
-               persist="width" ordinal="1"/>  
-          </treecols>  
-          <treechildren>  
-          <treeitem container="true" open="true">  
-            <treerow>  
-            <treecell label="Alice &lt;alice@example.com>"/>  
-            </treerow>  
-            <treechildren>  
-            <treeitem>  
-              <treerow>  
-              <treecell label="Personal"/>  
-              </treerow>  
-              <treerow>  
-              <treecell label="Work"/>  
-              </treerow>  
-            </treeitem>  
-            </treechildren>  
-          </treeitem>  
-          <treeitem container="true" open="true">  
-            <treerow>  
-            <treecell label="Bob &lt;bob@example.com>"/>  
-            </treerow>  
-            <treechildren>  
-            <treeitem>  
-              <treerow>  
-              <treecell label="Sample Calendar"/>  
-              </treerow>  
-            </treeitem>  
-            </treechildren>  
-          </treeitem>  
-          </treechildren>  
-        </tree>  
+            <treecol id="calendar-tree-calendar-col" hideheader="true"
+                     primary="true" flex="1" persist="width"/>
+          </treecols>
+          <treechildren>
+            <treeitem container="true" open="true">
+              <treerow>
+                <treecell label="Alice White &lt;alice@domain.com>"/>
+              </treerow>
+              <treechildren>
+                <treeitem>
+                  <treerow>
+                    <treecell value="eee://alice@domain.com/personal"
+                              label="Personal"/>
+                  </treerow>
+                  <treerow>
+                    <treecell value="eee://alice@domain.com/work"
+                              label="Work"/>
+                  </treerow>
+                </treeitem>
+              </treechildren>
+            </treeitem>
+            <treeitem container="true" open="true">
+              <treerow>
+                <treecell label="Carl Bernstein &lt;carl@domain.com>"/>
+              </treerow>
+              <treechildren>
+                <treeitem>
+                  <treerow>
+                    <treecell value="eee://carl@domain.com/tech-wg"
+                              label="Tech working group"/>
+                  </treerow>
+                </treeitem>
+              </treechildren>
+            </treeitem>
+          </treechildren>
+        </tree>
       </row>
     </rows>
   </grid>
