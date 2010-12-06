@@ -17,7 +17,39 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-function view3eSettings {
-  //TODO
-  console.log("called view3eSettings");
-}
+var cal3eCreation = {};
+
+/**
+ * Checks value of selected calendar format and modifies dialog
+ * accordingly.
+ *
+ * If calendar format is 3e, then URI textbox is hidden because URI is
+ * computed automatically. Previous value is stored in case user
+ * changes her mind.
+ */
+cal3eCreation.selectionChanged = function selectionChanged() {
+  var calendarFormat = document.getElementById('calendar-format'),
+      calendarUri = document.getElementById('calendar-uri');
+  if ('3e' == calendarFormat.value) {
+    cal3eCreation._originalUri = calendarUri.value;
+    calendarUri.parentNode.hidden = 'true';
+    calendarUri.value = 'eee://';
+  } else {
+    if (cal3eCreation._originalUri) {
+      calendarUri.value = cal3eCreation._originalUri;
+    }
+    calendarUri.parentNode.removeAttribute('hidden');
+  }
+};
+
+/**
+ * Initializes calendar creation dialog with 3e extesion specific
+ * behavior.
+ */
+cal3eCreation.init = function init() {
+  var calendarFormat = document.getElementById('calendar-format');
+  calendarFormat.addEventListener(
+    'command', cal3eCreation.selectionChanged, false);
+};
+
+window.addEventListener('load', cal3eCreation.init, false);

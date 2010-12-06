@@ -27,3 +27,5 @@
 <!ENTITY cal3eCalendarProperties.private.label "Private">
 <!ENTITY cal3eCalendarProperties.public.label "Public">
 <!ENTITY cal3eCalendarProperties.shared.label "Shared">
+
+<!ENTITY cal3eCalendarCreation.format.label "3e Calendar">

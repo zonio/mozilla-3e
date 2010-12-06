@@ -18,20 +18,19 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!DOCTYPE dialog [
-  <!ENTITY % creationDTD SYSTEM "chrome://calendar/locale/calendarCreation.dtd">
-  <!ENTITY % calendarDTD SYSTEM "chrome://calendar/locale/calendar.dtd">
-  %creationDTD;
-  %calendarDTD;
+<!DOCTYPE overlay [
+  <!ENTITY % cal3eCalendar SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+  %cal3eCalendar;
 ]>
 
-<overlay id="calendarCreation" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<overlay id="calendar3e-creation-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <radiogroup id="calendar-format">
-    <radio value="3e" label="3E Calendar" onclick="view3eSettings();" />
+    <radio value="3e" label="&cal3eCalendarCreation.format.label;"/>
   </radiogroup>
 
   <script type="application/javascript"
-    src="chrome://calendar3e/content/calendarCreation.js"/>
+          src="chrome://calendar3e/content/calendarCreation.js"/>
 
 </overlay>
