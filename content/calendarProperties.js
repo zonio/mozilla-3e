@@ -25,6 +25,17 @@ var cal3eProperties = {};
  * Otherwise ensures that permissions control is hidden.
  */
 cal3eProperties.typeChange = function typeChanged() {
+  if ('3e' == cal3eProperties._calendar.type) {
+    return;
+  }
+
+  var calendarEeeType = document.getElementById('calendar3e-type-group'),
+      permissionsRow = document.getElementById('calendar3e-permissions-row');
+  if ('shared' == calendarEeeType.selectedItem.value) {
+    permissionsRow.removeAttribute('hidden');
+  } else {
+    permissionsRow.hidden = 'true';
+  }
 };
 
 /**
@@ -42,7 +53,9 @@ cal3eProperties.hide3eControls = function hide3eControls() {
   var permissionsRow = document.getElementById('calendar3e-permissions-row');
   permissionsRow.hidden = 'true';
 
-  window.sizeToContent();
+  if (cal3eProperties._init) {
+    window.sizeToContent();
+  }
 };
 
 /**
@@ -51,12 +64,21 @@ cal3eProperties.hide3eControls = function hide3eControls() {
  * Otherwise ensures that those controls are hidden.
  */
 cal3eProperties.init = function init() {
-  dump("Whoa!");
+  cal3eProperties._init = true;
   var calendar = window.arguments[0].calendar;
   cal3eProperties._calendar = calendar;
+
+  var calendarEeeType = document.getElementById('calendar3e-type-group');
+
   if ('3e' != calendar.type) {
     cal3eProperties.hide3eControls();
   }
+
+  calendarEeeType.addEventListener(
+    'command', cal3eProperties.typeChange, false);
+  cal3eProperties.typeChange();
+
+  cal3eProperties._init = false;
 };
 
 window.addEventListener('load', cal3eProperties.init, false);
