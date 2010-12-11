@@ -30,7 +30,13 @@
     <radio value="3e" label="&cal3eCalendarCreation.format.label;"/>
   </radiogroup>
 
-  <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarCreation.js"/>
+  <wizard id="calendar-wizard">
+    <stringbundleset id="calendar3e-stringbundleset">
+      <stringbundle id="calendar3e-strings"
+                    src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+    </stringbundleset>
+    <script type="application/javascript"
+            src="chrome://calendar3e/content/calendarCreation.js"/>
+  </wizard>
 
 </overlay>
