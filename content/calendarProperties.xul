@@ -34,39 +34,48 @@
     <row id="calendar3e-permissions-row"
          insertafter="calendar-color-row">
       <label value="&cal3eCalendarProperties.permissions.label;"/>
-      <vbox>
-        <tree id="calendar3e-permissions-tree" hidecolumnpicker="true"
-              editable="true" seltype="single" class="tree" rows="5">
-          <treecols id="calendar3e-permissions-tree-cols">
-            <treecol id="calendar3e-permissions-tree-user-col"
-                     label="&cal3eCalendarProperties.user.label;"
-                     primary="true" flex="4" persist="width"/>
-            <treecol id="calendar3e-permissions-tree-read-col"
-                     label="&cal3eCalendarProperties.read.label;"
-                     type="checkbox" editable="true"
-                     primary="true" flex="1" persist="width"/>
-            <treecol id="calendar3e-permissions-tree-write-col"
-                     label="&cal3eCalendarProperties.write.label;"
-                     type="checkbox" editable="true"
-                     primary="true" flex="1" persist="width"/>
-          </treecols>
-          <treechildren>
-            <treeitem>
-              <treerow>
-                <treecell label="Alice White &lt;alice@domain.com>"/>
-                <treecell value="true"/>
-                <treecell value="false"/>
-              </treerow>
-            </treeitem>
-            <treeitem>
-              <treerow>
-                <treecell label="bob.woodward@washingtonpost.com>"/>
-                <treecell value="true"/>
-                <treecell value="true"/>
-              </treerow>
-            </treeitem>
-          </treechildren>
-        </tree>
+      <vbox flex="1">
+        <listbox id="permissions" flex="1">
+          <listhead>
+            <listheader label="&cal3eCalendarProperties.user.label;"/>
+            <listheader label="&cal3eCalendarProperties.permissions.label;"/>
+          </listhead>
+          <listcols>
+            <listcol flex="1"/>
+            <listcol/>
+          </listcols>
+          <listitem allowevents="true">
+            <listcell>
+              Alice White &lt;alice@domain.com>
+            </listcell>
+            <listcell>
+              <menulist label="Permission">
+                <menupopup>
+                  <menuitem value="read"
+                            label="&cal3eCalendarProperties.read.label;"/>
+                  <menuitem value="write"
+                            label="&cal3eCalendarProperties.write.label;"/>
+                </menupopup>
+              </menulist>
+            </listcell>
+          </listitem>
+          <listitem allowevents="true">
+            <listcell>
+              bob.woodward@washingtonpost.com
+            </listcell>
+            <listcell>
+              <menulist label="Permission">
+                <menupopup>
+                  <menuitem value="read"
+                            label="&cal3eCalendarProperties.read.label;"/>
+                  <menuitem value="write"
+                            label="&cal3eCalendarProperties.write.label;"
+                            selected="true"/>
+                </menupopup>
+              </menulist>
+            </listcell>
+          </listitem>
+        </listbox>
         <hbox>
           <button id="calendar3e-permissions-add"
                   label="&cal3eCalendarProperties.add.label;"/>
