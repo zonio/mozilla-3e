@@ -66,13 +66,13 @@ interface calEeeIMethodQueue: calIOperation {
      * Executes queue of queued methods on EEE server.
      *
      * @param listener gets notified when methods execution finishes
-     * @param context context passed to the listener
+     * @param resultContext context passed to the listener
      * @return receiver
      * @throws NS_ERROR_IN_PROGRESS if called after method calls have already
      * been executed
      * @throws NS_ERROR_NOT_INITIALIZED if called with no server URI set
      */
     calEeeIMethodQueue execute(in calIGenericOperationListener listener,
-        in nsISupports context);
+                               in nsISupports resultContext);
 
 };
