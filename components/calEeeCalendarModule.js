@@ -196,21 +196,21 @@ var calEeeCalendarModule = {
 
   makeFactoryFor: function cal3eModule_makeFactoryFor(constructor) {
     var factory = {
-      QueryInterface: function (aIID) {
-        if (!aIID.equals(Ci.nsISupports) &&
-            !aIID.equals(Ci.nsIFactory)) {
+      QueryInterface: function (iid) {
+        if (!iid.equals(Ci.nsISupports) &&
+            !iid.equals(Ci.nsIFactory)) {
           throw Cr.NS_ERROR_NO_INTERFACE;
         }
 
         return this;
       },
 
-      createInstance: function (aOuter, aIID) {
-        if (aOuter != null) {
+      createInstance: function (outer, iid) {
+        if (outer != null) {
           throw Cr.NS_ERROR_NO_AGGREGATION;
         }
 
-        return (new constructor()).QueryInterface(aIID);
+        return (new constructor()).QueryInterface(iid);
       }
     };
 
@@ -218,16 +218,16 @@ var calEeeCalendarModule = {
   },
 
   getClassObject: function cal3eModule_getClassObject(componentManager,
-                                                      aCID,
-                                                      aIID) {
-    if (!aIID.equals(Ci.nsIFactory)) {
+                                                      cid,
+                                                      iid) {
+    if (!iid.equals(Ci.nsIFactory)) {
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
 
     this._loadUtils();
 
     for each (var component in calEeeClassInfo) {
-      if (aCID.equals(component.classID)) {
+      if (cid.equals(component.classID)) {
         return this.makeFactoryFor(eval(component.constructor));
       }
     }
