@@ -18,15 +18,49 @@
 # ***** END LICENSE BLOCK ***** */
 
 ifndef XULRUNNER_SDK
-  XULRUNNER_SDK=./xulrunner-sdk
+  XULRUNNER_SDK = ./xulrunner-sdk
 endif
 ifndef TB_SRC
-  TB_SRC=./comm-1.9.2
+  TB_SRC = ./comm-1.9.2
 endif
 
-mozilla-plugin: all
-all:
-	rm -f 3E-Calendar.xpi
-	${XULRUNNER_SDK}/bin/xpidl -I ${XULRUNNER_SDK}/idl -I ${TB_SRC}/calendar/base/public -w -v -o ./components/calEeeModule -m typelib ./public/calEeeI*.idl
-	${XULRUNNER_SDK}/bin/xpidl -I ${XULRUNNER_SDK}/idl -w -v -o ./components/nsXmlRpc -m typelib ./public/nsI*.idl
-	zip -r 3E-Calendar.xpi chrome.manifest components content install.rdf js locale skin
+XPIDL = ${XULRUNNER_SDK}/bin/xpidl -m typelib -w -v -I ${XULRUNNER_SDK}/idl
+
+NS_XPTS = components/nsIDictionary.xpt components/nsIXmlRpcClient.xpt \
+	  components/nsIXmlRpcClientListener.xpt
+EEE_XPTS = components/calEeeIClient.xpt components/calEeeIMethodQueue.xpt
+XPTS = ${NS_XPTS} ${EEE_XPTS}
+
+
+calendar3e.xpi: ${XPTS}
+	zip -x "*~" -r calendar3e.xpi chrome.manifest install.rdf components \
+				      js content locale skin
+
+.PHONY : xpts clean
+
+xpts: ${XPTS}
+
+clean:
+	-rm calendar3e.xpi components/*.xpt
+
+
+components/calEeeIClient.xpt: public/calEeeIClient.idl
+	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public \
+		 -o components/calEeeIClient \
+		 public/calEeeIClient.idl
+components/calEeeIMethodQueue.xpt: public/calEeeIMethodQueue.idl
+	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public \
+		 -o components/calEeeIMethodQueue \
+		 public/calEeeIMethodQueue.idl
+
+components/nsIDictionary.xpt: public/nsIDictionary.idl
+	${XPIDL} -o components/nsIDictionary \
+		 public/nsIDictionary.idl
+components/nsIXmlRpcClientListener.xpt: public/nsIXmlRpcClientListener.idl
+	${XPIDL} -o components/nsIXmlRpcClientListener \
+		 public/nsIXmlRpcClientListener.idl
+components/nsIXmlRpcClient.xpt: public/nsIXmlRpcClientListener.idl \
+				public/nsIXmlRpcClient.idl
+	${XPIDL} -I public \
+		 -o components/nsIXmlRpcClient \
+		 public/nsIXmlRpcClient.idl
