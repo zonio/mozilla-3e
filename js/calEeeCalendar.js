@@ -232,7 +232,8 @@ calEeeCalendar.prototype = {
           }
         };
 
-    return this._client.queryObjects(clientListener, rangeStart, rangeEnd);
+    return this._client.queryObjects(clientListener, this, rangeStart,
+                                     rangeEnd);
   },
 
   /**

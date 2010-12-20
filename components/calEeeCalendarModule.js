@@ -108,7 +108,7 @@ var calEeeClassInfo = {
 
     classDescription: "Queue for methods to be executed on the EEE server",
     contractID: "@zonio.net/calendar3e/method-queue;1",
-    classID: Components.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
+    classID: Components.ID("{bd47191f-9617-4a77-ae79-b7927b535f4c}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeMethodQueue",
     flags: 0

@@ -90,13 +90,13 @@ calEeeClient.prototype = {
    *
    * @param {calEeeIMethodQueue} methodQueue
    * @param {String} methodName
-   * @param {nsIVariant} var_args method parameters
+   * @param {nsIVariant[]} [var_args] method parameters
    */
   _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue, methodName,
       var_args) {
-    var parameters = arguments.slice(2);
+    var parameters = Array.prototype.slice.call(arguments, 2);
     methodQueue.enqueueMethod(this._interface_name + "." + methodName,
-                              parameters.length, parameters);
+                              { value: parameters.length }, parameters);
   },
 
   /**
@@ -129,7 +129,7 @@ calEeeClient.prototype = {
   authenticate: function cal3eClient_authenticate(listener) {
     var methodQueue = this._prepareMethodQueue();
     this._enqueueAuthenticate(methodQueue);
-    this.execute(this);
+      methodQueue.execute(this, listener);
 
     return methodQueue;
   },
@@ -143,7 +143,8 @@ calEeeClient.prototype = {
     //TODO password manager
     var password = "qwe";
 
-    this._enqueueMethod('authenticate', this._identity.email, password);
+    this._enqueueMethod(methodQueue, 'authenticate', this._identity.email,
+                        password);
   },
 
   /**
@@ -161,14 +162,14 @@ calEeeClient.prototype = {
     var methodQueue = this._prepareMethodQueue();
     this._enqueueAuthenticate(methodQueue);
     this._enqueueGetCalendars(methodQueue, query);
-    this.execute(this);
+    methodQueue.execute(this, listener);
 
     return methodQueue;
   },
 
   _enqueueGetCalendars: function calEeeClient_enqueueGetCalendars(
       methodQueue, query) {
-    this._enqueueMethod('getCalendars', query);
+    this._enqueueMethod(methodQueue, 'getCalendars', query);
   },
 
   /**
@@ -187,7 +188,7 @@ calEeeClient.prototype = {
     var methodQueue = this._prepareMethodQueue();
     this._enqueueAuthenticate(methodQueue);
     this._enqueueQueryObjects(methodQueue, calendar, from, to);
-    this.execute(this);
+    methodQueue.execute(this, listener);
 
     return methodQueue;
   },
@@ -208,7 +209,7 @@ calEeeClient.prototype = {
     }
     query += "NOT deleted()";
     
-    this._enqueueMethod('queryObjects', calendar.calspec, query);
+    this._enqueueMethod(methodQueue, 'queryObjects', calendar.calspec, query);
   }
 
 };

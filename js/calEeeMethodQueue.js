@@ -166,7 +166,7 @@ calEeeMethodQueue.prototype = {
     }
 
     var methodEnvelope = [
-      methodName, parameters, length
+      methodName, parameters, { value: length },
     ];
     this._methods.push(methodEnvelope);
     this._status = Cr.NS_OK;
@@ -195,7 +195,7 @@ calEeeMethodQueue.prototype = {
 
     var server = Cc["@mozilla.org/xml-rpc/client;1"].
         createInstance(Ci.nsIXmlRpcClient);
-    server.init(this._uri.spec());
+    server.init(this._uri.spec);
     this._executing = true;
     this._server = server;
     this._listener = listener;
@@ -209,7 +209,7 @@ calEeeMethodQueue.prototype = {
    */
   _executeNext: function calEeeMq_executeNext() {
     var methodEnvelope = this._methods[this._methodIdx],
-        serverArguments = [this, methodEnvelope[0]];
+        serverArguments = [this, this, methodEnvelope[0]];
     serverArguments = serverArguments.concat(methodEnvelope);
     this._server.asyncCall.apply(this._server, serverArguments);
   },
