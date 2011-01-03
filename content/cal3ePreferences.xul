@@ -29,9 +29,9 @@
   id="cal3e-preferences"
   title="&cal3ePreferences.title;"
   button="accept,cancel"
-  onload="Calendar3e.Preferences.onLoad()"
-  onunload="Calendar3e.Preferences.onUnload()"
-  ondialogaccept="return Calendar3e.Preferences.onAccept()">
+  onload="cal3ePreferences.onLoad()"
+  onunload="cal3ePreferences.onUnload()"
+  ondialogaccept="return cal3ePreferences.onAccept()">
 
   <script type="application/x-javascript"
           src="chrome://calendar3e/content/cal3ePreferences.js"/>

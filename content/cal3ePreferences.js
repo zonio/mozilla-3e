@@ -48,7 +48,7 @@ cal3ePreferences = function () {
    *
    * @type {Object}
    */
-  this._identityStatusMap: {};
+  this._identityStatusMap = {};
 }
 
 cal3ePreferences.prototype = {
@@ -205,15 +205,15 @@ cal3ePreferences.prototype = {
 
 
 var prefs;
-Calendar3e.Preferences.onLoad = function () {
-  prefs = new Calendar3e.Preferences();
+cal3ePreferences.onLoad = function () {
+  prefs = new cal3ePreferences();
 }
-Calendar3e.Preferences.onAccept = function () {
+cal3ePreferences.onAccept = function () {
   prefs.store();
 
   return true;
 }
-Calendar3e.Preferences.onUnload = function () {
+cal3ePreferences.onUnload = function () {
   prefs.finalize();
   prefs = null;
 }
