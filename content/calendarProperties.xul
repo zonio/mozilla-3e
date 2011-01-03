@@ -18,71 +18,87 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
 
+<?xml-stylesheet type="text/css"
+                 href="chrome://calendar3e/skin/cal3eGlobal.css"?>
 <!DOCTYPE overlay [
-  <!ENTITY % globalDTD SYSTEM "chrome://calendar/locale/global.dtd">
-  <!ENTITY % calendarDTD SYSTEM "chrome://calendar/locale/calendar.dtd">
-  %globalDTD;
-  %calendarDTD;
+  <!ENTITY % cal3eCalendar SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+  %cal3eCalendar;
 ]>
 
-<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-    <dialog id="calendar-properties-dialog-2">
-        <grid id="calendar-properties-grid">
-          <columns>
-            <column/>
-            <column flex="1"/>
-          </columns>
-          <rows id="calendar-properties-rows">
-            <row id="calendar-uri-row" align="center" hidden="true">
-            </row>
-            <row id="calendar-permissions-row" align="center"
-                 insertafter="calendar-color-row">
-                 <label value="Permissions:" />
-                 <vbox>
-                 <tree id="calendar-permissions-tree" hidecolumnpicker="true" seltype="single"
-                    class="tree"  
-                    rows="5">  
-                  <treecols id="calendar-permissions-tree-cols">  
-                  <treecol id="calendar-permissions-tree-user-col" primary="true" flex="4"
-                           label="User"  
-                           persist="width" />  
-                  <treecol id="calendar-permissions-tree-permissions-col" primary="true" flex="1"
-                           label="Permissions"  
-                           persist="width" />  
-                  </treecols>  
-                  <treechildren>  
-                    <treeitem>  
-                      <treerow>  
-                        <treecell label="Alice &lt;alice@example.com>"/>  
-                        <treecell label="(read)" />  
-                      </treerow>  
-                   </treeitem>  
-                    <treeitem>  
-                      <treerow>  
-                        <treecell label="Bob &lt;bob@example.com>"/>  
-                        <treecell label="(write)" />  
-                      </treerow>  
-                   </treeitem>  
-                  </treechildren>  
-                 </tree>
-                 <hbox>
-                     <button label="Add" />
-                     <button label="Remove" />
-                 </hbox>
-                 </vbox>
-            </row>
-            <row id="calendar-type-row" align="center"
-                 insertafter="calendar-color-row">
-                 <label value="Calendar Type:" />
-                 <radiogroup>
-                    <radio label="Private" />
-                    <radio label="Public" />
-                    <radio label="Shared" />
-                 </radiogroup>
-            </row>
-          </rows>
-        </grid>
-    </dialog>
+<overlay id="calendar3e-calendar-properties-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <rows id="calendar-properties-rows">
+    <row id="calendar-uri-row" align="center" hidden="true"/>
+    <row id="calendar-email-identity-row" hidden="true"/>
+    <row id="calendar3e-permissions-row"
+         insertafter="calendar-color-row">
+      <label value="&cal3eCalendarProperties.permissions.label;"/>
+      <vbox flex="1">
+        <listbox id="permissions" flex="1">
+          <listhead>
+            <listheader label="&cal3eCalendarProperties.user.label;"/>
+            <listheader label="&cal3eCalendarProperties.permissions.label;"/>
+          </listhead>
+          <listcols>
+            <listcol flex="1"/>
+            <listcol/>
+          </listcols>
+          <listitem allowevents="true">
+            <listcell>
+              Alice White &lt;alice@domain.com>
+            </listcell>
+            <listcell>
+              <menulist label="Permission">
+                <menupopup>
+                  <menuitem value="read"
+                            label="&cal3eCalendarProperties.read.label;"/>
+                  <menuitem value="write"
+                            label="&cal3eCalendarProperties.write.label;"/>
+                </menupopup>
+              </menulist>
+            </listcell>
+          </listitem>
+          <listitem allowevents="true">
+            <listcell>
+              bob.woodward@washingtonpost.com
+            </listcell>
+            <listcell>
+              <menulist label="Permission">
+                <menupopup>
+                  <menuitem value="read"
+                            label="&cal3eCalendarProperties.read.label;"/>
+                  <menuitem value="write"
+                            label="&cal3eCalendarProperties.write.label;"
+                            selected="true"/>
+                </menupopup>
+              </menulist>
+            </listcell>
+          </listitem>
+        </listbox>
+        <hbox>
+          <button id="calendar3e-permissions-add"
+                  label="&cal3eCalendarProperties.add.label;"/>
+          <button id="calendar3e-permissions-remove"
+                  label="&cal3eCalendarProperties.remove.label;"/>
+        </hbox>
+      </vbox>
+    </row>
+    <row id="calendar3e-type-row"
+         insertafter="calendar-color-row">
+      <label control="calendar3e-type-group"
+             value="&cal3eCalendarProperties.type.label;"/>
+      <radiogroup id="calendar3e-type-group">
+        <radio value="private"
+               label="&cal3eCalendarProperties.private.label;"/>
+        <radio value="public"
+               label="&cal3eCalendarProperties.public.label;"/>
+        <radio value="shared"
+               label="&cal3eCalendarProperties.shared.label;"/>
+      </radiogroup>
+    </row>
+  </rows>
+
+  <script type="text/javascript"
+          src="chrome://calendar3e/content/calendarProperties.js"/>
 </overlay>

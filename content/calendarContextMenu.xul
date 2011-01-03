@@ -18,22 +18,21 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!DOCTYPE overlay SYSTEM "chrome://calendar/locale/calendar.dtd">
+<!DOCTYPE overlay SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
 
-<!-- TODO accesskey, limit displaying subscription option to 3e cals -->
 <overlay id="calendar-list-overlay"
-  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <popupset id="calendar-popupset">
     <popup id="list-calendars-context-menu">
       <menuitem id="list-calendars-context-subscribe"
-        label="Subscribe Calendar"
-        insertafter="list-calendars-context-delete"
-        oncommand="open3eCalendarSubscribeDialog();"/>
+                label="&cal3eCalendarContext.subscribe.label;"
+                insertafter="list-calendars-context-delete"
+                oncommand="open3eCalendarSubscribeDialog();"/>
     </popup>
   </popupset>
 
   <script type="application/javascript"
-    src="chrome://calendar3e/content/cal3eCalendarSubscribeDialog.js"/>
+          src="chrome://calendar3e/content/cal3eCalendarSubscribeDialog.js"/>
 
 </overlay>
