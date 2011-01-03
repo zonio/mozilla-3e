@@ -21,7 +21,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+Cu.import("resource://calendar3e/cal3eUtils.jsm");
 
 /**
  * Handler of 3e calendar preferences dialog.
@@ -32,7 +32,7 @@ Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
  * @class
  */
 cal3ePreferences = function () {
-  accountCollection = new cal3e.AccountCollection();
+  var accountCollection = new cal3e.AccountCollection();
   accountCollection.addObserver(this);
 
   /**
@@ -49,6 +49,9 @@ cal3ePreferences = function () {
    * @type {Object}
    */
   this._identityStatusMap = {};
+
+  // load accounts and fill the table
+  this.onAccountsChange();
 }
 
 cal3ePreferences.prototype = {
@@ -134,7 +137,7 @@ cal3ePreferences.prototype = {
           cal3e.AccountCollection.filterAll),
         account, identity, enabled;
     var identityNameCell, identityEnabledCell, treerow, treeitem;
-    for each (account in this._accounts) {
+    for each (account in accounts) {
       identity = account.defaultIdentity;
 
       identityNameCell = document.createElement('treecell');
