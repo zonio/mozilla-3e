@@ -36,9 +36,9 @@ var cal3e = {};
 
 cal3e.EEE_ENABLED_KEY = 'eee_enabled';
 
-cal3e.EnabledAccounts = function cal3eEnabledAccounts() {
+cal3e.AccountCollection = function cal3eAccountCollection() {
   var accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
-        .getService(Ci.nsIMsgAccountManager);
+    .getService(Ci.nsIMsgAccountManager);
   accountManager.addIncomingServerListener(this);
   this._accountManager = accountManager;
   this._accounts = [];
@@ -46,16 +46,31 @@ cal3e.EnabledAccounts = function cal3eEnabledAccounts() {
   this._observers = [];
 }
 
-cal3e.EnabledAccounts.prototype = {
+cal3e.AccountCollection.filterAll =
+function cal3eAccountCollection_filterAll(account) {
+  return true;
+}
 
-  addObserver: function cal3eEnabledAccounts_addObserver(observer) {
+cal3e.AccountCollection.filterEnabled =
+function cal3eAccountCollection_filterEnabled(account) {
+  return account.defaultIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
+}
+
+cal3e.AccountCollection.filterCandidate =
+function cal3eAccountCollection_filterCandidate(account) {
+  return !account.defaultIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
+}
+
+cal3e.AccountCollection.prototype = {
+
+  addObserver: function cal3eAccountCollection_addObserver(observer) {
     if (0 <= this._observers.indexOf(observer)) {
-      return this;
+      return;
     }
     this._observers.push(observer);
   },
 
-  removeObserver: function cal3eEnabledAccounts_removeObserver(observer) {
+  removeObserver: function cal3eAccountCollection_removeObserver(observer) {
     var idx = this._observers.indexOf(observer);
     if (0 > idx) {
       return;
@@ -63,7 +78,7 @@ cal3e.EnabledAccounts.prototype = {
     this._observers = this._observers.splice(idx, 1);
   },
 
-  notify: function cal3eEnabledAccounts_notify() {
+  notify: function cal3eAccountCollection_notify() {
     var observers = this._observers,
         observer, idx = observers.length;
     while (idx--) {
@@ -76,9 +91,21 @@ cal3e.EnabledAccounts.prototype = {
     }
   },
 
-  forEach: function cal3eEnabledAccounts_forEach(callback, thisObject) {
-    var accounts = this._enabledAccounts,
+  filter: function cal3eAccountCollection_filter(callback, thisObject) {
+    var filtered = [];
+    var accounts = this._accounts,
         account, idx = -1, limit = accounts.length;
+    while (++idx < limit) {
+      account = accounts[idx];
+      if (!callback.call(thisObject, account, idx, this)) {
+        filtered.push(account);
+      }
+    }
+  },
+
+  forEach: function cal3eAccountCollection_forEach(callback, thisObject) {
+    var accounts = this._accounts,
+        idx = -1, limit = accounts.length;
     while (++idx < limit) {
       callback.call(thisObject, accounts[idx], idx, this);
     }
@@ -87,7 +114,7 @@ cal3e.EnabledAccounts.prototype = {
   /**
    * Loads accounts currently registred in Thunderbird.
    */
-  _loadAccounts: function cal3eEnabledAccounts_loadAccounts() {
+  _loadAccounts: function cal3eAccountCollection_loadAccounts() {
     var accountManager = this._accountManager;
     var accounts = [
       a for each (a in fixIterator(accountManager.accounts, Ci.nsIMsgAccount))
@@ -110,28 +137,18 @@ cal3e.EnabledAccounts.prototype = {
     }
     accounts.sort(sortAccounts);
     this._accounts = accounts;
+    this.notify();
   },
 
   /**
-   * Filters accounts with enabled 3e calendaring features from all
-   * loaded accounts.
+   * Notifies this preference handler that accounts probably changed.
+   *
+   * Implemented according to nsIIncomingServerListener.
+   *
+   * @param {nsIMsgIncomingServer} server
    */
-  _filterEnabledAccounts:
-      function cal3eEnabledAccounts_filterEnabledAccounts() {
-    this._enabledAccounts = this._accounts.filter(
-      function cal3eEnabledAccounts_filterEnabledAccount(account) {
-        return account.defaultIdentity.getBoolAttribute(
-          cal3e.EEE_ENABLED_KEY);
-      });
-  },
-
-  /**
-   * Reloads accounts, whether they have enabled 3e calendaring
-   * features and rebuilds preferences table with them.
-   */
-  _accountsDidChange: function cal3eEnabledAccounts_accountsDidChange() {
+  onServerLoaded: function cal3eAccountCollection_onServerLoaded(server) {
     this._loadAccounts();
-    this._filterEnabledAccounts();
   },
 
   /**
@@ -141,19 +158,8 @@ cal3e.EnabledAccounts.prototype = {
    *
    * @param {nsIMsgIncomingServer} server
    */
-  onServerLoaded: function cal3eEnabledAccounts_onServerLoaded(server) {
-    this._accountsDidChange();
-  },
-
-  /**
-   * Notifies this preference handler that accounts probably changed.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerUnloaded: function cal3eEnabledAccounts_onServerUnloaded(server) {
-    this._accountsDidChange();
+  onServerUnloaded: function cal3eAccountCollection_onServerUnloaded(server) {
+    this._loadAccounts();
   },
 
   /**
@@ -164,8 +170,8 @@ cal3e.EnabledAccounts.prototype = {
    *
    * @param {nsIMsgIncomingServer} server
    */
-  onServerChanged: function cal3eEnabledAccounts_onServerChanged(server) {
-    this._filterEnabledAccounts();
+  onServerChanged: function cal3eAccountCollection_onServerChanged(server) {
+    this.notify();
   }
 
 }
