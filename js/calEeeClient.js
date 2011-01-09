@@ -148,6 +148,30 @@ calEeeClient.prototype = {
   },
 
   /**
+   * Retrieves users matching given query.
+   *
+   * @param {calIGenericOperationListener} listener
+   * @param {String} query definition according to specification of
+   * EEE query language and getUsers method
+   * @return {calEeeIMethodQueue} method queue with getUsrs being
+   * executed on the server
+   * @see authenticate
+   */
+  getUsers: function cal3eClient_getUsers(listener, query) {
+    var methodQueue = this._prepareMethodQueue();
+    this._enqueueAuthenticate(methodQueue);
+    this._enqueueGetUsers(methodQueue, query);
+    methodQueue.execute(this, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueGetUsers: function calEeeClient_enqueueGetUsers(
+      methodQueue, query) {
+    this._enqueueMethod(methodQueue, 'getUsers', query);
+  },
+
+  /**
    * Retrieves calendars matching given query and available to current
    * {@link identity}.
    *

@@ -55,6 +55,20 @@ interface calEeeIClient: nsISupports {
     calEeeIMethodQueue authenticate(in calIGenericOperationListener listener);
 
     /**
+     * Retrieves users matching given query.
+     *
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param query criteria for users to return specified in EEE query
+     * language
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue getUsers(
+        in calIGenericOperationListener listener,
+        in AString query
+    );
+
+    /**
      * Retrieves calendars matching given query.
      *
      * @param listener object which gets notified after methods call is
