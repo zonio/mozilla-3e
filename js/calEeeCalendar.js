@@ -191,12 +191,7 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this,
-        clientListener = {
-          QueryInterface: XPCOMUtils.generateQI([
-            Ci.calIGenericOperationListener
-          ]),
-
-          onResult: function calEee_getItems_onResult(methodQueue, result) {
+        clientListener = cal3e.createOperationListener(function calEee_getItems_onResult(methodQueue, result) {
             if (Cr.NS_OK !== methodQueue.status) {
               calendar.notifyOperationComplete(
                 listener,
@@ -229,8 +224,7 @@ calEeeCalendar.prototype = {
                                              Ci.calIOperationListener.GET,
                                              null,
                                              null);
-          }
-        };
+          });
 
     return this._client.queryObjects(clientListener, this, rangeStart,
                                      rangeEnd);

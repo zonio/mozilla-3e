@@ -21,6 +21,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 EXPORTED_SYMBOLS = [
   'cal3e'
@@ -176,4 +177,21 @@ cal3e.AccountCollection.prototype = {
     this.notify();
   }
 
+}
+
+/**
+ * Wraps given function to object acting as calIGenericOperationListener
+ *
+ * @param {Function} onResult
+ * @returns {calIGenericOperationListener}
+ */
+cal3e.createOperationListener = function
+cal3eCreateOperationListener(onResult) {
+  return {
+    QueryInterface: XPCOMUtils.generateQI([
+      Ci.calIGenericOperationListener
+    ]),
+
+    onResult: onResult
+  };
 }
