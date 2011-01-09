@@ -19,9 +19,8 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
-const Cu = Components.utils;
 
-Cu.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
 
 EXPORTED_SYMBOLS = [
   'cal3e'
@@ -39,11 +38,12 @@ cal3e.EEE_ENABLED_KEY = 'eee_enabled';
 cal3e.AccountCollection = function cal3eAccountCollection() {
   var accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
     .getService(Ci.nsIMsgAccountManager);
-  accountManager.addIncomingServerListener(this);
   this._accountManager = accountManager;
   this._accounts = [];
-  this._enabledAccounts = [];
   this._observers = [];
+
+  this._loadAccounts();
+  accountManager.addIncomingServerListener(this);
 }
 
 cal3e.AccountCollection.filterAll =
@@ -97,10 +97,12 @@ cal3e.AccountCollection.prototype = {
         account, idx = -1, limit = accounts.length;
     while (++idx < limit) {
       account = accounts[idx];
-      if (!callback.call(thisObject, account, idx, this)) {
+      if (callback.call(thisObject, account, idx, this)) {
         filtered.push(account);
       }
     }
+
+    return filtered;
   },
 
   forEach: function cal3eAccountCollection_forEach(callback, thisObject) {

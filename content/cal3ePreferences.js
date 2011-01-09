@@ -19,9 +19,8 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
-const Cu = Components.utils;
 
-Cu.import("resource://calendar3e/cal3eUtils.jsm");
+Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
 
 /**
  * Handler of 3e calendar preferences dialog.
@@ -49,6 +48,15 @@ cal3ePreferences = function () {
    * @type {Object}
    */
   this._identityStatusMap = {};
+
+  // register UI events handlers
+  var tree = document.getElementById('cal3e-accounts-tree-children');
+  var calPrefs = this;
+  var handler = function (evt) {
+    calPrefs._eeeEnabledDidChange(evt);
+  };
+  tree.addEventListener('keypress', handler, false);
+  tree.addEventListener('click', handler, false);
 
   // load accounts and fill the table
   this.onAccountsChange();
@@ -125,12 +133,6 @@ cal3ePreferences.prototype = {
     while (tree.firstChild) {
       tree.removeChild(tree.firstChild);
     }
-    var calPrefs = this;
-    var handler = function (evt) {
-      calPrefs._eeeEnabledDidChange(evt);
-    };
-    tree.addEventListener('keypress', handler, false);
-    tree.addEventListener('click', handler, false);
 
     var map = this._identityStatusMap;
     var accounts = this._accountCollection.filter(

@@ -17,9 +17,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+
 const CALENDAR3E_ACCOUNT_ID = 'calendar3e-account';
 const CALENDAR3E_ACCOUNT_ROW_ID = 'calendar3e-account-row';
-
 
 var cal3eCreation = {};
 
@@ -81,18 +82,11 @@ cal3eCreation._load3eAccounts = function load3eAccounts() {
     menuPopup.removeChild(menuPopup.firstChild);
   }
 
-  var accounts = [
-    {
-      key: 'bob.davis@mycomapny.com',
-      defaultIdentity: {
-        fullName: 'Bob Davis',
-        email: 'bob.davis@mycompany.com'
-      }
-    }
-  ];
+  var accountCollection = new cal3e.AccountCollection();
 
-  var idx = accounts.length,
-      account, identity;
+  var accounts = accountCollection.filter(
+        cal3e.AccountCollection.filterAll),
+      idx = accounts.length, account, identity;
   while (idx--) {
     account = accounts[idx];
     identity = account.defaultIdentity;
