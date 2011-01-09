@@ -25,7 +25,7 @@ var cal3eProperties = {};
  * Otherwise ensures that permissions control is hidden.
  */
 cal3eProperties.typeChange = function typeChanged() {
-  if ('eee' == cal3eProperties._calendar.type) {
+  if ('eee' != cal3eProperties._calendar.type) {
     return;
   }
 
@@ -68,12 +68,11 @@ cal3eProperties.init = function init() {
   var calendar = window.arguments[0].calendar;
   cal3eProperties._calendar = calendar;
 
-  var calendarEeeType = document.getElementById('calendar3e-type-group');
-
   if ('eee' != calendar.type) {
     cal3eProperties.hide3eControls();
   }
 
+  var calendarEeeType = document.getElementById('calendar3e-type-group');
   calendarEeeType.addEventListener(
     'command', cal3eProperties.typeChange, false);
   cal3eProperties.typeChange();
