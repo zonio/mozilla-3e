@@ -119,6 +119,10 @@ calEeeCalendar.prototype = {
    * @property {String}
    */
   get calspec calEee_calspec() {
+    return this.getCalspec();
+  },
+
+  getCalspec: function calEee_getCalspec() {
     var uriSpec = this._uri.spec,
         uriParts = uriSpec.split('/', 5),
         eeeUser = uriParts[2],
@@ -226,8 +230,9 @@ calEeeCalendar.prototype = {
                                              null);
           });
 
-    return this._client.queryObjects(clientListener, this, rangeStart,
-                                     rangeEnd);
+    return this._client.queryObjects(
+      clientListener, this.getCalspec(),
+      rangeStart.nativeTime, rangeEnd.nativeTime);
   },
 
   /**

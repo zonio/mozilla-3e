@@ -217,7 +217,7 @@ calEeeClient.prototype = {
     return methodQueue;
   },
 
-  _enqueueQueryObjects: function(methodQueue, calendar, from, to) {
+  _enqueueQueryObjects: function(methodQueue, calspec, from, to) {
     var query = "";
     if (null !== from) {
       query += "date_from('" + xpcomToEeeDate(from) + "')";
@@ -233,7 +233,7 @@ calEeeClient.prototype = {
     }
     query += "NOT deleted()";
     
-    this._enqueueMethod(methodQueue, 'queryObjects', calendar.calspec, query);
+    this._enqueueMethod(methodQueue, 'queryObjects', calspec, query);
   }
 
 };
@@ -258,7 +258,7 @@ function xpcomToEeeDate(xpcomDate) {
     return string;
   }
 
-  var jsDate = new Date(xpcomDate * 1000),
+  var jsDate = new Date(xpcomDate / 1000),
       eeeDate = "";
   eeeDate += zeropad(jsDate.getUTCFullYear(), 4) + '-' +
              zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +

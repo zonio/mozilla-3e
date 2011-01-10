@@ -88,14 +88,14 @@ interface calEeeIClient: nsISupports {
      *
      * @param listener object which gets notified after methods call is
      * finished
-     * @param calendar calendar which get queried for items (e.g. events)
+     * @param calspec calendar which gets queried for items (e.g. events)
      * @param from datetime from which objects are listed
      * @param to datatime to which objects are listed
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue queryObjects(
         in calIGenericOperationListener listener,
-        in calICalendar calendar,
+        in AString calspec,
         in PRTime from,
         in PRTime to
     );
