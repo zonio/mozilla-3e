@@ -70,4 +70,9 @@
 
   <script type="text/javascript"
           src="chrome://calendar3e/content/calendarProperties.js"/>
+
+  <stringbundleset id="calendar3e-stringbundleset">
+    <stringbundle id="calendar3e-strings"
+                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+  </stringbundleset>
 </overlay>

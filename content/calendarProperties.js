@@ -121,12 +121,16 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   nameListCell.value = user.username;
   listItem.appendChild(nameListCell);
 
+  var stringBundle = document.getElementById('calendar3e-strings');
+
   var permissionListCell = document.createElement("listcell");
   var permissionMenuList = document.createElement("menulist");
-  //TODO l10n
-  permissionMenuList.label = "Permission";
-  permissionMenuList.appendItem("Read Only", 'read');
-  permissionMenuList.appendItem("Read/Write", 'write');
+  permissionMenuList.label = stringBundle.getString(
+    'cal3eCalendarProperties.permissions.label');
+  permissionMenuList.appendItem(stringBundle.getString(
+    'cal3eCalendarProperties.read.label'), 'read');
+  permissionMenuList.appendItem(stringBundle.getString(
+    'cal3eCalendarProperties.write.label'), 'write');
   permissionListCell.appendChild(permissionMenuList);
   listItem.appendChild(permissionListCell);
 };

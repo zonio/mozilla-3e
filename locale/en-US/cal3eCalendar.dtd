@@ -18,10 +18,8 @@
    - ***** END LICENSE BLOCK ***** -->
 
 <!ENTITY cal3eCalendarProperties.type.label "Calendar Type:">
-<!ENTITY cal3eCalendarProperties.permissions.label "Permissions:">
+<!ENTITY cal3eCalendarProperties.permissions.label "Permissions">
 <!ENTITY cal3eCalendarProperties.user.label "User">
-<!ENTITY cal3eCalendarProperties.read.label "Read">
-<!ENTITY cal3eCalendarProperties.write.label "Read/Write">
 <!ENTITY cal3eCalendarProperties.add.label "Add">
 <!ENTITY cal3eCalendarProperties.remove.label "Remove">
 <!ENTITY cal3eCalendarProperties.private.label "Private">
