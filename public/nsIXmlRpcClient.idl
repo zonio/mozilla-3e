@@ -44,7 +44,6 @@
  */
 
 #include "nsISupports.idl"
-#include "nsIURL.idl"
 #include "nsIXmlRpcClientListener.idl"
 
 // forward decl.
@@ -88,7 +87,7 @@ interface nsIXmlRpcClient: nsISupports {
     /**
      * The URL of the XML-RPC server
      */
-    readonly attribute nsIURL serverURL;
+    readonly attribute string serverURL;
 
     /**
      * Call remote method methodName asynchronously with given arguments.

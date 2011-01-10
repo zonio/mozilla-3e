@@ -17,6 +17,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+
+Components.utils.import("resource:///modules/iteratorUtils.jsm");
+Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+
 var cal3eProperties = {};
 
 /**
@@ -32,6 +38,7 @@ cal3eProperties.typeChange = function typeChanged() {
   var calendarEeeType = document.getElementById('calendar3e-type-group'),
       permissionsRow = document.getElementById('calendar3e-permissions-row');
   if ('shared' == calendarEeeType.selectedItem.value) {
+    cal3eProperties._loadUsers();
     permissionsRow.removeAttribute('hidden');
   } else {
     permissionsRow.hidden = 'true';
@@ -56,6 +63,72 @@ cal3eProperties.hide3eControls = function hide3eControls() {
   if (cal3eProperties._init) {
     window.sizeToContent();
   }
+};
+
+/**
+ * Loads users from server.
+ */
+cal3eProperties._loadUsers = function loadUsers() {
+  var consoleService = Cc["@mozilla.org/consoleservice;1"]
+    .getService(Ci.nsIConsoleService);
+
+  var permissionsListBox = document.getElementById('permissions');
+  var permissionsListCols = permissionsListBox.getElementsByTagName(
+    "listcols")[0];
+  while (permissionsListCols.nextSibling) {
+    permissionsListBox.removeChild(permissionsListCols.nextSibling);
+  }
+
+  var clientListener = cal3e.createOperationListener(
+    function cal3eProperties_loadUsers_onResult(methodQueue, result) {
+      consoleService.logStringMessage("Wut?");
+      if (Cr.NS_OK !== methodQueue.status) {
+        //TODO can't get list of users
+        return;
+      }
+
+      consoleService.logStringMessage("How many? " + result.length);
+      // permissionsListBox.appendChild(cal3eProperties._listItemFromUser());
+    });
+
+  var client = Cc["@zonio.net/calendar3e/client;1"]
+    .createInstance(Ci.calEeeIClient);
+
+  var uriSpec = cal3eProperties._calendar.uri.spec,
+      uriParts = uriSpec.split('/', 4),
+      eeeUser = uriParts[2];
+  var accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
+    getService(Ci.nsIMsgAccountManager);
+  var identities = [i for each (
+    i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity)
+  )];
+  var idx = identities.length;
+  while (idx--) {
+    if (identities[idx].getBoolAttribute('eee_enabled') &&
+        (eeeUser == identities[idx].email)) {
+      client.identity = identities[idx];
+      break;
+    }
+  }
+  client.getUsers(clientListener, "");
+};
+
+cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
+  var listItem = document.createElement("listitem");
+  listitem.allowevents = 'true';
+
+  var nameListCell = document.createElement("listcell");
+  nameListCell.value = user.username;
+  listItem.appendChild(nameListCell);
+
+  var permissionListCell = document.createElement("listcell");
+  var permissionMenuList = document.createElement("menulist");
+  //TODO l10n
+  permissionMenuList.label = "Permission";
+  permissionMenuList.appendItem("Read Only", 'read');
+  permissionMenuList.appendItem("Read/Write", 'write');
+  permissionListCell.appendChild(permissionMenuList);
+  listItem.appendChild(permissionListCell);
 };
 
 /**

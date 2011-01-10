@@ -44,37 +44,6 @@
             <listcol flex="1"/>
             <listcol/>
           </listcols>
-          <listitem allowevents="true">
-            <listcell>
-              Alice White &lt;alice@domain.com>
-            </listcell>
-            <listcell>
-              <menulist label="Permission">
-                <menupopup>
-                  <menuitem value="read"
-                            label="&cal3eCalendarProperties.read.label;"/>
-                  <menuitem value="write"
-                            label="&cal3eCalendarProperties.write.label;"/>
-                </menupopup>
-              </menulist>
-            </listcell>
-          </listitem>
-          <listitem allowevents="true">
-            <listcell>
-              bob.woodward@washingtonpost.com
-            </listcell>
-            <listcell>
-              <menulist label="Permission">
-                <menupopup>
-                  <menuitem value="read"
-                            label="&cal3eCalendarProperties.read.label;"/>
-                  <menuitem value="write"
-                            label="&cal3eCalendarProperties.write.label;"
-                            selected="true"/>
-                </menupopup>
-              </menulist>
-            </listcell>
-          </listitem>
         </listbox>
         <hbox>
           <button id="calendar3e-permissions-add"
