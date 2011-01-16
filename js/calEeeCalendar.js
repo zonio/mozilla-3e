@@ -17,24 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/*
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
-
-Cu.import("resource://calendar/modules/calUtils.jsm");
-Cu.import("resource://calendar/modules/calProviderUtils.jsm");
-Cu.import("resource:///modules/iteratorUtils.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-cal.loadScripts(["calUtils.js"], this);
-
-EXPORTED_SYMBOLS = [
-  "calEeeCalendar"
-];
- */
-
 /**
  * Implementation of EEE calendar.
  *

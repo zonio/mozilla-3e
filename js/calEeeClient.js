@@ -17,19 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/*
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cr = Components.result;
-const Cu = Components.utils;
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-EXPORTED_SYMBOLS = [
-  "calEeeClient"
-];
- */
-
 /**
  * EEE client simplifying server method calls to prepared operations.
  */
