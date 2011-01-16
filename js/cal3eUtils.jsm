@@ -195,3 +195,48 @@ cal3eCreateOperationListener(onResult) {
     onResult: onResult
   };
 }
+
+/**
+ * Debugging object with methods heavily inspired by ddump function
+ * from session roaming extension.
+ */
+cal3e.Debug = {};
+cal3e.Debug.enable = true;
+cal3e.Debug.dump = function Debug_dump(text) {
+  if (this.enable) {
+    dump(text + "\n");
+  }
+}
+cal3e.Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth,
+                                                   curDepth) {
+  if (!this.enable) {
+    return;
+  }
+  if (curDepth == undefined) {
+    curDepth = 0;
+  }
+  if (maxDepth != undefined && curDepth > maxDepth) {
+    return;
+  }
+
+  var i = 0;
+  for (prop in obj) {
+    i++;
+    if (typeof(obj[prop]) == "object") {
+      if (obj[prop] && obj[prop].length != undefined) {
+        this.dump(name + "." + prop + "=[probably array, length "
+                  + obj[prop].length + "]");
+      } else {
+        this.dump(name + "." + prop + "=[" + typeof(obj[prop]) + "]");
+      }
+      this.dumpObject(obj[prop], name + "." + prop, maxDepth, curDepth+1);
+    } else if (typeof(obj[prop]) == "function") {
+      this.dump(name + "." + prop + "=[function]");
+    } else {
+      this.dump(name + "." + prop + "=" + obj[prop]);
+    }
+  }
+  if (!i) {
+    this.dump(name + " is empty");
+  }
+}

@@ -96,7 +96,7 @@ calEeeClient.prototype = {
       var_args) {
     var parameters = Array.prototype.slice.call(arguments, 2);
     methodQueue.enqueueMethod(this._interface_name + "." + methodName,
-                              { value: parameters.length }, parameters);
+                              parameters.length, parameters);
   },
 
   /**
@@ -129,7 +129,7 @@ calEeeClient.prototype = {
   authenticate: function cal3eClient_authenticate(listener) {
     var methodQueue = this._prepareMethodQueue();
     this._enqueueAuthenticate(methodQueue);
-      methodQueue.execute(this, listener);
+    methodQueue.execute(this, listener);
 
     return methodQueue;
   },

@@ -50,7 +50,7 @@ interface calEeeIMethodQueue: calIOperation {
      * Puts a method to the end of this queue with its parameters.
      *
      * @param methodName fully specified EEE method name
-     * @param length number of arguments passed to the method
+     * @param count number of arguments passed to the method
      * @param parameters method parameters themselves
      * @return receiver
      * @throws NS_ERROR_IN_PROGRESS if called after method calls have already
@@ -58,8 +58,8 @@ interface calEeeIMethodQueue: calIOperation {
      */
     calEeeIMethodQueue enqueueMethod(
         in ACString methodName,
-        in PRUint32 length,
-        [array, size_is(length)] in nsISupports parameters
+        in PRUint32 count,
+        [array, size_is(count)] in nsISupports parameters
     );
 
     /**

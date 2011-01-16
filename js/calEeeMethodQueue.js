@@ -153,21 +153,19 @@ calEeeMethodQueue.prototype = {
    *
    *
    * @param {String} methodName fully specified EEE method name
-   * @param {Number} length number of arguments passed to the method
+   * @param {Number} count number of arguments passed to the method
    * @param {Array} parameters method parameters themselves
    * @returns {calEeeMethodQueue} receiver
    * @throws {NS_ERROR_IN_PROGRESS} if called after method calls have already
    * been executed
    */
-  enqueueMethod: function calEeeMq_enqueueMethod(methodName, length,
+  enqueueMethod: function calEeeMq_enqueueMethod(methodName, count,
                                                  parameters) {
     if (this._executing) {
       throw Cr.NS_ERROR_IN_PROGRESS;
     }
 
-    var methodEnvelope = [
-      methodName, parameters, { value: length },
-    ];
+    var methodEnvelope = [ methodName, parameters, count ];
     this._methods.push(methodEnvelope);
     this._status = Cr.NS_OK;
 
@@ -208,10 +206,9 @@ calEeeMethodQueue.prototype = {
    * Executes EEE method from this queue on the server.
    */
   _executeNext: function calEeeMq_executeNext() {
-    var methodEnvelope = this._methods[this._methodIdx],
-        serverArguments = [this, this, methodEnvelope[0]];
-    serverArguments = serverArguments.concat(methodEnvelope);
-    this._server.asyncCall.apply(this._server, serverArguments);
+    var methodEnvelope = this._methods[this._methodIdx];
+    this._server.asyncCall(
+      this, this, methodEnvelope[0], methodEnvelope[1], methodEnvelope[2]);
   },
 
   /**
