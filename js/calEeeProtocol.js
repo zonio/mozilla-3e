@@ -17,6 +17,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/**
+ * Simple definition of EEE URIs just enough to enable eee URI scheme.
+ */
 function calEeeProtocol() {
 }
 
@@ -34,23 +37,69 @@ calEeeProtocol.prototype = {
     Ci.nsIProtocolHandler.URI_NORELATIVE |
     Ci.nsIProtocolHandler.URI_NOAUTH ,
 
+  /**
+   * Creates new nsIURI instance from given URI specification.
+   *
+   * @param {String} spec URI specification
+   * @param {String|null} charset (ignored) all data in EEE protocol
+   * are UTF-8 encoded
+   * @param {String|null} baseUri (ignored) no relative URIs are
+   * relevant in EEE URI scheme
+   * @returns {nsIURI}
+   */
   newURI: function(spec, charset, baseUri) {
-    var uri = Cc['@mozilla.org/network/simple-uri;1'].createInstance(Ci.nsIURI);
+    var uri = Cc['@mozilla.org/network/simple-uri;1']
+      .createInstance(Ci.nsIURI);
     //TODO some checks?
     uri.spec = spec;
 
     return uri;
   },
 
+  /**
+   * Resolves EEE URI and returns HTTP URI to XML-RPC gateway on EEE
+   * server.
+   *
+   * @param {nsIURI} eeeUri EEE URI
+   * @returns {nsIURI} HTTP URI
+   */
   eeeToHttpUri: function(eeeUri) {
+    var httpUri = Cc['@mozilla.org/network/simple-uri;1']
+      .createInstance(Ci.nsIURI);
     //TODO resolve hostname
-    var httpUri = Cc['@mozilla.org/network/simple-uri;1'].createInstance(Ci.nsIURI);
     httpUri.spec = 'http://localhost:4444/RPC2';
 
     return httpUri;
   },
 
+  /**
+   * Currently simply returns channel to XML-RPC gateway on EEE server.
+   *
+   * @param {nsIURI} uri EEE URI
+   * @returns {nsIHttpProtocolHandler}
+   */
   newChannel: function(uri) {
+    var httpProtocol = Cc["@mozilla.org/network/protocol;1?name=http"]
+      .getService(nsIHttpProtocolHandler);
+    if (this.scheme == uri.scheme) {
+      uri = this.eeeToHttpUri(uri);
+    }
+
+    return httpProtocol.newChannel(uri);
   },
+
+  /**
+   * Checks whether given port is backlisted.
+   *
+   * Resolution of this problem is delegated to {@link
+   * nsIHttpProtocolHandler}.
+   *
+   * @param {Number} port
+   * @param {String} scheme
+   * @returns {Boolean}
+   */
+  allowPort: function(port, scheme) {
+    return httpProtocol.allowPort(port, scheme);
+  }
 
 }
