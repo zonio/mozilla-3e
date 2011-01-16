@@ -108,8 +108,7 @@ calEeeClient.prototype = {
    * specialized Mozilla instances
    */
   onResult: function calEeeClient_onResult(methodQueue, context) {
-    var methodQueue = methodQueue.QueryInterface(Ci.calEeeIMethodQueue),
-        listener = context[0].QueryInterface(Ci.calIGenericOperationListener),
+    var listener = context[0].QueryInterface(Ci.calIGenericOperationListener),
         methodName = context[1];
 
     if (!methodQueue.isPending) {

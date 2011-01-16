@@ -191,7 +191,7 @@ calEeeCalendar.prototype = {
         Ci.calIOperationListener.GET, null,
         "Bad item filter passed to getItems"
       );
-      return;
+      return null;
     }
 
     var calendar = this,
