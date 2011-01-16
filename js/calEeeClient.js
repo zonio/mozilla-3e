@@ -39,11 +39,12 @@ calEeeClient.prototype = {
   set identity calEeeClient_set_identitity(identity) {
     this._identity = identity;
     var username = identity.email;
+    var domainName = username.substring(username.indexOf("@") + 1);
     //TODO DNS resolve
-    var host = username.substring(username.indexOf("@") + 1),
-        port = 4444;
+    var host, port;
     //XXX development
     host = "localhost";
+    port = 4444;
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
         getService(Ci.nsIIOService);
