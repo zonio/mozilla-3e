@@ -17,6 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
@@ -192,21 +194,11 @@ Calendar3e.Sync.prototype = {
    * Initializes identity to client map.
    */
   _initClients: function () {
-    var accountManager = this._accountManager;
-
-    var accounts = [
-      a for each (a in fixIterator(accountManager.accounts, Ci.nsIMsgAccount))
-    ];
-    //XXX incomingServer server check due to 41133
-    enabledAccounts = accounts.filter(function (a) {
-      return a.incomingServer &&
-            (a.incomingServer.type != "nntp") &&
-            (a.incomingServer.type != "none") &&
-             a.defaultIdentity.getBoolAttribute('eee_enabled');
-    });
-
     var clientClass = Cc["@zonio.net/calendar3e/client;1"];
-    var map = this._identityClientMap,
+    var accountCollection = new cal3e.AccountCollection();
+    var enabledAccounts = accountCollection.filter(
+          cal3e.AccountCollection.filterEnabled),
+        map = this._identityClientMap,
         account, client, identity;
     for each (account in enabledAccounts) {
       identity = account.defaultIdentity;
