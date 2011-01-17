@@ -5,10 +5,10 @@
 
   <Description about="urn:mozilla:install-manifest">
     <em:id>calendar3e@zonio.net</em:id>
-    <em:name>Provider for 3E Calendar</em:name>
-    <em:version>0.0.2pre2</em:version>
+    <em:name>Provider for 3e Calendar</em:name>
+    <em:version>0.0.5pre1</em:version>
     <em:description>Allows interaction with 3E Calendar system.</em:description>
-    <em:creator>Jan Kratina, Aleš Tamchyna</em:creator>
+    <em:creator>Zonio s.r.o.</em:creator>
     <em:type>2</em:type>
     <em:optionsURL>chrome://calendar3e/content/cal3ePreferences.xul</em:optionsURL>
 
@@ -19,6 +19,14 @@
 	<em:maxVersion>3.1.*</em:maxVersion>
       </Description>
     </em:targetApplication>
+
+    <em:requires>
+      <Description>
+        <em:id>{e2fda1a4-762b-4020-b5ad-a41df1933103}</em:id>
+        <em:minVersion>1.0b2</em:minVersion>
+        <em:maxVersion>1.0.*</em:maxVersion>
+      </Description>
+    </em:requires>
 
   </Description>
 </RDF>
