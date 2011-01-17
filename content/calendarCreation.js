@@ -19,9 +19,6 @@
 
 Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
 
-const CALENDAR3E_ACCOUNT_ID = 'calendar3e-account';
-const CALENDAR3E_ACCOUNT_ROW_ID = 'calendar3e-account-row';
-
 var cal3eCreation = {};
 
 /**
@@ -56,6 +53,12 @@ cal3eCreation._activate3eContext = function activate3eContext() {
   calendarUri.parentNode.setAttribute('hidden', 'true');
   cal3eCreation.computeUri();
 
+  // hide lightning identity menu list if it is there
+  //var identityRow = document.getElementById('calendar-email-identity-row');
+  //if (null !== identityRow) {
+  //  calendarUri.parentNode.setAttribute('hidden', 'true');
+  //}
+
   // fixes problem with setting calendar URI value for the first time
   // when XUL doesn't dispatch command event properly
   var commandEvent = document.createEvent('Event');
@@ -64,7 +67,7 @@ cal3eCreation._activate3eContext = function activate3eContext() {
 
   // show account menulist with 3e-enabled accounts
   cal3eCreation._load3eAccounts();
-  var calendar3eRow = document.getElementById(CALENDAR3E_ACCOUNT_ROW_ID);
+  var calendar3eRow = document.getElementById('calendar3e-account-row');
   calendar3eRow.setAttribute('hidden', 'false');
 };
 
@@ -76,23 +79,27 @@ cal3eCreation._activate3eContext = function activate3eContext() {
  * function or found elsewhere
  */
 cal3eCreation._load3eAccounts = function load3eAccounts() {
-  var calendar3eAccounts = document.getElementById(CALENDAR3E_ACCOUNT_ID),
+  var calendar3eAccounts = document.getElementById('calendar3e-account'),
       menuPopup = calendar3eAccounts.firstChild;
-  while (0 < menuPopup.childNodes.length) {
-    menuPopup.removeChild(menuPopup.firstChild);
+  var selectedIdentity = calendar3eAccounts.value;
+  while (menuPopup.lastChild) {
+    menuPopup.removeChild(menuPopup.lastChild);
   }
 
   var accountCollection = new cal3e.AccountCollection();
-
   var accounts = accountCollection.filter(
-        cal3e.AccountCollection.filterAll),
-      idx = accounts.length, account, identity;
+        cal3e.AccountCollection.filterEnabled),
+      idx = accounts.length, account, identity, item;
   while (idx--) {
     account = accounts[idx];
     identity = account.defaultIdentity;
-    calendar3eAccounts.appendItem(
+    item = calendar3eAccounts.appendItem(
       identity.fullName + " <" + identity.email + ">",
-      account.key);
+      identity.key);
+
+    if (identity.key == selectedIdentity) {
+      calendar3eAccounts.selectedItem = item;
+    }
   }
 };
 
@@ -105,8 +112,14 @@ cal3eCreation._load3eAccounts = function load3eAccounts() {
  */
 cal3eCreation._deactivate3eContext = function deactivate3eContext() {
   // hide account menulist
-  var accountRow = document.getElementById(CALENDAR3E_ACCOUNT_ROW_ID);
+  var accountRow = document.getElementById('calendar3e-account-row');
   accountRow.setAttribute('hidden', 'true');
+
+  // hide lightning identity menu list if it is there
+  //var identityRow = document.getElementById('calendar-email-identity-row');
+  //if (null !== identityRow) {
+  //  calendarUri.parentNode.setAttribute('hidden', 'false');
+  //}
 
   // show location textbox with previously entered URI
   var calendarUri = document.getElementById('calendar-uri');
@@ -126,11 +139,50 @@ cal3eCreation.computeUri = function computeUri() {
     return;
   }
 
-  var account = document.getElementById(CALENDAR3E_ACCOUNT_ID),
+  var account = document.getElementById('calendar3e-account'),
       uri = "eee://";
+
+  var accountCollection = new cal3e.AccountCollection();
+  var accounts = accountCollection.filter(
+        cal3e.AccountCollection.filterEnabled),
+      idx = accounts.length, account, identity;
+  while (idx--) {
+    identity
+  }
   uri += account.value + '/';
+
+  //XXX debug only
+  //TODO implementation should create custom unique calendar name a
+  //use name entered by user as name property value
+  var name = document.getElementById('calendar-name');
+  if (name.value) {
+    uri += name.value;
+  }
+
   var calendarUri = document.getElementById('calendar-uri');
   calendarUri.value = uri;
+};
+
+/**
+ * Synces identity set on 3e overlay controls to Lightning overlay
+ * controls.
+ *
+ * This ensures that calendar gets proper identity set.
+ */
+cal3eCreation.syncIdentity = function syncIdentity() {
+  var cal3eIdentity = document.getElementById('calendar3e-account');
+  var lightningIdentity = document.getElementById('email-identity-menulist');
+
+  cal3e.Debug.dump("Selected: " + cal3eIdentity.value);
+  var idx = lightningIdentity.itemCount, item;
+  while (idx--) {
+    item = lightningIdentity.getItemAtIndex(idx);
+    cal3e.Debug.dump("Compare to: " + item.value);
+    if (item.value == cal3eIdentity.value) {
+      lightningIdentity.selectedItem = item;
+      break;
+    }
+  }
 };
 
 /**
@@ -147,15 +199,15 @@ cal3eCreation.computeUri = function computeUri() {
  */
 cal3eCreation.overlay = function overlay() {
   var accountMenuList = document.createElement('menulist');
-  accountMenuList.id = CALENDAR3E_ACCOUNT_ID;
+  accountMenuList.id = 'calendar3e-account';
   accountMenuList.flex = 1;
   accountMenuList.appendChild(document.createElement('menupopup'));
   
   var accountLabel = document.createElement('label');
-  accountLabel.control = CALENDAR3E_ACCOUNT_ID;
+  accountLabel.control = 'calendar3e-account';
 
   var accountRow = document.createElement('row');
-  accountRow.id = CALENDAR3E_ACCOUNT_ROW_ID;
+  accountRow.id = 'calendar3e-account-row';
   accountRow.align = 'center';
   accountRow.insertBefore(accountMenuList, null);
   accountRow.insertBefore(accountLabel, accountMenuList);
@@ -169,6 +221,22 @@ cal3eCreation.overlay = function overlay() {
     'cal3eCalendarProperties.account.label');
 
   accountMenuList.addEventListener('command', cal3eCreation.computeUri, false);
+
+  var nameTextbox = document.getElementById('calendar-name');  
+  nameTextbox.addEventListener('input', cal3eCreation.computeUri, false);
+
+  // sadly, this is better solution but cannot there's no way to make
+  // event handler hadle page show in the right time (after
+  // Lightning's page initialization)
+  //var calendarWizard = document.getElementById('calendar-wizard');
+  //calendarWizard.getPageById('customizePage').addEventListener(
+  //  'pageshow', cal3eCreation.syncIdentity, false);
+  // ... so we have to override that Lightning's page initialization
+  cal3eCreation._ltn_initCustomizePage = initCustomizePage;
+  initCustomizePage = function cal3e_initCustomizePage() {
+    cal3eCreation._ltn_initCustomizePage();
+    cal3eCreation.syncIdentity();
+  };
 };
 
 /**
