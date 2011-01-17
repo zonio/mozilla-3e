@@ -145,11 +145,14 @@ cal3eCreation.computeUri = function computeUri() {
   var accountCollection = new cal3e.AccountCollection();
   var accounts = accountCollection.filter(
         cal3e.AccountCollection.filterEnabled),
-      idx = accounts.length, account, identity;
+      idx = accounts.length;
   while (idx--) {
-    identity
+    if (accounts[idx].defaultIdentity.key == account.value) {
+      uri += accounts[idx].defaultIdentity.email;
+      break;
+    }
   }
-  uri += account.value + '/';
+  uri += '/';
 
   //XXX debug only
   //TODO implementation should create custom unique calendar name a
@@ -161,6 +164,12 @@ cal3eCreation.computeUri = function computeUri() {
 
   var calendarUri = document.getElementById('calendar-uri');
   calendarUri.value = uri;
+
+  if (gCalendar) {
+    var ioService = Components.classes["@mozilla.org/network/io-service;1"]
+      .getService(Components.interfaces.nsIIOService);
+    gCalendar.uri = ioService.newURI(uri, null, null);
+  }
 };
 
 /**
@@ -173,11 +182,9 @@ cal3eCreation.syncIdentity = function syncIdentity() {
   var cal3eIdentity = document.getElementById('calendar3e-account');
   var lightningIdentity = document.getElementById('email-identity-menulist');
 
-  cal3e.Debug.dump("Selected: " + cal3eIdentity.value);
   var idx = lightningIdentity.itemCount, item;
   while (idx--) {
     item = lightningIdentity.getItemAtIndex(idx);
-    cal3e.Debug.dump("Compare to: " + item.value);
     if (item.value == cal3eIdentity.value) {
       lightningIdentity.selectedItem = item;
       break;

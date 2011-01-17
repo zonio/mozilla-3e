@@ -39,22 +39,20 @@ calEeeCalendar.prototype = {
     var uriSpec = this._uri.spec,
         uriParts = uriSpec.split('/', 4),
         eeeUser = uriParts[2];
-    var accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
-        getService(Ci.nsIMsgAccountManager);
 
-    var identities = [i for each (
-        i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity)
-    )];
-    var idx = identities.length,
-        identity = null;
+    var accountCollection = new cal3e.AccountCollection();
+    var accounts = accountCollection.filter(
+      cal3e.AccountCollection.filterEnabled);
+    var idx = accounts.length, identity = null;
     while (idx--) {
-      if (identities[idx].getBoolAttribute('eee_enabled') &&
-          (eeeUser == identities[idx].email)) {
-        identity = identities[idx];
+      if (eeeUser == accounts[idx].defaultIdentity.email) {
+        identity = accounts[idx].defaultIdentity;
         break;
       }
     }
-    this._client.identity = identity;
+    if (null !== identity) {
+      this._client.identity = identity;
+    }
   },
 
   set uri calEee_setUri(uri) {
