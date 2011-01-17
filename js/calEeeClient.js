@@ -81,7 +81,29 @@ calEeeClient.prototype = {
    * @param {nsIVariant[]} [parameters] method parameters
    */
   _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue, methodName) {
-    var parameters = Array.prototype.slice.call(arguments, 2);
+    var parameters = Array.prototype.slice.call(arguments, 2).map(
+      function (parameter) {
+        var instance = null;
+        switch (typeof parameter) {
+        case 'string':
+          instance = Cc["@mozilla.org/supports-cstring;1"]
+            .createInstance(Ci.nsISupportsCString);
+          break;
+        case 'number':
+          instance = Cc["@mozilla.org/supports-double;1"]
+            .createInstance(Ci.nsISupportsDouble);
+          break;
+        case 'boolean':
+          instance = Cc["@mozilla.org/supports-PRBool;1"]
+            .createInstance(Ci.nsISupportsPRBool);
+          break;
+        }
+        if (null !== instance) {
+          instance.data = parameter;
+          return instance;
+        }
+        return parameter;
+      });
     methodQueue.enqueueMethod(this._interface_name + "." + methodName,
                               parameters.length, parameters);
   },
@@ -130,8 +152,7 @@ calEeeClient.prototype = {
     var password = "qwe";
 
     this._enqueueMethod(methodQueue, 'authenticate',
-                        new String(this._identity.email),
-                        new String(password));
+                        this._identity.email, password);
   },
 
   /**
@@ -155,7 +176,7 @@ calEeeClient.prototype = {
 
   _enqueueGetUsers: function calEeeClient_enqueueGetUsers(
       methodQueue, query) {
-    this._enqueueMethod(methodQueue, 'getUsers', new String(query));
+    this._enqueueMethod(methodQueue, 'getUsers', query);
   },
 
   /**
@@ -180,7 +201,7 @@ calEeeClient.prototype = {
 
   _enqueueGetCalendars: function calEeeClient_enqueueGetCalendars(
       methodQueue, query) {
-    this._enqueueMethod(methodQueue, 'getCalendars', new String(query));
+    this._enqueueMethod(methodQueue, 'getCalendars', query);
   },
 
   /**
@@ -220,9 +241,7 @@ calEeeClient.prototype = {
     }
     query += "NOT deleted()";
     
-    this._enqueueMethod(methodQueue, 'queryObjects',
-                        new String(calspec),
-                        new String(query));
+    this._enqueueMethod(methodQueue, 'queryObjects', calspec, query);
   }
 
 };

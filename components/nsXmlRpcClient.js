@@ -379,7 +379,7 @@ nsXmlRpcClient.prototype = {
                 obj=obj.QueryInterface(Components.interfaces['nsISupports' +
                     sType]);
                 writer.startElement('i4');
-                writer.write(obj.toString());
+                writer.write(obj.data);
                 writer.endElement('i4');
                 break;
 
@@ -395,7 +395,7 @@ nsXmlRpcClient.prototype = {
                 obj=obj.QueryInterface(Components.interfaces['nsISupports' +
                     sType]);
                 writer.startElement('string');
-                writer.write(obj.toString());
+                writer.write(obj.data);
                 writer.endElement('string');
                 break;
 
@@ -404,7 +404,7 @@ nsXmlRpcClient.prototype = {
                 obj=obj.QueryInterface(Components.interfaces['nsISupports' +
                     sType]);
                 writer.startElement('double');
-                writer.write(obj.toString());
+                writer.write(obj.data);
                 writer.endElement('double');
                 break;
 
@@ -643,7 +643,7 @@ nsXmlRpcClient.prototype = {
     },
 
     parseString: function(node) {
-        value = '';
+        var value = '';
         while (node) {
             if (node.nodeType != DOMNode.TEXT_NODE)
                 throw Components.Exception('Expecting a text node', null, null,
