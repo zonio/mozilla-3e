@@ -33,7 +33,7 @@
  * @todo use more robust (nsIVariant) and modern XML-RPC client
  */
 function calEeeMethodQueue() {
-  this._methods = [];
+  this._methodCalls = [];
   this._pending = true;
   this._status = Cr.NS_OK;
   this._executing = false;
@@ -56,7 +56,7 @@ calEeeMethodQueue.prototype = {
    */
   get id calEeeMq_get_id() {
     var uri = this._uri.spec,
-        lastMethod = this._methods[this._methods.length - 1];
+        lastMethod = this._methodCalls[this._methodCalls.length - 1];
 
     return uri + ':' + lastMethod;
   },
@@ -152,8 +152,7 @@ calEeeMethodQueue.prototype = {
       throw Cr.NS_ERROR_IN_PROGRESS;
     }
 
-    var methodEnvelope = [ methodName, parameters, count ];
-    this._methods.push(methodEnvelope);
+    this._methodCalls.push([ methodName, parameters, count ]);
     this._status = Cr.NS_OK;
 
     return this;
@@ -193,9 +192,9 @@ calEeeMethodQueue.prototype = {
    * Executes EEE method from this queue on the server.
    */
   _executeNext: function calEeeMq_executeNext() {
-    var methodEnvelope = this._methods[this._methodIdx];
-    this._server.asyncCall(
-      this, this, methodEnvelope[0], methodEnvelope[1], methodEnvelope[2]);
+    var callArguments = [ this, this ];
+    callArguments = callArguments.concat(this._methodCalls[this._methodIdx]);
+    this._server.asyncCall.apply(this._server, callArguments);
   },
 
   /**
@@ -217,7 +216,7 @@ calEeeMethodQueue.prototype = {
 
     this._methodIdx += 1;
     this._lastResponse = result;
-    if (this._methods.length > this._methodIdx) {
+    if (this._methodCalls.length > this._methodIdx) {
       this._listener.onResult(this, [methodName, this._context]);
       this._executeNext();
     } else {

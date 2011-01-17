@@ -78,10 +78,9 @@ calEeeClient.prototype = {
    *
    * @param {calEeeIMethodQueue} methodQueue
    * @param {String} methodName
-   * @param {nsIVariant[]} [var_args] method parameters
+   * @param {nsIVariant[]} [parameters] method parameters
    */
-  _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue, methodName,
-      var_args) {
+  _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue, methodName) {
     var parameters = Array.prototype.slice.call(arguments, 2);
     methodQueue.enqueueMethod(this._interface_name + "." + methodName,
                               parameters.length, parameters);
@@ -130,8 +129,9 @@ calEeeClient.prototype = {
     //TODO password manager
     var password = "qwe";
 
-    this._enqueueMethod(methodQueue, 'authenticate', this._identity.email,
-                        password);
+    this._enqueueMethod(methodQueue, 'authenticate',
+                        new String(this._identity.email),
+                        new String(password));
   },
 
   /**
@@ -155,7 +155,7 @@ calEeeClient.prototype = {
 
   _enqueueGetUsers: function calEeeClient_enqueueGetUsers(
       methodQueue, query) {
-    this._enqueueMethod(methodQueue, 'getUsers', query);
+    this._enqueueMethod(methodQueue, 'getUsers', new String(query));
   },
 
   /**
@@ -180,7 +180,7 @@ calEeeClient.prototype = {
 
   _enqueueGetCalendars: function calEeeClient_enqueueGetCalendars(
       methodQueue, query) {
-    this._enqueueMethod(methodQueue, 'getCalendars', query);
+    this._enqueueMethod(methodQueue, 'getCalendars', new String(query));
   },
 
   /**
@@ -220,7 +220,9 @@ calEeeClient.prototype = {
     }
     query += "NOT deleted()";
     
-    this._enqueueMethod(methodQueue, 'queryObjects', calspec, query);
+    this._enqueueMethod(methodQueue, 'queryObjects',
+                        new String(calspec),
+                        new String(query));
   }
 
 };
