@@ -8,7 +8,7 @@
     <em:name>Provider for 3e Calendar</em:name>
     <em:version>0.0.5pre1</em:version>
     <em:description>Allows interaction with 3e calendaring system and
-    other EEE server.</em:description>
+    other EEE servers.</em:description>
     <em:creator>Zonio s.r.o.</em:creator>
     <em:type>2</em:type>
     <em:optionsURL>chrome://calendar3e/content/cal3ePreferences.xul</em:optionsURL>
