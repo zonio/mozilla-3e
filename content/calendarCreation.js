@@ -54,10 +54,10 @@ cal3eCreation._activate3eContext = function activate3eContext() {
   cal3eCreation.computeUri();
 
   // hide lightning identity menu list if it is there
-  //var identityRow = document.getElementById('calendar-email-identity-row');
-  //if (null !== identityRow) {
-  //  calendarUri.parentNode.setAttribute('hidden', 'true');
-  //}
+  var identityRow = document.getElementById('calendar-email-identity-row');
+  if (null !== identityRow) {
+    identityRow.setAttribute('hidden', 'true');
+  }
 
   // fixes problem with setting calendar URI value for the first time
   // when XUL doesn't dispatch command event properly
@@ -116,10 +116,10 @@ cal3eCreation._deactivate3eContext = function deactivate3eContext() {
   accountRow.setAttribute('hidden', 'true');
 
   // hide lightning identity menu list if it is there
-  //var identityRow = document.getElementById('calendar-email-identity-row');
-  //if (null !== identityRow) {
-  //  calendarUri.parentNode.setAttribute('hidden', 'false');
-  //}
+  var identityRow = document.getElementById('calendar-email-identity-row');
+  if (null !== identityRow) {
+    identityRow.setAttribute('hidden', 'false');
+  }
 
   // show location textbox with previously entered URI
   var calendarUri = document.getElementById('calendar-uri');
