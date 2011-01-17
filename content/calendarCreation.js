@@ -123,7 +123,11 @@ cal3eCreation._deactivate3eContext = function deactivate3eContext() {
 
   // show location textbox with previously entered URI
   var calendarUri = document.getElementById('calendar-uri');
-  calendarUri.value = cal3eCreation._originalUri || calendarUri.value || "";
+  if ('undefined' !== typeof cal3eCreation._originalUri) {
+    calendarUri.value = cal3eCreation._originalUri;
+  } else {
+    calendarUri.value = calendarUri.value || "";
+  }
   calendarUri.parentNode.setAttribute('hidden', 'false');
 };
 
