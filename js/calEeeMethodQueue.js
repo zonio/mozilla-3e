@@ -192,7 +192,11 @@ calEeeMethodQueue.prototype = {
    * Executes EEE method from this queue on the server.
    */
   _executeNext: function calEeeMq_executeNext() {
-    var callArguments = [ this, this ];
+    var context = Cc["@mozilla.org/supports-cstring;1"]
+      .createInstance(Ci.nsISupportsCString);
+    context.data = this._methodCalls[this._methodIdx][0];
+
+    var callArguments = [ this, context ];
     callArguments = callArguments.concat(this._methodCalls[this._methodIdx]);
     this._server.asyncCall.apply(this._server, callArguments);
   },
