@@ -176,39 +176,53 @@ calEeeCalendar.prototype = {
 
     var calendar = this,
         clientListener = cal3e.createOperationListener(function calEee_getItems_onResult(methodQueue, result) {
-            if (Cr.NS_OK !== methodQueue.status) {
-              calendar.notifyOperationComplete(
-                listener,
-                methodQueue.status,
-                Ci.calIOperationListener.GET,
-                null,
-                "Objects retrieval from EEE server failed");
-              return;
-            }
+          if (Cr.NS_OK !== methodQueue.status) {
+            calendar.notifyOperationComplete(
+              listener,
+              methodQueue.status,
+              Ci.calIOperationListener.GET,
+              null,
+              "Objects retrieval from EEE server failed");
+            return;
+          }
 
-            console.logStringMessage("Items: " + rawItems);
-            var parser = calendar._getIcsParser();
-            try {
-              parser.parseString(rawItems);          
-            } catch (e) {
-              console.logStringMessage("Error while parsing: " + e);
-            }
+          var rawItems;
+          try {
+            rawItems = result.QueryInterface(Ci.nsISupportsCString);
+          } catch (e) {
+            calendar.notifyOperationComplete(
+              listener,
+              methodQueue.status,
+              Ci.calIOperationListener.GET,
+              null,
+              "Objects retrieval from EEE server failed");
+            return;
+          }
 
-            var items = parser.getItems({});
-            console.logStringMessage("Number of items: " + items.length);
-            listener.onGetResult(calendar,
-                                 Cr.NS_OK,
-                                 Ci.calIEvent,
-                                 null,
-                                 items.length,
-                                 items);
+          console.logStringMessage("Items: " + rawItems);
+          var parser = calendar._getIcsParser();
+          try {
+            parser.parseString(rawItems);          
+          } catch (e) {
+            console.logStringMessage("Error while parsing: " + e);
+          }
 
-            calendar.notifyOperationComplete(listener,
-                                             Cr.NS_OK,
-                                             Ci.calIOperationListener.GET,
-                                             null,
-                                             null);
-          });
+          var itemsCount = {};
+          var items = parser.getItems(itemsCount);
+          console.logStringMessage("Number of items: " + itemsCount.value);
+          listener.onGetResult(calendar,
+                               Cr.NS_OK,
+                               Ci.calIEvent,
+                               null,
+                               itemsCount.value,
+                               items);
+
+          calendar.notifyOperationComplete(listener,
+                                           Cr.NS_OK,
+                                           Ci.calIOperationListener.GET,
+                                           null,
+                                           null);
+        });
 
     return this._client.queryObjects(
       clientListener, this.getCalspec(),
