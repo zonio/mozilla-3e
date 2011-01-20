@@ -19,6 +19,7 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+const Cr = Components.results;
 
 Components.utils.import("resource:///modules/iteratorUtils.jsm");
 Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
@@ -81,14 +82,27 @@ cal3eProperties._loadUsers = function loadUsers() {
 
   var clientListener = cal3e.createOperationListener(
     function cal3eProperties_loadUsers_onResult(methodQueue, result) {
-      consoleService.logStringMessage("Wut?");
+      try {
       if (Cr.NS_OK !== methodQueue.status) {
         //TODO can't get list of users
         return;
       }
 
-      consoleService.logStringMessage("How many? " + result.length);
-      // permissionsListBox.appendChild(cal3eProperties._listItemFromUser());
+      var users;
+      try {
+        users = result.QueryInterface(Ci.nsISupportsArray);
+      } catch (e) {
+        //TODO can't get list of users
+        return;
+      }
+        
+      for (var idx = 0; idx < users.Count(); idx++) {
+        permissionsListBox.appendChild(
+          cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
+      }
+      } catch (e) {
+        consoleService.logStringMessage("Sum error: " + e);
+      }
     });
 
   var client = Cc["@zonio.net/calendar3e/client;1"]
@@ -114,25 +128,67 @@ cal3eProperties._loadUsers = function loadUsers() {
 };
 
 cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
+  user = user.QueryInterface(Ci.nsIDictionary);
+
   var listItem = document.createElement("listitem");
-  listitem.allowevents = 'true';
+  listItem.allowevents = 'true';
 
   var nameListCell = document.createElement("listcell");
-  nameListCell.value = user.username;
+  var realname = null;
+  if (user.hasKey('attrs')) {
+    var userAttrs = user.getValue('attrs').QueryInterface(Ci.nsISupportsArray);
+    for (var idx = 0, attr; idx < userAttrs.Count(); idx++) {
+      attr = userAttrs.QueryElementAt(idx, Ci.nsIDictionary);
+      if ('realname' == attr.getValue('name').QueryInterface(Ci.nsISupportsCString)) {
+        realname = attr.getValue('value').QueryInterface(Ci.nsISupportsCString);
+        break;
+      }
+    }
+  }
+  var userLabel = "";
+  if (realname) {
+    userLabel += realname + " <";
+  }
+  userLabel += user.getValue('username').QueryInterface(Ci.nsISupportsCString);
+  if (realname) {
+    userLabel += ">";
+  }
+  nameListCell.value = userLabel;
   listItem.appendChild(nameListCell);
 
   var stringBundle = document.getElementById('calendar3e-strings');
 
   var permissionListCell = document.createElement("listcell");
   var permissionMenuList = document.createElement("menulist");
-  permissionMenuList.label = stringBundle.getString(
-    'cal3eCalendarProperties.permissions.label');
-  permissionMenuList.appendItem(stringBundle.getString(
-    'cal3eCalendarProperties.read.label'), 'read');
-  permissionMenuList.appendItem(stringBundle.getString(
-    'cal3eCalendarProperties.write.label'), 'write');
+  var permissionMenuPopup = document.createElement("menupopup");
+
+  permissionMenuList.label = stringBundle ?
+    stringBundle.getString('cal3eCalendarProperties.permissions.label') :
+    "Permissions" ;
+
+  var readPermissionMenuItem = document.createElement("menuitem");
+  readPermissionMenuItem.setAttribute(
+    'label',
+    stringBundle ? stringBundle.getString('cal3eCalendarProperties.read.label') : "Read Only");
+  readPermissionMenuItem.setAttribute(
+    'value',
+    'read');
+  permissionMenuPopup.appendChild(readPermissionMenuItem);
+
+  var writePermissionMenuItem = document.createElement("menuitem");
+  writePermissionMenuItem.setAttribute(
+    'label',
+    stringBundle ? stringBundle.getString('cal3eCalendarProperties.write.label') : "Read/Write");
+  writePermissionMenuItem.setAttribute(
+    'value',
+    'write');
+  permissionMenuPopup.appendChild(writePermissionMenuItem);
+
+  permissionMenuList.appendChild(permissionMenuPopup);
   permissionListCell.appendChild(permissionMenuList);
   listItem.appendChild(permissionListCell);
+
+  return listItem;
 };
 
 /**
