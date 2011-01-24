@@ -70,9 +70,6 @@ cal3eProperties.hide3eControls = function hide3eControls() {
  * Loads users from server.
  */
 cal3eProperties._loadUsers = function loadUsers() {
-  var consoleService = Cc["@mozilla.org/consoleservice;1"]
-    .getService(Ci.nsIConsoleService);
-
   var permissionsListBox = document.getElementById('permissions');
   var permissionsListCols = permissionsListBox.getElementsByTagName(
     "listcols")[0];
@@ -82,7 +79,6 @@ cal3eProperties._loadUsers = function loadUsers() {
 
   var clientListener = cal3e.createOperationListener(
     function cal3eProperties_loadUsers_onResult(methodQueue, result) {
-      try {
       if (Cr.NS_OK !== methodQueue.status) {
         //TODO can't get list of users
         return;
@@ -99,9 +95,6 @@ cal3eProperties._loadUsers = function loadUsers() {
       for (var idx = 0; idx < users.Count(); idx++) {
         permissionsListBox.appendChild(
           cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
-      }
-      } catch (e) {
-        consoleService.logStringMessage("Sum error: " + e);
       }
     });
 
@@ -153,7 +146,7 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   if (realname) {
     userLabel += ">";
   }
-  nameListCell.value = userLabel;
+  nameListCell.appendChild(document.createTextNode(userLabel));
   listItem.appendChild(nameListCell);
 
   var stringBundle = document.getElementById('calendar3e-strings');
