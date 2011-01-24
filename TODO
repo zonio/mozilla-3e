@@ -1,6 +1,3 @@
-* Finish transition of fundamental classes (calendar, client, method
-  stack and 3rd party classes) and code which uses them to Mozilla
-  component system
 * Handling 3e account configuration changes (load user's calendars)
 * Synchronize user's calendars from time to time
 * Calendar events CRUD operations
