@@ -24,17 +24,42 @@ ifndef TB_SRC
   TB_SRC = ./comm-1.9.2
 endif
 
-XPIDL = ${XULRUNNER_SDK}/bin/xpidl -m typelib -w -v -I ${XULRUNNER_SDK}/idl
+XPIDL = ${XULRUNNER_SDK}/bin/xpidl -m typelib -w -v -I	\
+${XULRUNNER_SDK}/idl
 
-NS_XPTS = components/nsIDictionary.xpt components/nsIXmlRpcClient.xpt \
+NS_XPTS = components/nsIDictionary.xpt components/nsIXmlRpcClient.xpt	\
 	  components/nsIXmlRpcClientListener.xpt
-EEE_XPTS = components/calEeeIClient.xpt components/calEeeIMethodQueue.xpt
+EEE_XPTS = components/calEeeIClient.xpt		\
+components/calEeeIMethodQueue.xpt
 XPTS = ${NS_XPTS} ${EEE_XPTS}
 
+NS_COMPONENTS = components/nsDictionary.js	\
+components/nsXmlRpcClient.js
+EEE_COMPONENTS = components/calEeeCalendarModule.js js/cal3eUtils.jsm	\
+js/calEeeCalendar.js js/calEeeClient.js js/calEeeMethodQueue.js		\
+js/calEeeProtocol.js
+COMPONENTS = ${NS_COMPONENTS} ${EEE_IMPLEMENTATION}
 
-calendar3e.xpi: ${XPTS}
-	zip -x "*~" -r calendar3e.xpi chrome.manifest install.rdf components \
-				      js content locale skin
+VC = content/cal3eCalendarSubscribeDialog.js				\
+content/cal3eCalendarSubscribeDialog.xul content/cal3ePreferences.js	\
+content/cal3ePreferences.xul content/cal3eSync.js			\
+content/cal3eSync.xul content/calendarContextMenu.xul			\
+content/calendarCreation.js content/calendarCreation.xul		\
+content/calendarProperties.js content/calendarProperties.xul
+
+L10N = locale/en-US/cal3eCalendar.dtd		\
+locale/en-US/cal3eCalendar.properties		\
+locale/en-US/cal3ePreferences.dtd
+
+SKIN = skin/cal3eGlobal.css
+
+DEFINITION = chrome.manifest install.rdf
+
+
+calendar3e.xpi: ${XPTS} ${COMPONENTS} ${VC} ${L10N} ${SKIN} ${DEFINITION}
+	zip -x '*~' '#*#' -r calendar3e.xpi chrome.manifest		\
+					    install.rdf components js	\
+					    content locale skin
 
 .PHONY : xpts clean
 
@@ -45,22 +70,18 @@ clean:
 
 
 components/calEeeIClient.xpt: public/calEeeIClient.idl
-	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public \
-		 -o components/calEeeIClient \
-		 public/calEeeIClient.idl
+	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o	\
+	components/calEeeIClient public/calEeeIClient.idl
 components/calEeeIMethodQueue.xpt: public/calEeeIMethodQueue.idl
-	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public \
-		 -o components/calEeeIMethodQueue \
-		 public/calEeeIMethodQueue.idl
+	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o		\
+	components/calEeeIMethodQueue public/calEeeIMethodQueue.idl
 
 components/nsIDictionary.xpt: public/nsIDictionary.idl
-	${XPIDL} -o components/nsIDictionary \
-		 public/nsIDictionary.idl
+	${XPIDL} -o components/nsIDictionary public/nsIDictionary.idl
 components/nsIXmlRpcClientListener.xpt: public/nsIXmlRpcClientListener.idl
-	${XPIDL} -o components/nsIXmlRpcClientListener \
+	${XPIDL} -o components/nsIXmlRpcClientListener	\
 		 public/nsIXmlRpcClientListener.idl
 components/nsIXmlRpcClient.xpt: public/nsIXmlRpcClientListener.idl \
 				public/nsIXmlRpcClient.idl
-	${XPIDL} -I public \
-		 -o components/nsIXmlRpcClient \
-		 public/nsIXmlRpcClient.idl
+	${XPIDL} -I public -o components/nsIXmlRpcClient	\
+	public/nsIXmlRpcClient.idl
