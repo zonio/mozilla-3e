@@ -72,7 +72,7 @@ var calEeeClassInfo = {
   calEeeCalendar: {
     getInterfaces: function cI_cal3eCalendar_getInterfaces(count) {
       var interfaces = [
-        Ci.calICalendar,
+        Ci.calEeeICalendar,
         Ci.nsIClassInfo
       ];
       count.value = interfaces.length;

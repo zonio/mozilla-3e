@@ -29,7 +29,7 @@ ${XULRUNNER_SDK}/idl
 
 NS_XPTS = components/nsIDictionary.xpt components/nsIXmlRpcClient.xpt	\
 components/nsIXmlRpcClientListener.xpt
-EEE_XPTS = components/calEeeIClient.xpt					\
+EEE_XPTS = components/calEeeICalendar.xpt components/calEeeIClient.xpt	\
 components/calEeeIMethodQueue.xpt components/calEeeISynchronizer.xpt
 XPTS = ${NS_XPTS} ${EEE_XPTS}
 
@@ -69,6 +69,9 @@ clean:
 	-rm calendar3e.xpi components/*.xpt
 
 
+components/calEeeICalendar.xpt: public/calEeeICalendar.idl
+	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o	\
+	components/calEeeICalendar public/calEeeICalendar.idl
 components/calEeeIClient.xpt: public/calEeeIClient.idl
 	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o	\
 	components/calEeeIClient public/calEeeIClient.idl

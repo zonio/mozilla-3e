@@ -55,6 +55,10 @@ calEeeCalendar.prototype = {
     }
   },
 
+  get client calEee_getClient() {
+    return this._client;
+  },
+
   set uri calEee_setUri(uri) {
     this._uri = uri;
     this._setupClient();
