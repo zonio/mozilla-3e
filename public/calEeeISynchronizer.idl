@@ -1,0 +1,43 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Mozilla 3e Calendar Extension
+ * Copyright © 2010  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+ 
+#include "nsISupports.idl"
+
+interface calEeeIClient;
+
+/**
+ * Synchronizer of calendars present in Mozilla client application
+ * (i.e. Lightning) with those on EEE server.
+ */
+[scriptable, uuid(17646dc9-178b-4a49-8201-d07167165331)]
+interface calEeeISynchronizer: nsISupports {
+
+    /**
+     * Synchronizes calendars of client's identity with those on EEE
+     * server.
+     *
+     * Calendars removed on server are deleted, new calendars on
+     * server are added and properties of already loaded are taken
+     * from values on server as well.
+     *
+     * @param client EEE client used to retrieve calendars
+     */
+    calEeeISynchronizer synchronize(in calEeeIClient client);
+
+};

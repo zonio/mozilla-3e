@@ -112,6 +112,28 @@ var calEeeClassInfo = {
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeMethodQueue",
     flags: 0
+  },
+
+  calEeeSynchronizer: {
+    getInterfaces: function cI_cal3eSynchronizer_getInterfaces(count) {
+      var interfaces = [
+        Ci.calEeeISynchronizer,
+        Ci.nsIClassInfo
+      ];
+      count.value = interfaces.length;
+      return interfaces;
+    },
+
+    getHelperForLanguage: function cI_cal3eSynchronizer_getHelperForLanguage(language) {
+      return null;
+    },
+
+    classDescription: "EEE calendar synchronizer",
+    contractID: "@zonio.net/calendar3e/synchronizer;1",
+    classID: Components.ID("{9045ff85-9e1c-47e4-9872-44c5ab424b73}"),
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    constructor: "calEeeSynchronizer",
+    flags: 0
   }
 };
 
@@ -138,7 +160,8 @@ var calEeeCalendarModule = {
     var jsDir = __LOCATION__.parent.parent.clone();
     jsDir.append("js");
     cal.loadScripts(["calEeeClient.js", "calEeeProtocol.js",
-		     "calEeeCalendar.js", "calEeeMethodQueue.js"],
+		     "calEeeCalendar.js", "calEeeMethodQueue.js",
+                     "calEeeSynchronizer.js"],
 		    this.__parent__, jsDir);
 
     this._utilsLoaded = true;

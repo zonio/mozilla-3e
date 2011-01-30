@@ -17,10 +17,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
-
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+
+Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
 
 /**
  * Top-level 3e calendar provider namespace.

@@ -28,16 +28,16 @@ XPIDL = ${XULRUNNER_SDK}/bin/xpidl -m typelib -w -v -I	\
 ${XULRUNNER_SDK}/idl
 
 NS_XPTS = components/nsIDictionary.xpt components/nsIXmlRpcClient.xpt	\
-	  components/nsIXmlRpcClientListener.xpt
-EEE_XPTS = components/calEeeIClient.xpt		\
-components/calEeeIMethodQueue.xpt
+components/nsIXmlRpcClientListener.xpt
+EEE_XPTS = components/calEeeIClient.xpt					\
+components/calEeeIMethodQueue.xpt components/calEeeISynchronizer.xpt
 XPTS = ${NS_XPTS} ${EEE_XPTS}
 
 NS_COMPONENTS = components/nsDictionary.js	\
 components/nsXmlRpcClient.js
 EEE_COMPONENTS = components/calEeeCalendarModule.js js/cal3eUtils.jsm	\
 js/calEeeCalendar.js js/calEeeClient.js js/calEeeMethodQueue.js		\
-js/calEeeProtocol.js
+js/calEeeProtocol.js js/calEeeSynchronizer.js
 COMPONENTS = ${NS_COMPONENTS} ${EEE_IMPLEMENTATION}
 
 VC = content/cal3eCalendarSubscribeDialog.js				\
@@ -75,6 +75,9 @@ components/calEeeIClient.xpt: public/calEeeIClient.idl
 components/calEeeIMethodQueue.xpt: public/calEeeIMethodQueue.idl
 	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o		\
 	components/calEeeIMethodQueue public/calEeeIMethodQueue.idl
+components/calEeeISynchronizer.xpt: public/calEeeISynchronizer.idl
+	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o		\
+	components/calEeeISynchronizer public/calEeeISynchronizer.idl
 
 components/nsIDictionary.xpt: public/nsIDictionary.idl
 	${XPIDL} -o components/nsIDictionary public/nsIDictionary.idl
