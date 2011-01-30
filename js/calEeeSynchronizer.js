@@ -17,6 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+
 /**
  * Synchronizer of calendars present in Mozilla client application
  * (i.e. Lightning) with those on EEE server.
@@ -29,7 +31,6 @@ calEeeSynchronizer.prototype = {
     Ci.calEeeISynchronizer
   ]),
 
-
   /**
    * Synchronizes calendars of client's identity with those on EEE
    * server.
@@ -38,7 +39,110 @@ calEeeSynchronizer.prototype = {
    * @returns {calEeeISynchronizer} receiver
    */
   synchronize: function calEeeSynchronizer_synchronize(client) {
+    var synchronizer = this;
+    client.getCalendars("owned()", {
+      onSuccess: function (calendars, methodStack) {
+        var knownCalendars = synchornizer._loadEeeCalendarsByUri(
+          client.identity);
+        calendars = calendars.QueryInterface(Ci.nsISupportsArray);
+        var idx = calendars.Count(), data, uri;
+        while (idx--) {
+          data = calendars.QueryElementAt(idx, Ci.nsIDictionary);
+          uri = synchronizer._buildCalendarUri(data);
+          if ('undefined' === typeof knownCalendars[uri]) {
+            synchronizer._addCalendar(data);
+          } else {
+            synchronizer._updateCalendar(knownCalendars[uri], data);
+          }
+          delete knownCalendars[uri];
+        }
+
+        for (uri in knownCalendars) {
+          if (!knownCalendars.hasOwnProperty(uri)) {
+            continue;
+          }
+
+          this._deleteCalendar(knownCalendars[uri]);
+        }
+      },
+      onError: function (methodStack) {
+        throw new Error("Not yet implemented");
+      }
+    });
+  },
+
+  /**
+   * Builds calendar URI specifiacation from data retrieved from
+   * 'getCalendar' method call.
+   *
+   * @param {nsIDictionary} data
+   * @returns {String}
+   */
+  _buildCalendarUri: function calEeeSynchronizer_buildCalendarUri(data) {
+    return 'eee://' +
+      data.getValue('owner').
+      QueryInterface(Ci.nsISupportsCString) +
+      '/' +
+      data.getValue('name').
+      QueryInterface(Ci.nsISupportsCString);
+  },
+
+  /**
+   * Adds given calendar build from given data.
+   *
+   * @param {nsIDictionary} data
+   */
+  _addCalendar:
+  function calEeeSynchronizer_synchronizeCalendar(data) {
+    throw new Error("Not yet implemented");    
+  },
+
+  /**
+   * Updates given calendar with given data.
+   *
+   * @param {calEeeICalendar} calendar
+   * @param {nsIDictionary} data
+   */
+  _updateCalendar:
+  function calEeeSynchronizer_synchronizeCalendar(calendar, data) {
     throw new Error("Not yet implemented");
+  },
+
+  /**
+   * Removes given calendar.
+   *
+   * @param {calEeeICalendar} calendar
+   */
+  _deleteCalendar:
+  function calEeeSynchronizer_synchronizeCalendar(calendar) {
+    throw new Error("Not yet implemented");
+  },
+
+  /**
+   * Loads calendars of given identity and maps them to their URI.
+   *
+   * @param {nsIMsgIdentity} identity
+   * @returns {Object}
+   */
+  _loadEeeCalendarsByUri:
+  function calEeeSynchronizer_loadEeeCalendars(identity) {
+    var eeeCalendars = Cc["@mozilla.org/calendar/manager;1"].
+      getService(Ci.calICalendarManager).
+      getCalendars({}).
+      filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
+        return 'eee' == calendar.type;
+      }).
+      map(function calEeeSynchronizer_mapEeeCalendars(calendar) {
+        return calendar.QueryInterfaces(Ci.calEeeICalendar);
+      });
+    var calendarsByUri = {};
+    var calendar;
+    for each (calendar in eeeCalendars) {
+      calendarsByUri[calendar.uri.spec] = calendar;
+    }
+
+    return calendarsByUri;
   }
 
 };
+76
