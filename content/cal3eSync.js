@@ -39,237 +39,109 @@ if ('undefined' === typeof Calendar3e) {
  * @todo different interval for each account/client
  */
 Calendar3e.Sync = function () {
-  var console = Cc["@mozilla.org/consoleservice;1"].getService(
-      Ci.nsIConsoleService
-    );
-  this._console = console;
+  /**
+   * Maps interval identifiers by identity.
+   *
+   * @type Object
+   */
+  this._intervalsByIdentity = {};
 
-  var accountManager = Cc["@mozilla.org/messenger/account-manager;1"].getService(
-      Ci.nsIMsgAccountManager
-    );
-  accountManager.addIncomingServerListener(this);
-  this._accountManager = accountManager;
+  /**
+   * Maps EEE clients by identity.
+   *
+   * @type Object
+   */
+  this._clientsByIdentity = {};
 
-  var calendarManager = Cc["@mozilla.org/calendar/manager;1"]
-    .getService(Ci.calICalendarManager);
-  this._calendarManager = calendarManager;
+  /**
+   * Synchronizer of EEE calendars.
+   *
+   * @type calEeeISynchronizer
+   */
+  this._synchronizer = Cc["@zonio.net/calendar3e/synchronizer;1"].
+    createInstance(Ci.calEeeISynchronizer);
 
-  this._initClients();
+  /**
+   * Collection of account dynamically notifying of changes in
+   * accounts settings.
+   *
+   * @type cal3e.AccountCollection
+   */
+  this._accountCollection = new cal3e.AccountCollection();
+  this._accountCollection.addObserver(this);
+  this.onAccountsChange(this._accountCollection);
 }
 
 Calendar3e.Sync.prototype = {
 
   /**
-   * Thunderbird's error console.
+   * Adds or removes identities according to state of account
+   * collection.
    *
-   * @type nsIConsoleService
-   * @todo replace by Log4Moz
+   * @param {cal3e.AccountCollection} accountCollection
    */
-  _console: undefined,
+  onAccountsChange: function cal3eSync_onAccountsChange(accountCollection) {
+    var knownIdentities = {};
+    var identityKey;
+    for (identityKey in this._intervalsByIdentity) {
+      knownIdentities[identityKey] = true;
+    }
 
-  /**
-   * Thunderbird's account manager.
-   *
-   * @type nsIMsgAccountManager
-   */
-  _accountManager: undefined,
-
-  /**
-   * Thunderbird's calendar manager.
-   *
-   * @type calICalendarManager
-   */
-  _calendarManager: undefined,
-
-  /**
-   * Maps identities with their EEE clients.
-   *
-   * @type Object
-   */
-  _identityClientMap: {},
-
-  /**
-   * Identifier of interval used by sync.
-   *
-   * @type numeric
-   */
-  _syncId: undefined,
-
-  /**
-   * Loads calendars for every account and then synchronizes them with what
-   * is currently registered.
-   */
-  loadCalendars: function () {
-    var console = this._console,
-        calendarManager = this._calendarManager;
-
-    var map = this._identityClientMap,
-        identityKey, client;
-    for (identityKey in map) {
-      client = map[identityKey];
-
-      calSync = this;
-      client.getCalendars("match_owner('" + client.identity.email + "')", {
-        onSuccess: function (calendars, methodStack) {
-          var calendarsEee = [], calendarProperties = [],
-              idx = -1,
-              length = calendars.length,
-              calendar, calendarUri, calendarEee,
-              properties;
-          if (0 < length) {
-            while (++idx < length) {
-              properties = {
-                name: null,
-                color: null
-              };
-              calendar = calendars[idx];
-              calendarUri = ioService.newURI("eee://" + client.identity.email + "/" + calendar.name, null, null);
-              calendarEee = calendarManager.createCalendar(
-                'eee', calendarUri
-              );
-              for each (var attr in calendar.attrs) {
-                switch (attr.name) {
-                case 'title':
-                  properties.name = attr.value;
-                  break;
-                case 'color':
-                  properties.color = attr.value;
-                  break;
-                }
-              }
-              if (null === properties.name) {
-                properties.name = calendar.name;
-              }
-              calendarsEee.push(calendarEee);
-              calendarProperties.push(properties);
-            }
-          } else {
-          }
-          calSync.syncCalendars(calendarsEee, calendarProperties);
-        },
-        onError: function (methodStack) { }
+    var identities = accountCollection.
+      filter(cal3e.AccountCollection.filterEnabled).
+      map(function cal3eSync_mapAccountsToIdentities(account) {
+        return account.defaultIdentity;
+      }).
+      filter(function cal3esync_filterUnknownIdentities(identity) {
+        return !knownIdentities[identity.key];
       });
+    var identity;
+    for each (identity in identities) {
+      this._addIdentity(identity);
+      delete knownIdentities[identity.key];
+    }
+
+    var identityKey;
+    for (identityKey in knownIdentities) {
+      this._removeIdentity(identityKey);
     }
   },
 
   /**
-   * Synchronizes given calendars with already registered calendars.
+   * Creates new client and sets synchronization interval.
    *
-   * @param {Array} calendars array of calEeeCalendar
+   * @param {nsIMsgIdentity} identity
    */
-  syncCalendars: function (calendars, properties) {
-    var console = this._console,
-        calendarManager = this._calendarManager,
-        currentCalendars = calendarManager.getCalendars({});
+  _addIdentity: function cal3eSync_addIdentity(identity) {
+    this._clientsByIdentity[identity.key] =
+      Cc["@zonio.net/calendar3e/client;1"].createInstance(Ci.calEeeIClient);
+    this._clientsByIdentity[identity.key].identity = identity;
 
-    currentCalendars = currentCalendars.filter(function (c) {
-      return 'eee' == c.type;
-    });
-    var newCalendars = calendars.filter(function (c) {
-      var isNew = true, current;
-      for each (current in currentCalendars) {
-        if (c.uri.equals(current.uri)) {
-          isNew = false;
-          break;
-        }
-      }
-
-      return isNew;
-    });
-
-    var idx = calendars.length,
-        calendar, props;
-    while (idx--) {
-      calendar = calendars[idx];
-      props = properties[idx];
-      calendarManager.registerCalendar(calendar);
-      calendar.name = props.name;
-      if (null !== props.color) {
-        calendar.setProperty('color', props.color);
-      }
-    }
+    var cal3eSync = this;
+    this._intervalsByIdentity[identity.key] =
+      window.setInterval(function cal3eSync_callSynchronize() {
+        cal3eSync._synchronizer.synchronize(
+          cal3eSync._clientsByIdentity[identity.key]);
+      }, 15000);
   },
 
   /**
-   * Initializes identity to client map.
+   * Clears sycnrhonization interval and client created for given
+   * identity key.
+   *
+   * @param {Number} identityKey
    */
-  _initClients: function () {
-    var clientClass = Cc["@zonio.net/calendar3e/client;1"];
-    var accountCollection = new cal3e.AccountCollection();
-    var enabledAccounts = accountCollection.filter(
-          cal3e.AccountCollection.filterEnabled),
-        map = this._identityClientMap,
-        account, client, identity;
-    for each (account in enabledAccounts) {
-      identity = account.defaultIdentity;
-      client = clientClass.createInstance(Ci.calEeeIClient);
-      client.identity = identity;
-      map[identity.key] = client;
-    }
-  },
-
-  /**
-   * Adds new EEE client according to added server.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerLoaded: function (server) {
-    var accountManager = this._accountManager,
-        account = accountManager.FindAccountForServer(server);
-    if (null === account) {
-      return
-    }
-
-    var identity = accounts.defaultIdentity,
-	client = Cc["@zonio.net/calendar3e/client;1"].createInstance(
-	    Ci.calEeeIClient);
-    client.identity = identity;
-    this._identityClientMap[identity.key] = client;
-  },
-
-  /**
-   * Removes EEE client according to given server.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerUnloaded: function (server) {
-    var accountManager = this._accountManager,
-        account = accountManager.FindAccountForServer(server);
-    if (null === account) {
-      return
-    }
-
-    var identity = accounts.defaultIdentity;
-    delete this._identityClientMap[identity.key];
-  },
-
-  /**
-   * Does nothing.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerChanged: function (server) { },
-
-  startSync: function () {
-    var calSync = this;
-    function sync() {
-      calSync.loadCalendars();
-    }
-    window.setInterval(sync, 15000);
+  _removeIdentity: function cal3eSync_removeIdentity(identityKey) {
+    window.clearInterval(this._intervalsByIdentity[identityKey]);
+    delete this._intervalsByIdentity[identityKey];
+    delete this._clientsByIdentity[identityKey];
   }
 
 }
 
-var sync;
+var cal3eSync;
 Calendar3e.Sync.onLoad = function () {
-  sync = new Calendar3e.Sync();
-  //sync.loadCalendars();
+  cal3eSync = new Calendar3e.Sync();
 }
 
 window.addEventListener('load', Calendar3e.Sync.onLoad, false);

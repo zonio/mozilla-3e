@@ -40,11 +40,15 @@ calEeeSynchronizer.prototype = {
    */
   synchronize: function calEeeSynchronizer_synchronize(client) {
     var synchronizer = this;
-    client.getCalendars("owned()", {
-      onSuccess: function (calendars, methodStack) {
+    client.getCalendars(cal3e.createOperationListener(
+      function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
+        if (Components.results.NS_OK !== methodQueue.status) {
+          throw new Error("Cannot retrieve calendar");
+        }
+
         var knownCalendars = synchornizer._loadEeeCalendarsByUri(
           client.identity);
-        calendars = calendars.QueryInterface(Ci.nsISupportsArray);
+        calendars = result.QueryInterface(Ci.nsISupportsArray);
         var idx = calendars.Count(), data, uri;
         while (idx--) {
           data = calendars.QueryElementAt(idx, Ci.nsIDictionary);
@@ -64,11 +68,7 @@ calEeeSynchronizer.prototype = {
 
           this._deleteCalendar(knownCalendars[uri]);
         }
-      },
-      onError: function (methodStack) {
-        throw new Error("Not yet implemented");
-      }
-    });
+      }), "owned()");
   },
 
   /**
@@ -145,4 +145,3 @@ calEeeSynchronizer.prototype = {
   }
 
 };
-76
