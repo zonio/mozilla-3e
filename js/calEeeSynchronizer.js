@@ -42,14 +42,20 @@ calEeeSynchronizer.prototype = {
     var synchronizer = this;
     client.getCalendars(cal3e.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
+        var console = Cc["@mozilla.org/consoleservice;1"]
+          .getService(Ci.nsIConsoleService);
+        console.logStringMessage("Fuck!!!");
+
         if (Components.results.NS_OK !== methodQueue.status) {
-          throw new Error("Cannot retrieve calendar");
+          throw Components.Exception("Cannot retrieve calendar",
+                                     methodQueue.status);
         }
 
         var knownCalendars = synchornizer._loadEeeCalendarsByUri(
           client.identity);
         calendars = result.QueryInterface(Ci.nsISupportsArray);
         var idx = calendars.Count(), data, uri;
+        console.logStringMessage("Calendars #: " + idx);
         while (idx--) {
           data = calendars.QueryElementAt(idx, Ci.nsIDictionary);
           uri = synchronizer._buildCalendarUri(data);
@@ -94,7 +100,34 @@ calEeeSynchronizer.prototype = {
    */
   _addCalendar:
   function calEeeSynchronizer_synchronizeCalendar(data) {
-    throw new Error("Not yet implemented");    
+    var manager = Cc["@mozilla.org/calendar/manager;1"].
+      getService(Ci.calICalendarManager);
+
+    var calendar = manager.createCalendar('eee', this._buildCalendarUri(data));
+    manager.registerCalendar(calendar);
+
+    var attrs = !data.hasKey('attrs') ?
+      data.getValue('attrs').QueryInterface(Ci.nsIDictionary) :
+      null ;
+
+    var console = Cc["@mozilla.org/consoleservice;1"]
+      .getService(Ci.nsIConsoleService);
+
+    if (attrs && attrs.hasKey('title')) {
+      calendar.name = '' + attrs.getValue('title').
+        QueryInterface(Ci.nsISupportsCString);
+    } else {
+      calendar.name = '' + data.getValue('name').
+        QueryInterface(Ci.nsISupportsCString);
+    }
+    console.logStringMessage("Added calendar title: " + calendar.name);
+
+    if (attrs && attrs.hasKey('color')) {
+      calendar.setProperty(
+        'color',
+        '' + data.getValue('name').
+          QueryInterface(Ci.nsISupportsCString));
+    }
   },
 
   /**
