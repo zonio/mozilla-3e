@@ -138,7 +138,7 @@ calEeeSynchronizer.prototype = {
    */
   _updateCalendar:
   function calEeeSynchronizer_synchronizeCalendar(calendar, data) {
-    throw new Error("Not yet implemented");
+    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
   },
 
   /**
@@ -148,7 +148,7 @@ calEeeSynchronizer.prototype = {
    */
   _deleteCalendar:
   function calEeeSynchronizer_synchronizeCalendar(calendar) {
-    throw new Error("Not yet implemented");
+    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;    
   },
 
   /**
