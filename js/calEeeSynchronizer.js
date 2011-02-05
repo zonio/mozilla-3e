@@ -47,9 +47,9 @@ calEeeSynchronizer.prototype = {
                                      methodQueue.status);
         }
 
-        var knownCalendars = synchornizer._loadEeeCalendarsByUri(
+        var knownCalendars = synchronizer._loadEeeCalendarsByUri(
           client.identity);
-        calendars = result.QueryInterface(Ci.nsISupportsArray);
+        var calendars = result.QueryInterface(Ci.nsISupportsArray);
         var idx = calendars.Count(), data, uri;
         while (idx--) {
           data = calendars.QueryElementAt(idx, Ci.nsIDictionary);
@@ -80,12 +80,16 @@ calEeeSynchronizer.prototype = {
    * @returns {String}
    */
   _buildCalendarUri: function calEeeSynchronizer_buildCalendarUri(data) {
-    return 'eee://' +
-      data.getValue('owner').
-      QueryInterface(Ci.nsISupportsCString) +
-      '/' +
-      data.getValue('name').
-      QueryInterface(Ci.nsISupportsCString);
+    var ioService = Cc["@mozilla.org/network/io-service;1"]
+      .getService(Ci.nsIIOService);
+    var uri = ioService.newURI(
+      'eee://' +
+        data.getValue('owner').QueryInterface(Ci.nsISupportsCString) +
+        '/' +
+        data.getValue('name').QueryInterface(Ci.nsISupportsCString),
+      null, null);
+
+    return uri;
   },
 
   /**
@@ -155,10 +159,11 @@ calEeeSynchronizer.prototype = {
       getCalendars({}).
       filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
         return 'eee' == calendar.type;
-      }).
-      map(function calEeeSynchronizer_mapEeeCalendars(calendar) {
-        return calendar.QueryInterfaces(Ci.calEeeICalendar);
       });
+      //TODO could be nice to allow this conversion
+      // map(function calEeeSynchronizer_mapEeeCalendars(calendar) {
+      //   return calendar.QueryInterface(Ci.calEeeICalendar);
+      // })
     var calendarsByUri = {};
     var calendar;
     for each (calendar in eeeCalendars) {
