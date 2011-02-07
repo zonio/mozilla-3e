@@ -23,7 +23,37 @@ Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
  * Synchronizer of calendars present in Mozilla client application
  * (i.e. Lightning) with those on EEE server.
  */
-function calEeeSynchronizationService() {}
+function calEeeSynchronizationService() {
+  /**
+   * Map of interval identifiers by identity.
+   *
+   * @type Object
+   */
+  this._intervalsByIdentity = {};
+
+  /**
+   * Map of synchronizers by identity.
+   *
+   * @type Object
+   */
+  this._synchronizersByIdentity = {};
+
+  /**
+   * Synchronizer of EEE calendars.
+   *
+   * @type calEeeISynchronizer
+   */
+  this._synchronizer = Cc["@zonio.net/calendar3e/synchronizer;1"].
+    createInstance(Ci.calEeeISynchronizer);
+
+  /**
+   * Collection of account dynamically notifying of changes in
+   * accounts settings.
+   *
+   * @type cal3e.AccountCollection
+   */
+  this._accountCollection = new cal3e.AccountCollection();
+}
 
 calEeeSynchronizationService.prototype = {
 
@@ -32,7 +62,47 @@ calEeeSynchronizationService.prototype = {
     Ci.nsIObserver
   ]),
 
-  observe: function calEeeSynchronizationService_observe(subject, topic, data) {
+  /**
+   * Adds or removes identities according to state of account
+   * collection.
+   *
+   * @param {cal3e.AccountCollection} accountCollection
+   */
+  onAccountsChange: function calEeeSyncService_onAccountsChange(accountCollection) {
+    var knownIdentities = {};
+    var identityKey;
+    for (identityKey in this._intervalsByIdentity) {
+      knownIdentities[identityKey] = true;
+    }
+
+    var identities = accountCollection.
+      filter(cal3e.AccountCollection.filterEnabled).
+      map(function calEeeSyncService_mapAccountsToIdentities(account) {
+        return account.defaultIdentity;
+      }).
+      filter(function calEeeSyncService_filterUnknownIdentities(identity) {
+        return !knownIdentities[identity.key];
+      });
+    var identity;
+    for each (identity in identities) {
+      this.addIdentity(identity);
+      delete knownIdentities[identity.key];
+    }
+
+    var identityKey;
+    for (identityKey in knownIdentities) {
+      this.removeIdentity(identityKey);
+    }
+  },
+
+  /**
+   * Calls {@link register} when Thunderbird starts.
+   *
+   * @param {nsISupports} subject
+   * @param {String} topic
+   * @param {String} data
+   */
+  observe: function calEeeSyncService_observe(subject, topic, data) {
     switch (topic) {
     case 'profile-do-change':
       this.register();
@@ -40,21 +110,53 @@ calEeeSynchronizationService.prototype = {
     }
   },
 
-  register: function calEeeSynchronizationService_register() {
-    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  /**
+   * Registers synchronization service to globally observe account changes
+   * and synchronize their EEE calendars.
+   *
+   * @returns {calEeeISynchronizationService} receiver
+   */
+  register: function calEeeSyncService_register() {
+    this._accountCollection.addObserver(this);
+    this.onAccountsChange(this._accountCollection);
+
+    return this;
   },
 
-  addAccount: function calEeeSynchronizationService_addAccount(account) {
-    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  /**
+   * Registers identity to synchronize its calendars once in 15 seconds.
+   *
+   * @param {nsIMsgIdentity} identity
+   * @returns {calEeeISynchronizationService} receiver
+   */
+  addIdentity: function calEeeSyncService_addIdentity(identity) {
+    this._synchronizersByIdentity[identity.key] =
+      Cc["@zonio.net/calendar3e/synchronizer;1"].
+      createInstance(Ci.calEeeISynchronizer);
+    this._synchronizersByIdentity[identity.key].client =
+      Cc["@zonio.net/calendar3e/client;1"].
+      createInstance(Ci.calEeeIClient);
+    this._synchronizersByIdentity[identity.key].client.identity = identity;
+
+    var syncService = this;
+    this._intervalsByIdentity[identity.key] =
+      window.setInterval(function calEeeSyncService_callSynchronize() {
+        syncService._synchronizersByIdentity[identity.key].synchronize();
+      }, 15000);
+
+    return this;
   },
 
-  removeAccount: function calEeeSynchronizationService_removeAccount(account) {
-    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
-  },
-
-  synchronizeAccounts:
-  function calEeeSynchronizationService_synchronizeAccounts(account) {
-    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  /**
+   * Removes identity from periodical calendar synchronization.
+   *
+   * @param {String} identity
+   * @returns {calEeeISynchronizationService} receiver
+   */
+  removeIdentity: function calEeeSyncService_removeAccount(identityKey) {
+    window.clearInterval(this._intervalsByIdentity[identityKey]);
+    delete this._intervalsByIdentity[identityKey];
+    delete this._synchronizersByIdentity[identityKey];
   }
 
 };

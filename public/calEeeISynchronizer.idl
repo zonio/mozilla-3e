@@ -28,35 +28,22 @@ interface calEeeIClient;
 interface calEeeISynchronizationService: nsISupports {
 
   /**
-   * Registers synchronizer to run {@link synchronizeAccounts}
-   * periodically.
+   * Adds messaging and calendaring identity to list of accounts to
+   * synchronize.
    *
+   * @param identity messaging and calendaring identity to add
    * @return receiver
    */
-  calEeeISynchronizerService register();
+  calEeeISynchronizerService addIdentity(in nsIMsgIdentity identity);
 
   /**
-   * Adds messaging account to list of accounts to synchronize.
+   * Removes messaging and calendaring identity from list of accounts
+   * to synchronize.
    *
-   * @param account messaging account to add
+   * @param identityKey messaging and calendaring identity to remove
    * @return receiver
    */
-  calEeeISynchronizerService addAccount(in nsIMsgAccount account);
-
-  /**
-   * Removes messaging account from list of accounts to synchronize.
-   *
-   * @param account messaging account to remove
-   * @return receiver
-   */
-  calEeeISynchronizerService removeAccount(in nsIMsgAccount account);
-
-  /**
-   * Synchronizes all added account with EEE server.
-   *
-   * @return receiver
-   */
-  calEeeISynchronizerService synchronizeAccounts();
+  calEeeISynchronizerService removeIdentity(in ACString identityKey);
 
 };
 
