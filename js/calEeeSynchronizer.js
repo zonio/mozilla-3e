@@ -23,13 +23,63 @@ Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
  * Synchronizer of calendars present in Mozilla client application
  * (i.e. Lightning) with those on EEE server.
  */
-function calEeeSynchronizer() {}
+function calEeeSynchronizationService() {}
+
+calEeeSynchronizationService.prototype = {
+
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.calEeeISynchronizationService,
+    Ci.nsIObserver
+  ]),
+
+  observe: function calEeeSynchronizationService_observe(subject, topic, data) {
+    switch (topic) {
+    case 'profile-do-change':
+      this.register();
+      break;
+    }
+  },
+
+  register: function calEeeSynchronizationService_register() {
+    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  addAccount: function calEeeSynchronizationService_addAccount(account) {
+    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  removeAccount: function calEeeSynchronizationService_removeAccount(account) {
+    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
+  synchronizeAccounts:
+  function calEeeSynchronizationService_synchronizeAccounts(account) {
+    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+};
+
+/**
+ * Synchronizer of calendars present in Mozilla client application
+ * (i.e. Lightning) with those on EEE server.
+ */
+function calEeeSynchronizer() {
+  this._client = null;
+}
 
 calEeeSynchronizer.prototype = {
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeISynchronizer
   ]),
+
+  get client calEeeSynchronizer_getClient() {
+    return this._client;
+  },
+
+  set client calEeeSynchronizer_setClient(client) {
+    this._client = client;
+  },
 
   /**
    * Synchronizes calendars of client's identity with those on EEE
@@ -38,9 +88,9 @@ calEeeSynchronizer.prototype = {
    * @param {calEeeIClient} client
    * @returns {calEeeISynchronizer} receiver
    */
-  synchronize: function calEeeSynchronizer_synchronize(client) {
+  synchronize: function calEeeSynchronizer_synchronize() {
     var synchronizer = this;
-    client.getCalendars(cal3e.createOperationListener(
+    this._client.getCalendars(cal3e.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
         if (Components.results.NS_OK !== methodQueue.status) {
           throw Components.Exception("Cannot retrieve calendar",
@@ -48,7 +98,7 @@ calEeeSynchronizer.prototype = {
         }
 
         var knownCalendars = synchronizer._loadEeeCalendarsByUri(
-          client.identity);
+          synchronizer.client.identity);
         var calendars = result.QueryInterface(Ci.nsISupportsArray);
         var idx = calendars.Count(), data, uri;
         while (idx--) {

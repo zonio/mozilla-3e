@@ -114,6 +114,30 @@ var calEeeClassInfo = {
     flags: 0
   },
 
+  calEeeSynchronizationService: {
+    getInterfaces: function cI_cal3eSynchronizationService_getInterfaces(count) {
+      var interfaces = [
+        Ci.calEeeISynchronizationService,
+        Ci.nsIObserver,
+        Ci.nsIClassInfo
+      ];
+      count.value = interfaces.length;
+      return interfaces;
+    },
+
+    getHelperForLanguage: function cI_cal3eSynchronizer_getHelperForLanguage(language) {
+      return null;
+    },
+
+    classDescription: "EEE calendar synchronization service",
+    contractID: "@zonio.net/calendar3e/synchronization-service;1",
+    classID: Components.ID("{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}"),
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    constructor: "calEeeSynchronizationService",
+    flags: Ci.nsIClassInfo.SINGLETON,
+    categories: ['profile-do-change']
+  },
+
   calEeeSynchronizer: {
     getInterfaces: function cI_cal3eSynchronizer_getInterfaces(count) {
       var interfaces = [
@@ -128,7 +152,7 @@ var calEeeClassInfo = {
       return null;
     },
 
-    classDescription: "EEE calendar synchronizer",
+    classDescription: "EEE-enabled client calendar synchronizer",
     contractID: "@zonio.net/calendar3e/synchronizer;1",
     classID: Components.ID("{9045ff85-9e1c-47e4-9872-44c5ab424b73}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
@@ -181,6 +205,8 @@ var calEeeCalendarModule = {
                                                   type) {
     componentManager = componentManager.QueryInterface(
       Ci.nsIComponentRegistrar);
+    var categoryManager = Cc["@mozilla.org/categorymanager;1"]
+      .getService(Ci.nsICategoryManager);
 
     for each (var component in calEeeClassInfo) {
       componentManager.registerFactoryLocation(
@@ -190,6 +216,15 @@ var calEeeCalendarModule = {
           fileSpec,
           location,
           type);
+      for each (var category in component.categories) {
+        categoryManager.addCategoryEntry(
+          'profile-do-change',
+          component.classDescription,
+          (component.flags & Ci.nsIClassInfo.SINGLETON ? "service" : "") +
+            component.contractID,
+          true,
+          true);
+      }
     }
   },
 
