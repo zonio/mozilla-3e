@@ -54,20 +54,21 @@ calEeeSynchronizer.prototype = {
         while (idx--) {
           data = calendars.QueryElementAt(idx, Ci.nsIDictionary);
           uri = synchronizer._buildCalendarUri(data);
-          if ('undefined' === typeof knownCalendars[uri]) {
+          if ('undefined' === typeof knownCalendars[uri.spec]) {
             synchronizer._addCalendar(data);
           } else {
-            synchronizer._updateCalendar(knownCalendars[uri], data);
+            synchronizer._updateCalendar(knownCalendars[uri.spec], data);
           }
-          delete knownCalendars[uri];
+          delete knownCalendars[uri.spec];
         }
 
-        for (uri in knownCalendars) {
-          if (!knownCalendars.hasOwnProperty(uri)) {
+        var uriSpec;
+        for (uriSpec in knownCalendars) {
+          if (!knownCalendars.hasOwnProperty(uriSpec)) {
             continue;
           }
 
-          this._deleteCalendar(knownCalendars[uri]);
+          this._deleteCalendar(knownCalendars[uriSpec]);
         }
       }), "owned()");
   },
@@ -82,14 +83,13 @@ calEeeSynchronizer.prototype = {
   _buildCalendarUri: function calEeeSynchronizer_buildCalendarUri(data) {
     var ioService = Cc["@mozilla.org/network/io-service;1"]
       .getService(Ci.nsIIOService);
-    var uri = ioService.newURI(
+
+    return ioService.newURI(
       'eee://' +
         data.getValue('owner').QueryInterface(Ci.nsISupportsCString) +
         '/' +
         data.getValue('name').QueryInterface(Ci.nsISupportsCString),
       null, null);
-
-    return uri;
   },
 
   /**
