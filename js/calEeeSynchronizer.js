@@ -54,7 +54,7 @@ calEeeSynchronizer.prototype = {
         while (idx--) {
           data = calendars.QueryElementAt(idx, Ci.nsIDictionary);
           uri = synchronizer._buildCalendarUri(data);
-          if ('undefined' === typeof knownCalendars[uri.spec]) {
+          if (!knownCalendars.hasOwnProperty(uri.spec)) {
             synchronizer._addCalendar(data);
           } else {
             synchronizer._updateCalendar(knownCalendars[uri.spec], data);
