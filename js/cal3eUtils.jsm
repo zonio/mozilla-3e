@@ -31,6 +31,7 @@ EXPORTED_SYMBOLS = [
  * Utility prototypes and functions for 3e calendar provider.
  *
  * @namespace
+ * @todo implement as some kind of service.
  */
 var cal3e = {};
 
@@ -42,6 +43,10 @@ cal3e.AccountCollection = function cal3eAccountCollection() {
   this._accountManager = accountManager;
   this._accounts = [];
   this._observers = [];
+
+  var prefService = Cc["@mozilla.org/preferences-service;1"].
+    getService(Ci.nsIPrefService);
+  this._prefBranch = prefService.getBranch("mail.identity");
 
   this._loadAccounts();
   accountManager.addIncomingServerListener(this);
@@ -64,6 +69,17 @@ function cal3eAccountCollection_filterCandidate(account) {
 
 cal3e.AccountCollection.prototype = {
 
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.nsIIncomingServerListener,
+    Ci.nsIObserver
+  ]),
+
+  /**
+   * Adds collection observer.
+   *
+   * @param {Object} observer
+   * @see notify
+   */
   addObserver: function cal3eAccountCollection_addObserver(observer) {
     if (0 <= this._observers.indexOf(observer)) {
       return;
@@ -71,6 +87,11 @@ cal3e.AccountCollection.prototype = {
     this._observers.push(observer);
   },
 
+  /**
+   * Removes collection observer.
+   *
+   * @param {Object} observer
+   */
   removeObserver: function cal3eAccountCollection_removeObserver(observer) {
     var idx = this._observers.indexOf(observer);
     if (0 > idx) {
@@ -79,6 +100,13 @@ cal3e.AccountCollection.prototype = {
     this._observers = this._observers.splice(idx, 1);
   },
 
+  /**
+   * Notifies all observers that something in collection might change.
+   *
+   * Method name onAccountsChange is called on observer. But observer
+   * doesn't have any information which account changed, what changed
+   * on it or whether any account was removed or added.
+   */
   notify: function cal3eAccountCollection_notify() {
     var observers = this._observers,
         observer, idx = observers.length;
@@ -92,6 +120,13 @@ cal3e.AccountCollection.prototype = {
     }
   },
 
+  /**
+   * Filters accounts for which callback returns false value from
+   * collection.
+   * 
+   * @param {Function} callback
+   * @param {Object} thisObject used as this inside callback
+   */
   filter: function cal3eAccountCollection_filter(callback, thisObject) {
     var filtered = [];
     var accounts = this._accounts,
@@ -106,6 +141,12 @@ cal3e.AccountCollection.prototype = {
     return filtered;
   },
 
+  /**
+   * Iterates over all accounts in collection passing each to callback.
+   *
+   * @param {Function} callback
+   * @param {Object} thisObject used as this inside callback
+   */
   forEach: function cal3eAccountCollection_forEach(callback, thisObject) {
     var accounts = this._accounts,
         idx = -1, limit = accounts.length;
@@ -115,7 +156,7 @@ cal3e.AccountCollection.prototype = {
   },
 
   /**
-   * Loads accounts currently registred in Thunderbird.
+   * Initially loads accounts registred in Thunderbird.
    */
   _loadAccounts: function cal3eAccountCollection_loadAccounts() {
     var accountManager = this._accountManager;
@@ -123,12 +164,62 @@ cal3e.AccountCollection.prototype = {
       a for each (a in fixIterator(accountManager.accounts, Ci.nsIMsgAccount))
     ];
     //XXX incomingServer server check due to 41133
-    accounts = accounts.filter(function (a) {
+    this._accounts = accounts.filter(function (a) {
       return a.incomingServer &&
-            (a.incomingServer.type != "nntp") &&
-            (a.incomingServer.type != "none");
-    });
+        this._isSupportedIncomingServer(a.incomingServer);
+    }, this);
 
+    this._sortAccounts();
+
+    this._accounts.forEach(function (a) {
+      this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).addObserver(
+        account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
+        this,
+        false);
+    }, this);
+  },
+
+  /**
+   * Adds account to collection and adds observer to watch for EEE
+   * enabled status.
+   *
+   * @param {nsIMsgAccount} account
+   */
+  _addAccount: function cal3eAccountCollection_addAccount(account) {
+    this._accounts.push(account);
+    //XXX too lazy
+    this._sortAccounts();
+    this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).addObserver(
+      account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
+      this,
+      false);
+    this.notify();
+  },
+
+  /**
+   * Removes account from collection and removes observer from
+   * watching for EEE enabled status.
+   *
+   * @param {nsIMsgAccount} account
+   */
+  _removeAccount: function cal3eAccountCollection_removeAccount(account) {
+    var idx = this._accounts.indexOf(account);
+    if (0 > idx) {
+      return;
+    }
+
+    this._accounts.splice(idx, 1);
+    this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).removeObserver(
+      account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
+      this);
+    this.notify();
+  },
+
+  /**
+   * Sorts accounts in collection by their keys.
+   */
+  _sortAccounts: function cal3eAccountCollection_sortAccounts() {
+    var accountManager = this._accountManager;
     function sortAccounts(a, b) {
       if (a.key == accountManager.defaultAccount.key) {
         return -1;
@@ -138,10 +229,21 @@ cal3e.AccountCollection.prototype = {
       }
       return 0;
     }
-    accounts.sort(sortAccounts);
-    this._accounts = accounts;
-    this.notify();
+
+    this._accounts.sort(sortAccounts);
   },
+
+  /**
+   * Checks whether given account as owner of given server can be used
+   * as EEE account.
+   *
+   * @param {nsIMsgIncomingServer} server
+   */
+  _isSupportedIncomingServer:
+  function cal3eAccountCollection_isSupportedIncomingServer(server) {
+    return (server.type != "nntp") &&
+      (server.type != "none")
+  }
 
   /**
    * Notifies this preference handler that accounts probably changed.
@@ -151,7 +253,10 @@ cal3e.AccountCollection.prototype = {
    * @param {nsIMsgIncomingServer} server
    */
   onServerLoaded: function cal3eAccountCollection_onServerLoaded(server) {
-    this._loadAccounts();
+    if (!this._isSupportedIncomingServer(server)) {
+      return;
+    }
+    this._addAccount(this._accountManager.FindAccountForServer(server));
   },
 
   /**
@@ -162,7 +267,10 @@ cal3e.AccountCollection.prototype = {
    * @param {nsIMsgIncomingServer} server
    */
   onServerUnloaded: function cal3eAccountCollection_onServerUnloaded(server) {
-    this._loadAccounts();
+    if (!this._isSupportedIncomingServer(server)) {
+      return;
+    }
+    this._removeAccount(this._accountManager.FindAccountForServer(server));
   },
 
   /**
@@ -175,6 +283,24 @@ cal3e.AccountCollection.prototype = {
    */
   onServerChanged: function cal3eAccountCollection_onServerChanged(server) {
     this.notify();
+  },
+
+  /**
+   * Notifies this preference handler that accounts parameters
+   * probably changed and their representation should be rebuild.
+   *
+   * Implemented according to nsIIObserver.
+   *
+   * @param {nsISupports} subject pref branch is expected
+   * @param {String} topic
+   * @param {String} data name of changed preference in pref branch
+   */
+  observe: function cal3eAccountCollection_observer(subject, topic, data) {
+    switch (topic) {
+    case 'nsPref:changed':
+      this.notify();
+      break;
+    }
   }
 
 }
