@@ -19,6 +19,7 @@
  
 #include "nsISupports.idl"
 
+interface nsIMsgIdentity;
 interface calEeeIClient;
 
 /**
@@ -34,7 +35,7 @@ interface calEeeISynchronizationService: nsISupports {
    * @param identity messaging and calendaring identity to add
    * @return receiver
    */
-  calEeeISynchronizerService addIdentity(in nsIMsgIdentity identity);
+  calEeeISynchronizationService addIdentity(in nsIMsgIdentity identity);
 
   /**
    * Removes messaging and calendaring identity from list of accounts
@@ -43,7 +44,14 @@ interface calEeeISynchronizationService: nsISupports {
    * @param identityKey messaging and calendaring identity to remove
    * @return receiver
    */
-  calEeeISynchronizerService removeIdentity(in ACString identityKey);
+  calEeeISynchronizationService removeIdentity(in ACString identityKey);
+
+  /**
+   * Registers itself in global context to observe changes in identities.
+   *
+   * @return receiver
+   */
+  calEeeISynchronizationService register();
 
 };
 

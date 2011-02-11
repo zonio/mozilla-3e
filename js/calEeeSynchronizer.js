@@ -25,11 +25,11 @@ Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
  */
 function calEeeSynchronizationService() {
   /**
-   * Map of interval identifiers by identity.
+   * Map of timers by identity.
    *
    * @type Object
    */
-  this._intervalsByIdentity = {};
+  this._timersByIdentity = {};
 
   /**
    * Map of synchronizers by identity.
@@ -68,10 +68,14 @@ calEeeSynchronizationService.prototype = {
    *
    * @param {cal3e.AccountCollection} accountCollection
    */
-  onAccountsChange: function calEeeSyncService_onAccountsChange(accountCollection) {
+  onAccountsChange:
+  function calEeeSyncService_onAccountsChange(accountCollection) {
     var knownIdentities = {};
     var identityKey;
-    for (identityKey in this._intervalsByIdentity) {
+    for (identityKey in this._timersByIdentity) {
+      if (!this._timersByIdentity.hasOwnProperty(identityKey)) {
+        continue;
+      }
       knownIdentities[identityKey] = true;
     }
 
@@ -91,6 +95,9 @@ calEeeSynchronizationService.prototype = {
 
     var identityKey;
     for (identityKey in knownIdentities) {
+      if (!knownIdentities.hasOwnProperty(identityKey)) {
+        continue;
+      }
       this.removeIdentity(identityKey);
     }
   },
@@ -107,6 +114,9 @@ calEeeSynchronizationService.prototype = {
     case 'profile-do-change':
       this.register();
       break;
+    case 'timer-callback':
+      this.runSynchronizer(this._findIdentityOfTimer(subject));
+      break;
     }
   },
 
@@ -117,8 +127,13 @@ calEeeSynchronizationService.prototype = {
    * @returns {calEeeISynchronizationService} receiver
    */
   register: function calEeeSyncService_register() {
+    if (this._registered) {
+      return this;
+    }
+    this._registered = true;
     this._accountCollection.addObserver(this);
     this.onAccountsChange(this._accountCollection);
+    dump("Synchronizer registered.\n");
 
     return this;
   },
@@ -137,12 +152,14 @@ calEeeSynchronizationService.prototype = {
       Cc["@zonio.net/calendar3e/client;1"].
       createInstance(Ci.calEeeIClient);
     this._synchronizersByIdentity[identity.key].client.identity = identity;
+    dump("Added identity " + identity.key + ".\n");
 
-    var syncService = this;
-    this._intervalsByIdentity[identity.key] =
-      window.setInterval(function calEeeSyncService_callSynchronize() {
-        syncService._synchronizersByIdentity[identity.key].synchronize();
-      }, 15000);
+    this._synchronizersByIdentity[identity.key].synchronize();
+
+    this._timersByIdentity[identity.key] = Cc["@mozilla.org/timer;1"].
+      createInstance(Ci.nsITimer);
+    this._timersByIdentity[identity.key].init(
+      this, 15000, Ci.nsITimer.TYPE_REPEATING_SLACK);
 
     return this;
   },
@@ -154,9 +171,53 @@ calEeeSynchronizationService.prototype = {
    * @returns {calEeeISynchronizationService} receiver
    */
   removeIdentity: function calEeeSyncService_removeAccount(identityKey) {
-    window.clearInterval(this._intervalsByIdentity[identityKey]);
-    delete this._intervalsByIdentity[identityKey];
+    this._timersByIdentity[identityKey].cancel();
+    delete this._timersByIdentity[identityKey];
     delete this._synchronizersByIdentity[identityKey];
+    dump("Removed identity " + identity.key + ".\n");
+
+    return this;
+  },
+
+  /**
+   * Runs synchronizer of given identity.
+   *
+   * If identity's synchronizer is not found, nothing happens.
+   *
+   * @param {String} identityKey
+   * @returns {calEeeISynchronizationService} receiver
+   */
+  runSynchronizer: function calEeeSyncService_runSynchronizer(identityKey) {
+    if (this._synchronizersByIdentity[identityKey]) {
+      dump("Synchronizing identity " + identityKey + ".\n");
+      this._synchronizersByIdentity[identityKey].synchronize();
+    }
+
+    return this;
+  },
+
+  /**
+   * Tries to find identity (its key) of given timer.
+   *
+   * @param {nsITimer} timer
+   * @returns {String|null}
+   */
+  _findIdentityOfTimer:
+  function calEeeSyncService_findIdentityOfTimer(timer) {
+    timer = timer.QueryInterface(Ci.nsITimer);
+    var identityKey;
+    var found = false;
+    for (identityKey in this._timersByIdentity) {
+      if (!this._timersByIdentity.hasOwnProperty(identityKey)) {
+        continue;
+      }
+      if (timer === this._timersByIdentity[identityKey]) {
+        found = true;
+        break;
+      }
+    }
+
+    return found ? identityKey : null ;
   }
 
 };
