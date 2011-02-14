@@ -236,11 +236,11 @@ calEeeSynchronizer.prototype = {
     Ci.calEeeISynchronizer
   ]),
 
-  get client calEeeSynchronizer_getClient() {
+  get client() {
     return this._client;
   },
 
-  set client calEeeSynchronizer_setClient(client) {
+  set client(client) {
     this._client = client;
   },
 
@@ -318,24 +318,7 @@ calEeeSynchronizer.prototype = {
     var calendar = manager.createCalendar('eee', this._buildCalendarUri(data));
     manager.registerCalendar(calendar);
 
-    var attrs = !data.hasKey('attrs') ?
-      data.getValue('attrs').QueryInterface(Ci.nsIDictionary) :
-      null ;
-
-    if (attrs && attrs.hasKey('title')) {
-      calendar.name = '' + attrs.getValue('title').
-        QueryInterface(Ci.nsISupportsCString);
-    } else {
-      calendar.name = '' + data.getValue('name').
-        QueryInterface(Ci.nsISupportsCString);
-    }
-
-    if (attrs && attrs.hasKey('color')) {
-      calendar.setProperty(
-        'color',
-        '' + data.getValue('name').
-          QueryInterface(Ci.nsISupportsCString));
-    }
+    this._setCalendarProperties(calendar, data);
   },
 
   /**
@@ -346,7 +329,7 @@ calEeeSynchronizer.prototype = {
    */
   _updateCalendar:
   function calEeeSynchronizer_synchronizeCalendar(calendar, data) {
-    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
+    this._setCalendarProperties(calendar, data);
   },
 
   /**
@@ -357,6 +340,34 @@ calEeeSynchronizer.prototype = {
   _deleteCalendar:
   function calEeeSynchronizer_synchronizeCalendar(calendar) {
     throw Components.results.NS_ERROR_NOT_IMPLEMENTED;    
+  },
+
+  /**
+   * Sets properties to calendar according to given raw data from
+   * XML-RPC response.
+   *
+   * @param {calEeeICalendar} calendar
+   * @param {nsIDictionary} data
+   */
+  _setCalendarProperties:
+  function calEeeSynchronizer_setCalendarProperties(calendar, data) {
+    var attrs = !data.hasKey('attrs') ?
+      data.getValue('attrs').QueryInterface(Ci.nsIDictionary) :
+      null ;
+
+    if (attrs && attrs.hasKey('title')) {
+      calendar.name = '' + attrs.getValue('title').
+        QueryInterface(Ci.nsISupportsCString);
+    } else {
+      calendar.name = '' +
+        data.getValue('name').QueryInterface(Ci.nsISupportsCString);
+    }
+
+    if (attrs && attrs.hasKey('color')) {
+      calendar.setProperty(
+        'color',
+        '' + data.getValue('name').QueryInterface(Ci.nsISupportsCString));
+    }
   },
 
   /**
