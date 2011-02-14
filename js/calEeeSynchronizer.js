@@ -281,7 +281,7 @@ calEeeSynchronizer.prototype = {
             continue;
           }
 
-          this._deleteCalendar(knownCalendars[uriSpec]);
+          synchronizer._deleteCalendar(knownCalendars[uriSpec]);
         }
       }), "owned()");
   },
@@ -339,7 +339,9 @@ calEeeSynchronizer.prototype = {
    */
   _deleteCalendar:
   function calEeeSynchronizer_synchronizeCalendar(calendar) {
-    throw Components.results.NS_ERROR_NOT_IMPLEMENTED;    
+    var manager = Cc["@mozilla.org/calendar/manager;1"].
+      getService(Ci.calICalendarManager);
+    manager.unregisterCalendar(calendar);
   },
 
   /**
