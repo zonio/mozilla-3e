@@ -243,7 +243,7 @@ cal3e.AccountCollection.prototype = {
   function cal3eAccountCollection_isSupportedIncomingServer(server) {
     return (server.type != "nntp") &&
       (server.type != "none")
-  }
+  },
 
   /**
    * Notifies this preference handler that accounts probably changed.
