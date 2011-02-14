@@ -241,8 +241,7 @@ cal3e.AccountCollection.prototype = {
    */
   _isSupportedIncomingServer:
   function cal3eAccountCollection_isSupportedIncomingServer(server) {
-    return (server.type != "nntp") &&
-      (server.type != "none")
+    return ("nntp" != server.type) && ("none" != server.type);
   },
 
   /**
