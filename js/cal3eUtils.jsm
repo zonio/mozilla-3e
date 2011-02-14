@@ -164,14 +164,14 @@ cal3e.AccountCollection.prototype = {
       a for each (a in fixIterator(accountManager.accounts, Ci.nsIMsgAccount))
     ];
     //XXX incomingServer server check due to 41133
-    this._accounts = accounts.filter(function (a) {
-      return a.incomingServer &&
-        this._isSupportedIncomingServer(a.incomingServer);
+    this._accounts = accounts.filter(function (account) {
+      return account.incomingServer &&
+        this._isSupportedIncomingServer(account.incomingServer);
     }, this);
 
     this._sortAccounts();
 
-    this._accounts.forEach(function (a) {
+    this._accounts.forEach(function (account) {
       this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).addObserver(
         account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
         this,
