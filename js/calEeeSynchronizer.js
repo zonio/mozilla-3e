@@ -133,7 +133,6 @@ calEeeSynchronizationService.prototype = {
     this._registered = true;
     this._accountCollection.addObserver(this);
     this.onAccountsChange(this._accountCollection);
-    dump("Synchronizer registered.\n");
 
     return this;
   },
@@ -152,7 +151,6 @@ calEeeSynchronizationService.prototype = {
       Cc["@zonio.net/calendar3e/client;1"].
       createInstance(Ci.calEeeIClient);
     this._synchronizersByIdentity[identity.key].client.identity = identity;
-    dump("Added identity " + identity.key + ".\n");
 
     this._synchronizersByIdentity[identity.key].synchronize();
 
@@ -174,7 +172,6 @@ calEeeSynchronizationService.prototype = {
     this._timersByIdentity[identityKey].cancel();
     delete this._timersByIdentity[identityKey];
     delete this._synchronizersByIdentity[identityKey];
-    dump("Removed identity " + identity.key + ".\n");
 
     return this;
   },
@@ -189,7 +186,6 @@ calEeeSynchronizationService.prototype = {
    */
   runSynchronizer: function calEeeSyncService_runSynchronizer(identityKey) {
     if (this._synchronizersByIdentity[identityKey]) {
-      dump("Synchronizing identity " + identityKey + ".\n");
       this._synchronizersByIdentity[identityKey].synchronize();
     }
 

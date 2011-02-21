@@ -18,12 +18,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 window.addEventListener('load', function cal3eSync_onLoad() {
-  try {
   var synchronizationService =
     Components.classes["@zonio.net/calendar3e/synchronization-service;1"].
     getService(Components.interfaces.calEeeISynchronizationService);
   synchronizationService.register();
-  } catch (e) {
-    dump('' + e);
-  }
 }, false);

@@ -159,9 +159,6 @@ calEeeCalendar.prototype = {
 
   getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
       listener) {
-    var console = Cc["@mozilla.org/consoleservice;1"].
-        getService(Ci.nsIConsoleService);
-
     var wantEvents = ((itemFilter &
       Ci.calICalendar.ITEM_FILTER_TYPE_EVENT) != 0);
     var wantInvitations = ((itemFilter &
@@ -203,17 +200,15 @@ calEeeCalendar.prototype = {
             return;
           }
 
-          console.logStringMessage("Items: " + rawItems);
           var parser = calendar._getIcsParser();
           try {
             parser.parseString(rawItems);          
           } catch (e) {
-            console.logStringMessage("Error while parsing: " + e);
+            //TODO
           }
 
           var itemsCount = {};
           var items = parser.getItems(itemsCount);
-          console.logStringMessage("Number of items: " + itemsCount.value);
           listener.onGetResult(calendar,
                                Cr.NS_OK,
                                Ci.calIEvent,
