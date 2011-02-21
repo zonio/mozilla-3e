@@ -177,6 +177,9 @@ calEeeCalendar.prototype = {
 
     var calendar = this,
         clientListener = cal3e.createOperationListener(function calEee_getItems_onResult(methodQueue, result) {
+          if (methodQueue.isPending) {
+            return;
+          }
           if (Cr.NS_OK !== methodQueue.status) {
             calendar.notifyOperationComplete(
               listener,
@@ -205,6 +208,7 @@ calEeeCalendar.prototype = {
             parser.parseString(rawItems);          
           } catch (e) {
             //TODO
+            return;
           }
 
           var itemsCount = {};

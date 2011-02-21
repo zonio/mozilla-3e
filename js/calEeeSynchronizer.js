@@ -251,13 +251,15 @@ calEeeSynchronizer.prototype = {
     var synchronizer = this;
     this._client.getCalendars(cal3e.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
+        if (methodQueue.isPending) {
+          return;
+        }
         if (Components.results.NS_OK !== methodQueue.status) {
           throw Components.Exception("Cannot retrieve calendar",
                                      methodQueue.status);
         }
 
-        var knownCalendars = synchronizer._loadEeeCalendarsByUri(
-          synchronizer.client.identity);
+        var knownCalendars = synchronizer._loadEeeCalendarsByUri();
         var calendars = result.QueryInterface(Ci.nsISupportsArray);
         var idx = calendars.Count(), data, uri;
         while (idx--) {
@@ -314,6 +316,7 @@ calEeeSynchronizer.prototype = {
     var calendar = manager.createCalendar('eee', this._buildCalendarUri(data));
     manager.registerCalendar(calendar);
 
+    calendar.setProperty("imip.identity.key", this._client.identity.key);
     this._setCalendarProperties(calendar, data);
   },
 
@@ -349,43 +352,53 @@ calEeeSynchronizer.prototype = {
    */
   _setCalendarProperties:
   function calEeeSynchronizer_setCalendarProperties(calendar, data) {
-    var attrs = !data.hasKey('attrs') ?
-      data.getValue('attrs').QueryInterface(Ci.nsIDictionary) :
-      null ;
+    var attrs = {};
+    if (data.hasKey('attrs')) {
+      let attrsData = data.getValue('attrs').
+        QueryInterface(Ci.nsISupportsArray);
+      let idx = attrsData.Count(), attrData, attrName, attrValue;
+      try {
+        while (idx--) {
+          attrData = attrsData.QueryElementAt(idx, Ci.nsIDictionary);
+          attrName = "" + attrData.getValue('name').
+            QueryInterface(Ci.nsISupportsCString);
+          attrValue = "" + attrData.getValue('value').
+            QueryInterface(Ci.nsISupportsCString);
+          attrs[attrName] = attrValue;
+        }
+      } catch (e) {
+        //TODO
+      }
+    }
 
-    if (attrs && attrs.hasKey('title')) {
-      calendar.name = '' + attrs.getValue('title').
-        QueryInterface(Ci.nsISupportsCString);
+    if (attrs['title']) {
+      calendar.name = attrs['title'];
     } else {
       calendar.name = '' +
         data.getValue('name').QueryInterface(Ci.nsISupportsCString);
     }
 
-    if (attrs && attrs.hasKey('color')) {
-      calendar.setProperty(
-        'color',
-        '' + data.getValue('name').QueryInterface(Ci.nsISupportsCString));
+    //TODO validation
+    if (attrs['color']) {
+      calendar.setProperty('color', attrs['color']);
     }
   },
 
   /**
-   * Loads calendars of given identity and maps them to their URI.
+   * Loads calendars of client's identity and maps them to their URI.
    *
-   * @param {nsIMsgIdentity} identity
    * @returns {Object}
    */
   _loadEeeCalendarsByUri:
-  function calEeeSynchronizer_loadEeeCalendars(identity) {
+  function calEeeSynchronizer_loadEeeCalendars() {
+    var identity = this._client.identity;
     var eeeCalendars = Cc["@mozilla.org/calendar/manager;1"].
       getService(Ci.calICalendarManager).
       getCalendars({}).
       filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
-        return 'eee' == calendar.type;
+        return ('eee' == calendar.type) &&
+          (calendar.getProperty("imip.identity") === identity);
       });
-      //TODO could be nice to allow this conversion
-      // map(function calEeeSynchronizer_mapEeeCalendars(calendar) {
-      //   return calendar.QueryInterface(Ci.calEeeICalendar);
-      // })
     var calendarsByUri = {};
     var calendar;
     for each (calendar in eeeCalendars) {
