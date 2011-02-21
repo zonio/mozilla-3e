@@ -111,13 +111,14 @@ calEeeClient.prototype = {
   /**
    * Notified listener if method queue has finished execution of methods.
    *
-   * @param {calEeeIMethodQueue} methodQueue
+   * @param {calIOperation} operation can be queried for calEeeIMethodQueue
    * @param {Array} context
    * @todo custom listener with transformation of XML-RPC response to
    * specialized Mozilla instances
    */
-  onResult: function calEeeClient_onResult(methodQueue, context) {
-    var methodName = context[0].QueryInterface(Ci.nsISupportsCString),
+  onResult: function calEeeClient_onResult(operation, context) {
+    var methodQueue = operation.QueryInterface(Ci.calEeeIMethodQueue),
+        methodName = context[0].QueryInterface(Ci.nsISupportsCString),
         listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
 
     if (!methodQueue.isPending) {
