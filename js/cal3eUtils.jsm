@@ -345,7 +345,7 @@ cal3e.Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth,
   }
 
   var i = 0;
-  for (prop in obj) {
+  for (let prop in obj) {
     i++;
     if (typeof(obj[prop]) == "object") {
       if (obj[prop] && obj[prop].length != undefined) {
