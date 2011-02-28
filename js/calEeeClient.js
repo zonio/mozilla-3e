@@ -20,13 +20,18 @@
 /**
  * EEE client simplifying server method calls to prepared operations.
  */
-function calEeeClient() {}
+function calEeeClient() {
+  this._queues = [];
+  this._activeQueue = null;
+  this._timer = null;
+}
 
 calEeeClient.prototype = {
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeIClient,
-    Ci.calIGenericOperationListener
+    Ci.calIGenericOperationListener,
+    Ci.nsIObserver
   ]),
 
   _interface_name: 'ESClient',
@@ -109,6 +114,50 @@ calEeeClient.prototype = {
   },
 
   /**
+   * Add method queue to another queue for execution.
+   *
+   * @param {calEeeIMethodQueue} methodQueue
+   * @param {calIGenericOperationListener} listener
+   * @returns {calEeeIClient} receiver
+   */
+  _queueExecution: function calEeeClient_queueExecution(methodQueue, listener) {
+    this._queues.push([methodQueue, listener]);
+    if (null === this._timer) {
+      this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+      this._timer.init(this, 1, Ci.nsITimer.TYPE_ONE_SHOT);
+    }
+
+    return this;
+  },
+
+  /**
+   * Handles timer callbacks.
+   *
+   * @param {nsISupports} subject
+   * @param {String} topic
+   * @param {String} data
+   */
+  observe: function calEeeSyncService_observe(subject, topic, data) {
+    switch (topic) {
+    case 'timer-callback':
+      this._execute();
+      break;
+    }
+  },
+
+  _execute: function calEeeClient_execute() {
+    if (null === this._activeQueue) {
+      let listener;
+      [this._activeQueue, listener] = this._queues.shift();
+      this._activeQueue.execute(this, listener);
+    }
+    if (0 < this._queues.length) {
+      this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+      this._timer.init(this, 500, Ci.nsITimer.TYPE_ONE_SHOT);
+    }
+  },
+
+  /**
    * Notified listener if method queue has finished execution of methods.
    *
    * @param {calIOperation} operation can be queried for calEeeIMethodQueue
@@ -122,6 +171,7 @@ calEeeClient.prototype = {
         listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
 
     if (!methodQueue.isPending) {
+      this._activeQueue = null;
       listener.onResult(methodQueue, methodQueue.lastResponse);
     }
   },
@@ -138,7 +188,7 @@ calEeeClient.prototype = {
   authenticate: function cal3eClient_authenticate(listener) {
     var methodQueue = this._prepareMethodQueue();
     this._enqueueAuthenticate(methodQueue);
-    methodQueue.execute(this, listener);
+    this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },

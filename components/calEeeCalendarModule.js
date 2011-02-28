@@ -28,6 +28,7 @@ var calEeeClassInfo = {
       var interfaces = [
         Ci.calEeeIClient,
         Ci.calIGenericOperationListener,
+        Ci.nsIObserver,
         Ci.nsIClassInfo
       ];
       count.value = interfaces.length;
