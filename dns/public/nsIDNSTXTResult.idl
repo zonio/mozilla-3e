@@ -36,56 +36,36 @@
 
 #include "nsISupports.idl"
 
-native PRNetAddr(union PRNetAddr);
-
 /**
- * nsIDNSRecord
+ * nsIDNSTXTResult
  *
- * this interface represents the result of a DNS lookup.  since a DNS
- * query may return more than one resolved IP address, the record acts
- * like an enumerator, allowing the caller to easily step through the
- * list of IP addresses.
+ * this interface represents the result of a DNS lookup for TXT
+ * records. since a DNS query may return more than one resolved TXT
+ * records, the result acts like an enumerator, allowing the caller to
+ * easily step through the list of TXT results.
  */
 [scriptable, uuid(31c9c52e-1100-457d-abac-d2729e43f506)]
-interface nsIDNSRecord : nsISupports
+interface nsIDNSTXTResult : nsISupports
 {
-    /**
-     * @return the canonical hostname for this record.  this value is empty if
-     * the record was not fetched with the RESOLVE_CANONICAL_NAME flag.
-     *
-     * e.g., www.mozilla.org --> rheet.mozilla.org
-     */
-    readonly attribute ACString canonicalName;
 
     /**
-     * this function copies the value of the next IP address into the
-     * given PRNetAddr struct and increments the internal address iterator.
+     * this function returns the value of the next TXT record as a
+     * string and increments the internal record iterator.
      *
-     * @param aPort
-     *        A port number to initialize the PRNetAddr with.
-     *
-     * @throws NS_ERROR_NOT_AVAILABLE if there is not another IP address in
-     * the record.
+     * @throws NS_ERROR_NOT_AVAILABLE if there is not another TXT
+     * record in the result.
      */
-    [noscript] PRNetAddr getNextAddr(in PRUint16 aPort);
+    ACString getNextRecord();
 
     /**
-     * this function returns the value of the next IP address as a
-     * string and increments the internal address iterator.
-     *
-     * @throws NS_ERROR_NOT_AVAILABLE if there is not another IP address in
-     * the record.
-     */
-    ACString getNextAddrAsString();
-
-    /**
-     * this function returns true if there is another address in the record.
+     * this function returns true if there is another record in the
+     * result.
      */
     boolean hasMore();
 
     /**
-     * this function resets the internal address iterator to the first
-     * address in the record.
+     * this function resets the internal record iterator to the first
+     * record in the result.
      */
     void rewind();
 };

@@ -40,14 +40,14 @@
 
 interface nsICancelable;
 interface nsIEventTarget;
-interface nsIDNSRecord;
-interface nsIDNSListener;
+interface nsIDNSTXTResult;
+interface nsIDNSTXTListener;
 
 /**
- * nsIDNSService
+ * nsIDNSTXTService
  */
 [scriptable, uuid(c1a56a45-8fa3-44e6-9f01-38c91c858cf9)]
-interface nsIDNSService : nsISupports
+interface nsIDNSTXTService : nsISupports
 {
     /**
      * kicks off an asynchronous host lookup.
@@ -69,7 +69,7 @@ interface nsIDNSService : nsISupports
      */
     nsICancelable asyncResolve(in AUTF8String       aHostName,
                                in unsigned long     aFlags,
-                               in nsIDNSListener    aListener,
+                               in nsIDNSTXTListener aListener,
                                in nsIEventTarget    aListenerTarget);
 
     /**
@@ -82,16 +82,11 @@ interface nsIDNSService : nsISupports
      * @param aFlags
      *        a bitwise OR of the RESOLVE_ prefixed constants defined below.
      *
-     * @return DNS record corresponding to the given hostname.
+     * @return DNS result corresponding to the given hostname.
      * @throws NS_ERROR_UNKNOWN_HOST if host could not be resolved.
      */
-    nsIDNSRecord resolve(in AUTF8String   aHostName,
-                         in unsigned long aFlags);
-
-    /**
-     * @return the hostname of the operating system.
-     */
-    readonly attribute AUTF8String myHostName;
+    nsIDNSTXTResult resolve(in AUTF8String   aHostName,
+                            in unsigned long aFlags);
 
     /*************************************************************************
      * Listed below are the various flags that may be OR'd together to form
@@ -104,20 +99,15 @@ interface nsIDNSService : nsISupports
     const unsigned long RESOLVE_BYPASS_CACHE = (1 << 0);
 
     /**
-     * if set, the canonical name of the specified host will be queried.
-     */
-    const unsigned long RESOLVE_CANONICAL_NAME = (1 << 1);
-
-    /**
      * if set, the query is given lower priority. Medium takes precedence
      * if both are used.
      */
-    const unsigned long RESOLVE_PRIORITY_MEDIUM = (1 << 2);
-    const unsigned long RESOLVE_PRIORITY_LOW    = (1 << 3);
+    const unsigned long RESOLVE_PRIORITY_MEDIUM = (1 << 1);
+    const unsigned long RESOLVE_PRIORITY_LOW    = (1 << 2);
 
     /**
      * if set, indicates request is speculative. Speculative requests 
      * return errors if prefetching is disabled by configuration.
      */
-    const unsigned long RESOLVE_SPECULATE = (1 << 4);
+    const unsigned long RESOLVE_SPECULATE = (1 << 3);
 };
