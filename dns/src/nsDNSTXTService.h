@@ -34,39 +34,27 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsPIDNSService.h"
-#include "nsIIDNService.h"
 #include "nsIObserver.h"
 #include "nsHostResolver.h"
 #include "nsAutoPtr.h"
 #include "nsString.h"
 #include "prlock.h"
 
-class nsDNSService : public nsPIDNSService
-                   , public nsIObserver
+class nsDNSTXTService : public nsIObserver
 {
 public:
     NS_DECL_ISUPPORTS
-    NS_DECL_NSPIDNSSERVICE
-    NS_DECL_NSIDNSSERVICE
+    NS_DECL_NSIDNSTXTSERVICE
     NS_DECL_NSIOBSERVER
 
-    nsDNSService();
-    ~nsDNSService();
+    nsDNSTXTService();
+    ~nsDNSTXTService();
 
 private:
-    PRUint16 GetAFForLookup(const nsACString &host);
-
     nsRefPtr<nsHostResolver>  mResolver;
-    nsCOMPtr<nsIIDNService>   mIDN;
 
-    // mLock protects access to mResolver and mIPv4OnlyDomains
+    // mLock protects access to mResolver
     PRLock                   *mLock;
 
-    // mIPv4OnlyDomains is a comma-separated list of domains for which only
-    // IPv4 DNS lookups are performed. This allows the user to disable IPv6 on
-    // a per-domain basis and work around broken DNS servers. See bug 68796.
-    nsAdoptingCString         mIPv4OnlyDomains;
-    PRBool                    mDisableIPv6;
     PRBool                    mDisablePrefetch;
 };

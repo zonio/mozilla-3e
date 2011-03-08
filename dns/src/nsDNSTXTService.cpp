@@ -35,9 +35,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsDNSService2.h"
-#include "nsIDNSRecord.h"
-#include "nsIDNSListener.h"
+#include "nsDNSTXTService.h"
+#include "nsIDNSTXTResult.h"
+#include "nsIDNSTXTListener.h"
 #include "nsICancelable.h"
 #include "nsIProxyObjectManager.h"
 #include "nsIPrefService.h"
@@ -58,29 +58,26 @@
 #include "prio.h"
 #include "plstr.h"
 
-static const char kPrefDnsCacheEntries[]    = "network.dnsCacheEntries";
-static const char kPrefDnsCacheExpiration[] = "network.dnsCacheExpiration";
-static const char kPrefEnableIDN[]          = "network.enableIDN";
-static const char kPrefIPv4OnlyDomains[]    = "network.dns.ipv4OnlyDomains";
-static const char kPrefDisableIPv6[]        = "network.dns.disableIPv6";
-static const char kPrefDisablePrefetch[]    = "network.dns.disablePrefetch";
+static const char kPrefDnsTxtCacheEntries[]    = "network.dnsTxtCacheEntries";
+static const char kPrefDnsTxtCacheExpiration[] = "network.dnsTxtCacheExpiration";
+static const char kPrefDisablePrefetch[]       = "network.dnsTxt.disablePrefetch";
 
 //-----------------------------------------------------------------------------
 
-class nsDNSRecord : public nsIDNSRecord
+class nsDNSTXTResult : public nsIDNSTXTResult
 {
 public:
     NS_DECL_ISUPPORTS
-    NS_DECL_NSIDNSRECORD
+    NS_DECL_NSIDNSTXTRESULT
 
-    nsDNSRecord(nsHostRecord *hostRecord)
+    nsDNSTXTResult(nsHostRecord *hostRecord)
         : mHostRecord(hostRecord)
         , mIter(nsnull)
         , mIterGenCnt(-1)
         , mDone(PR_FALSE) {}
 
 private:
-    virtual ~nsDNSRecord() {}
+    virtual ~nsDNSTXTResult() {}
 
     nsRefPtr<nsHostRecord>  mHostRecord;
     void                   *mIter;
@@ -90,34 +87,15 @@ private:
     PRBool                  mDone;
 };
 
-NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSRecord, nsIDNSRecord)
+NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSTXTResult, nsIDNSTXTResult)
 
 NS_IMETHODIMP
-nsDNSRecord::GetCanonicalName(nsACString &result)
+nsDNSTXTResult::GetNextRecord(PRUint16 port, PRNetAddr *addr)
 {
-    // this method should only be called if we have a CNAME
-    NS_ENSURE_TRUE(mHostRecord->flags & nsHostResolver::RES_CANON_NAME,
-                   NS_ERROR_NOT_AVAILABLE);
-
-    // if the record is for an IP address literal, then the canonical
-    // host name is the IP address literal.
-    const char *cname;
-    PR_Lock(mHostRecord->addr_info_lock);
-    if (mHostRecord->addr_info)
-        cname = PR_GetCanonNameFromAddrInfo(mHostRecord->addr_info);
-    else
-        cname = mHostRecord->host;
-    result.Assign(cname);
-    PR_Unlock(mHostRecord->addr_info_lock);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDNSRecord::GetNextAddr(PRUint16 port, PRNetAddr *addr)
-{
-    // not a programming error to poke the DNS record when it has no more
-    // entries.  just fail without any debug warnings.  this enables consumers
-    // to enumerate the DNS record without calling HasMore.
+    // not a programming error to poke the DNS record when it has no
+    // more entries.  just fail without any debug warnings.  this
+    // enables consumers to enumerate the DNS record without calling
+    // HasMore.
     if (mDone)
         return NS_ERROR_NOT_AVAILABLE;
 
@@ -126,8 +104,9 @@ nsDNSRecord::GetNextAddr(PRUint16 port, PRNetAddr *addr)
         if (!mIter)
             mIterGenCnt = mHostRecord->addr_info_gencnt;
         else if (mIterGenCnt != mHostRecord->addr_info_gencnt) {
-            // mHostRecord->addr_info has changed, so mIter is invalid.
-            // Restart the iteration.  Alternatively, we could just fail.
+            // mHostRecord->addr_info has changed, so mIter is
+            // invalid.  Restart the iteration.  Alternatively, we
+            // could just fail.
             mIter = nsnull;
             mIterGenCnt = mHostRecord->addr_info_gencnt;
         }
@@ -160,10 +139,10 @@ nsDNSRecord::GetNextAddr(PRUint16 port, PRNetAddr *addr)
 }
 
 NS_IMETHODIMP
-nsDNSRecord::GetNextAddrAsString(nsACString &result)
+nsDNSTXTResult::GetNextRecordAsString(nsACString &result)
 {
     PRNetAddr addr;
-    nsresult rv = GetNextAddr(0, &addr);
+    nsresult rv = GetNextRecord(0, &addr);
     if (NS_FAILED(rv)) return rv;
 
     char buf[64];
@@ -176,7 +155,7 @@ nsDNSRecord::GetNextAddrAsString(nsACString &result)
 }
 
 NS_IMETHODIMP
-nsDNSRecord::HasMore(PRBool *result)
+nsDNSTXTResult::HasMore(PRBool *result)
 {
     if (mDone)
         *result = PR_FALSE;
@@ -185,7 +164,7 @@ nsDNSRecord::HasMore(PRBool *result)
         // there is another address other than to simply get the next address.
         void *iterCopy = mIter;
         PRNetAddr addr;
-        *result = NS_SUCCEEDED(GetNextAddr(0, &addr));
+        *result = NS_SUCCEEDED(GetNextRecord(0, &addr));
         mIter = iterCopy; // backup iterator
         mDone = PR_FALSE;
     }
@@ -193,7 +172,7 @@ nsDNSRecord::HasMore(PRBool *result)
 }
 
 NS_IMETHODIMP
-nsDNSRecord::Rewind()
+nsDNSTXTResult::Rewind()
 {
     mIter = nsnull;
     mIterGenCnt = -1;
@@ -203,46 +182,46 @@ nsDNSRecord::Rewind()
 
 //-----------------------------------------------------------------------------
 
-class nsDNSAsyncRequest : public nsResolveHostCallback
-                        , public nsICancelable
+class nsDNSTXTAsyncRequest : public nsResolveHostCallback
+                           , public nsICancelable
 {
 public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSICANCELABLE
 
-    nsDNSAsyncRequest(nsHostResolver   *res,
-                      const nsACString &host,
-                      nsIDNSListener   *listener,
-                      PRUint16          flags,
-                      PRUint16          af)
+    nsDNSTXTAsyncRequest(nsHostResolver    *res,
+                         const nsACString  &host,
+                         nsIDNSTXTListener *listener,
+                         PRUint16           flags,
+                         PRUint16           af)
         : mResolver(res)
         , mHost(host)
         , mListener(listener)
         , mFlags(flags)
         , mAF(af) {}
-    ~nsDNSAsyncRequest() {}
+    ~nsDNSTXTAsyncRequest() {}
 
     void OnLookupComplete(nsHostResolver *, nsHostRecord *, nsresult);
 
-    nsRefPtr<nsHostResolver> mResolver;
-    nsCString                mHost; // hostname we're resolving
-    nsCOMPtr<nsIDNSListener> mListener;
-    PRUint16                 mFlags;
-    PRUint16                 mAF;
+    nsRefPtr<nsHostResolver>    mResolver;
+    nsCString                   mHost; // hostname we're resolving
+    nsCOMPtr<nsIDNSTXTListener> mListener;
+    PRUint16                    mFlags;
+    PRUint16                    mAF;
 };
 
 void
-nsDNSAsyncRequest::OnLookupComplete(nsHostResolver *resolver,
-                                    nsHostRecord   *hostRecord,
-                                    nsresult        status)
+nsDNSTXTAsyncRequest::OnLookupComplete(nsHostResolver *resolver,
+                                       nsHostRecord   *hostRecord,
+                                       nsresult        status)
 {
     // need to have an owning ref when we issue the callback to enable
     // the caller to be able to addref/release multiple times without
     // destroying the record prematurely.
-    nsCOMPtr<nsIDNSRecord> rec;
+    nsCOMPtr<nsIDNSTXTResult> rec;
     if (NS_SUCCEEDED(status)) {
         NS_ASSERTION(hostRecord, "no host record");
-        rec = new nsDNSRecord(hostRecord);
+        rec = new nsDNSTXTResult(hostRecord);
         if (!rec)
             status = NS_ERROR_OUT_OF_MEMORY;
     }
@@ -255,10 +234,10 @@ nsDNSAsyncRequest::OnLookupComplete(nsHostResolver *resolver,
     NS_RELEASE_THIS();
 }
 
-NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSAsyncRequest, nsICancelable)
+NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSTXTAsyncRequest, nsICancelable)
 
 NS_IMETHODIMP
-nsDNSAsyncRequest::Cancel(nsresult reason)
+nsDNSTXTAsyncRequest::Cancel(nsresult reason)
 {
     NS_ENSURE_ARG(NS_FAILED(reason));
     mResolver->DetachCallback(mHost.get(), mFlags, mAF, this, reason);
@@ -267,14 +246,14 @@ nsDNSAsyncRequest::Cancel(nsresult reason)
 
 //-----------------------------------------------------------------------------
 
-class nsDNSSyncRequest : public nsResolveHostCallback
+class nsDNSTXTSyncRequest : public nsResolveHostCallback
 {
 public:
-    nsDNSSyncRequest(PRMonitor *mon)
+    nsDNSTXTSyncRequest(PRMonitor *mon)
         : mDone(PR_FALSE)
         , mStatus(NS_OK)
         , mMonitor(mon) {}
-    virtual ~nsDNSSyncRequest() {}
+    virtual ~nsDNSTXTSyncRequest() {}
 
     void OnLookupComplete(nsHostResolver *, nsHostRecord *, nsresult);
 
@@ -287,11 +266,12 @@ private:
 };
 
 void
-nsDNSSyncRequest::OnLookupComplete(nsHostResolver *resolver,
-                                   nsHostRecord   *hostRecord,
-                                   nsresult        status)
+nsDNSTXTSyncRequest::OnLookupComplete(nsHostResolver *resolver,
+                                      nsHostRecord   *hostRecord,
+                                      nsresult        status)
 {
-    // store results, and wake up nsDNSService::Resolve to process results.
+    // store results, and wake up nsDNSTXTService::Resolve to process
+    // results.
     PR_EnterMonitor(mMonitor);
     mDone = PR_TRUE;
     mStatus = status;
@@ -302,22 +282,21 @@ nsDNSSyncRequest::OnLookupComplete(nsHostResolver *resolver,
 
 //-----------------------------------------------------------------------------
 
-nsDNSService::nsDNSService()
+nsDNSTXTService::nsDNSTXTService()
     : mLock(nsnull)
 {
 }
 
-nsDNSService::~nsDNSService()
+nsDNSTXTService::~nsDNSTXTService()
 {
     if (mLock)
         PR_DestroyLock(mLock);
 }
 
-NS_IMPL_THREADSAFE_ISUPPORTS3(nsDNSService, nsIDNSService, nsPIDNSService,
-                              nsIObserver)
+NS_IMPL_THREADSAFE_ISUPPORTS2(nsDNSTXTService, nsIDNSTXTService, nsIObserver)
 
 NS_IMETHODIMP
-nsDNSService::Init()
+nsDNSTXTService::Init()
 {
     NS_ENSURE_TRUE(!mResolver, NS_ERROR_ALREADY_INITIALIZED);
 
@@ -326,26 +305,19 @@ nsDNSService::Init()
     // prefs
     PRUint32 maxCacheEntries  = 400;
     PRUint32 maxCacheLifetime = 3; // minutes
-    PRBool   enableIDN        = PR_TRUE;
-    PRBool   disableIPv6      = PR_FALSE;
     PRBool   disablePrefetch  = PR_FALSE;
     int      proxyType        = nsProtocolProxyService::eProxyConfig_Direct;
     
-    nsAdoptingCString ipv4OnlyDomains;
-
     // read prefs
     nsCOMPtr<nsIPrefBranch2> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
     if (prefs) {
         PRInt32 val;
-        if (NS_SUCCEEDED(prefs->GetIntPref(kPrefDnsCacheEntries, &val)))
+        if (NS_SUCCEEDED(prefs->GetIntPref(kPrefDnsTxtCacheEntries, &val)))
             maxCacheEntries = (PRUint32) val;
-        if (NS_SUCCEEDED(prefs->GetIntPref(kPrefDnsCacheExpiration, &val)))
+        if (NS_SUCCEEDED(prefs->GetIntPref(kPrefDnsTxtCacheExpiration, &val)))
             maxCacheLifetime = val / 60; // convert from seconds to minutes
 
         // ASSUMPTION: pref branch does not modify out params on failure
-        prefs->GetBoolPref(kPrefEnableIDN, &enableIDN);
-        prefs->GetBoolPref(kPrefDisableIPv6, &disableIPv6);
-        prefs->GetCharPref(kPrefIPv4OnlyDomains, getter_Copies(ipv4OnlyDomains));
         prefs->GetBoolPref(kPrefDisablePrefetch, &disablePrefetch);
 
         // If a manual proxy is in use, disable prefetch implicitly
@@ -359,11 +331,8 @@ nsDNSService::Init()
 
         // register as prefs observer
         if (prefs) {
-            prefs->AddObserver(kPrefDnsCacheEntries, this, PR_FALSE);
-            prefs->AddObserver(kPrefDnsCacheExpiration, this, PR_FALSE);
-            prefs->AddObserver(kPrefEnableIDN, this, PR_FALSE);
-            prefs->AddObserver(kPrefIPv4OnlyDomains, this, PR_FALSE);
-            prefs->AddObserver(kPrefDisableIPv6, this, PR_FALSE);
+            prefs->AddObserver(kPrefDnsTxtCacheEntries, this, PR_FALSE);
+            prefs->AddObserver(kPrefDnsTxtCacheExpiration, this, PR_FALSE);
             prefs->AddObserver(kPrefDisablePrefetch, this, PR_FALSE);
 
             // Monitor these to see if there is a change in proxy configuration
@@ -371,12 +340,6 @@ nsDNSService::Init()
             prefs->AddObserver("network.proxy.type", this, PR_FALSE);
         }
     }
-
-    // we have to null out mIDN since we might be getting re-initialized
-    // as a result of a pref change.
-    nsCOMPtr<nsIIDNService> idn;
-    if (enableIDN)
-        idn = do_GetService(NS_IDNSERVICE_CONTRACTID);
 
     nsRefPtr<nsHostResolver> res;
     nsresult rv = nsHostResolver::Create(maxCacheEntries,
@@ -386,20 +349,16 @@ nsDNSService::Init()
         // now, set all of our member variables while holding the lock
         nsAutoLock lock(mLock);
         mResolver = res;
-        mIDN = idn;
-        mIPv4OnlyDomains = ipv4OnlyDomains; // exchanges buffer ownership
-        mDisableIPv6 = disableIPv6;
 
         // Disable prefetching either by explicit preference or if a manual proxy is configured 
         mDisablePrefetch = disablePrefetch || (proxyType == nsProtocolProxyService::eProxyConfig_Manual);
     }
     
-    nsDNSPrefetch::Initialize(this);
     return rv;
 }
 
 NS_IMETHODIMP
-nsDNSService::Shutdown()
+nsDNSTXTService::Shutdown()
 {
     nsRefPtr<nsHostResolver> res;
     {
@@ -413,16 +372,15 @@ nsDNSService::Shutdown()
 }
 
 NS_IMETHODIMP
-nsDNSService::AsyncResolve(const nsACString  &hostname,
-                           PRUint32           flags,
-                           nsIDNSListener    *listener,
-                           nsIEventTarget    *target,
-                           nsICancelable    **result)
+nsDNSTXTService::AsyncResolve(const nsACString  &hostname,
+                              PRUint32           flags,
+                              nsIDNSTXTListener *listener,
+                              nsIEventTarget    *target,
+                              nsICancelable    **result)
 {
-    // grab reference to global host resolver and IDN service.  beware
-    // simultaneous shutdown!!
+    // grab reference to global host resolver.  beware simultaneous
+    // shutdown!!
     nsRefPtr<nsHostResolver> res;
-    nsCOMPtr<nsIIDNService> idn;
     {
         nsAutoLock lock(mLock);
 
@@ -430,34 +388,17 @@ nsDNSService::AsyncResolve(const nsACString  &hostname,
             return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
 
         res = mResolver;
-        idn = mIDN;
     }
     NS_ENSURE_TRUE(res, NS_ERROR_OFFLINE);
 
     const nsACString *hostPtr = &hostname;
 
     nsresult rv;
-    nsCAutoString hostACE;
-    if (idn && !IsASCII(hostname)) {
-        if (NS_SUCCEEDED(idn->ConvertUTF8toACE(hostname, hostACE)))
-            hostPtr = &hostACE;
-    }
 
-    nsCOMPtr<nsIDNSListener> listenerProxy;
-    if (target) {
-        rv = NS_GetProxyForObject(target,
-                                  NS_GET_IID(nsIDNSListener),
-                                  listener,
-                                  NS_PROXY_ASYNC | NS_PROXY_ALWAYS,
-                                  getter_AddRefs(listenerProxy));
-        if (NS_FAILED(rv)) return rv;
-        listener = listenerProxy;
-    }
+    PRUint16 af = PR_AF_UNSPEC;
 
-    PRUint16 af = GetAFForLookup(*hostPtr);
-
-    nsDNSAsyncRequest *req =
-            new nsDNSAsyncRequest(res, *hostPtr, listener, flags, af);
+    nsDNSTXTAsyncRequest *req =
+            new nsDNSTXTAsyncRequest(res, *hostPtr, listener, flags, af);
     if (!req)
         return NS_ERROR_OUT_OF_MEMORY;
     NS_ADDREF(*result = req);
@@ -473,29 +414,22 @@ nsDNSService::AsyncResolve(const nsACString  &hostname,
 }
 
 NS_IMETHODIMP
-nsDNSService::Resolve(const nsACString &hostname,
-                      PRUint32          flags,
-                      nsIDNSRecord    **result)
+nsDNSTXTService::Resolve(const nsACString &hostname,
+                         PRUint32          flags,
+                         nsIDNSTXTResult **result)
 {
-    // grab reference to global host resolver and IDN service.  beware
-    // simultaneous shutdown!!
+    // grab reference to global host resolver.  beware simultaneous
+    // shutdown!!
     nsRefPtr<nsHostResolver> res;
-    nsCOMPtr<nsIIDNService> idn;
     {
         nsAutoLock lock(mLock);
         res = mResolver;
-        idn = mIDN;
     }
     NS_ENSURE_TRUE(res, NS_ERROR_OFFLINE);
 
     const nsACString *hostPtr = &hostname;
 
     nsresult rv;
-    nsCAutoString hostACE;
-    if (idn && !IsASCII(hostname)) {
-        if (NS_SUCCEEDED(idn->ConvertUTF8toACE(hostname, hostACE)))
-            hostPtr = &hostACE;
-    }
 
     //
     // sync resolve: since the host resolver only works asynchronously, we need
@@ -510,9 +444,9 @@ nsDNSService::Resolve(const nsACString &hostname,
         return NS_ERROR_OUT_OF_MEMORY;
 
     PR_EnterMonitor(mon);
-    nsDNSSyncRequest syncReq(mon);
+    nsDNSTXTSyncRequest syncReq(mon);
 
-    PRUint16 af = GetAFForLookup(*hostPtr);
+    PRUint16 af = PR_AF_UNSPEC;
 
     rv = res->ResolveHost(PromiseFlatCString(*hostPtr).get(), flags, af, &syncReq);
     if (NS_SUCCEEDED(rv)) {
@@ -524,7 +458,7 @@ nsDNSService::Resolve(const nsACString &hostname,
             rv = syncReq.mStatus;
         else {
             NS_ASSERTION(syncReq.mHostRecord, "no host record");
-            nsDNSRecord *rec = new nsDNSRecord(syncReq.mHostRecord);
+            nsDNSTXTResult *rec = new nsDNSTXTResult(syncReq.mHostRecord);
             if (!rec)
                 rv = NS_ERROR_OUT_OF_MEMORY;
             else
@@ -538,18 +472,7 @@ nsDNSService::Resolve(const nsACString &hostname,
 }
 
 NS_IMETHODIMP
-nsDNSService::GetMyHostName(nsACString &result)
-{
-    char name[100];
-    if (PR_GetSystemInfo(PR_SI_HOSTNAME, name, sizeof(name)) == PR_SUCCESS) {
-        result = name;
-        return NS_OK;
-    }
-    return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-nsDNSService::Observe(nsISupports *subject, const char *topic, const PRUnichar *data)
+nsDNSTXTService::Observe(nsISupports *subject, const char *topic, const PRUnichar *data)
 {
     // we are only getting called if a preference has changed. 
     NS_ASSERTION(strcmp(topic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0,
@@ -569,59 +492,4 @@ nsDNSService::Observe(nsISupports *subject, const char *topic, const PRUnichar *
         Init();
     }
     return NS_OK;
-}
-
-PRUint16
-nsDNSService::GetAFForLookup(const nsACString &host)
-{
-    if (mDisableIPv6)
-        return PR_AF_INET;
-
-    nsAutoLock lock(mLock);
-
-    PRUint16 af = PR_AF_UNSPEC;
-
-    if (!mIPv4OnlyDomains.IsEmpty()) {
-        const char *domain, *domainEnd, *end;
-        PRUint32 hostLen, domainLen;
-
-        // see if host is in one of the IPv4-only domains
-        domain = mIPv4OnlyDomains.BeginReading();
-        domainEnd = mIPv4OnlyDomains.EndReading(); 
-
-        nsACString::const_iterator hostStart;
-        host.BeginReading(hostStart);
-        hostLen = host.Length();
-
-        do {
-            // skip any whitespace
-            while (*domain == ' ' || *domain == '\t')
-                ++domain;
-
-            // find end of this domain in the string
-            end = strchr(domain, ',');
-            if (!end)
-                end = domainEnd;
-
-            // to see if the hostname is in the domain, check if the domain
-            // matches the end of the hostname.
-            domainLen = end - domain;
-            if (domainLen && hostLen >= domainLen) {
-                const char *hostTail = hostStart.get() + hostLen - domainLen;
-                if (PL_strncasecmp(domain, hostTail, domainLen) == 0) {
-                    // now, make sure either that the hostname is a direct match or
-                    // that the hostname begins with a dot.
-                    if (hostLen == domainLen ||
-                            *hostTail == '.' || *(hostTail - 1) == '.') {
-                        af = PR_AF_INET;
-                        break;
-                    }
-                }
-            }
-
-            domain = end + 1;
-        } while (*end);
-    }
-
-    return af;
 }
