@@ -39,7 +39,6 @@
 #include "nsIDNSTXTResult.h"
 #include "nsIDNSTXTListener.h"
 #include "nsICancelable.h"
-#include "nsIProxyObjectManager.h"
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefBranch2.h"
@@ -50,8 +49,6 @@
 #include "nsAutoPtr.h"
 #include "nsNetCID.h"
 #include "nsNetError.h"
-#include "nsDNSPrefetch.h"
-#include "nsProtocolProxyService.h"
 #include "prsystem.h"
 #include "prnetdb.h"
 #include "prmon.h"
@@ -60,7 +57,6 @@
 
 static const char kPrefDnsTxtCacheEntries[]    = "network.dnsTxtCacheEntries";
 static const char kPrefDnsTxtCacheExpiration[] = "network.dnsTxtCacheExpiration";
-static const char kPrefDisablePrefetch[]       = "network.dnsTxt.disablePrefetch";
 
 //-----------------------------------------------------------------------------
 
@@ -305,8 +301,6 @@ nsDNSTXTService::Init()
     // prefs
     PRUint32 maxCacheEntries  = 400;
     PRUint32 maxCacheLifetime = 3; // minutes
-    PRBool   disablePrefetch  = PR_FALSE;
-    int      proxyType        = nsProtocolProxyService::eProxyConfig_Direct;
     
     // read prefs
     nsCOMPtr<nsIPrefBranch2> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
@@ -316,12 +310,6 @@ nsDNSTXTService::Init()
             maxCacheEntries = (PRUint32) val;
         if (NS_SUCCEEDED(prefs->GetIntPref(kPrefDnsTxtCacheExpiration, &val)))
             maxCacheLifetime = val / 60; // convert from seconds to minutes
-
-        // ASSUMPTION: pref branch does not modify out params on failure
-        prefs->GetBoolPref(kPrefDisablePrefetch, &disablePrefetch);
-
-        // If a manual proxy is in use, disable prefetch implicitly
-        prefs->GetIntPref("network.proxy.type", &proxyType);
     }
 
     if (firstTime) {
@@ -333,11 +321,6 @@ nsDNSTXTService::Init()
         if (prefs) {
             prefs->AddObserver(kPrefDnsTxtCacheEntries, this, PR_FALSE);
             prefs->AddObserver(kPrefDnsTxtCacheExpiration, this, PR_FALSE);
-            prefs->AddObserver(kPrefDisablePrefetch, this, PR_FALSE);
-
-            // Monitor these to see if there is a change in proxy configuration
-            // If a manual proxy is in use, disable prefetch implicitly
-            prefs->AddObserver("network.proxy.type", this, PR_FALSE);
         }
     }
 
@@ -349,9 +332,6 @@ nsDNSTXTService::Init()
         // now, set all of our member variables while holding the lock
         nsAutoLock lock(mLock);
         mResolver = res;
-
-        // Disable prefetching either by explicit preference or if a manual proxy is configured 
-        mDisablePrefetch = disablePrefetch || (proxyType == nsProtocolProxyService::eProxyConfig_Manual);
     }
     
     return rv;
@@ -384,7 +364,7 @@ nsDNSTXTService::AsyncResolve(const nsACString  &hostname,
     {
         nsAutoLock lock(mLock);
 
-        if (mDisablePrefetch && (flags & RESOLVE_SPECULATE))
+        if (flags & RESOLVE_SPECULATE)
             return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
 
         res = mResolver;

@@ -55,6 +55,4 @@ private:
 
     // mLock protects access to mResolver
     PRLock                   *mLock;
-
-    PRBool                    mDisablePrefetch;
 };
