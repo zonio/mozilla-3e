@@ -196,7 +196,6 @@ nsHostRecord::Create(const nsHostKey *key, nsHostRecord **result)
     rec->txt_info_lock = lock;
     rec->txt_info = nsnull;
     rec->txt_info_gencnt = 0;
-    rec->addr = nsnull;
     rec->expiration = NowInMinutes();
     rec->resolving = PR_FALSE;
     rec->onQueue = PR_FALSE;
@@ -216,8 +215,6 @@ nsHostRecord::~nsHostRecord()
         PR_DestroyLock(txt_info_lock);
     if (txt_info)
         PR_FreeAddrInfo(txt_info);
-    if (addr)
-        free(addr);
 }
 
 //----------------------------------------------------------------------------
@@ -270,16 +267,6 @@ HostDB_ClearEntry(PLDHashTable *table,
         LOG(("%s: exp=%d => %s\n",
             he->rec->host, diff,
             PR_GetCanonNameFromAddrInfo(he->rec->txt_info)));
-        void *iter = nsnull;
-        PRNetAddr addr;
-        char buf[64];
-        for (;;) {
-            iter = PR_EnumerateAddrInfo(iter, he->rec->txt_info, 0, &addr);
-            if (!iter)
-                break;
-            PR_NetAddrToString(&addr, buf, sizeof(buf));
-            LOG(("  %s\n", buf));
-        }
     }
 #endif
     NS_RELEASE(he->rec);
@@ -507,12 +494,6 @@ nsHostResolver::ResolveHost(const char            *host,
         if (mShutdown)
             rv = NS_ERROR_NOT_INITIALIZED;
         else {
-            PRNetAddr tempAddr;
-
-            // unfortunately, PR_StringToNetAddr does not properly initialize
-            // the output buffer in the case of IPv6 input.  see bug 223145.
-            memset(&tempAddr, 0, sizeof(PRNetAddr));
-            
             // check to see if there is already an entry for this |host|
             // in the hash table.  if so, then check to see if we can't
             // just reuse the lookup result.  otherwise, if there are
@@ -541,25 +522,6 @@ nsHostResolver::ResolveHost(const char            *host,
                         // the record in the background
                         IssueLookup(he->rec);
                 }
-            }
-            // if the host name is an IP address literal and has been parsed,
-            // go ahead and use it.
-            else if (he->rec->addr) {
-                result = he->rec;
-            }
-            // try parsing the host name as an IP address literal to short
-            // circuit full host resolution.  (this is necessary on some
-            // platforms like Win9x.  see bug 219376 for more details.)
-            else if (PR_StringToNetAddr(host, &tempAddr) == PR_SUCCESS) {
-                // ok, just copy the result into the host record, and be done
-                // with it! ;-)
-                he->rec->addr = (PRNetAddr *) malloc(sizeof(PRNetAddr));
-                if (!he->rec->addr)
-                    status = NS_ERROR_OUT_OF_MEMORY;
-                else
-                    memcpy(he->rec->addr, &tempAddr, sizeof(PRNetAddr));
-                // put reference to host record on stack...
-                result = he->rec;
             }
             else if (mPendingCount >= MAX_NON_PRIORITY_REQUESTS &&
                      !IsHighPriority(flags) &&
