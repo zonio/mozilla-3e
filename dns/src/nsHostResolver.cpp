@@ -171,11 +171,6 @@ private:
 
 //----------------------------------------------------------------------------
 
-// this macro filters out any flags that are not used when constructing the
-// host key.  the significant flags are those that would affect the resulting
-// host record (i.e., the flags that are passed down to PR_GetAddrInfoByName).
-#define RES_KEY_FLAGS(_f) ((_f) & nsHostResolver::RES_CANON_NAME)
-
 nsresult
 nsHostRecord::Create(const nsHostKey *key, nsHostRecord **result)
 {
@@ -236,7 +231,7 @@ static PLDHashNumber
 HostDB_HashKey(PLDHashTable *table, const void *key)
 {
     const nsHostKey *hk = static_cast<const nsHostKey *>(key);
-    return PL_DHashStringKey(table, hk->host) ^ RES_KEY_FLAGS(hk->flags) ^ hk->af;
+    return PL_DHashStringKey(table, hk->host) ^ hk->af;
 }
 
 static PRBool
@@ -248,7 +243,6 @@ HostDB_MatchEntry(PLDHashTable *table,
     const nsHostKey *hk = static_cast<const nsHostKey *>(key); 
 
     return !strcmp(he->rec->host, hk->host) &&
-            RES_KEY_FLAGS (he->rec->flags) == RES_KEY_FLAGS(hk->flags) &&
             he->rec->af == hk->af;
 }
 
@@ -877,9 +871,7 @@ nsHostResolver::ThreadFunc(void *arg)
     while (resolver->GetHostToLookup(&rec)) {
         LOG(("resolving %s ...\n", rec->host));
 
-        PRIntn flags = PR_AI_ADDRCONFIG;
-        if (!(rec->flags & RES_CANON_NAME))
-            flags |= PR_AI_NOCANONNAME;
+        PRIntn flags = PR_AI_ADDRCONFIG | PR_AI_NOCANONNAME;
 
         ai = PR_GetAddrInfoByName(rec->host, rec->af, flags);
 #if defined(RES_RETRY_ON_FAILURE)

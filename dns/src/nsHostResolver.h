@@ -91,35 +91,35 @@ public:
     /* instantiates a new host record */
     static nsresult Create(const nsHostKey *key, nsHostRecord **record);
 
-    /* a fully resolved host record has either a non-null |addr_info| or |addr|
-     * field.  if |addr_info| is null, it implies that the |host| is an IP
-     * address literal.  in which case, |addr| contains the parsed address.
-     * otherwise, if |addr_info| is non-null, then it contains one or many
-     * IP addresses corresponding to the given host name.  if both |addr_info|
-     * and |addr| are null, then the given host has not yet been fully resolved.
-     * |af| is the address family of the record we are querying for.
+    /* a fully resolved host record has a non-null |txt_info| field.
+     * if |txt_info| is non-null, then it contains one or many TXT
+     * records corresponding to the given host name.  if both
+     * |txt_info| is null, then the given host has not yet been fully
+     * resolved.  |af| is the address family of the record we are
+     * querying for.
      */
 
-    /* the lock protects |addr_info| and |addr_info_gencnt| because they
+    /* the lock protects |txt_info| and |txt_info_gencnt| because they
      * are mutable and accessed by the resolver worker thread and the
-     * nsDNSService2 class.  |addr| doesn't change after it has been
-     * assigned a value.  only the resolver worker thread modifies
-     * nsHostRecord (and only in nsHostResolver::OnLookupComplete);
-     * the other threads just read it.  therefore the resolver worker
-     * thread doesn't need to lock when reading |addr_info|.
+     * nsDNDTXTService class.  only the resolver worker thread
+     * modifies nsHostRecord (and only in
+     * nsHostResolver::OnLookupComplete); the other threads just read
+     * it.  therefore the resolver worker thread doesn't need to lock
+     * when reading |txt_info|.
      */
-    PRLock      *addr_info_lock;
-    int          addr_info_gencnt; /* generation count of |addr_info| */
-    PRAddrInfo  *addr_info;
-    PRNetAddr   *addr;
-    PRBool       negative;   /* True if this record is a cache of a failed lookup.
-                                Negative cache entries are valid just like any other
-                                (though never for more than 60 seconds), but a use
-                                of that negative entry forces an asynchronous refresh. */
+    PRLock      *txt_info_lock;
+    int          txt_info_gencnt; /* generation count of |txt_info| */
+    PRAddrInfo  *txt_info;
+    PRBool       negative;   /* True if this record is a cache of a
+                                failed lookup.  Negative cache entries
+                                are valid just like any other (though
+                                never for more than 60 seconds), but a
+                                use of that negative entry forces an
+                                asynchronous refresh. */
 
     PRUint32     expiration; /* measured in minutes since epoch */
 
-    PRBool HasResult() const { return addr_info || addr || negative; }
+    PRBool HasResult() const { return txt_info || negative; }
 
 private:
     friend class nsHostResolver;
@@ -223,10 +223,9 @@ public:
      */
     enum {
         RES_BYPASS_CACHE = 1 << 0,
-        RES_CANON_NAME   = 1 << 1,
-        RES_PRIORITY_MEDIUM   = 1 << 2,
-        RES_PRIORITY_LOW  = 1 << 3,
-        RES_SPECULATE     = 1 << 4   
+        RES_PRIORITY_MEDIUM   = 1 << 1,
+        RES_PRIORITY_LOW  = 1 << 2,
+        RES_SPECULATE     = 1 << 3   
     };
 
 private:
