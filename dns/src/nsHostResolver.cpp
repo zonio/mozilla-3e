@@ -193,9 +193,9 @@ nsHostRecord::Create(const nsHostKey *key, nsHostRecord **result)
 
     rec->_refc = 1; // addref
     NS_LOG_ADDREF(rec, 1, "nsHostRecord", sizeof(nsHostRecord));
-    rec->addr_info_lock = lock;
-    rec->addr_info = nsnull;
-    rec->addr_info_gencnt = 0;
+    rec->txt_info_lock = lock;
+    rec->txt_info = nsnull;
+    rec->txt_info_gencnt = 0;
     rec->addr = nsnull;
     rec->expiration = NowInMinutes();
     rec->resolving = PR_FALSE;
@@ -212,10 +212,10 @@ nsHostRecord::Create(const nsHostKey *key, nsHostRecord **result)
 
 nsHostRecord::~nsHostRecord()
 {
-    if (addr_info_lock)
-        PR_DestroyLock(addr_info_lock);
-    if (addr_info)
-        PR_FreeAddrInfo(addr_info);
+    if (txt_info_lock)
+        PR_DestroyLock(txt_info_lock);
+    if (txt_info)
+        PR_FreeAddrInfo(txt_info);
     if (addr)
         free(addr);
 }
@@ -262,19 +262,19 @@ HostDB_ClearEntry(PLDHashTable *table,
     LOG(("evicting record\n"));
     nsHostDBEnt *he = static_cast<nsHostDBEnt *>(entry);
 #if defined(DEBUG) && defined(PR_LOGGING)
-    if (!he->rec->addr_info)
-        LOG(("%s: => no addr_info\n", he->rec->host));
+    if (!he->rec->txt_info)
+        LOG(("%s: => no txt_info\n", he->rec->host));
     else {
         PRInt32 now = (PRInt32) NowInMinutes();
         PRInt32 diff = (PRInt32) he->rec->expiration - now;
         LOG(("%s: exp=%d => %s\n",
             he->rec->host, diff,
-            PR_GetCanonNameFromAddrInfo(he->rec->addr_info)));
+            PR_GetCanonNameFromAddrInfo(he->rec->txt_info)));
         void *iter = nsnull;
         PRNetAddr addr;
         char buf[64];
         for (;;) {
-            iter = PR_EnumerateAddrInfo(iter, he->rec->addr_info, 0, &addr);
+            iter = PR_EnumerateAddrInfo(iter, he->rec->txt_info, 0, &addr);
             if (!iter)
                 break;
             PR_NetAddrToString(&addr, buf, sizeof(buf));
@@ -798,16 +798,16 @@ nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, PRAddrInfo 
         // grab list of callbacks to notify
         MoveCList(rec->callbacks, cbs);
 
-        // update record fields.  We might have a rec->addr_info already if a
+        // update record fields.  We might have a rec->txt_info already if a
         // previous lookup result expired and we're reresolving it..
-        PRAddrInfo  *old_addr_info;
-        PR_Lock(rec->addr_info_lock);
-        old_addr_info = rec->addr_info;
-        rec->addr_info = result;
-        rec->addr_info_gencnt++;
-        PR_Unlock(rec->addr_info_lock);
-        if (old_addr_info)
-            PR_FreeAddrInfo(old_addr_info);
+        PRAddrInfo  *old_txt_info;
+        PR_Lock(rec->txt_info_lock);
+        old_txt_info = rec->txt_info;
+        rec->txt_info = result;
+        rec->txt_info_gencnt++;
+        PR_Unlock(rec->txt_info_lock);
+        if (old_txt_info)
+            PR_FreeAddrInfo(old_txt_info);
         rec->expiration = NowInMinutes();
         if (result) {
             rec->expiration += mMaxCacheLifetime;
@@ -824,7 +824,7 @@ nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, PRAddrInfo 
             rec->usingAnyThread = PR_FALSE;
         }
 
-        if (rec->addr_info && !mShutdown) {
+        if (rec->txt_info && !mShutdown) {
             // add to mEvictionQ
             PR_APPEND_LINK(rec, &mEvictionQ);
             NS_ADDREF(rec);
