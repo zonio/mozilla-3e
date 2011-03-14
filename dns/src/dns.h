@@ -25,31 +25,16 @@
 # include "config.h"
 #endif
 
-#define DNS_QUERY_TYPE_A    (1)
-#define DNS_QUERY_TYPE_AAAA (2)
-#define DNS_QUERY_TYPE_SRV  (3)
-
-typedef struct dns_host_st {
-    struct dns_host_st  *next;
+typedef struct dns_txt_st {
+    struct dns_txt_st   *next;
 
     unsigned int        type;
     unsigned int        class;
     unsigned int        ttl;
 
-    void                *rr;
-} *dns_host_t;
+    char                *rr;
+} *dns_txt_t;
 
-typedef struct dns_srv_st {
-    unsigned int        priority;
-    unsigned int        weight;
-    unsigned int        port;
-    unsigned int        rweight;
-
-    char                name[256];
-} *dns_srv_t;
-
-extern dns_host_t   dns_resolve(const char *zone, int type);
-extern void         dns_free(dns_host_t dns);
-
+extern dns_txt_t   dns_txt_resolve(const char *zone);
+extern void        dns_txt_free(dns_txt_t dns);
 #endif
-
