@@ -37,14 +37,27 @@ calEeeClient.prototype = {
   _interface_name: 'ESClient',
 
   /**
-   * Sets identity used for authorization.
+   * Prepares new method queue for operation on EEE server.
    *
-   * @param {nsIMsqIdentity} identity used to resolve how to connect to server
+   * @param {nsIMsgIdentity} identity
+   * @returns {calEeeIMethodQueue}
    */
-  set identity calEeeClient_set_identitity(identity) {
-    this._identity = identity;
-    var username = identity.email;
-    var domainName = username.substring(username.indexOf("@") + 1);
+  _prepareMethodQueue: function calEeeClient_prepareMethodQueue(identity) {
+    var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"].
+        createInstance(Ci.calEeeIMethodQueue);
+    methodQueue.serverUri = this._uriFromIdentity(identity);
+
+    return methodQueue;
+  },
+
+  /**
+   * Creates URI to send method queue to.
+   *
+   * @param {nsIMsgIdentity} identity
+   * @returns {nsIURI}
+   */
+  _uriFromIdentity: function calEeeClient_uriFromIdentity(identity) {
+    var domainName = identity.email.substring(identity.email.indexOf("@") + 1);
     //TODO DNS resolve
     var host, port;
     //XXX development
@@ -53,29 +66,7 @@ calEeeClient.prototype = {
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
         getService(Ci.nsIIOService);
-    this._uri = ioService.newURI(url, null, null);
-  },
-
-  /**
-   * Identity used for authorization.
-   *
-   * @property {nsIMsqIdentity}
-   */
-  get identity calEeeClient_get_identity() {
-    return this._identity;
-  },
-
-  /**
-   * Prepares new method queue for operation on EEE server.
-   *
-   * @returns {calEeeIMethodQueue}
-   */
-  _prepareMethodQueue: function calEeeClient_prepareMethodQueue() {
-    var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"].
-        createInstance(Ci.calEeeIMethodQueue);
-    methodQueue.serverUri = this._uri;
-
-    return methodQueue;
+    return ioService.newURI(url, null, null);
   },
 
   /**
@@ -120,7 +111,8 @@ calEeeClient.prototype = {
    * @param {calIGenericOperationListener} listener
    * @returns {calEeeIClient} receiver
    */
-  _queueExecution: function calEeeClient_queueExecution(methodQueue, listener) {
+  _queueExecution:
+  function calEeeClient_queueExecution(methodQueue, listener) {
     this._queues.push([methodQueue, listener]);
     if (null === this._timer) {
       this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -180,35 +172,32 @@ calEeeClient.prototype = {
    * Calls <code>ESClient.authenticate</code> with credentials retrieved from
    * {@link identity}.
    *
+   * @param {nsIMsgIdentity} identity
    * @param {calIGenericOperationListener} listener
    * @return {calEeeIMethodQueue} method queue with authenticate being
    * executed on the server
    * @throws {NS_ERROR_NOT_INITIALIZED} if called with no identity set
    */
-  authenticate: function cal3eClient_authenticate(listener) {
-    var methodQueue = this._prepareMethodQueue();
-    this._enqueueAuthenticate(methodQueue);
+  authenticate: function cal3eClient_authenticate(identity, listener) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
-  _enqueueAuthenticate: function calEeeClient_enqueueAuthenticate(
-      methodQueue) {
-    if ('undefined' === typeof this._identity) {
-      throw Cr.NS_ERROR_NOT_INITIALIZED;
-    }
-
+  _enqueueAuthenticate:
+  function calEeeClient_enqueueAuthenticate(identity, methodQueue) {
     //TODO password manager
     var password = "qwe";
 
-    this._enqueueMethod(methodQueue, 'authenticate',
-                        this._identity.email, password);
+    this._enqueueMethod(methodQueue, 'authenticate', identity.email, password);
   },
 
   /**
    * Retrieves users matching given query.
    *
+   * @param {nsIMsgIdentity} identity
    * @param {calIGenericOperationListener} listener
    * @param {String} query definition according to specification of
    * EEE query language and getUsers method
@@ -216,17 +205,16 @@ calEeeClient.prototype = {
    * executed on the server
    * @see authenticate
    */
-  getUsers: function cal3eClient_getUsers(listener, query) {
-    var methodQueue = this._prepareMethodQueue();
-    this._enqueueAuthenticate(methodQueue);
+  getUsers: function cal3eClient_getUsers(identity, listener, query) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueGetUsers(methodQueue, query);
-    methodQueue.execute(this, listener);
+    this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
-  _enqueueGetUsers: function calEeeClient_enqueueGetUsers(
-      methodQueue, query) {
+  _enqueueGetUsers: function calEeeClient_enqueueGetUsers(methodQueue, query) {
     this._enqueueMethod(methodQueue, 'getUsers', query);
   },
 
@@ -234,6 +222,7 @@ calEeeClient.prototype = {
    * Retrieves calendars matching given query and available to current
    * {@link identity}.
    *
+   * @param {nsIMsgIdentity} identity
    * @param {calIGenericOperationListener} listener
    * @param {String} query definition according to specification of EEE query
    * language and getCalendars method
@@ -241,23 +230,24 @@ calEeeClient.prototype = {
    * executed on the server
    * @see authenticate
    */
-  getCalendars: function cal3eClient_getCalendars(listener, query) {
-    var methodQueue = this._prepareMethodQueue();
-    this._enqueueAuthenticate(methodQueue);
+  getCalendars: function cal3eClient_getCalendars(identity, listener, query) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueGetCalendars(methodQueue, query);
-    methodQueue.execute(this, listener);
+    this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
-  _enqueueGetCalendars: function calEeeClient_enqueueGetCalendars(
-      methodQueue, query) {
+  _enqueueGetCalendars:
+  function calEeeClient_enqueueGetCalendars(methodQueue, query) {
     this._enqueueMethod(methodQueue, 'getCalendars', query);
   },
 
   /**
    * Retrieves objects from given calendar and in given date-time range.
    *
+   * @param {nsIMsgIdentity} identity
    * @param {calIGenericOperationListener} listener
    * @param {calICalendar} calendar queried calendar
    * @param {Number} from beggining of the range as a UNIX timestamp
@@ -266,12 +256,12 @@ calEeeClient.prototype = {
    * executed on the server
    * @see authenticate
    */
-  queryObjects: function cal3eClient_queryObjects(listener, calendar, from,
-      to) {
-    var methodQueue = this._prepareMethodQueue();
-    this._enqueueAuthenticate(methodQueue);
+  queryObjects:
+  function cal3eClient_queryObjects(identity, listener, calendar, from, to) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueQueryObjects(methodQueue, calendar, from, to);
-    methodQueue.execute(this, listener);
+    this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },

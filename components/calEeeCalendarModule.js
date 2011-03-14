@@ -45,7 +45,7 @@ var calEeeClassInfo = {
     classID: Components.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeClient",
-    flags: 0
+    flags: Ci.nsIClassInfo.SINGLETON
   },
 
   calEeeProtocol: {

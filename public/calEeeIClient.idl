@@ -40,23 +40,22 @@ interface calEeeIMethodQueue;
 interface calEeeIClient: nsISupports {
 
     /**
-     * Identity used for authorization.
-     */
-    attribute nsIMsgIdentity identity;
-
-    /**
      * Authenticates identity aqainst EEE server.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @return method queue with methods being called on the server
      * @throws NS_ERROR_NOT_INITIALIZED if called with no identity set
      */
-    calEeeIMethodQueue authenticate(in calIGenericOperationListener listener);
+    calEeeIMethodQueue authenticate(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener);
 
     /**
      * Retrieves users matching given query.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @param query criteria for users to return specified in EEE query
@@ -64,13 +63,14 @@ interface calEeeIClient: nsISupports {
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue getUsers(
+        in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
-        in AString query
-    );
+        in AString query);
 
     /**
      * Retrieves calendars matching given query.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @param query criteria for calendars to return specified in EEE query
@@ -78,14 +78,15 @@ interface calEeeIClient: nsISupports {
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue getCalendars(
+        in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
-        in AString query
-    );
+        in AString query);
 
     /**
      * Retrieves calendar objects within given date and time range and
      * matching given query.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @param calspec calendar which gets queried for items (e.g. events)
@@ -94,10 +95,10 @@ interface calEeeIClient: nsISupports {
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue queryObjects(
+        in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
         in AString calspec,
         in PRTime from,
-        in PRTime to
-    );
+        in PRTime to);
 
 };
