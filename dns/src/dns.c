@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA02111-1307USA
  */
 
-#include "resolver.h"
 #include "dns.h"
 
 /* Mac OS X 10.3 needs this - I don't think it will break anything else */
