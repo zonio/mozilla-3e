@@ -20,7 +20,7 @@
 #include "nsISupports.idl"
 
 interface nsIMsgIdentity;
-interface calICalendar;
+interface calEeeICalendar;
 interface calIGenericOperationListener;
 interface calEeeIMethodQueue;
 
@@ -89,7 +89,7 @@ interface calEeeIClient: nsISupports {
      * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
-     * @param calspec calendar which gets queried for items (e.g. events)
+     * @param calendar calendar which gets queried for items (e.g. events)
      * @param from datetime from which objects are listed
      * @param to datatime to which objects are listed
      * @return method queue with methods being called on the server
@@ -97,8 +97,24 @@ interface calEeeIClient: nsISupports {
     calEeeIMethodQueue queryObjects(
         in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
-        in AString calspec,
+        in calEeeICalendar calendar,
         in PRTime from,
         in PRTime to);
+
+    /**
+     * Adds calendar object to given calendar.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar where new item will be added
+     * @param item item to add
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue addObject(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in calIItemBase item);
 
 };

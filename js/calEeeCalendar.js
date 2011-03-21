@@ -293,7 +293,7 @@ calEeeCalendar.prototype = {
         });
 
     return this._getClient().queryObjects(
-      this._identity, clientListener, this.getCalspec(),
+      this._identity, clientListener, this,
       rangeStart.nativeTime, rangeEnd.nativeTime);
   },
 

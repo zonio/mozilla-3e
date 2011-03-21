@@ -397,6 +397,9 @@ calEeeSynchronizer.prototype = {
       filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
         return ('eee' == calendar.type) &&
           (calendar.getProperty("imip.identity") === identity);
+      }).
+      map(function calEeeSynchronizer_mapEeeCalendars(calendar) {
+        return calendar.QueryInterface(Ci.calEeeICalendar);
       });
     var calendarsByUri = {};
     var calendar;
