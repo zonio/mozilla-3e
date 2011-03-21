@@ -266,7 +266,7 @@ calEeeClient.prototype = {
     return methodQueue;
   },
 
-  _enqueueQueryObjects: function(methodQueue, calspec, from, to) {
+  _enqueueQueryObjects: function(methodQueue, calendar, from, to) {
     var query = "";
     if (null !== from) {
       query += "date_from('" + xpcomToEeeDate(from) + "')";
@@ -282,7 +282,22 @@ calEeeClient.prototype = {
     }
     query += "NOT deleted()";
     
-    this._enqueueMethod(methodQueue, 'queryObjects', calspec, query);
+    this._enqueueMethod(methodQueue, 'queryObjects', calendar.calspec, query);
+  },
+
+  addObject:
+  function cal3eClient_addObject(identity, listener, calendar, item) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAddObject(methodQueue, calendar, item);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueAddObject: function(methodQueue, calendar, item) {
+    this._enqueueMethod(methodQueue, 'addObject',
+                        calendar.calspec, item.icalString);
   }
 
 };

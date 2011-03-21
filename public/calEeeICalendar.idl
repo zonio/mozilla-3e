@@ -28,8 +28,8 @@ interface calEeeIClient;
 interface calEeeICalendar: calICalendar {
 
     /**
-     * EEE client used by calendar to communicate with EEE server.
+     * EEE unique calendar identifier.
      */
-    readonly attribute calEeeIClient client;
+    readonly attribute string calspec;
 
 };
