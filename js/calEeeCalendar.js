@@ -138,14 +138,63 @@ calEeeCalendar.prototype = {
   get color() {
     //TODO call getCalendarAttributes
     return this._color;
-  },   
+  },
 
   addItem: function calEee_addItem(item, listener) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    return this.adoptItem(item.clone(), listener);
   },
 
   adoptItem: function calEee_adoptItem(item, listener) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    if (null === this._identity) {
+      this.notifyOperationComplete(listener,
+                                   Cr.NS_ERROR_NOT_INITIALIZED,
+                                   Ci.calIOperationListener.ADD,
+                                   null,
+                                   "Unknown identity");
+      return null;
+    }
+    if (this.readOnly) {
+      this.notifyOperationComplete(listener,
+                                   Ci.calIErrors.CAL_IS_READONLY,
+                                   Ci.calIOperationListener.ADD,
+                                   null,
+                                   "Read-only calendar");
+      return null;
+    }
+
+    item = item.QueryInterface(Ci.calIEvent);
+
+    var calendar = this;
+    var clientListener = cal3e.createOperationListener(
+      function calEee_getItems_onResult(methodQueue, result) {
+        if (methodQueue.isPending) {
+          return;
+        }
+        if (Cr.NS_OK !== methodQueue.status) {
+          calendar.notifyOperationComplete(
+            listener,
+            methodQueue.status,
+            Ci.calIOperationListener.ADD,
+            null,
+            "Object addition to EEE server failed");
+          return;
+        }
+
+        listener.onGetResult(calendar,
+                             Cr.NS_OK,
+                             Ci.calIEvent,
+                             null,
+                             1,
+                             item);
+        calendar.notifyOperationComplete(listener,
+                                         Cr.NS_OK,
+                                         Ci.calIOperationListener.ADD,
+                                         null,
+                                         null);
+      });
+
+    return this._getClient().addObject(
+      this._identity, clientListener, this, item);
   },
 
   modifyItem: function calEee_modifyItem(item, listener) {
