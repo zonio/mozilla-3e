@@ -146,6 +146,8 @@ calEeeClient.prototype = {
     if (0 < this._queues.length) {
       this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       this._timer.init(this, 500, Ci.nsITimer.TYPE_ONE_SHOT);
+    } else {
+      this._timer = null;
     }
   },
 
