@@ -166,7 +166,7 @@ calEeeCalendar.prototype = {
 
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
-      function calEee_getItems_onResult(methodQueue, result) {
+      function calEee_adoptItem_onResult(methodQueue, result) {
         if (methodQueue.isPending) {
           return;
         }

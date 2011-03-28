@@ -23,6 +23,7 @@ interface nsIMsgIdentity;
 interface calEeeICalendar;
 interface calIGenericOperationListener;
 interface calEeeIMethodQueue;
+interface calIItemBase;
 
 /**
  * Builder of {@link calEeeIMethodQueue} with main client-side user oriented
