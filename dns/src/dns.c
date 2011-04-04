@@ -1,7 +1,8 @@
 /*
- * jabberd - Jabber Open Source Server
+ * jabberd - Jabber Open Source Server & Mozilla 3e Plugin
  * Copyright (c) 2002 Jeremie Miller, Thomas Muldowney,
  *                    Ryan Eatmon, Robert Norris
+ * Copyright (c) 2011 Zonio s.r.o.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,11 +21,10 @@
 
 #include "dns.h"
 
-/* Mac OS X 10.3 needs this - I don't think it will break anything else */
-#define BIND_8_COMPAT (1)
-
-#include <string.h>
-#include <stdlib.h>
+#include <prtypes.h>
+#include <prmem.h>
+#include <prnetdb.h>
+#include <plstr.h>
 
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
@@ -48,49 +48,40 @@
 # include <windns.h>
 #endif
 
+static char * *_parse_result(const unsigned char *abuf, int alen);
 
 /* unix implementation */
 #if defined(HAVE_RES_QUERY) || defined(HAVE___RES_QUERY)
- 
-/* older systems might not have these */
-#ifndef T_TXT
-# define T_TXT 16
-#endif
-
-/* the largest packet we'll send and receive */
-#if PACKETSZ > 1024
-# define MAX_PACKET PACKETSZ
-#else
-# define MAX_PACKET (1024)
-#endif
 
 typedef union {
     HEADER          hdr;
-    unsigned char   buf[MAX_PACKET];
+    unsigned char   buf[PR_NETDB_BUF_SIZE];
 } dns_packet_t;
 
 /** the actual resolver function */
 dns_txt_t dns_txt_resolve(const char *zone) {
     char host[256];
     dns_packet_t packet;
-    int len, qdcount, ancount, an, n;
+    PRInt32 len;
+    PRUint16 qdcount, ancount, an, n;
     unsigned char *eom, *scan;
     dns_txt_t *reply, first;
-    unsigned int type, class, ttl;
+    PRUint16 type, class;
+    PRUint32 ttl;
 
     if(zone == NULL || *zone == '\0')
         return NULL;
 
     /* do the actual query */
-    if((len = res_query(zone, C_IN, T_TXT, packet.buf, MAX_PACKET)) == -1 || len < sizeof(HEADER))
+    if((len = res_query(zone, C_IN, T_TXT, packet.buf, PR_NETDB_BUF_SIZE)) == -1 || len < sizeof(HEADER))
         return NULL;
 
     /* we got a valid result, containing two types of records - packet
      * and answer .. we have to skip over the packet records */
 
     /* no. of packets, no. of answers */
-    qdcount = ntohs(packet.hdr.qdcount);
-    ancount = ntohs(packet.hdr.ancount);
+    qdcount = PR_Ntohs(packet.hdr.qdcount);
+    ancount = PR_Ntohs(packet.hdr.ancount);
 
     /* end of the returned message */
     eom = (unsigned char *) (packet.buf + len);
@@ -107,17 +98,17 @@ dns_txt_t dns_txt_resolve(const char *zone) {
     }
 
     /* create an array to store the replies in */
-    reply = (dns_txt_t *) calloc(1, sizeof(dns_txt_t) * ancount);
+    reply = (dns_txt_t *) PR_Calloc(1, sizeof(dns_txt_t) * ancount);
 
     an = 0;
-    /* loop through the answer buffer and extract SRV records */
+    /* loop through the answer buffer and extract TXT records */
     while(ancount > 0 && scan < eom ) {
         ancount--;
         len = dn_expand(packet.buf, eom, scan, host, 256);
         if(len < 0) {
             for(n = 0; n < an; n++)
-                free(reply[n]);
-            free(reply);
+                PR_Free(reply[n]);
+            PR_Free(reply);
             return NULL;
         }
 
@@ -136,7 +127,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
         }
 
         /* create a new reply structure to save it in */
-        reply[an] = (dns_txt_t) malloc(sizeof(struct dns_txt_st));
+        reply[an] = (dns_txt_t) PR_Malloc(sizeof(struct dns_txt_st));
 
         reply[an]->type = type;
         reply[an]->class = class;
@@ -149,7 +140,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
         /* fell short, we're done */
         if(reply[an]->rr == NULL)
         {
-            free(reply[an]);
+            PR_Free(reply[an]);
             reply[an] = NULL;
             break;
         }
@@ -164,7 +155,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
     first = reply[0];
 
-    free(reply);
+    PR_Free(reply);
 
     return first;
 }
@@ -180,7 +171,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 #endif
 
 dns_txt_t dns_txt_resolve(const char *zone) {
-    int num, i;
+    PRUint16 num, i;
     PDNS_RECORD rr, scan;
     dns_txt_t *reply, first;
 
@@ -194,14 +185,14 @@ dns_txt_t dns_txt_resolve(const char *zone) {
     for(scan = rr; scan != NULL; scan = scan->pNext)
         num++;
 
-    reply = (dns_txt_t *) calloc(1, sizeof(dns_txt_t) * num);
+    reply = (dns_txt_t *) PR_Calloc(1, sizeof(dns_txt_t) * num);
 
     num = 0;
     for(scan = rr; scan != NULL; scan = scan->pNext) {
-        if(scan->wType != DNS_TYPE_TXT || stricmp(scan->pName, zone) != 0)
+        if(scan->wType != DNS_TYPE_TXT || PL_strcasecmp(scan->pName, zone) != 0)
             continue;
 
-        reply[num] = (dns_txt_t) malloc(sizeof(struct dns_txt_st));
+        reply[num] = (dns_txt_t) PR_Malloc(sizeof(struct dns_txt_st));
 
         reply[num]->type = scan->wType;
         reply[num]->class = 0;
@@ -219,7 +210,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
     first = reply[0];
 
-    free(reply);
+    PR_Free(reply);
 
     return first;
 }
@@ -231,8 +222,8 @@ void dns_txt_free(dns_txt_t dns) {
 
     while(dns != NULL) {
         next = dns->next;
-        free(dns->rr);
-        free(dns);
+        PR_Free(dns->rr);
+        PR_Free(dns);
         dns = next;
     }
 }

@@ -1,7 +1,8 @@
 /*
- * jabberd - Jabber Open Source Server
+ * jabberd - Jabber Open Source Server & Mozilla 3e Plugin
  * Copyright (c) 2002 Jeremie Miller, Thomas Muldowney,
  *                    Ryan Eatmon, Robert Norris
+ * Copyright (c) 2011 Zonio s.r.o.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,12 +26,14 @@
 # include "config.h"
 #endif
 
+#include <prtypes.h>
+
 typedef struct dns_txt_st {
     struct dns_txt_st   *next;
 
-    unsigned int        type;
-    unsigned int        class;
-    unsigned int        ttl;
+    PRUint16            type;
+    PRUint16            class;
+    PRUint32            ttl;
 
     char                *rr;
 } *dns_txt_t;
