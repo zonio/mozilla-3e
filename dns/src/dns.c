@@ -136,16 +136,9 @@ dns_txt_t dns_txt_resolve(const char *zone) {
         reply[an]->next = NULL;
 
         /* copy answer data into the allocated area */
-        reply[an]->rr = (char *) PR_Malloc(len);
-        PL_strncpyz(reply[an]->rr, scan, len);
+        reply[an]->rr = (char *) PR_Malloc(len + 1);
+        PL_strncpyz(reply[an]->rr, scan, len + 1);
         scan += len;
-
-        /* fell short, we're done */
-        if(reply[an]->rr == NULL) {
-            PR_Free(reply[an]);
-            reply[an] = NULL;
-            break;
-        }
 
         /* on to the next one */
         an++;
@@ -199,8 +192,8 @@ dns_txt_t dns_txt_resolve(const char *zone) {
         reply[num]->next = NULL;
 
         /* copy answer data into the allocated area */
-        reply[num]->rr = (char *) PR_Malloc(scan->wDataLength);
-        PL_strncpyz(reply[num]->rr, scan->Data.TXT->pStringArray[0], scan->wDataLength);
+        reply[num]->rr = (char *) PR_Malloc(scan->wDataLength + 1);
+        PL_strncpyz(reply[num]->rr, scan->Data.TXT->pStringArray[0], scan->wDataLength + 1);
 
         num++;
     }
