@@ -62,7 +62,7 @@ typedef union {
 dns_txt_t dns_txt_resolve(const char *zone) {
     char host[256];
     dns_packet_t packet;
-    PRInt32 len;
+    PRInt32 len, eor, m;
     PRUint16 qdcount, ancount, an, n;
     unsigned char *eom, *scan;
     dns_txt_t *reply, first;
@@ -135,11 +135,13 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
         reply[an]->next = NULL;
 
-        //TODO process TXT record
+        /* copy answer data into the allocated area */
+        reply[an]->rr = (char *) PR_Malloc(len);
+        PL_strncpyz(reply[an]->rr, scan, len);
+        scan += len;
 
         /* fell short, we're done */
-        if(reply[an]->rr == NULL)
-        {
+        if(reply[an]->rr == NULL) {
             PR_Free(reply[an]);
             reply[an] = NULL;
             break;
@@ -165,12 +167,8 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 /* windows implementation */
 #ifdef HAVE_DNSQUERY
 
-/* mingw doesn't have these, and msdn doesn't document them. hmph. */
-#ifndef DNS_TYPE_TXT
-# define DNS_TYPE_TXT (16)
-#endif
-
 dns_txt_t dns_txt_resolve(const char *zone) {
+    PRInt32 eor, n;
     PRUint16 num, i;
     PDNS_RECORD rr, scan;
     dns_txt_t *reply, first;
@@ -178,7 +176,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
     if(zone == NULL || *zone == '\0')
         return NULL;
 
-    if(DnsQuery(zone, DNS_TYPE_TXT, DNS_QUERY_STANDARD, NULL, &rr, NULL) != 0)
+    if(DnsQuery(zone, DNS_TYPE_TEXT, DNS_QUERY_STANDARD, NULL, &rr, NULL) != 0)
         return NULL;
 
     num = 0;
@@ -189,7 +187,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
     num = 0;
     for(scan = rr; scan != NULL; scan = scan->pNext) {
-        if(scan->wType != DNS_TYPE_TXT || PL_strcasecmp(scan->pName, zone) != 0)
+        if(scan->wType != DNS_TYPE_TEXT || PL_strcasecmp(scan->pName, zone) != 0)
             continue;
 
         reply[num] = (dns_txt_t) PR_Malloc(sizeof(struct dns_txt_st));
@@ -200,7 +198,9 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
         reply[num]->next = NULL;
 
-        //TODO process TXT record
+        /* copy answer data into the allocated area */
+        reply[num]->rr = (char *) PR_Malloc(scan->wDataLength);
+        PL_strncpyz(reply[num]->rr, scan->Data.TXT->pStringArray[0], scan->wDataLength);
 
         num++;
     }
