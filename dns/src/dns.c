@@ -48,8 +48,6 @@
 # include <windns.h>
 #endif
 
-static char * *_parse_result(const unsigned char *abuf, int alen);
-
 /* unix implementation */
 #if defined(HAVE_RES_QUERY) || defined(HAVE___RES_QUERY)
 
