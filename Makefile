@@ -17,77 +17,217 @@
 #
 # ***** END LICENSE BLOCK ***** */
 
-ifndef XULRUNNER_SDK
-  XULRUNNER_SDK = ./xulrunner-sdk
+SHELL = /bin/sh
+NULL :=
+SPACE := $(NULL) $(NULL)
+CC = cc
+CXX = c++
+LD = ld
+
+ifdef VPATH
+  srcdir = $(firstword $(subst :,$(SPACE),$(VPATH)))
+else
+  srcdir = .
 endif
-ifndef TB_SRC
-  TB_SRC = ./comm-1.9.2
+
+ifndef XULRUNNER_NAME
+  XULRUNNER_NAME = xulrunner-devel
+endif
+ifndef XULRUNNER_VERSION
+  XULRUNNER_VERSION = 1.9.2.15
 endif
 
-XPIDL = ${XULRUNNER_SDK}/bin/xpidl -m typelib -w -v -I	\
-${XULRUNNER_SDK}/idl
+ifndef XULRUNNER_SDK_PATH
+  ifneq ($(XULRUNNER_VERSION),)
+    XULRUNNER_SDK_PATH = /usr/lib/$(XULRUNNER_NAME)-$(XULRUNNER_VERSION)
+  else
+    XULRUNNER_SDK_PATH = /usr/lib/$(XULRUNNER_NAME)
+  endif
+endif
+ifndef XULRUNNER_INCLUDE_PATH
+  XULRUNNER_INCLUDE_PATH = $(XULRUNNER_SDK_PATH)/include
+endif
+ifndef XULRUNNER_IDL_PATH
+  XULRUNNER_IDL_PATH = $(XULRUNNER_SDK_PATH)/idl
+endif
+ifndef XULRUNNER_LIB_PATH
+  XULRUNNER_LIB_PATH = $(XULRUNNER_SDK_PATH)/lib
+endif
 
-NS_XPTS = components/nsIDictionary.xpt components/nsIXmlRpcClient.xpt	\
-components/nsIXmlRpcClientListener.xpt
-EEE_XPTS = components/calEeeICalendar.xpt components/calEeeIClient.xpt	\
-components/calEeeIMethodQueue.xpt components/calEeeISynchronizer.xpt
-XPTS = ${NS_XPTS} ${EEE_XPTS}
+ifndef THUNDERBIRD_NAME
+  THUNDERBIRD_NAME = thunderbird-devel
+endif
+ifndef THUNDERBIRD_VERSION
+  THUNDERBIRD_VERSION = 3.1.9
+endif
 
-NS_COMPONENTS = components/nsDictionary.js	\
-components/nsXmlRpcClient.js
-EEE_COMPONENTS = components/calEeeCalendarModule.js js/cal3eUtils.jsm	\
-js/calEeeCalendar.js js/calEeeClient.js js/calEeeMethodQueue.js		\
-js/calEeeProtocol.js js/calEeeSynchronizer.js
-COMPONENTS = ${NS_COMPONENTS} ${EEE_IMPLEMENTATION}
+ifndef THUNDERBIRD_SDK_PATH
+  ifneq ($(THUNDERBIRD_VERSION),)
+    THUNDERBIRD_SDK_PATH = /usr/lib/$(THUNDERBIRD_NAME)-$(THUNDERBIRD_VERSION)
+  else
+    THUNDERBIRD_SDK_PATH = /usr/lib/$(THUNDERBIRD_NAME)
+  endif
+endif
+ifndef THUNDERBIRD_INCLUDE_PATH
+  THUNDERBIRD_INCLUDE_PATH = $(THUNDERBIRD_SDK_PATH)/include
+endif
+ifndef THUNDERBIRD_IDL_PATH
+  THUNDERBIRD_IDL_PATH = $(THUNDERBIRD_SDK_PATH)/idl
+endif
+ifndef THUNDERBIRD_LIB_PATH
+  THUNDERBIRD_LIB_PATH = $(THUNDERBIRD_SDK_PATH)/lib
+endif
 
-VC = content/cal3eCalendarSubscribeDialog.js				\
-content/cal3eCalendarSubscribeDialog.xul content/cal3ePreferences.js	\
-content/cal3ePreferences.xul content/cal3eSync.js			\
-content/cal3eSync.xul content/calendarContextMenu.xul			\
-content/calendarCreation.js content/calendarCreation.xul		\
-content/calendarProperties.js content/calendarProperties.xul
+XPIDL = ${XULRUNNER_SDK_PATH}/bin/xpidl
+XPIDL_TYPELIB = $(XPIDL) -m typelib -I $(XULRUNNER_IDL_PATH)
+XPIDL_HEADER = $(XPIDL) -m typelib -I $(XULRUNNER_IDL_PATH)
+XPT_LINK = $(XULRUNNER_SDK_PATH)/bin/xpt_link
 
-L10N = locale/en-US/cal3eCalendar.dtd		\
-locale/en-US/cal3eCalendar.properties		\
-locale/en-US/cal3ePreferences.dtd
+override DEFS += -DXPCOM_GLUE
+override INCLUDES += -include xpcom-config.h -include mozilla-config.h 
+override CFLAGS += $(DEFS) $(INCLUDES) \
+          -Iinclude \
+          -I$(XULRUNNER_INCLUDE_PATH) \
+          -I$(THUNDERBIRD_INCLUDE_PATH)
+override CXXFLAGS += $(CFLAGS) \
+            -fno-rtti \
+            -fno-exceptions \
+            -shared \
+            $(NULL)
+override LDFLAGS += -L$(XULRUNNER_LIB_PATH) \
+           -lxpcomglue \
+           -lnspr4 \
+           -lplds4 \
+           $(NULL)
+LIB_FLAG = -dylib
+LIB_SUFFIX = .dylib
 
-SKIN = skin/cal3eGlobal.css
+DNS_IDLS = dns/public/nsIDNSTXTListener.idl \
+           dns/public/nsIDNSTXTResult.idl \
+           dns/public/nsIDNSTXTRequest.idl \
+           dns/public/nsIDNSTXTService.idl \
+           $(NULL)
+DNS_CSRCS = dns/src/dns.c \
+            $(NULL)
+DNS_CPPSRCS = dns/src/nsURLHelper.cpp \
+              dns/src/nsHostResolver.cpp \
+              dns/src/nsDNSTXTService.cpp \
+              $(NULL)
 
-DEFINITION = chrome.manifest install.rdf
+XMLRPC_XPTS = xml-rpc/public/nsIDictionary.xpt \
+              xml-rpc/public/nsIXmlRpcClient.xpt \
+              xml-rpc/public/nsIXmlRpcClientListener.xpt \
+              $(NULL)
+XMLRPC_JSSRCS = components/nsDictionary.js \
+                components/nsXmlRpcClient.js \
+                $(NULL)
 
+CALENDAR_XPTS = calendar/public/calEeeICalendar.xpt \
+                calendar/public/calEeeIClient.xpt \
+                calendar/public/calEeeIMethodQueue.xpt \
+                calendar/public/calEeeISynchronizer.xpt \
+                $(NULL)
+CALENDAR_JSSRCS = calendar/src/calEeeCalendarModule.js \
+                  calendar/src/cal3eUtils.jsm \
+                  calendar/src/calEeeCalendar.js \
+                  calendar/src/calEeeClient.js \
+                  calendar/src/calEeeMethodQueue.js \
+                  calendar/src/calEeeProtocol.js \
+                  calendar/src/calEeeSynchronizer.js \
+                  $(NULL)
 
-calendar3e.xpi: ${XPTS} ${COMPONENTS} ${VC} ${L10N} ${SKIN} ${DEFINITION}
+CHROME_CONTENT = content/cal3eCalendarSubscribeDialog.js \
+                 content/cal3eCalendarSubscribeDialog.xul \
+                 content/cal3ePreferences.js \
+                 content/cal3ePreferences.xul \
+                 content/cal3eSync.js \
+                 content/cal3eSync.xul \
+                 content/calendarContextMenu.xul \
+                 content/calendarCreation.js \
+                 content/calendarCreation.xul \
+                 content/calendarProperties.js \
+                 content/calendarProperties.xul \
+                 $(NULL)
+
+CHROME_LOCALE = locale/en-US/cal3eCalendar.dtd \
+                locale/en-US/cal3eCalendar.properties \
+                locale/en-US/cal3ePreferences.dtd \
+                $(NULL)
+
+CHROME_SKIN = skin/cal3eGlobal.css
+
+CHROME_MANIFEST = chrome.manifest
+
+XPI_DEFINITION = install.rdf
+
+.PHONY: build
+build: prepare dns-module xml-rpc-module calendar-module chrome
+
+.PHONY: prepare
+prepare:
+	install -d components include js content locale skin \
+	           dns/public dns/obj xml-rpc/public calendar/public
+
+.PHONY: dns-module
+dns-module: dns-xpts dns-headers dns-libs
+
+.PHONY: dns-xpts
+dns-xpts: components/dns.xpt
+
+components/dns.xpt: $(patsubst %.idl,%.xpt,$(DNS_IDLS))
+	$(XPT_LINK) components/dns.xpt $^
+
+$(patsubst %.idl,%.xpt,$(DNS_IDLS)): $(DNS_IDLS)
+	$(XPIDL_TYPELIB) -w -v -e $@ $(srcdir)/$(patsubst %.xpt,%.idl,$@)
+
+.PHONY: dns-headers
+dns-headers: $(patsubst dns/public/%.idl,include/%.h,$(DNS_IDLS))
+
+$(patsubst dns/public/%.idl,include/%.h,$(DNS_IDLS)): $(DNS_IDLS)
+	$(XPIDL_HEADER) -e $@ $(srcdir)/$(patsubst include/%.h,dns/public/%.idl,$@)
+
+.PHONY: dns-c-objs
+dns-c-objs: $(patsubst dns/src/%.c,dns/obj/%.o,$(DNS_CSRCS))
+
+$(patsubst dns/src/%.c,dns/obj/%.o,$(DNS_CSRCS)): $(DNS_CSRCS)
+	$(CC) -c -Wall -Os -o $@ $(CFLAGS) $(srcdir)/$(patsubst dns/obj/%.o,dns/src/%.c,$@)
+
+.PHONY: dns-cpp-objs
+dns-cpp-objs: $(patsubst dns/src/%.cpp,dns/obj/%.o,$(DNS_CPPSRCS))
+
+$(patsubst dns/src/%.cpp,dns/obj/%.o,$(DNS_CPPSRCS)): $(DNS_CPPSRCS)
+	$(CXX) -c -Wall -Os -o $@ $(CXXFLAGS) $(srcdir)/$(patsubst dns/obj/%.o,dns/src/%.cpp,$@)
+
+.PHONY: dns-libs
+dns-libs: components/dns.$(LIB_SUFFIX)
+
+components/dns.$(LIB_SUFFIX): $(patsubst dns/src/%.c,dns/obj/%.o,$(DNS_CSRCS)) $(patsubst dns/src/%.cpp,dns/obj/%.o,$(DNS_CPPSRCS))
+	$(LD) $^ $(LDFLAGS) $(LIB_FLAG) -o components/dns.$(LIB_SUFFIX)
+
+.PHONY: dist
+dist: calendar3e.xpi
+
+calendar3e.xpi: build
 	zip -x '*~' '#*#' -r calendar3e.xpi chrome.manifest		\
 					    install.rdf components js	\
 					    content locale skin
 
-.PHONY : xpts clean
-
-xpts: ${XPTS}
-
+.PHONY: clean
+ifdef VPATH
 clean:
-	-rm calendar3e.xpi components/*.xpt
+	rm -r components/ include/ \
+	      dns/ xml-rpc/ calendar/ \
+	      js/ \
+	      content/ locale/ skin/
+else
+clean:
+	rm -r components/*.xpt include/ \
+	      dns/public/*.xpt \
+	      xmlrpc/public/*.xpt \
+	      calendar/public/*.xpt \
+	      js/
+endif
 
-
-components/calEeeICalendar.xpt: public/calEeeICalendar.idl
-	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o	\
-	components/calEeeICalendar public/calEeeICalendar.idl
-components/calEeeIClient.xpt: public/calEeeIClient.idl
-	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o	\
-	components/calEeeIClient public/calEeeIClient.idl
-components/calEeeIMethodQueue.xpt: public/calEeeIMethodQueue.idl
-	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o		\
-	components/calEeeIMethodQueue public/calEeeIMethodQueue.idl
-components/calEeeISynchronizer.xpt: public/calEeeISynchronizer.idl
-	${XPIDL} -I ${TB_SRC}/calendar/base/public -I public -o		\
-	components/calEeeISynchronizer public/calEeeISynchronizer.idl
-
-components/nsIDictionary.xpt: public/nsIDictionary.idl
-	${XPIDL} -o components/nsIDictionary public/nsIDictionary.idl
-components/nsIXmlRpcClientListener.xpt: public/nsIXmlRpcClientListener.idl
-	${XPIDL} -o components/nsIXmlRpcClientListener	\
-		 public/nsIXmlRpcClientListener.idl
-components/nsIXmlRpcClient.xpt: public/nsIXmlRpcClientListener.idl \
-				public/nsIXmlRpcClient.idl
-	${XPIDL} -I public -o components/nsIXmlRpcClient	\
-	public/nsIXmlRpcClient.idl
+.PHONY: distclean
+distclean:
+	rm calendar3e.xpi
