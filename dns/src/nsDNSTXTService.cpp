@@ -43,8 +43,7 @@
 #include "nsIPrefBranch.h"
 #include "nsIPrefBranch2.h"
 #include "nsIServiceManager.h"
-#include "nsReadableUtils.h"
-#include "nsString.h"
+#include "nsStringAPI.h"
 #include "nsAutoLock.h"
 #include "nsAutoPtr.h"
 #include "nsNetCID.h"
@@ -81,12 +80,13 @@ private:
                                          // mHostRecord->addr_info when we
                                          // start iterating
     PRBool                  mDone;
+
 };
 
 NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSTXTResult, nsIDNSTXTResult)
 
 NS_IMETHODIMP
-nsDNSTXTResult::GetNextRecord(PRUint16 port, PRNetAddr *addr)
+nsDNSTXTResult::GetNextRecord()
 {
     // not a programming error to poke the DNS record when it has no
     // more entries.  just fail without any debug warnings.  this
@@ -95,59 +95,25 @@ nsDNSTXTResult::GetNextRecord(PRUint16 port, PRNetAddr *addr)
     if (mDone)
         return NS_ERROR_NOT_AVAILABLE;
 
-    PR_Lock(mHostRecord->addr_info_lock);
-    if (mHostRecord->addr_info) {
-        if (!mIter)
-            mIterGenCnt = mHostRecord->addr_info_gencnt;
-        else if (mIterGenCnt != mHostRecord->addr_info_gencnt) {
-            // mHostRecord->addr_info has changed, so mIter is
-            // invalid.  Restart the iteration.  Alternatively, we
-            // could just fail.
-            mIter = nsnull;
-            mIterGenCnt = mHostRecord->addr_info_gencnt;
-        }
-        mIter = PR_EnumerateAddrInfo(mIter, mHostRecord->addr_info, port, addr);
-        PR_Unlock(mHostRecord->addr_info_lock);
-        if (!mIter) {
-            mDone = PR_TRUE;
-            return NS_ERROR_NOT_AVAILABLE;
-        }
+    PR_Lock(mHostRecord->txt_info_lock);
+    if (!mIter)
+        mIterGenCnt = mHostRecord->txt_info_gencnt;
+    else if (mIterGenCnt != mHostRecord->txt_info_gencnt) {
+        // mHostRecord->txt_info has changed, so mIter is
+        // invalid.  Restart the iteration.  Alternatively, we
+        // could just fail.
+        mIter = nsnull;
+        mIterGenCnt = mHostRecord->txt_info_gencnt;
     }
-    else {
-        PR_Unlock(mHostRecord->addr_info_lock);
-        if (!mHostRecord->addr) {
-            // Both mHostRecord->addr_info and mHostRecord->addr are null.
-            // This can happen if mHostRecord->addr_info expired and the
-            // attempt to reresolve it failed.
-            return NS_ERROR_NOT_AVAILABLE;
-        }
-        memcpy(addr, mHostRecord->addr, sizeof(PRNetAddr));
-        // set given port
-        port = PR_htons(port);
-        if (addr->raw.family == PR_AF_INET)
-            addr->inet.port = port;
-        else
-            addr->ipv6.port = port;
-        mDone = PR_TRUE; // no iterations
+    mIter =  PR_EnumerateAddrInfo(mIter, mHostRecord->txt_info, port, addr);
+    PR_Unlock(mHostRecord->txt_info_lock);
+    if (!mIter) {
+        mDone = PR_TRUE;
+        return NS_ERROR_NOT_AVAILABLE;
     }
+
         
     return NS_OK; 
-}
-
-NS_IMETHODIMP
-nsDNSTXTResult::GetNextRecordAsString(nsACString &result)
-{
-    PRNetAddr addr;
-    nsresult rv = GetNextRecord(0, &addr);
-    if (NS_FAILED(rv)) return rv;
-
-    char buf[64];
-    if (PR_NetAddrToString(&addr, buf, sizeof(buf)) == PR_SUCCESS) {
-        result.Assign(buf);
-        return NS_OK;
-    }
-    NS_ERROR("PR_NetAddrToString failed unexpectedly");
-    return NS_ERROR_FAILURE; // conversion failed for some reason
 }
 
 NS_IMETHODIMP
@@ -157,10 +123,9 @@ nsDNSTXTResult::HasMore(PRBool *result)
         *result = PR_FALSE;
     else {
         // unfortunately, NSPR does not provide a way for us to determine if
-        // there is another address other than to simply get the next address.
+        // there is another record other than to simply get the next record.
         void *iterCopy = mIter;
-        PRNetAddr addr;
-        *result = NS_SUCCEEDED(GetNextRecord(0, &addr));
+        *result = NS_SUCCEEDED(GetNextRecord());
         mIter = iterCopy; // backup iterator
         mDone = PR_FALSE;
     }

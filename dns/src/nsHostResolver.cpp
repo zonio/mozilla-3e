@@ -189,7 +189,6 @@ nsHostRecord::Create(const nsHostKey *key, nsHostRecord **result)
 
     rec->host = ((char *) rec) + sizeof(nsHostRecord);
     rec->flags = key->flags;
-    rec->af = key->af;
 
     rec->_refc = 1; // addref
     NS_LOG_ADDREF(rec, 1, "nsHostRecord", sizeof(nsHostRecord));
@@ -214,7 +213,7 @@ nsHostRecord::~nsHostRecord()
     if (txt_info_lock)
         PR_DestroyLock(txt_info_lock);
     if (txt_info)
-        PR_FreeAddrInfo(txt_info);
+        dns_txt_free(txt_info);
 }
 
 //----------------------------------------------------------------------------
@@ -228,7 +227,7 @@ static PLDHashNumber
 HostDB_HashKey(PLDHashTable *table, const void *key)
 {
     const nsHostKey *hk = static_cast<const nsHostKey *>(key);
-    return PL_DHashStringKey(table, hk->host) ^ hk->af;
+    return PL_DHashStringKey(table, hk->host);
 }
 
 static PRBool
@@ -239,8 +238,7 @@ HostDB_MatchEntry(PLDHashTable *table,
     const nsHostDBEnt *he = static_cast<const nsHostDBEnt *>(entry);
     const nsHostKey *hk = static_cast<const nsHostKey *>(key); 
 
-    return !strcmp(he->rec->host, hk->host) &&
-            he->rec->af == hk->af;
+    return !strcmp(he->rec->host, hk->host);
 }
 
 static void
@@ -265,8 +263,7 @@ HostDB_ClearEntry(PLDHashTable *table,
         PRInt32 now = (PRInt32) NowInMinutes();
         PRInt32 diff = (PRInt32) he->rec->expiration - now;
         LOG(("%s: exp=%d => %s\n",
-            he->rec->host, diff,
-            PR_GetCanonNameFromAddrInfo(he->rec->txt_info)));
+            he->rec->host, diff, he->rec->txt_info->rr[0]));
     }
 #endif
     NS_RELEASE(he->rec);
@@ -472,7 +469,6 @@ nsHostResolver::MoveQueue(nsHostRecord *aRec, PRCList &aDestQ)
 nsresult
 nsHostResolver::ResolveHost(const char            *host,
                             PRUint16               flags,
-                            PRUint16               af,
                             nsResolveHostCallback *callback)
 {
     NS_ENSURE_TRUE(host && *host, NS_ERROR_UNEXPECTED);
@@ -501,7 +497,7 @@ nsHostResolver::ResolveHost(const char            *host,
             // and return.  otherwise, add ourselves as first pending
             // callback, and proceed to do the lookup.
 
-            nsHostKey key = { host, flags, af };
+            nsHostKey key = { host, flags };
             nsHostDBEnt *he = static_cast<nsHostDBEnt *>
                                          (PL_DHashTableOperate(&mDB, &key, PL_DHASH_ADD));
 
@@ -568,7 +564,6 @@ nsHostResolver::ResolveHost(const char            *host,
 void
 nsHostResolver::DetachCallback(const char            *host,
                                PRUint16               flags,
-                               PRUint16               af,
                                nsResolveHostCallback *callback,
                                nsresult               status)
 {
@@ -576,7 +571,7 @@ nsHostResolver::DetachCallback(const char            *host,
     {
         nsAutoLock lock(mLock);
 
-        nsHostKey key = { host, flags, af };
+        nsHostKey key = { host, flags };
         nsHostDBEnt *he = static_cast<nsHostDBEnt *>
                                      (PL_DHashTableOperate(&mDB, &key, PL_DHASH_LOOKUP));
         if (he && he->rec) {
@@ -748,7 +743,7 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
 }
 
 void
-nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, PRAddrInfo *result)
+nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, dns_txt_t *result)
 {
     // get the list of pending callbacks for this lookup, and notify
     // them that the lookup is complete.
@@ -762,14 +757,14 @@ nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, PRAddrInfo 
 
         // update record fields.  We might have a rec->txt_info already if a
         // previous lookup result expired and we're reresolving it..
-        PRAddrInfo  *old_txt_info;
+        dns_txt_t *old_txt_info;
         PR_Lock(rec->txt_info_lock);
         old_txt_info = rec->txt_info;
         rec->txt_info = result;
         rec->txt_info_gencnt++;
         PR_Unlock(rec->txt_info_lock);
         if (old_txt_info)
-            PR_FreeAddrInfo(old_txt_info);
+            dns_txt_free(old_txt_info);
         rec->expiration = NowInMinutes();
         if (result) {
             rec->expiration += mMaxCacheLifetime;
@@ -829,21 +824,19 @@ nsHostResolver::ThreadFunc(void *arg)
 #endif
     nsHostResolver *resolver = (nsHostResolver *)arg;
     nsHostRecord *rec;
-    PRAddrInfo *ai;
+    dns_txt_t *dt;
     while (resolver->GetHostToLookup(&rec)) {
         LOG(("resolving %s ...\n", rec->host));
 
-        PRIntn flags = PR_AI_ADDRCONFIG | PR_AI_NOCANONNAME;
-
-        ai = PR_GetAddrInfoByName(rec->host, rec->af, flags);
+        dt = dns_txt_resolve(rec->host);
 #if defined(RES_RETRY_ON_FAILURE)
-        if (!ai && rs.Reset())
-            ai = PR_GetAddrInfoByName(rec->host, rec->af, flags);
+        if (!dt && rs.Reset())
+            dt = dns_txt_resolve(rec->host);
 #endif
 
         // convert error code to nsresult.
-        nsresult status = ai ? NS_OK : NS_ERROR_UNKNOWN_HOST;
-        resolver->OnLookupComplete(rec, status, ai);
+        nsresult status = dt ? NS_OK : NS_ERROR_UNKNOWN_HOST;
+        resolver->OnLookupComplete(rec, status, dt);
         LOG(("lookup complete for %s ...\n", rec->host));
     }
     NS_RELEASE(resolver);

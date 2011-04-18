@@ -45,6 +45,7 @@
 #include "prnetdb.h"
 #include "pldhash.h"
 #include "nsISupportsImpl.h"
+#include "dns.h"
 
 class nsHostResolver;
 class nsHostRecord;
@@ -77,7 +78,6 @@ struct nsHostKey
 {
     const char *host;
     PRUint16    flags;
-    PRUint16    af;
 };
 
 /**
@@ -95,8 +95,7 @@ public:
      * if |txt_info| is non-null, then it contains one or many TXT
      * records corresponding to the given host name.  if both
      * |txt_info| is null, then the given host has not yet been fully
-     * resolved.  |af| is the address family of the record we are
-     * querying for.
+     * resolved.
      */
 
     /* the lock protects |txt_info| and |txt_info_gencnt| because they
@@ -109,7 +108,7 @@ public:
      */
     PRLock      *txt_info_lock;
     int          txt_info_gencnt; /* generation count of |txt_info| */
-    PRAddrInfo  *txt_info;
+    dns_txt_t   *txt_info;
     PRBool       negative;   /* True if this record is a cache of a
                                 failed lookup.  Negative cache entries
                                 are valid just like any other (though
@@ -199,18 +198,15 @@ public:
      */
     nsresult ResolveHost(const char            *hostname,
                          PRUint16               flags,
-                         PRUint16               af,
                          nsResolveHostCallback *callback);
 
     /**
      * removes the specified callback from the nsHostRecord for the given
-     * hostname, flags, and address family.  these parameters should correspond
-     * to the parameters passed to ResolveHost.  this function executes the
-     * callback if the callback is still pending with the given status.
+     * hostname.  these parameters should correspond to the parameters passed
+     * to ResolveHost.  this function executes the callback if the callback
+     * is still pending with the given status.
      */
     void DetachCallback(const char            *hostname,
-                        PRUint16               flags,
-                        PRUint16               af,
                         nsResolveHostCallback *callback,
                         nsresult               status);
 
@@ -235,7 +231,7 @@ private:
     nsresult Init();
     nsresult IssueLookup(nsHostRecord *);
     PRBool   GetHostToLookup(nsHostRecord **m);
-    void     OnLookupComplete(nsHostRecord *, nsresult, PRAddrInfo *);
+    void     OnLookupComplete(nsHostRecord *, nsresult, dns_txt_t *);
     void     DeQueue(PRCList &aQ, nsHostRecord **aResult);
     void     ClearPendingQueue(PRCList *aPendingQueue);
     nsresult ConditionallyCreateThread(nsHostRecord *rec);

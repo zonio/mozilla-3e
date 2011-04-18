@@ -80,7 +80,7 @@ endif
 
 XPIDL = ${XULRUNNER_SDK_PATH}/bin/xpidl
 XPIDL_TYPELIB = $(XPIDL) -m typelib -I $(XULRUNNER_IDL_PATH)
-XPIDL_HEADER = $(XPIDL) -m typelib -I $(XULRUNNER_IDL_PATH)
+XPIDL_HEADER = $(XPIDL) -m header -I $(XULRUNNER_IDL_PATH)
 XPT_LINK = $(XULRUNNER_SDK_PATH)/bin/xpt_link
 
 override DEFS += -DXPCOM_GLUE

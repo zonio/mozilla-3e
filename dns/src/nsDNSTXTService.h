@@ -35,9 +35,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "nsIObserver.h"
+#include "nsIDNSTXTService.h"
 #include "nsHostResolver.h"
 #include "nsAutoPtr.h"
-#include "nsString.h"
+#include "nsStringAPI.h"
 #include "prlock.h"
 
 class nsDNSTXTService : public nsIObserver
