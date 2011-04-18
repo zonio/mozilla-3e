@@ -19,25 +19,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA02111-1307USA
  */
 
-#ifndef DNS_H
-#define DNS_H
+#ifndef dns_h__
+#define dns_h__
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#include <prtypes.h>
+#include "prtypes.h"
 
 typedef struct dns_txt_st {
-    struct dns_txt_st   *next;
+    struct dns_txt_st  *next;
 
     PRUint16            type;
     PRUint16            class;
     PRUint32            ttl;
 
-    char                *rr;
+    char               *rr;
 } *dns_txt_t;
 
 extern dns_txt_t   dns_txt_resolve(const char *zone);
 extern void        dns_txt_free(dns_txt_t dns);
+
 #endif

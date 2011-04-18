@@ -153,13 +153,11 @@ public:
     nsDNSTXTAsyncRequest(nsHostResolver    *res,
                          const nsACString  &host,
                          nsIDNSTXTListener *listener,
-                         PRUint16           flags,
-                         PRUint16           af)
+                         PRUint16           flags)
         : mResolver(res)
         , mHost(host)
         , mListener(listener)
-        , mFlags(flags)
-        , mAF(af) {}
+        , mFlags(flags) {}
     ~nsDNSTXTAsyncRequest() {}
 
     void OnLookupComplete(nsHostResolver *, nsHostRecord *, nsresult);
@@ -168,7 +166,6 @@ public:
     nsCString                   mHost; // hostname we're resolving
     nsCOMPtr<nsIDNSTXTListener> mListener;
     PRUint16                    mFlags;
-    PRUint16                    mAF;
 };
 
 void
@@ -201,7 +198,7 @@ NS_IMETHODIMP
 nsDNSTXTAsyncRequest::Cancel(nsresult reason)
 {
     NS_ENSURE_ARG(NS_FAILED(reason));
-    mResolver->DetachCallback(mHost.get(), mFlags, mAF, this, reason);
+    mResolver->DetachCallback(mHost.get(), mFlags, this, reason);
     return NS_OK;
 }
 
@@ -340,17 +337,15 @@ nsDNSTXTService::AsyncResolve(const nsACString  &hostname,
 
     nsresult rv;
 
-    PRUint16 af = PR_AF_UNSPEC;
-
     nsDNSTXTAsyncRequest *req =
-            new nsDNSTXTAsyncRequest(res, *hostPtr, listener, flags, af);
+            new nsDNSTXTAsyncRequest(res, *hostPtr, listener, flags);
     if (!req)
         return NS_ERROR_OUT_OF_MEMORY;
     NS_ADDREF(*result = req);
 
     // addref for resolver; will be released when OnLookupComplete is called.
     NS_ADDREF(req);
-    rv = res->ResolveHost(req->mHost.get(), flags, af, req);
+    rv = res->ResolveHost(req->mHost.get(), flags, req);
     if (NS_FAILED(rv)) {
         NS_RELEASE(req);
         NS_RELEASE(*result);
@@ -391,9 +386,7 @@ nsDNSTXTService::Resolve(const nsACString &hostname,
     PR_EnterMonitor(mon);
     nsDNSTXTSyncRequest syncReq(mon);
 
-    PRUint16 af = PR_AF_UNSPEC;
-
-    rv = res->ResolveHost(PromiseFlatCString(*hostPtr).get(), flags, af, &syncReq);
+    rv = res->ResolveHost(PromiseFlatCString(*hostPtr).get(), flags, &syncReq);
     if (NS_SUCCEEDED(rv)) {
         // wait for result
         while (!syncReq.mDone)

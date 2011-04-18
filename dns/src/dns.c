@@ -21,35 +21,24 @@
 
 #include "dns.h"
 
-#include <prtypes.h>
-#include <prmem.h>
-#include <prnetdb.h>
-#include <plstr.h>
+#include "prtypes.h"
+#include "prmem.h"
+#include "prnetdb.h"
+#include "plstr.h"
 
-#ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-# include <arpa/nameser.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#endif
-#ifdef HAVE_RESOLV_H
-# include <resolv.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_WINSOCK2_H
-# include <winsock2.h>
-#endif
-#ifdef HAVE_WINDNS_H
-# include <windns.h>
+#if defined(HAVE_RES_NINIT)
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <arpa/inet.h>
+#include <resolv.h>
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#include <windns.h>
 #endif
 
 /* unix implementation */
-#if defined(HAVE_RES_QUERY) || defined(HAVE___RES_QUERY)
+#if defined(HAVE_RES_NINIT)
 
 typedef union {
     HEADER          hdr;
@@ -153,10 +142,8 @@ dns_txt_t dns_txt_resolve(const char *zone) {
     return first;
 }
 
-#endif /* HAVE_RES_QUERY */
-
 /* windows implementation */
-#ifdef HAVE_DNSQUERY
+#else
 
 dns_txt_t dns_txt_resolve(const char *zone) {
     PRInt32 eor, n;
@@ -205,7 +192,8 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
     return first;
 }
-#endif /* HAVE_DNSQUERY */
+
+#endif
 
 /** free an srv structure */
 void dns_txt_free(dns_txt_t dns) {
