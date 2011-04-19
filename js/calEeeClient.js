@@ -298,8 +298,18 @@ calEeeClient.prototype = {
   },
 
   _enqueueAddObject: function(methodQueue, calendar, item) {
+	var count = { value: 0 };
+	var timezones = item.icalComponent.getReferencedTimezones(count);
+	var idx = count.value;
+	while (idx--) {
+	  this._enqueueMethod(methodQueue, 'addObject',
+                          calendar.calspec,
+						  timezones[idx].icalComponent.serializeToICS());
+	}
+
     this._enqueueMethod(methodQueue, 'addObject',
-                        calendar.calspec, item.icalString);
+                        calendar.calspec,
+						item.icalComponent.serializeToICS());
   }
 
 };

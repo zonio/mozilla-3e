@@ -163,6 +163,8 @@ calEeeCalendar.prototype = {
     }
 
     item = item.QueryInterface(Ci.calIEvent);
+	//TODO generate proper UID
+	item.id = '1';
 
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
