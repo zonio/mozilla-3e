@@ -27,6 +27,7 @@
 #include "plstr.h"
 
 #if defined(HAVE_RES_NINIT)
+#define BIND_8_COMPAT
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <arpa/inet.h>
