@@ -50,7 +50,7 @@ typedef union {
 dns_txt_t dns_txt_resolve(const char *zone) {
     char host[256];
     dns_packet_t packet;
-    PRInt32 len, eor, m;
+    PRUint32 len;
     PRUint16 qdcount, ancount, an, n;
     unsigned char *eom, *scan;
     dns_txt_t *reply, first;
@@ -147,7 +147,6 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 #else
 
 dns_txt_t dns_txt_resolve(const char *zone) {
-    PRInt32 eor, n;
     PRUint16 num, i;
     PDNS_RECORD rr, scan;
     dns_txt_t *reply, first;

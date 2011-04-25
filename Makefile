@@ -92,6 +92,7 @@ override CFLAGS += $(DEFS) $(INCLUDES) \
           -I$(THUNDERBIRD_INCLUDE_PATH) \
           $(NULL)
 override CXXFLAGS += $(CFLAGS) \
+            -fshort-wchar \
             -fno-rtti \
             -fno-exceptions \
             -shared \
