@@ -213,7 +213,7 @@ nsHostRecord::~nsHostRecord()
     if (txt_info_lock)
         PR_DestroyLock(txt_info_lock);
     if (txt_info)
-        dns_txt_free(txt_info);
+        dns_txt_free(&txt_info);
 }
 
 //----------------------------------------------------------------------------
@@ -764,7 +764,7 @@ nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, dns_txt_t *
         rec->txt_info_gencnt++;
         PR_Unlock(rec->txt_info_lock);
         if (old_txt_info)
-            dns_txt_free(old_txt_info);
+            dns_txt_free(&old_txt_info);
         rec->expiration = NowInMinutes();
         if (result) {
             rec->expiration += mMaxCacheLifetime;
