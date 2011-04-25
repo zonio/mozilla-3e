@@ -86,9 +86,11 @@ XPT_LINK = $(XULRUNNER_SDK_PATH)/bin/xpt_link
 override DEFS += -DXPCOM_GLUE
 override INCLUDES += -include xpcom-config.h -include mozilla-config.h 
 override CFLAGS += $(DEFS) $(INCLUDES) \
+          -DHAVE_RES_NINIT \
           -Iinclude \
           -I$(XULRUNNER_INCLUDE_PATH) \
-          -I$(THUNDERBIRD_INCLUDE_PATH)
+          -I$(THUNDERBIRD_INCLUDE_PATH) \
+          $(NULL)
 override CXXFLAGS += $(CFLAGS) \
             -fno-rtti \
             -fno-exceptions \
@@ -98,6 +100,7 @@ override LDFLAGS += -L$(XULRUNNER_LIB_PATH) \
            -lxpcomglue \
            -lnspr4 \
            -lplds4 \
+           -lresolv \
            $(NULL)
 LIB_FLAG = -dylib
 LIB_SUFFIX = .dylib
