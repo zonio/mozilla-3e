@@ -68,8 +68,8 @@ dns_txt_t dns_txt_resolve(const char *zone) {
      * and answer .. we have to skip over the packet records */
 
     /* no. of packets, no. of answers */
-    qdcount = PR_Ntohs(packet.hdr.qdcount);
-    ancount = PR_Ntohs(packet.hdr.ancount);
+    qdcount = PR_ntohs(packet.hdr.qdcount);
+    ancount = PR_ntohs(packet.hdr.ancount);
 
     /* end of the returned message */
     eom = (unsigned char *) (packet.buf + len);
