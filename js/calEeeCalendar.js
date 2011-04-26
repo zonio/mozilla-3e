@@ -205,6 +205,56 @@ calEeeCalendar.prototype = {
 
   deleteItem: function calEee_deleteItem(item, listener) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    if (null === this._identity) {
+      this.notifyOperationComplete(listener,
+                                   Cr.NS_ERROR_NOT_INITIALIZED,
+                                   Ci.calIOperationListener.DELETE,
+                                   null,
+                                   "Unknown identity");
+      return null;
+    }
+    if (this.readOnly) {
+      this.notifyOperationComplete(listener,
+                                   Ci.calIErrors.CAL_IS_READONLY,
+                                   Ci.calIOperationListener.DELETE,
+                                   null,
+                                   "Read-only calendar");
+      return null;
+    }
+
+    item = item.QueryInterface(Ci.calIEvent);
+
+    var calendar = this;
+    var clientListener = cal3e.createOperationListener(
+      function calEee_adoptItem_onResult(methodQueue, result) {
+        if (methodQueue.isPending) {
+          return;
+        }
+        if (Cr.NS_OK !== methodQueue.status) {
+          calendar.notifyOperationComplete(
+            listener,
+            methodQueue.status,
+            Ci.calIOperationListener.DELETE,
+            null,
+            "Object addition to EEE server failed");
+          return;
+        }
+
+        listener.onGetResult(calendar,
+                             Cr.NS_OK,
+                             Ci.calIEvent,
+                             null,
+                             1,
+                             item);
+        calendar.notifyOperationComplete(listener,
+                                         Cr.NS_OK,
+                                         Ci.calIOperationListener.ADD,
+                                         null,
+                                         null);
+      });
+
+    return this._getClient().deleteObject(
+      this._identity, clientListener, this, item);
   },
 
   getItem: function calEee_getItem(id, listener) {

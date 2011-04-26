@@ -310,6 +310,22 @@ calEeeClient.prototype = {
     this._enqueueMethod(methodQueue, 'addObject',
                         calendar.calspec,
 			item.icalComponent.serializeToICS());
+  },
+
+  deleteObject:
+  function cal3eClient_deleteObject(identity, listener, calendar, item) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueDeleteObject(methodQueue, calendar, item);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueDeleteObject: function(methodQueue, calendar, item) {
+    this._enqueueMethod(methodQueue, 'deleteObject',
+                        calendar.calspec,
+			item.id);
   }
 
 };
