@@ -28,7 +28,7 @@ typedef struct dns_txt_st {
     struct dns_txt_st  *next;
 
     PRUint16            type;
-    PRUint16            class;
+    PRUint16            cls;
     PRUint32            ttl;
 
     char               *rr;

@@ -54,7 +54,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
     PRUint16 qdcount, ancount, an, n;
     unsigned char *eom, *scan;
     dns_txt_t *reply, first;
-    PRUint16 type, class;
+    PRUint16 type, cls;
     PRUint32 ttl;
 
     if(zone == NULL || *zone == '\0')
@@ -104,7 +104,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
         /* extract the various parts of the record */
         GETSHORT(type, scan);
-        GETSHORT(class, scan);
+        GETSHORT(cls, scan);
         GETLONG(ttl, scan);
         GETSHORT(len, scan);
 
@@ -118,7 +118,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
         reply[an] = (dns_txt_t) PR_Malloc(sizeof(struct dns_txt_st));
 
         reply[an]->type = type;
-        reply[an]->class = class;
+        reply[an]->cls = cls;
         reply[an]->ttl = ttl;
 
         reply[an]->next = NULL;
@@ -171,7 +171,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
         reply[num] = (dns_txt_t) PR_Malloc(sizeof(struct dns_txt_st));
 
         reply[num]->type = scan->wType;
-        reply[num]->class = 0;
+        reply[num]->cls = 0;
         reply[num]->ttl = scan->dwTtl;
 
         reply[num]->next = NULL;

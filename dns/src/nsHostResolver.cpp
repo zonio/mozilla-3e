@@ -213,7 +213,7 @@ nsHostRecord::~nsHostRecord()
     if (txt_info_lock)
         PR_DestroyLock(txt_info_lock);
     if (txt_info)
-        dns_txt_free(&txt_info);
+        dns_txt_free(*txt_info);
 }
 
 //----------------------------------------------------------------------------
@@ -764,7 +764,7 @@ nsHostResolver::OnLookupComplete(nsHostRecord *rec, nsresult status, dns_txt_t *
         rec->txt_info_gencnt++;
         PR_Unlock(rec->txt_info_lock);
         if (old_txt_info)
-            dns_txt_free(&old_txt_info);
+            dns_txt_free(*old_txt_info);
         rec->expiration = NowInMinutes();
         if (result) {
             rec->expiration += mMaxCacheLifetime;
@@ -824,7 +824,7 @@ nsHostResolver::ThreadFunc(void *arg)
 #endif
     nsHostResolver *resolver = (nsHostResolver *)arg;
     nsHostRecord *rec;
-    dns_txt_t *dt;
+    dns_txt_t dt;
     while (resolver->GetHostToLookup(&rec)) {
         LOG(("resolving %s ...\n", rec->host));
 
@@ -836,7 +836,7 @@ nsHostResolver::ThreadFunc(void *arg)
 
         // convert error code to nsresult.
         nsresult status = dt ? NS_OK : NS_ERROR_UNKNOWN_HOST;
-        resolver->OnLookupComplete(rec, status, dt);
+        resolver->OnLookupComplete(rec, status, &dt);
         LOG(("lookup complete for %s ...\n", rec->host));
     }
     NS_RELEASE(resolver);

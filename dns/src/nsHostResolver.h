@@ -45,7 +45,9 @@
 #include "prnetdb.h"
 #include "pldhash.h"
 #include "nsISupportsImpl.h"
+extern "C" {
 #include "dns.h"
+}
 
 class nsHostResolver;
 class nsHostRecord;
@@ -207,6 +209,7 @@ public:
      * is still pending with the given status.
      */
     void DetachCallback(const char            *hostname,
+                        PRUint16               flags,
                         nsResolveHostCallback *callback,
                         nsresult               status);
 
