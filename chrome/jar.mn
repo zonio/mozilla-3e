@@ -1,28 +1,27 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Mozilla 3e Calendar Extension
-# Copyright © 2010  Zonio s.r.o.
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# ***** END LICENSE BLOCK ***** */
+calendar3e.jar:
+% content  calendar3e               %content/
+% locale   calendar3e   en-US       %locale/en-US/
+% skin     calendar3e   classic/1.0 %skin/
+% resource calendar3e               %js/
+% overlay chrome://lightning/content/messenger-overlay-toolbar.xul chrome://calendar3e/content/cal3eSync.xul
+% overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
+% overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
+% overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
 
-content  calendar3e               content/
-locale   calendar3e   en-US       locale/en-US/
-skin     calendar3e   classic/1.0 skin/
-resource calendar3e               js/
+  content/cal3eCalendarSubscribeDialog.js  (content/cal3eCalendarSubscribeDialog.js)
+  content/cal3eCalendarSubscribeDialog.xul (content/cal3eCalendarSubscribeDialog.xul)
+  content/cal3ePreferences.js              (content/cal3ePreferences.js)
+  content/cal3ePreferences.xul             (content/cal3ePreferences.xul)
+  content/cal3eSync.js                     (content/cal3eSync.js)
+  content/cal3eSync.xul                    (content/cal3eSync.xul)
+  content/calendarContextMenu.xul          (content/calendarContextMenu.xul)
+  content/calendarCreation.js              (content/calendarCreation.js)
+  content/calendarCreation.xul             (content/calendarCreation.xul)
+  content/calendarProperties.js            (content/calendarProperties.js)
+  content/calendarProperties.xul           (content/calendarProperties.xul)
 
-overlay chrome://lightning/content/messenger-overlay-toolbar.xul chrome://calendar3e/content/cal3eSync.xul
-overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
-overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
-overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
+  skin/cal3eGlobal.css (skin/cal3eGlobal.css)
+
+  locales/en-US/cal3eCalendar.dtd        (locales/en-US/cal3eCalendar.dtd)
+  locales/en-US/cal3eCalendar.properties (locales/en-US/cal3eCalendar.properties)
+  locales/en-US/cal3ePreferences.dtd     (locales/en-US/cal3ePreferences.dtd)
