@@ -162,7 +162,7 @@ var calEeeClassInfo = {
   }
 };
 
-var calEeeCalendarModule = {
+var calEeeModule = {
 
   _utilsLoaded: false,
 
@@ -276,5 +276,5 @@ var calEeeCalendarModule = {
 };
 
 function NSGetModule(componentManager, fileSpec) {
-  return calEeeCalendarModule;
+  return calEeeModule;
 }
