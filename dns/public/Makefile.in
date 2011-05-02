@@ -1,6 +1,6 @@
 # ***** BEGIN LICENSE BLOCK *****
 # Mozilla 3e Calendar Extension
-# Copyright © 2011  Zonio s.r.o.
+# Copyright © 2010  Zonio s.r.o.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,19 +17,22 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../..
+DEPTH = ../../../..
 topsrcdir = @top_srcdir@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
 include $(DEPTH)/config/autoconf.mk
 
-DIST_FILES = install.rdf
-
+MODULE = calendar3e
+XPIDL_MODULES = dns
 XPI_NAME = calendar3e
-INSTALL_EXTENSION_ID = calendar3e@zonio.net
-XPI_PKGNAME = calendar3e
 
-DIRS = xml-rpc dns calendar chrome
+XPIDLSRCS = \
+	nsIDNSTXTListener.idl \
+	nsIDNSTXTRequest.idl \
+	nsIDNSTXTResult.idl \
+	nsIDNSTXTService.idl \
+	$(NULL)
 
 include $(topsrcdir)/config/rules.mk
