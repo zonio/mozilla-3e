@@ -25,7 +25,7 @@ VPATH = @srcdir@
 include $(DEPTH)/config/autoconf.mk
 
 MODULE = calendar3e
-LIBRARY_NAME = calendar3edns_s
+LIBRARY_NAME = calendar3edns
 IS_COMPONENT = 1
 XPI_NAME = calendar3e
 
@@ -44,7 +44,5 @@ CPPSRCS = \
 CSRCS = \
 	dns.c \
 	$(NULL)
-
-FORCE_STATIC_LIB = 1
 
 include $(topsrcdir)/config/rules.mk
