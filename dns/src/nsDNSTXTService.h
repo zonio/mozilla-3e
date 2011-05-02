@@ -34,14 +34,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsIObserver.h"
 #include "nsIDNSTXTService.h"
+#include "nsIObserver.h"
 #include "nsHostResolver.h"
 #include "nsAutoPtr.h"
 #include "nsStringAPI.h"
 #include "prlock.h"
 
-class nsDNSTXTService : public nsIObserver
+class nsDNSTXTService : public nsIDNSTXTService
+                      , public nsIObserver
 {
 public:
     NS_DECL_ISUPPORTS

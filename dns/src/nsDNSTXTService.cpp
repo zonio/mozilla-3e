@@ -75,7 +75,7 @@ private:
     virtual ~nsDNSTXTResult() {}
 
     nsRefPtr<nsHostRecord>  mHostRecord;
-    void                   *mIter;
+    dns_txt_t               mIter;
     int                     mIterGenCnt; // the generation count of
                                          // mHostRecord->addr_info when we
                                          // start iterating
@@ -86,7 +86,7 @@ private:
 NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSTXTResult, nsIDNSTXTResult)
 
 NS_IMETHODIMP
-nsDNSTXTResult::GetNextRecord()
+nsDNSTXTResult::GetNextRecord(nsACString &record)
 {
     // not a programming error to poke the DNS record when it has no
     // more entries.  just fail without any debug warnings.  this
@@ -96,6 +96,11 @@ nsDNSTXTResult::GetNextRecord()
         return NS_ERROR_NOT_AVAILABLE;
 
     PR_Lock(mHostRecord->txt_info_lock);
+    if (!mHostRecord->txt_info) {
+        PR_Unlock(mHostRecord->txt_info_lock);
+        return NS_ERROR_NOT_AVAILABLE;
+    }
+
     if (!mIter)
         mIterGenCnt = mHostRecord->txt_info_gencnt;
     else if (mIterGenCnt != mHostRecord->txt_info_gencnt) {
@@ -105,7 +110,15 @@ nsDNSTXTResult::GetNextRecord()
         mIter = nsnull;
         mIterGenCnt = mHostRecord->txt_info_gencnt;
     }
-    mIter =  PR_EnumerateAddrInfo(mIter, mHostRecord->txt_info, port, addr);
+
+    if (!mIter) {
+         mIter = *mHostRecord->txt_info;
+    } else {
+         mIter = mIter->next;
+    }
+    if (mIter) {
+         record.Assign(mIter->rr);
+    }
     PR_Unlock(mHostRecord->txt_info_lock);
     if (!mIter) {
         mDone = PR_TRUE;
@@ -124,8 +137,9 @@ nsDNSTXTResult::HasMore(PRBool *result)
     else {
         // unfortunately, NSPR does not provide a way for us to determine if
         // there is another record other than to simply get the next record.
-        void *iterCopy = mIter;
-        *result = NS_SUCCEEDED(GetNextRecord());
+        dns_txt_t iterCopy = mIter;
+        nsACString record;
+        *result = NS_SUCCEEDED(GetNextRecord(record));
         mIter = iterCopy; // backup iterator
         mDone = PR_FALSE;
     }
@@ -263,9 +277,21 @@ nsDNSTXTService::Init()
     // prefs
     PRUint32 maxCacheEntries  = 400;
     PRUint32 maxCacheLifetime = 3; // minutes
-    
-    // read prefs
-    nsCOMPtr<nsIPrefBranch2> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+
+    nsresult rv;
+
+    nsCOMPtr<nsIServiceManager> svcMgr;
+    rv = NS_GetServiceManager(getter_AddRefs(svcMgr));
+    nsCOMPtr<nsIPrefBranch2> prefs;
+    if (NS_SUCCEEDED(rv)) {
+        rv = svcMgr->GetServiceByContractID(
+            NS_PREFBRANCH_CONTRACTID,
+            NS_GET_IID(nsIPrefBranch2),
+            getter_AddRefs(prefs));
+    } else {
+        prefs = nsnull;
+    }
+
     if (prefs) {
         PRInt32 val;
         if (NS_SUCCEEDED(prefs->GetIntPref(kPrefDnsTxtCacheEntries, &val)))
@@ -287,9 +313,9 @@ nsDNSTXTService::Init()
     }
 
     nsRefPtr<nsHostResolver> res;
-    nsresult rv = nsHostResolver::Create(maxCacheEntries,
-                                         maxCacheLifetime,
-                                         getter_AddRefs(res));
+    rv = nsHostResolver::Create(maxCacheEntries,
+                                maxCacheLifetime,
+                                getter_AddRefs(res));
     if (NS_SUCCEEDED(rv)) {
         // now, set all of our member variables while holding the lock
         nsAutoLock lock(mLock);
@@ -325,10 +351,6 @@ nsDNSTXTService::AsyncResolve(const nsACString  &hostname,
     nsRefPtr<nsHostResolver> res;
     {
         nsAutoLock lock(mLock);
-
-        if (flags & RESOLVE_SPECULATE)
-            return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
-
         res = mResolver;
     }
     NS_ENSURE_TRUE(res, NS_ERROR_OFFLINE);
