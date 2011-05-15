@@ -61,7 +61,7 @@ calEeeClient.prototype = {
     //TODO DNS resolve
     var host, port;
     //XXX development
-    host = "localhost";
+    host = "3e";
     port = 4444;
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].

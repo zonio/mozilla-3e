@@ -67,7 +67,7 @@ calEeeProtocol.prototype = {
     var httpUri = Cc['@mozilla.org/network/simple-uri;1']
       .createInstance(Ci.nsIURI);
     //TODO resolve hostname
-    httpUri.spec = 'http://localhost:4444/RPC2';
+    httpUri.spec = 'http://3e:4444/RPC2';
 
     return httpUri;
   },
