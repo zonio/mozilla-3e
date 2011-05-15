@@ -312,6 +312,31 @@ calEeeClient.prototype = {
 			item.icalComponent.serializeToICS());
   },
 
+  updateObject:
+  function cal3eClient_updateObject(identity, listener, calendar, item) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueUpdateObject(methodQueue, calendar, item);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueUpdateObject: function(methodQueue, calendar, item) {
+    var count = { value: 0 };
+    var timezones = item.icalComponent.getReferencedTimezones(count);
+    var idx = count.value;
+    while (idx--) {
+      this._enqueueMethod(methodQueue, 'addObject',
+                          calendar.calspec,
+			  timezones[idx].icalComponent.serializeToICS());
+    }
+
+    this._enqueueMethod(methodQueue, 'updateObject',
+                        calendar.calspec,
+			item.icalComponent.serializeToICS());
+  },
+
   deleteObject:
   function cal3eClient_deleteObject(identity, listener, calendar, item) {
     var methodQueue = this._prepareMethodQueue(identity);

@@ -194,6 +194,62 @@ calEeeCalendar.prototype = {
       this._identity, clientListener, this, item);
   },
 
+  modifyItem: function calEee_modifyItem(newitem, oldItem, listener) {
+    if (null === this._identity) {
+      this.notifyOperationComplete(listener,
+                                   Cr.NS_ERROR_NOT_INITIALIZED,
+                                   Ci.calIOperationListener.MODIFY,
+                                   newItem.id,
+                                   "Unknown identity");
+      return null;
+    }
+    if (this.readOnly) {
+      this.notifyOperationComplete(listener,
+                                   Ci.calIErrors.CAL_IS_READONLY,
+                                   Ci.calIOperationListener.MODIFY,
+                                   newItem.id,
+                                   "Read-only calendar");
+      return null;
+    }
+
+    if (!newItem.id) {
+      this.notifyOperationComplete(listener,
+                                   Cr.NS_ERROR_FAILURE,
+                                   Ci.calIOperationListener.MODIFY,
+                                   newItem.id,
+                                   "Unknown ID of modified item");
+      return null;
+    }
+
+    newItem = newItem.QueryInterface(Ci.calIEvent);
+
+    var calendar = this;
+    var clientListener = cal3e.createOperationListener(
+      function calEee_modifyItem_onResult(methodQueue, result) {
+        if (methodQueue.isPending) {
+          return;
+        }
+        if (Cr.NS_OK !== methodQueue.status) {
+          calendar.notifyOperationComplete(
+            listener,
+            methodQueue.status,
+            Ci.calIOperationListener.MODIFY,
+            newItem.id,
+            "Object addition to EEE server failed");
+          return;
+        }
+
+        calendar.notifyOperationComplete(listener,
+                                         Cr.NS_OK,
+                                         Ci.calIOperationListener.MODIFY,
+                                         newItem.id,
+                                         newItem);
+      });
+
+    return this._getClient().updateObject(
+      this._identity, clientListener, this, newItem);
+  },
+
   deleteItem: function calEee_deleteItem(item, listener) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     if (null === this._identity) {
