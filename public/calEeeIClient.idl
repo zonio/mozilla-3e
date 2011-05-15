@@ -118,4 +118,36 @@ interface calEeeIClient: nsISupports {
         in calEeeICalendar calendar,
         in calIItemBase item);
 
+    /**
+     * Updates calendar object in given calendar.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after method call is
+     * finished
+     * @param calendar calendar where is updated item
+     * @param item updated item
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue updateObject(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in calIItemBase item);
+
+    /**
+     * Deletes calendar object in given calendar.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar where is deleted item
+     * @param item deleted item
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue deleteObject(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in calIItemBase item);
+
 };
