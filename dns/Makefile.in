@@ -17,7 +17,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../../..
+DEPTH = ../../../..
 topsrcdir = @top_srcdir@
 srcdir = @srcdir@
 VPATH = @srcdir@
