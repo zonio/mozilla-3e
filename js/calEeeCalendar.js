@@ -194,7 +194,7 @@ calEeeCalendar.prototype = {
       this._identity, clientListener, this, item);
   },
 
-  modifyItem: function calEee_modifyItem(newitem, oldItem, listener) {
+  modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
     if (null === this._identity) {
       this.notifyOperationComplete(listener,
                                    Cr.NS_ERROR_NOT_INITIALIZED,
