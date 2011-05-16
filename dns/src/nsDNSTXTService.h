@@ -53,6 +53,10 @@ public:
     ~nsDNSTXTService();
 
 private:
+    nsresult Init();
+    nsresult Shutdown();
+
+private:
     nsRefPtr<nsHostResolver>  mResolver;
 
     // mLock protects access to mResolver

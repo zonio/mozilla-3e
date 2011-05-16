@@ -266,7 +266,7 @@ nsDNSTXTService::~nsDNSTXTService()
 
 NS_IMPL_THREADSAFE_ISUPPORTS2(nsDNSTXTService, nsIDNSTXTService, nsIObserver)
 
-NS_IMETHODIMP
+nsresult
 nsDNSTXTService::Init()
 {
     NS_ENSURE_TRUE(!mResolver, NS_ERROR_ALREADY_INITIALIZED);
@@ -324,7 +324,7 @@ nsDNSTXTService::Init()
     return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 nsDNSTXTService::Shutdown()
 {
     nsRefPtr<nsHostResolver> res;
