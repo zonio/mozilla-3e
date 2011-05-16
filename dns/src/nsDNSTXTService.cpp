@@ -92,15 +92,12 @@ nsDNSTXTResult::GetNextRecord(nsACString &record)
     // more entries.  just fail without any debug warnings.  this
     // enables consumers to enumerate the DNS record without calling
     // HasMore.
-    if (mDone)
+    PRBool result;
+    HasMore(&result);
+    if (!result)
         return NS_ERROR_NOT_AVAILABLE;
 
     PR_Lock(mHostRecord->txt_info_lock);
-    if (!mHostRecord->txt_info) {
-        PR_Unlock(mHostRecord->txt_info_lock);
-        return NS_ERROR_NOT_AVAILABLE;
-    }
-
     if (!mIter)
         mIterGenCnt = mHostRecord->txt_info_gencnt;
     else if (mIterGenCnt != mHostRecord->txt_info_gencnt) {
@@ -135,13 +132,15 @@ nsDNSTXTResult::HasMore(PRBool *result)
     if (mDone)
         *result = PR_FALSE;
     else {
-        // unfortunately, NSPR does not provide a way for us to determine if
-        // there is another record other than to simply get the next record.
-        dns_txt_t iterCopy = mIter;
-        nsACString record;
-        *result = NS_SUCCEEDED(GetNextRecord(record));
-        mIter = iterCopy; // backup iterator
-        mDone = PR_FALSE;
+        PR_Lock(mHostRecord->txt_info_lock);
+        if (!mHostRecord->txt_info) {
+            *result = PR_FALSE;
+            mDone = PR_TRUE;
+        } else {
+            *result = PR_TRUE;
+            mDone = PR_FALSE;
+        }
+        PR_Unlock(mHostRecord->txt_info_lock);
     }
     return NS_OK;
 }
