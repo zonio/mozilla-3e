@@ -29,10 +29,11 @@ XPIDL_MODULE = dns
 XPI_NAME = calendar3e
 
 XPIDLSRCS = \
+	nsPIDNSTXTService.idl \
+	nsIDNSTXTService.idl \
 	nsIDNSTXTListener.idl \
 	nsIDNSTXTRequest.idl \
 	nsIDNSTXTResult.idl \
-	nsIDNSTXTService.idl \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

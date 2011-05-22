@@ -25,9 +25,15 @@ VPATH = @srcdir@
 include $(DEPTH)/config/autoconf.mk
 
 MODULE = calendar3e
+XPI_NAME = calendar3e
+
 LIBRARY_NAME = calendar3edns
 IS_COMPONENT = 1
-XPI_NAME = calendar3e
+USE_STATIC_LIBS = 1
+
+EXTRA_DSO_LIBS = \
+	resolv \
+	$(NULL)
 
 REQUIRES = \
 	xpcom \
@@ -38,7 +44,7 @@ REQUIRES = \
 CPPSRCS = \
 	nsDNSTXTService.cpp \
 	nsHostResolver.cpp \
-	nsURLHelper.cpp \
+	nsDNSTXTModule.cpp \
 	$(NULL)
 
 CSRCS = \
@@ -46,3 +52,11 @@ CSRCS = \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk
+
+DEFINES += -DHAVE_RES_NINIT
+
+EXTRA_DSO_LDOPTS += \
+	$(XPCOM_GLUE_LDOPTS) \
+	$(NSPR_LIBS) \
+	$(EXTRA_DSO_LIBS) \
+	$(NULL)

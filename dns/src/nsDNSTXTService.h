@@ -34,27 +34,35 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsIDNSTXTService.h"
+#include "nsPIDNSTXTService.h"
 #include "nsIObserver.h"
 #include "nsHostResolver.h"
 #include "nsAutoPtr.h"
 #include "nsStringAPI.h"
 #include "prlock.h"
 
-class nsDNSTXTService : public nsIDNSTXTService
+#define NS_DNSTXTSERVICE_CLASSNAME \
+    "nsDNSTXTService"
+#define NS_DNSTXTSERVICE_CONTRACTID \
+    "@mozilla.org/network/dns-txt-service;1"
+#define NS_DNSTXTSERVICE_CID \
+{ /* 6ed64adc-c45f-4a4e-aea2-09e429c5a286 */         \
+    0x6ed64adc,                                      \
+    0xc45f,                                          \
+    0x4a4e,                                          \
+    {0xae, 0xa2, 0x09, 0xe4, 0x29, 0xc5, 0xa2, 0x86} \
+}
+class nsDNSTXTService : public nsPIDNSTXTService
                       , public nsIObserver
 {
 public:
     NS_DECL_ISUPPORTS
+    NS_DECL_NSPIDNSTXTSERVICE
     NS_DECL_NSIDNSTXTSERVICE
     NS_DECL_NSIOBSERVER
 
     nsDNSTXTService();
     ~nsDNSTXTService();
-
-private:
-    nsresult Init();
-    nsresult Shutdown();
 
 private:
     nsRefPtr<nsHostResolver>  mResolver;

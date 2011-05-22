@@ -264,9 +264,10 @@ nsDNSTXTService::~nsDNSTXTService()
         PR_DestroyLock(mLock);
 }
 
-NS_IMPL_THREADSAFE_ISUPPORTS2(nsDNSTXTService, nsIDNSTXTService, nsIObserver)
+NS_IMPL_THREADSAFE_ISUPPORTS3(nsDNSTXTService, nsIDNSTXTService,
+                              nsPIDNSTXTService, nsIObserver)
 
-nsresult
+NS_IMETHODIMP
 nsDNSTXTService::Init()
 {
     NS_ENSURE_TRUE(!mResolver, NS_ERROR_ALREADY_INITIALIZED);
@@ -324,7 +325,7 @@ nsDNSTXTService::Init()
     return rv;
 }
 
-nsresult
+NS_IMETHODIMP
 nsDNSTXTService::Shutdown()
 {
     nsRefPtr<nsHostResolver> res;

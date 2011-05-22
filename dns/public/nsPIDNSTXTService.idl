@@ -1,4 +1,5 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -14,12 +15,12 @@
  *
  * The Original Code is mozilla.org code.
  *
- * The Initial Developer of the Original Code is
- * Andreas Otte.
- * Portions created by the Initial Developer are Copyright (C) 2000
+ * The Initial Developer of the Original Code is Google Inc.
+ * Portions created by the Initial Developer are Copyright (C) 2005
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *  Darin Fisher <darin@meer.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,33 +36,26 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef nsURLHelper_h__
-#define nsURLHelper_h__
-
-#include "nsStringAPI.h"
+#include "nsIDNSTXTService.idl"
 
 /**
- * returns pointer to first character of |str| NOT in the given set.  if all
- * characters are in the given set, then |end| is returned.  if '\0' is not
- * included in |set|, then stops prematurely if a null byte is encountered,
- * and returns the address of the null byte.
+ * This is a private interface used by the internals of the networking library.
+ * It will never be frozen.  Do not use it in external code.
  */
-NS_HIDDEN_(char *) net_FindCharNotInSet(const char *str, const char *end, const char *set);
-
-/* inline versions */
-
-/* remember the 64-bit platforms ;-) */
-#define NET_MAX_ADDRESS (((char*)0)-1)
-
-inline char *net_FindCharNotInSet(const char *str, const char *set)
+[scriptable, uuid(2f48a7a8-06a9-4fe8-b605-bfd1d1af5d5f)]
+interface nsPIDNSTXTService : nsIDNSTXTService
 {
-    return net_FindCharNotInSet(str, NET_MAX_ADDRESS, set);
-}
+    /**
+     * called to initialize the DNS service.
+     */
+    void init();
 
-/**
- * This function returns true if the given hostname does not include any
- * restricted characters.  Otherwise, false is returned.
- */
-NS_HIDDEN_(PRBool) net_IsValidHostName(const nsDependentCString &host);
-
-#endif // !nsURLHelper_h__
+    /**
+     * called to shutdown the DNS service.  any pending asynchronous
+     * requests will be canceled, and the local cache of DNS records
+     * will be cleared.  NOTE: the operating system may still have
+     * its own cache of DNS records, which would be unaffected by
+     * this method.
+     */
+    void shutdown();
+};

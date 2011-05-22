@@ -64,7 +64,6 @@
 #include "prlog.h"
 #include "pldhash.h"
 #include "plstr.h"
-#include "nsURLHelper.h"
 
 //----------------------------------------------------------------------------
 
@@ -474,11 +473,6 @@ nsHostResolver::ResolveHost(const char            *host,
     NS_ENSURE_TRUE(host && *host, NS_ERROR_UNEXPECTED);
 
     LOG(("nsHostResolver::ResolveHost [host=%s]\n", host));
-
-    // ensure that we are working with a valid hostname before proceeding.  see
-    // bug 304904 for details.
-    if (!net_IsValidHostName(nsDependentCString(host)))
-        return NS_ERROR_UNKNOWN_HOST;
 
     // if result is set inside the lock, then we need to issue the
     // callback before returning.
