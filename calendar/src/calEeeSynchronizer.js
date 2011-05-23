@@ -147,10 +147,7 @@ calEeeSynchronizationService.prototype = {
     this._synchronizersByIdentity[identity.key] =
       Cc["@zonio.net/calendar3e/synchronizer;1"].
       createInstance(Ci.calEeeISynchronizer);
-    this._synchronizersByIdentity[identity.key].client =
-      Cc["@zonio.net/calendar3e/client;1"].
-      createInstance(Ci.calEeeIClient);
-    this._synchronizersByIdentity[identity.key].client.identity = identity;
+    this._synchronizersByIdentity[identity.key].identity = identity;
 
     this._synchronizersByIdentity[identity.key].synchronize();
 
@@ -223,7 +220,7 @@ calEeeSynchronizationService.prototype = {
  * (i.e. Lightning) with those on EEE server.
  */
 function calEeeSynchronizer() {
-  this._client = null;
+  this._identity = null;
 }
 
 calEeeSynchronizer.prototype = {
@@ -232,12 +229,12 @@ calEeeSynchronizer.prototype = {
     Ci.calEeeISynchronizer
   ]),
 
-  get client() {
-    return this._client;
+  get identity() {
+    return this._identity;
   },
 
-  set client(client) {
-    this._client = client;
+  set identity(identity) {
+    this._identity = identity;
   },
 
   /**
@@ -249,7 +246,9 @@ calEeeSynchronizer.prototype = {
    */
   synchronize: function calEeeSynchronizer_synchronize() {
     var synchronizer = this;
-    this._client.getCalendars(cal3e.createOperationListener(
+    var client = Cc["@zonio.net/calendar3e/client-service;1"].
+      getService(Ci.calEeeIClient);
+    client.getCalendars(this._identity, cal3e.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
         if (methodQueue.isPending) {
           return;
@@ -316,7 +315,7 @@ calEeeSynchronizer.prototype = {
     var calendar = manager.createCalendar('eee', this._buildCalendarUri(data));
     manager.registerCalendar(calendar);
 
-    calendar.setProperty("imip.identity.key", this._client.identity.key);
+    calendar.setProperty("imip.identity.key", this._identity.key);
     this._setCalendarProperties(calendar, data);
   },
 
@@ -391,13 +390,16 @@ calEeeSynchronizer.prototype = {
    */
   _loadEeeCalendarsByUri:
   function calEeeSynchronizer_loadEeeCalendars() {
-    var identity = this._client.identity;
+    var identity = this._identity;
     var eeeCalendars = Cc["@mozilla.org/calendar/manager;1"].
       getService(Ci.calICalendarManager).
       getCalendars({}).
       filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
         return ('eee' == calendar.type) &&
           (calendar.getProperty("imip.identity") === identity);
+      }).
+      map(function calEeeSynchronizer_mapEeeCalendars(calendar) {
+        return calendar.QueryInterface(Ci.calEeeICalendar);
       });
     var calendarsByUri = {};
     var calendar;

@@ -98,7 +98,7 @@ cal3eProperties._loadUsers = function loadUsers() {
       }
     });
 
-  var client = Cc["@zonio.net/calendar3e/client;1"]
+  var client = Cc["@zonio.net/calendar3e/client-service;1"]
     .createInstance(Ci.calEeeIClient);
 
   var uriSpec = cal3eProperties._calendar.uri.spec,
@@ -110,14 +110,15 @@ cal3eProperties._loadUsers = function loadUsers() {
     i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity)
   )];
   var idx = identities.length;
+  var identity = null;
   while (idx--) {
     if (identities[idx].getBoolAttribute('eee_enabled') &&
         (eeeUser == identities[idx].email)) {
-      client.identity = identities[idx];
+      identity = identities[idx];
       break;
     }
   }
-  client.getUsers(clientListener, "");
+  client.getUsers(identity, clientListener, "");
 };
 
 cal3eProperties._listItemFromUser = function listItemFromAccount(user) {

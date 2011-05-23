@@ -20,9 +20,10 @@
 #include "nsISupports.idl"
 
 interface nsIMsgIdentity;
-interface calICalendar;
+interface calEeeICalendar;
 interface calIGenericOperationListener;
 interface calEeeIMethodQueue;
+interface calIItemBase;
 
 /**
  * Builder of {@link calEeeIMethodQueue} with main client-side user oriented
@@ -40,23 +41,22 @@ interface calEeeIMethodQueue;
 interface calEeeIClient: nsISupports {
 
     /**
-     * Identity used for authorization.
-     */
-    attribute nsIMsgIdentity identity;
-
-    /**
      * Authenticates identity aqainst EEE server.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @return method queue with methods being called on the server
      * @throws NS_ERROR_NOT_INITIALIZED if called with no identity set
      */
-    calEeeIMethodQueue authenticate(in calIGenericOperationListener listener);
+    calEeeIMethodQueue authenticate(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener);
 
     /**
      * Retrieves users matching given query.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @param query criteria for users to return specified in EEE query
@@ -64,13 +64,14 @@ interface calEeeIClient: nsISupports {
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue getUsers(
+        in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
-        in AString query
-    );
+        in AString query);
 
     /**
      * Retrieves calendars matching given query.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
      * @param query criteria for calendars to return specified in EEE query
@@ -78,26 +79,75 @@ interface calEeeIClient: nsISupports {
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue getCalendars(
+        in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
-        in AString query
-    );
+        in AString query);
 
     /**
      * Retrieves calendar objects within given date and time range and
      * matching given query.
      *
+     * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
-     * @param calspec calendar which gets queried for items (e.g. events)
+     * @param calendar calendar which gets queried for items (e.g. events)
      * @param from datetime from which objects are listed
      * @param to datatime to which objects are listed
      * @return method queue with methods being called on the server
      */
     calEeeIMethodQueue queryObjects(
+        in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
-        in AString calspec,
+        in calEeeICalendar calendar,
         in PRTime from,
-        in PRTime to
-    );
+        in PRTime to);
+
+    /**
+     * Adds calendar object to given calendar.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar where new item will be added
+     * @param item item to add
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue addObject(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in calIItemBase item);
+
+    /**
+     * Updates calendar object in given calendar.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after method call is
+     * finished
+     * @param calendar calendar where is updated item
+     * @param item updated item
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue updateObject(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in calIItemBase item);
+
+    /**
+     * Deletes calendar object in given calendar.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar where is deleted item
+     * @param item deleted item
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue deleteObject(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in calIItemBase item);
 
 };

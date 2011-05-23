@@ -20,7 +20,6 @@
 #include "nsISupports.idl"
 
 interface nsIMsgIdentity;
-interface calEeeIClient;
 
 /**
  * Service running calendar synchronization on given accounts.
@@ -63,12 +62,12 @@ interface calEeeISynchronizationService: nsISupports {
 interface calEeeISynchronizer: nsISupports {
 
     /**
-     * EEE client which synchronization runs on.
+     * EEE-enabled identity whose calendars are synchronized.
      */
-    attribute calEeeIClient client;
+    attribute nsIMsgIdentity identity;
 
     /**
-     * Synchronizes calendars of client's identity with those on EEE
+     * Synchronizes identity's local EEE calendars with those on EEE
      * server.
      *
      * Calendars removed on server are deleted, new calendars on

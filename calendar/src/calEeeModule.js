@@ -41,11 +41,11 @@ var calEeeClassInfo = {
 
     classDescription: "EEE client simplifying server method calls to " +
                       "prepared operations",
-    contractID: "@zonio.net/calendar3e/client;1",
+    contractID: "@zonio.net/calendar3e/client-service;1",
     classID: Components.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeClient",
-    flags: 0
+    flags: Ci.nsIClassInfo.SINGLETON
   },
 
   calEeeProtocol: {
