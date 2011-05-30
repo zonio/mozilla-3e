@@ -55,18 +55,53 @@ calEeeClient.prototype = {
    *
    * @param {nsIMsgIdentity} identity
    * @returns {nsIURI}
+   * @todo create EEE URI a let EEE protocol resolve it
    */
   _uriFromIdentity: function calEeeClient_uriFromIdentity(identity) {
-    var domainName = identity.email.substring(identity.email.indexOf("@") + 1);
-    //TODO DNS resolve
-    var host, port;
-    //XXX development
-    host = "3e";
-    port = 4444;
+    var [host, port] = this._getEeeHostAndPort(
+      identity.email.substring(identity.email.indexOf("@") + 1));
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
         getService(Ci.nsIIOService);
     return ioService.newURI(url, null, null);
+  },
+
+  //TODO try move to EEE protocol
+  //TODO parametrize timeout and default port
+  _getEeeHostAndPort: function calEeeClient_getEeeHostAndPort(domainName) {
+    if (!this._resolver) {
+      this._resolver = Cc["@mozilla.org/network/dns-txt-service;1"]
+        .createInstance(Ci.nsIDNSTXTService);
+    }
+
+    try {
+      result = this._resolver.resolve(domainName, 0);
+    } catch (e) {
+      return [domainName, 4444];
+    }
+
+    var found = false, eeeRecord = null;
+    while (result.hasMore()) {
+      eeeRecord = result.getNextRecord();
+      if (0 > result.getNextRecord().indexOf("eee server=")) {
+        continue;
+      }
+      found = true;
+      break;
+    }
+
+    if (!found) {
+      return [domainName, 4444];
+    }
+
+    eeeRecord = eeeRecord.match(/^eee server=(\S+):(\d{1,5})$/);
+    if (!eeeRecord) {
+      throw Components.Exception(
+        "Invalid EEE TXT record found for \"" + domainName + "\"",
+        Cr.NS_ERROR_UNKNOWN_HOST);
+    }
+
+    return [eeeRecord[1], eeeRecord[2]];
   },
 
   /**

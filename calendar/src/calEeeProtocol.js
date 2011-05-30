@@ -57,35 +57,13 @@ calEeeProtocol.prototype = {
   },
 
   /**
-   * Resolves EEE URI and returns HTTP URI to XML-RPC gateway on EEE
-   * server.
-   *
-   * @param {nsIURI} eeeUri EEE URI
-   * @returns {nsIURI} HTTP URI
-   */
-  eeeToHttpUri: function(eeeUri) {
-    var httpUri = Cc['@mozilla.org/network/simple-uri;1']
-      .createInstance(Ci.nsIURI);
-    //TODO resolve hostname
-    httpUri.spec = 'http://3e:4444/RPC2';
-
-    return httpUri;
-  },
-
-  /**
    * Currently simply returns channel to XML-RPC gateway on EEE server.
    *
    * @param {nsIURI} uri EEE URI
    * @returns {nsIHttpProtocolHandler}
    */
   newChannel: function(uri) {
-    var httpProtocol = Cc["@mozilla.org/network/protocol;1?name=http"]
-      .getService(nsIHttpProtocolHandler);
-    if (this.scheme == uri.scheme) {
-      uri = this.eeeToHttpUri(uri);
-    }
-
-    return httpProtocol.newChannel(uri);
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
 
   /**
