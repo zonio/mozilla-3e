@@ -20,7 +20,7 @@
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
-Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 /**
  * Handler of 3e calendar preferences dialog.

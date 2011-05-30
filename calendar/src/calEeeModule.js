@@ -166,6 +166,26 @@ var calEeeModule = {
 
   _utilsLoaded: false,
 
+  _registerResource: function cal3eModule_registerResource() {
+    var calendar3eResource = "calendar3e";
+    var ioService = Components.classes["@mozilla.org/network/io-service;1"].
+      getService(Components.interfaces.nsIIOService);
+    var resourceProtocol = ioService.getProtocolHandler("resource").
+      QueryInterface(Components.interfaces.nsIResProtocolHandler);
+    if (resourceProtocol.hasSubstitution(calendar3eResource)) {
+      return;
+    }
+
+    var cal3eExtensionId = "calendar3e@zonio.net";
+    var em = Components.classes["@mozilla.org/extensions/manager;1"]
+      .getService(Components.interfaces.nsIExtensionManager);
+    var file = em.getInstallLocation(cal3eExtensionId)
+      .getItemFile(cal3eExtensionId, "chrome.manifest");
+    var resourceDir = file.parent.clone();
+    var resourceDirUri = ioService.newFileURI(resourceDir);
+    resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
+  },
+
   _loadUtils: function cal3eModule_loadUtils() {
     if (this._utilsLoaded) {
         return;
@@ -178,7 +198,8 @@ var calEeeModule = {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     cal.loadScripts(["calUtils.js"], this.__parent__);
 
-    Cu.import("resource://calendar3e/cal3eUtils.jsm", this.__parent__);
+    this._registerResource();
+    Cu.import("resource://calendar3e/modules/cal3eUtils.jsm", this.__parent__);
 
     // Now load EEE extension scripts. Note that unintuitively,
     // __LOCATION__.parent == . We expect to find the subscripts in ./../js

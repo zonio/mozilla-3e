@@ -22,7 +22,7 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 
 Components.utils.import("resource:///modules/iteratorUtils.jsm");
-Components.utils.import("resource://calendar3e/cal3eUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 var cal3eProperties = {};
 
