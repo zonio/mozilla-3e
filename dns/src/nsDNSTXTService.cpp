@@ -73,6 +73,7 @@ public:
 
 private:
     virtual ~nsDNSTXTResult() {}
+    void CheckIter();
 
     nsRefPtr<nsHostRecord>  mHostRecord;
     dns_txt_t               mIter;
@@ -88,25 +89,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1(nsDNSTXTResult, nsIDNSTXTResult)
 NS_IMETHODIMP
 nsDNSTXTResult::GetNextRecord(nsACString &record)
 {
-    // not a programming error to poke the DNS record when it has no
-    // more entries.  just fail without any debug warnings.  this
-    // enables consumers to enumerate the DNS record without calling
-    // HasMore.
-    PRBool result;
-    HasMore(&result);
-    if (!result)
-        return NS_ERROR_NOT_AVAILABLE;
-
     PR_Lock(mHostRecord->txt_info_lock);
-    if (!mIter)
-        mIterGenCnt = mHostRecord->txt_info_gencnt;
-    else if (mIterGenCnt != mHostRecord->txt_info_gencnt) {
-        // mHostRecord->txt_info has changed, so mIter is
-        // invalid.  Restart the iteration.  Alternatively, we
-        // could just fail.
-        mIter = nsnull;
-        mIterGenCnt = mHostRecord->txt_info_gencnt;
-    }
+    CheckIter();
 
     if (!mIter) {
          mIter = *mHostRecord->txt_info;
@@ -122,8 +106,7 @@ nsDNSTXTResult::GetNextRecord(nsACString &record)
         return NS_ERROR_NOT_AVAILABLE;
     }
 
-        
-    return NS_OK; 
+    return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -133,7 +116,9 @@ nsDNSTXTResult::HasMore(PRBool *result)
         *result = PR_FALSE;
     else {
         PR_Lock(mHostRecord->txt_info_lock);
-        if (!mHostRecord->txt_info) {
+        CheckIter();
+        if ((!mIter && !*mHostRecord->txt_info) ||
+            ( mIter && !mIter->next)) {
             *result = PR_FALSE;
             mDone = PR_TRUE;
         } else {
@@ -152,6 +137,20 @@ nsDNSTXTResult::Rewind()
     mIterGenCnt = -1;
     mDone = PR_FALSE;
     return NS_OK;
+}
+
+void
+nsDNSTXTResult::CheckIter()
+{
+    if (!mIter)
+        mIterGenCnt = mHostRecord->txt_info_gencnt;
+    else if (mIterGenCnt != mHostRecord->txt_info_gencnt) {
+        // mHostRecord->txt_info has changed, so mIter is
+        // invalid.  Restart the iteration.  Alternatively, we
+        // could just fail.
+        mIter = nsnull;
+        mIterGenCnt = mHostRecord->txt_info_gencnt;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -321,7 +320,7 @@ nsDNSTXTService::Init()
         nsAutoLock lock(mLock);
         mResolver = res;
     }
-    
+
     return rv;
 }
 
@@ -400,7 +399,7 @@ nsDNSTXTService::Resolve(const nsACString &hostname,
     // on the same thread.  so, our mutex needs to be re-entrant.  in other words,
     // we need to use a monitor! ;-)
     //
-    
+
     PRMonitor *mon = PR_NewMonitor();
     if (!mon)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -434,7 +433,7 @@ nsDNSTXTService::Resolve(const nsACString &hostname,
 NS_IMETHODIMP
 nsDNSTXTService::Observe(nsISupports *subject, const char *topic, const PRUnichar *data)
 {
-    // we are only getting called if a preference has changed. 
+    // we are only getting called if a preference has changed.
     NS_ASSERTION(strcmp(topic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0,
         "unexpected observe call");
 

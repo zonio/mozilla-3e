@@ -94,14 +94,15 @@ calEeeClient.prototype = {
       return [domainName, 4444];
     }
 
-    eeeRecord = eeeRecord.match(/^eee server=(\S+):(\d{1,5})$/);
+    //FIXME fix resolver to allow /^...$/ regexp
+    eeeRecord = eeeRecord.match(/eee server=([^:]+)(?::(\d{1,5}))?/);
     if (!eeeRecord) {
       throw Components.Exception(
         "Invalid EEE TXT record found for \"" + domainName + "\"",
         Cr.NS_ERROR_UNKNOWN_HOST);
     }
 
-    return [eeeRecord[1], eeeRecord[2]];
+    return [eeeRecord[1], eeeRecord[2] || 4444];
   },
 
   /**
