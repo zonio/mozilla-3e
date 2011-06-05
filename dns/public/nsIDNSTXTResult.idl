@@ -44,7 +44,7 @@
  * records, the result acts like an enumerator, allowing the caller to
  * easily step through the list of TXT results.
  */
-[scriptable, uuid(31c9c52e-1100-457d-abac-d2729e43f506)]
+[scriptable, uuid(05575556-7a4c-40ea-b4aa-f89396670cfc)]
 interface nsIDNSTXTResult : nsISupports
 {
 

@@ -42,7 +42,7 @@ interface nsIDNSTXTResult;
 /**
  * nsIDNSTXTListener
  */
-[scriptable, uuid(41466a9f-f027-487d-a96c-af39e629b8d2)]
+[scriptable, uuid(8e0816fc-836e-426f-83d2-9a0aa0abf549)]
 interface nsIDNSTXTListener : nsISupports
 {
     /**
