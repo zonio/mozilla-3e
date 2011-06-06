@@ -83,7 +83,7 @@ calEeeClient.prototype = {
     var found = false, eeeRecord = null;
     while (result.hasMore()) {
       eeeRecord = result.getNextRecord();
-      if (0 > result.getNextRecord().indexOf("eee server=")) {
+      if (0 > eeeRecord.indexOf("eee server=")) {
         continue;
       }
       found = true;
