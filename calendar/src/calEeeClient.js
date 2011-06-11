@@ -17,6 +17,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cr = Components.results;
+const Cu = Components.utils;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
 /**
  * EEE client simplifying server method calls to prepared operations.
  */
@@ -319,7 +326,7 @@ calEeeClient.prototype = {
       query += ' AND ';
     }
     query += "NOT deleted()";
-    
+
     this._enqueueMethod(methodQueue, 'queryObjects', calendar.calspec, query);
   },
 
@@ -340,12 +347,12 @@ calEeeClient.prototype = {
     while (idx--) {
       this._enqueueMethod(methodQueue, 'addObject',
                           calendar.calspec,
-			  timezones[idx].icalComponent.serializeToICS());
+                          timezones[idx].icalComponent.serializeToICS());
     }
 
     this._enqueueMethod(methodQueue, 'addObject',
                         calendar.calspec,
-			item.icalComponent.serializeToICS());
+                        item.icalComponent.serializeToICS());
   },
 
   updateObject:
@@ -365,12 +372,12 @@ calEeeClient.prototype = {
     while (idx--) {
       this._enqueueMethod(methodQueue, 'addObject',
                           calendar.calspec,
-			  timezones[idx].icalComponent.serializeToICS());
+                          timezones[idx].icalComponent.serializeToICS());
     }
 
     this._enqueueMethod(methodQueue, 'updateObject',
                         calendar.calspec,
-			item.icalComponent.serializeToICS());
+                        item.icalComponent.serializeToICS());
   },
 
   deleteObject:
@@ -386,7 +393,7 @@ calEeeClient.prototype = {
   _enqueueDeleteObject: function(methodQueue, calendar, item) {
     this._enqueueMethod(methodQueue, 'deleteObject',
                         calendar.calspec,
-			item.id);
+                        item.id);
   }
 
 };
@@ -422,3 +429,7 @@ function xpcomToEeeDate(xpcomDate) {
 
   return eeeDate;
 }
+
+EXPORTED_SYMBOLS = [
+  'calEeeClient'
+];

@@ -17,7 +17,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cr = Components.results;
+const Cu = Components.utils;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 /**
  * Synchronizer of calendars present in Mozilla client application
@@ -111,7 +117,7 @@ calEeeSynchronizationService.prototype = {
    */
   observe: function calEeeSyncService_observe(subject, topic, data) {
     switch (topic) {
-    case 'profile-do-change':
+    case 'profile-after-change':
       this.register();
       break;
     case 'timer-callback':
@@ -411,3 +417,7 @@ calEeeSynchronizer.prototype = {
   }
 
 };
+
+EXPORTED_SYMBOLS = [
+  'calEeeSynchronizationService', 'calEeeSynchronizer'
+];

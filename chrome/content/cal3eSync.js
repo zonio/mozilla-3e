@@ -19,7 +19,7 @@
 
 window.addEventListener('load', function cal3eSync_onLoad() {
   var synchronizationService =
-    Components.classes["@zonio.net/calendar3e/synchronization-service;1"].
-    getService(Components.interfaces.calEeeISynchronizationService);
+    Components.classes["@zonio.net/calendar3e/synchronization-service;1"]
+    .getService(Components.interfaces.calEeeISynchronizationService);
   synchronizationService.register();
 }, false);

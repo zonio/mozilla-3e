@@ -17,6 +17,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cr = Components.results;
+const Cu = Components.utils;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
 /**
  * Simple definition of EEE URIs just enough to enable eee URI scheme.
  */
@@ -81,3 +88,7 @@ calEeeProtocol.prototype = {
   }
 
 }
+
+EXPORTED_SYMBOLS = [
+  'calEeeProtocol'
+];

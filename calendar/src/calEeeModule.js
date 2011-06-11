@@ -45,7 +45,8 @@ var calEeeClassInfo = {
     classID: Components.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeClient",
-    flags: Ci.nsIClassInfo.SINGLETON
+    flags: Ci.nsIClassInfo.SINGLETON,
+    resource: "resource://calendar3e/js/calEeeClient.js"
   },
 
   calEeeProtocol: {
@@ -67,7 +68,8 @@ var calEeeClassInfo = {
     classID: Components.ID("{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeProtocol",
-    flags: 0
+    flags: 0,
+    resource: "resource://calendar3e/js/calEeeProtocol.js"
   },
 
   calEeeCalendar: {
@@ -89,7 +91,8 @@ var calEeeClassInfo = {
     classID: Components.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeCalendar",
-    flags: 0
+    flags: 0,
+    resource: "resource://calendar3e/js/calEeeCalendar.js"
   },
 
   calEeeMethodQueue: {
@@ -112,7 +115,8 @@ var calEeeClassInfo = {
     classID: Components.ID("{bd47191f-9617-4a77-ae79-b7927b535f4c}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeMethodQueue",
-    flags: 0
+    flags: 0,
+    resource: "resource://calendar3e/js/calEeeMethodQueue.js"
   },
 
   calEeeSynchronizationService: {
@@ -136,7 +140,8 @@ var calEeeClassInfo = {
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeSynchronizationService",
     flags: Ci.nsIClassInfo.SINGLETON,
-    categories: ['profile-do-change']
+    categories: ['profile-after-change'],
+    resource: "resource://calendar3e/js/calEeeSynchronizer.js"
   },
 
   calEeeSynchronizer: {
@@ -158,21 +163,24 @@ var calEeeClassInfo = {
     classID: Components.ID("{9045ff85-9e1c-47e4-9872-44c5ab424b73}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeSynchronizer",
-    flags: 0
+    flags: 0,
+    resource: "resource://calendar3e/js/calEeeSynchronizer.js"
   }
 };
 
 var calEeeModule = {
 
-  _utilsLoaded: false,
-
   _registerResource: function cal3eModule_registerResource() {
-    var calendar3eResource = "calendar3e";
+    if (this._resourceRegistered) {
+      return;
+    }
+
     var ioService = Components.classes["@mozilla.org/network/io-service;1"].
       getService(Components.interfaces.nsIIOService);
     var resourceProtocol = ioService.getProtocolHandler("resource").
       QueryInterface(Components.interfaces.nsIResProtocolHandler);
-    if (resourceProtocol.hasSubstitution(calendar3eResource)) {
+    if (resourceProtocol.hasSubstitution('calendar3e')) {
+      this._resourceRegistered = true;
       return;
     }
 
@@ -183,34 +191,9 @@ var calEeeModule = {
       .getItemFile(cal3eExtensionId, "chrome.manifest");
     var resourceDir = file.parent.clone();
     var resourceDirUri = ioService.newFileURI(resourceDir);
-    resourceProtocol.setSubstitution(calendar3eResource, resourceDirUri);
-  },
+    resourceProtocol.setSubstitution('calendar3e', resourceDirUri);
 
-  _loadUtils: function cal3eModule_loadUtils() {
-    if (this._utilsLoaded) {
-        return;
-    }
-
-    Cu.import("resource://calendar/modules/calUtils.jsm");
-    Cu.import("resource://calendar/modules/calProviderUtils.jsm");
-    Cu.import("resource://calendar/modules/calAuthUtils.jsm");
-    Cu.import("resource:///modules/iteratorUtils.jsm");
-    Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-    cal.loadScripts(["calUtils.js"], this.__parent__);
-
-    this._registerResource();
-    Cu.import("resource://calendar3e/modules/cal3eUtils.jsm", this.__parent__);
-
-    // Now load EEE extension scripts. Note that unintuitively,
-    // __LOCATION__.parent == . We expect to find the subscripts in ./../js
-    var jsDir = __LOCATION__.parent.parent.clone();
-    jsDir.append("js");
-    cal.loadScripts(["calEeeClient.js", "calEeeProtocol.js",
-		     "calEeeCalendar.js", "calEeeMethodQueue.js",
-                     "calEeeSynchronizer.js"],
-		    this.__parent__, jsDir);
-
-    this._utilsLoaded = true;
+    this._resourceRegistered = true;
   },
 
   unregisterSelf: function cal3eModule_unregisterSelf(componentManager) {
@@ -240,9 +223,9 @@ var calEeeModule = {
           type);
       for each (var category in component.categories) {
         categoryManager.addCategoryEntry(
-          'profile-do-change',
-          component.classDescription,
-          (component.flags & Ci.nsIClassInfo.SINGLETON ? "service" : "") +
+          category,
+          component.constructor,
+          (component.flags & Ci.nsIClassInfo.SINGLETON ? "service," : "") +
             component.contractID,
           true,
           true);
@@ -280,14 +263,21 @@ var calEeeModule = {
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
 
-    this._loadUtils();
-
+    var found = false;
     for each (var component in calEeeClassInfo) {
       if (cid.equals(component.classID)) {
-        return this.makeFactoryFor(eval(component.constructor));
+        found = true;
+        break;
       }
     }
-    throw Cr.NS_ERROR_NO_INTERFACE;
+    if (!found) {
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    }
+
+    this._registerResource();
+    Cu.import(component.resource);
+
+    return this.makeFactoryFor(eval(component.constructor));
   },
 
   canUnload: function(componentManager) {

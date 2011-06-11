@@ -17,6 +17,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+const Cr = Components.results;
+const Cu = Components.utils;
+
+Cu.import("resource://calendar/modules/calProviderUtils.jsm");
+Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
+
 /**
  * Implementation of EEE calendar.
  *
@@ -30,7 +38,7 @@ function calEeeCalendar() {
 calEeeCalendar.prototype = {
 
   __proto__: cal.ProviderBase.prototype,
-  
+
   /**
    * Returns EEE client service.
    *
@@ -75,7 +83,7 @@ calEeeCalendar.prototype = {
 
   /**
    * Identifier of EEE calendar type.
-   * 
+   *
    * @property {String}
    */
   get type() {
@@ -368,7 +376,7 @@ calEeeCalendar.prototype = {
 
           var parser = calendar._getIcsParser();
           try {
-            parser.parseString(rawItems);          
+            parser.parseString(rawItems);
           } catch (e) {
             calendar.notifyOperationComplete(listener,
                                              e.result,
@@ -417,8 +425,12 @@ calEeeCalendar.prototype = {
       this._icsParser = Cc["@mozilla.org/calendar/ics-parser;1"].
         createInstance(Ci.calIIcsParser);
     }
-    
+
     return this._icsParser;
   }
 
 }
+
+EXPORTED_SYMBOLS = [
+  'calEeeCalendar'
+];
