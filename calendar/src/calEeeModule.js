@@ -79,6 +79,7 @@ var components = {
       var interfaces = [
         Ci.calEeeICalendar,
         Ci.calICalendar,
+        Ci.calIObserver,
         Ci.nsIClassInfo
       ];
       count.value = interfaces.length;

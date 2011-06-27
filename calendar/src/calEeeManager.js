@@ -37,6 +37,7 @@ calEeeManager.prototype = {
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeIManager,
     Ci.calICalendarManagerObserver,
+    Ci.calIObserver,
     Ci.nsIObserver
   ]),
 
@@ -65,6 +66,16 @@ calEeeManager.prototype = {
       .getService(Ci.calICalendarManager);
     calendarManager.addObserver(this);
 
+    var count = {};
+    var manager = this;
+    calendarManager.getCalendars(count)
+      .filter(function (calendar) {
+        return 'eee' == calendar.type;
+      })
+      .forEach(function (calendar) {
+        calendar.addObserver(manager)
+      });
+
     return this;
   },
 
@@ -89,6 +100,7 @@ calEeeManager.prototype = {
       return;
     }
     calendar = calendar.QueryInterface(Ci.calEeeICalendar);
+    calendar.addObserver(this);
 
     // calendar already is registered if it has calname set
     if (calendar.calname) {
@@ -98,7 +110,6 @@ calEeeManager.prototype = {
     var listener = cal3e.createOperationListener(
       function calEeeManager_create_onResult(methodQueue, result) {}
     );
-
     this._generateUniqueUri(calendar);
     this._getClient().createCalendar(calendar.identity, listener, calendar);
   },
@@ -122,6 +133,7 @@ calEeeManager.prototype = {
       return;
     }
     calendar = calendar.QueryInterface(Ci.calEeeICalendar);
+    calendar.removeObserver(this);
 
     // calendar is not registered if it has no calname set
     if (!calendar.calname) {
@@ -133,6 +145,52 @@ calEeeManager.prototype = {
     );
     this._getClient().deleteCalendar(calendar.identity, listener, calendar);
   },
+
+  onPropertyChanged: function calEeeManager_onPropertyChanged(
+    calendar, name, value, oldValue) {
+    if ('eee' != calendar.type) {
+      return;
+    }
+    calendar = calendar.QueryInterface(Ci.calEeeICalendar);
+
+    // calendar is not registered if it has no calname set
+    if (!calendar.calname) {
+      return;
+    }
+
+    var attrName, attrValue, isPublic;
+    switch (name) {
+    case 'name':
+      attrName = 'title';
+      attrValue = value;
+      isPublic = true;
+      break;
+    case 'color':
+      attrName = 'color';
+      attrValue = value;
+      isPublic = true;
+      break;
+    default:
+      return;
+      break;
+    }
+
+    var listener = cal3e.createOperationListener(
+      function calEeeManager_update_onResult(methodQueue, result) {}
+    );
+    this._getClient().setCalendarAttribute(
+      calendar.identity, listener, calendar, attrName, attrValue, isPublic);
+  },
+
+  onStartBatch: function calEeeManager_onStartBatch() {},
+  onEndBatch: function calEeeManager_onEndBatch() {},
+  onLoad: function calEeeManager_onLoad(calendar) {},
+  onAddItem: function calEeeManager_onAddItem(item) {},
+  onModifyItem: function calEeeManager_onModifyItem(newItem, oldItem) {},
+  onDeleteItem: function calEeeManager_onDeleteItem(item) {},
+  onError: function calEeeManager_onError(calendar, error, message) {},
+  onPropertyDeleting: function calEeeManager_onPropertyDeleting(
+    calendar, name) {},
 
   _getClient: function calEeeManager_getClient() {
     return Cc["@zonio.net/calendar3e/client-service;1"]

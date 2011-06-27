@@ -135,28 +135,6 @@ calEeeCalendar.prototype = {
     return uriParts[4] || uriParts[3];
   },
 
-  /**
-   * Sets calendar's color.
-   *
-   * @param {String} color formatted in HTML's #RRGGBB
-   */
-  set color(color) {
-    //TODO call setCalendarAttribute
-    this._color = color;
-  },
-
-  /**
-   * Returns calendar's color.
-   *
-   * Color is formatted in HTML's #RRGGBB.
-   *
-   * @property {String}
-   */
-  get color() {
-    //TODO call getCalendarAttributes
-    return this._color;
-  },
-
   addItem: function calEee_addItem(item, listener) {
     return this.adoptItem(item.clone(), listener);
   },

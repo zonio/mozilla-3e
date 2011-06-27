@@ -112,6 +112,26 @@ interface calEeeIClient: nsISupports {
         in calEeeICalendar calendar);
 
     /**
+     * Sets attribute to given calendar on EEE server.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar modified calendar
+     * @param name attribute name
+     * @param value attribute value
+     * @param isPublic whether attribute is visible others
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue setCalendarAttribute(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar,
+        in ACString name,
+        in ACString value,
+        in PRBool isPublic);
+
+    /**
      * Retrieves calendar objects within given date and time range and
      * matching given query.
      *

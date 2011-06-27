@@ -300,17 +300,15 @@ calEeeClient.prototype = {
   },
 
   _enqueueCreateCalendar:
-  function calEeeClient_enqueueCreateCalendars(methodQueue, calendar) {
+  function calEeeClient_enqueueCreateCalendar(methodQueue, calendar) {
     this._enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
     if (calendar.calname != calendar.name) {
-      this._enqueueMethod(
-        methodQueue, 'setCalendarAttribute',
-        calendar.calspec, 'title', calendar.name, true);
+      this._enqueueSetCalendarAttribute(
+        methodQueue, calendar, 'title', calendar.name, true);
     }
     if (calendar.getProperty('color')) {
-      this._enqueueMethod(
-        methodQueue, 'setCalendarAttribute',
-        calendar.calspec, 'color', calendar.getProperty('color'), true);
+      this._enqueueSetCalendarAttribute(
+        methodQueue, calendar, 'color', calendar.getProperty('color'), true);
     }
   },
 
@@ -325,8 +323,27 @@ calEeeClient.prototype = {
   },
 
   _enqueueDeleteCalendar:
-  function calEeeClient_enqueueDeleteCalendars(methodQueue, calendar) {
+  function calEeeClient_enqueueDeleteCalendar(methodQueue, calendar) {
     this._enqueueMethod(methodQueue, 'deleteCalendar', calendar.calname);
+  },
+
+  setCalendarAttribute:
+  function calEeeClient_setCalendarAttribute(
+    identity, listener, calendar, name, value, isPublic) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueSetCalendarAttribute(
+      methodQueue, calendar, name, value, isPublic);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueSetCalendarAttribute:
+  function calEeeClient_enqueueSetCalendarAttribute(
+    methodQueue, calendar, name, value, isPublic) {
+    this._enqueueMethod(methodQueue, 'setCalendarAttribute',
+                        calendar.calspec, name, value, isPublic);
   },
 
   /**
