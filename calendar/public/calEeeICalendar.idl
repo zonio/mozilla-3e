@@ -16,10 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 #include "calICalendar.idl"
 
 interface calEeeIClient;
+interface nsIMsgIdentity;
 
 /**
  * Behavior specific to EEE calendars.
@@ -28,8 +29,20 @@ interface calEeeIClient;
 interface calEeeICalendar: calICalendar {
 
     /**
-     * EEE client used by calendar to communicate with EEE server.
+     * Calendar identifier used in EEE protocol unique in the scope of
+     * owner's domain.
      */
-    readonly attribute calEeeIClient client;
+    readonly attribute string calspec;
+
+    /**
+     * Calendar identifier used in EEE protocol unique in the scope of
+     * its owner.
+     */
+    readonly attribute string calname;
+
+    /**
+     * Identity which operates this calendar.
+     */
+    readonly attribute nsIMsgIdentity identity;
 
 };

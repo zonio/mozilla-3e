@@ -39,14 +39,9 @@ calEeeCalendar.prototype = {
 
   __proto__: cal.ProviderBase.prototype,
 
-  /**
-   * Returns EEE client service.
-   *
-   * @returns {calEeeIClient
-   */
   _getClient: function calEee_getClient() {
-    var client = Cc["@zonio.net/calendar3e/client-service;1"].
-      getService(Ci.calEeeIClient);
+    var client = Cc["@zonio.net/calendar3e/client-service;1"]
+      .getService(Ci.calEeeIClient);
 
     return client;
   },
@@ -79,6 +74,10 @@ calEeeCalendar.prototype = {
 
   get uri() {
     return this._uri;
+  },
+
+  get identity() {
+    return this._identity;
   },
 
   /**
@@ -114,16 +113,20 @@ calEeeCalendar.prototype = {
    * @property {String}
    */
   get calspec() {
-    return this.getCalspec();
+    var uriParts = this._uri.spec.split('/', 5);
+
+    return uriParts[2] + ":" + (uriParts[4] || uriParts[3]);
   },
 
-  getCalspec: function calEee_getCalspec() {
-    var uriSpec = this._uri.spec,
-        uriParts = uriSpec.split('/', 5),
-        eeeUser = uriParts[2],
-        calname = uriParts[4] || uriParts[3];
+  /**
+   * Unique calendar identifier in the set user's calendar.
+   *
+   * @property {String}
+   */
+  get calname() {
+    var uriParts = this._uri.spec.split('/', 5);
 
-    return eeeUser + ":" + calname;
+    return uriParts[4] || uriParts[3];
   },
 
   /**
