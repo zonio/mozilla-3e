@@ -98,6 +98,20 @@ interface calEeeIClient: nsISupports {
         in calEeeICalendar calendar);
 
     /**
+     * Deletes given calendar on EEE server.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar to delete
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue deleteCalendar(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar);
+
+    /**
      * Retrieves calendar objects within given date and time range and
      * matching given query.
      *

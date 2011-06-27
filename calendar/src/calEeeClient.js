@@ -302,6 +302,31 @@ calEeeClient.prototype = {
   _enqueueCreateCalendar:
   function calEeeClient_enqueueCreateCalendars(methodQueue, calendar) {
     this._enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
+    if (calendar.calname != calendar.name) {
+      this._enqueueMethod(
+        methodQueue, 'setCalendarAttribute',
+        calendar.calspec, 'title', calendar.name, true);
+    }
+    if (calendar.getProperty('color')) {
+      this._enqueueMethod(
+        methodQueue, 'setCalendarAttribute',
+        calendar.calspec, 'color', calendar.getProperty('color'), true);
+    }
+  },
+
+  deleteCalendar:
+  function calEeeClient_deleteCalendar(identity, listener, calendar) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueDeleteCalendar(methodQueue, calendar);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueDeleteCalendar:
+  function calEeeClient_enqueueDeleteCalendars(methodQueue, calendar) {
+    this._enqueueMethod(methodQueue, 'deleteCalendar', calendar.calname);
   },
 
   /**
