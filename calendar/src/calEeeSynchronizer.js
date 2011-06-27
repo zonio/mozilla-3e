@@ -144,6 +144,22 @@ calEeeSynchronizationService.prototype = {
   },
 
   /**
+   * Unregisters synchronization service globally observing account
+   * changes and synchronizing their EEE calendars.
+   *
+   * @returns {calEeeISynchronizationService} receiver
+   */
+  unregister: function calEeeSyncService_register() {
+    if (!this._registered) {
+      return this;
+    }
+    this._accountCollection.removeObserver(this);
+    this._registered = false;
+
+    return this;
+  },
+
+  /**
    * Registers identity to synchronize its calendars once in 15 seconds.
    *
    * @param {nsIMsgIdentity} identity

@@ -52,6 +52,13 @@ interface calEeeISynchronizationService: nsISupports {
    */
   calEeeISynchronizationService register();
 
+  /**
+   * Unregisters itself from global context.
+   *
+   * @return receiver
+   */
+  calEeeISynchronizationService unregister();
+
 };
 
 /**
