@@ -120,7 +120,7 @@ var components = {
     classID: Components.ID("{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}"),
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeManager",
-    flags: 0,
+    flags: Ci.nsIClassInfo.SINGLETON,
     resource: "resource://calendar3e/js/calEeeManager.js"
   },
 
