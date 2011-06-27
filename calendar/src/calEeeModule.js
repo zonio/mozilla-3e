@@ -22,9 +22,9 @@ const Cc = Components.classes;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-var calEeeClassInfo = {
+var components = {
   calEeeClient: {
-    getInterfaces: function cI_cal3eClient_getInterfaces(count) {
+    getInterfaces: function calEeeClient_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeIClient,
         Ci.calIGenericOperationListener,
@@ -35,7 +35,8 @@ var calEeeClassInfo = {
       return interfaces;
     },
 
-    getHelperForLanguage: function cI_cal3eClient_getHelperForLanguage(language) {
+    getHelperForLanguage:
+    function calEeeClient_getHelperForLanguage(language) {
       return null;
     },
 
@@ -50,7 +51,7 @@ var calEeeClassInfo = {
   },
 
   calEeeProtocol: {
-    getInterfaces: function cI_cal3eProtocol_getInterfaces(count) {
+    getInterfaces: function calEeeProtocol_getInterfaces(count) {
       var interfaces = [
         Ci.nsIProtocolHandler,
         Ci.nsIClassInfo
@@ -59,7 +60,8 @@ var calEeeClassInfo = {
       return interfaces;
     },
 
-    getHelperForLanguage: function cI_cal3eProtocol_getHelperForLanguage(language) {
+    getHelperForLanguage:
+    function calEeeProtocol_getHelperForLanguage(language) {
       return null;
     },
 
@@ -73,7 +75,7 @@ var calEeeClassInfo = {
   },
 
   calEeeCalendar: {
-    getInterfaces: function cI_cal3eCalendar_getInterfaces(count) {
+    getInterfaces: function calEeeCalendar_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeICalendar,
         Ci.nsIClassInfo
@@ -82,7 +84,8 @@ var calEeeClassInfo = {
       return interfaces;
     },
 
-    getHelperForLanguage: function cI_cal3eCalendar_getHelperForLanguage(language) {
+    getHelperForLanguage:
+    function calEeeCalendar_getHelperForLanguage(language) {
       return null;
     },
 
@@ -96,7 +99,8 @@ var calEeeClassInfo = {
   },
 
   calEeeMethodQueue: {
-    getInterfaces: function cI_cal3eMethodQueue_getInterfaces(count) {
+    getInterfaces:
+    function calEeeMethodQueue_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeIMethodQueue,
         Ci.nsIXmlRpcClientListener,
@@ -106,7 +110,8 @@ var calEeeClassInfo = {
       return interfaces;
     },
 
-    getHelperForLanguage: function cI_cal3eMethodQueue_getHelperForLanguage(language) {
+    getHelperForLanguage:
+    function calEeeMethodQueue_getHelperForLanguage(language) {
       return null;
     },
 
@@ -120,7 +125,8 @@ var calEeeClassInfo = {
   },
 
   calEeeSynchronizationService: {
-    getInterfaces: function cI_cal3eSynchronizationService_getInterfaces(count) {
+    getInterfaces:
+    function calEeeSynchronizationService_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeISynchronizationService,
         Ci.nsIObserver,
@@ -130,7 +136,8 @@ var calEeeClassInfo = {
       return interfaces;
     },
 
-    getHelperForLanguage: function cI_cal3eSynchronizer_getHelperForLanguage(language) {
+    getHelperForLanguage:
+    function calEeeSynchronizer_getHelperForLanguage(language) {
       return null;
     },
 
@@ -145,7 +152,7 @@ var calEeeClassInfo = {
   },
 
   calEeeSynchronizer: {
-    getInterfaces: function cI_cal3eSynchronizer_getInterfaces(count) {
+    getInterfaces: function calEeeSynchronizer_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeISynchronizer,
         Ci.nsIClassInfo
@@ -154,7 +161,8 @@ var calEeeClassInfo = {
       return interfaces;
     },
 
-    getHelperForLanguage: function cI_cal3eSynchronizer_getHelperForLanguage(language) {
+    getHelperForLanguage:
+    function calEeeSynchronizer_getHelperForLanguage(language) {
       return null;
     },
 
@@ -170,7 +178,7 @@ var calEeeClassInfo = {
 
 var calEeeModule = {
 
-  _registerResource: function cal3eModule_registerResource() {
+  _registerResource: function calEeeModule_registerResource() {
     if (this._resourceRegistered) {
       return;
     }
@@ -196,24 +204,24 @@ var calEeeModule = {
     this._resourceRegistered = true;
   },
 
-  unregisterSelf: function cal3eModule_unregisterSelf(componentManager) {
+  unregisterSelf: function calEeeModule_unregisterSelf(componentManager) {
     componentManager = componentManager.QueryInterface(
       Ci.nsIComponentRegistrar);
-    for each (var component in calEeeClassInfo) {
+    for each (var component in components) {
       componentManager.unregisterFactoryLocation(component.classID);
     }
   },
 
-  registerSelf: function cal3eModule_registerSelf(componentManager,
-                                                  fileSpec,
-                                                  location,
-                                                  type) {
+  registerSelf: function calEeeModule_registerSelf(componentManager,
+                                                   fileSpec,
+                                                   location,
+                                                   type) {
     componentManager = componentManager.QueryInterface(
       Ci.nsIComponentRegistrar);
     var categoryManager = Cc["@mozilla.org/categorymanager;1"]
       .getService(Ci.nsICategoryManager);
 
-    for each (var component in calEeeClassInfo) {
+    for each (var component in components) {
       componentManager.registerFactoryLocation(
           component.classID,
           component.classDescription,
@@ -233,7 +241,7 @@ var calEeeModule = {
     }
   },
 
-  makeFactoryFor: function cal3eModule_makeFactoryFor(constructor) {
+  makeFactoryFor: function calEeeModule_makeFactoryFor(constructor) {
     var factory = {
       QueryInterface: function (iid) {
         if (!iid.equals(Ci.nsISupports) &&
@@ -256,15 +264,15 @@ var calEeeModule = {
     return factory;
   },
 
-  getClassObject: function cal3eModule_getClassObject(componentManager,
-                                                      cid,
-                                                      iid) {
+  getClassObject: function calEeeModule_getClassObject(componentManager,
+                                                       cid,
+                                                       iid) {
     if (!iid.equals(Ci.nsIFactory)) {
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
 
     var found = false;
-    for each (var component in calEeeClassInfo) {
+    for each (var component in components) {
       if (cid.equals(component.classID)) {
         found = true;
         break;
