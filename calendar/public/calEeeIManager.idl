@@ -36,4 +36,4 @@ interface calEeeIManager: calICalendarManagerObserver {
      */
     calEeeIManager unregister();
 
-}
+};
