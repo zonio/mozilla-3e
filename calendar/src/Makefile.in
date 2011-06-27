@@ -36,6 +36,7 @@ EXTRA_SCRIPTS = \
 	calEeeClient.js \
 	calEeeMethodQueue.js \
 	calEeeProtocol.js \
+	calEeeManager.js \
 	calEeeSynchronizer.js \
 	$(NULL)
 

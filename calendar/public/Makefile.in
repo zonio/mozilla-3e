@@ -32,6 +32,7 @@ XPIDLSRCS = \
 	calEeeICalendar.idl \
 	calEeeIClient.idl \
 	calEeeIMethodQueue.idl \
+	calEeeIManager.idl \
 	calEeeISynchronizer.idl \
 	$(NULL)
 
