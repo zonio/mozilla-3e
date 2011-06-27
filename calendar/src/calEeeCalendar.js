@@ -22,6 +22,7 @@ const Cc = Components.classes;
 const Cr = Components.results;
 const Cu = Components.utils;
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
@@ -39,6 +40,12 @@ calEeeCalendar.prototype = {
 
   __proto__: cal.ProviderBase.prototype,
 
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.calEeeICalendar,
+    Ci.calICalendar,
+    Ci.nsIObserver
+  ]),
+
   _getClient: function calEee_getClient() {
     var client = Cc["@zonio.net/calendar3e/client-service;1"]
       .getService(Ci.calEeeIClient);
@@ -47,8 +54,7 @@ calEeeCalendar.prototype = {
   },
 
   _findAndSetIdentity: function calEee_findAndSetIdentity() {
-    var uriSpec = this._uri.spec,
-        uriParts = uriSpec.split('/', 4),
+    var uriParts = this._uri.spec.split('/', 4),
         eeeUser = uriParts[2];
 
     var accountCollection = new cal3e.AccountCollection();

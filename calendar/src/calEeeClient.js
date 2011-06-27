@@ -293,14 +293,14 @@ calEeeClient.prototype = {
   function calEeeClient_createCalendar(identity, listener, calendar) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
-    this._enqueueAddCalendar(methodQueue, calendar);
+    this._enqueueCreateCalendar(methodQueue, calendar);
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
   _enqueueCreateCalendar:
-  function calEeeClient_enqueueGetCalendars(methodQueue, calendar) {
+  function calEeeClient_enqueueCreateCalendars(methodQueue, calendar) {
     this._enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
   },
 

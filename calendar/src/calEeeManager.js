@@ -62,7 +62,7 @@ calEeeManager.prototype = {
    */
   register: function calEeeManager_register() {
     var calendarManager = Cc["@mozilla.org/calendar/manager;1"]
-      .getService(Ci.calICalendarManagerObserver);
+      .getService(Ci.calICalendarManager);
     calendarManager.addObserver(this);
 
     return this;
@@ -73,7 +73,7 @@ calEeeManager.prototype = {
    */
   unregister: function calEeeManager_register() {
     var calendarManager = Cc["@mozilla.org/calendar/manager;1"]
-      .getService(Ci.calICalendarManagerObserver);
+      .getService(Ci.calICalendarManager);
     calendarManager.removeObserver(this);
 
     return this;
@@ -103,6 +103,15 @@ calEeeManager.prototype = {
 
     this._generateUniqueUri(calendar);
     this._getClient().createCalendar(calendar.identity, listener, calendar);
+  },
+
+  /**
+   * Does nothing and is here only to comply with declared interface.
+   *
+   * @param {calICalendar} calendar
+   */
+  onCalendarUnregistering:
+  function calEeeManager_onCalendarUnregistering(calendar) {
   },
 
   /**
@@ -145,3 +154,7 @@ calEeeManager.prototype = {
   }
 
 }
+
+EXPORTED_SYMBOLS = [
+  'calEeeManager'
+];
