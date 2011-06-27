@@ -98,6 +98,32 @@ var components = {
     resource: "resource://calendar3e/js/calEeeCalendar.js"
   },
 
+  calEeeManager: {
+    getInterfaces: function calEeeManager_getInterfaces(count) {
+      var interfaces = [
+        Ci.calEeeIManager,
+        Ci.calICalendarManagerObserver,
+        Ci.nsIObserver
+        Ci.nsIClassInfo
+      ];
+      count.value = interfaces.length;
+      return interfaces;
+    },
+
+    getHelperForLanguage:
+    function calEeeManager_getHelperForLanguage(language) {
+      return null;
+    },
+
+    classDescription: "EEE calendar manager",
+    contractID: "@zonio.net/calendar3e/manager;1",
+    classID: Components.ID("{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}"),
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    constructor: "calEeeManager",
+    flags: 0,
+    resource: "resource://calendar3e/js/calEeeManager.js"
+  },
+
   calEeeMethodQueue: {
     getInterfaces:
     function calEeeMethodQueue_getInterfaces(count) {

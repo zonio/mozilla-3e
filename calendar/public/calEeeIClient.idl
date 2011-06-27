@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 #include "nsISupports.idl"
 
 interface nsIMsgIdentity;
@@ -82,6 +82,20 @@ interface calEeeIClient: nsISupports {
         in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
         in AString query);
+
+    /**
+     * Creates given calendar on EEE server.
+     *
+     * @param identity executor of methods call
+     * @param listener object which gets notified after methods call is
+     * finished
+     * @param calendar calendar to create
+     * @return method queue with methods being called on the server
+     */
+    calEeeIMethodQueue createCalendar(
+        in nsIMsgIdentity identity,
+        in calIGenericOperationListener listener,
+        in calEeeICalendar calendar);
 
     /**
      * Retrieves calendar objects within given date and time range and

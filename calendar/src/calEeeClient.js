@@ -289,6 +289,21 @@ calEeeClient.prototype = {
     this._enqueueMethod(methodQueue, 'getCalendars', query);
   },
 
+  createCalendar:
+  function calEeeClient_createCalendar(identity, listener, calendar) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAddCalendar(methodQueue, calendar);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+  },
+
+  _enqueueCreateCalendar:
+  function calEeeClient_enqueueGetCalendars(methodQueue, calendar) {
+    this._enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
+  },
+
   /**
    * Retrieves objects from given calendar and in given date-time range.
    *

@@ -142,6 +142,9 @@ cal3eCreation.computeUri = function computeUri() {
   if ('eee' != calendarFormat.value) {
     return;
   }
+  if (cal3eCreation._uriComputed) {
+    return;
+  }
 
   var account = document.getElementById('calendar3e-account'),
       uri = "eee://";
@@ -150,20 +153,18 @@ cal3eCreation.computeUri = function computeUri() {
   var accounts = accountCollection.filter(
         cal3e.AccountCollection.filterEnabled),
       idx = accounts.length;
+  var found = false
   while (idx--) {
     if (accounts[idx].defaultIdentity.key == account.value) {
       uri += accounts[idx].defaultIdentity.email;
+      found = true;
       break;
     }
   }
   uri += '/';
 
-  //XXX debug only
-  //TODO implementation should create custom unique calendar name a
-  //use name entered by user as name property value
-  var name = document.getElementById('calendar-name');
-  if (name.value) {
-    uri += name.value;
+  if (found) {
+    cal3eCreation._uriComputed = true;
   }
 
   var calendarUri = document.getElementById('calendar-uri');
@@ -213,7 +214,7 @@ cal3eCreation.overlay = function overlay() {
   accountMenuList.id = 'calendar3e-account';
   accountMenuList.flex = 1;
   accountMenuList.appendChild(document.createElement('menupopup'));
-  
+
   var accountLabel = document.createElement('label');
   accountLabel.control = 'calendar3e-account';
 
@@ -233,7 +234,7 @@ cal3eCreation.overlay = function overlay() {
 
   accountMenuList.addEventListener('command', cal3eCreation.computeUri, false);
 
-  var nameTextbox = document.getElementById('calendar-name');  
+  var nameTextbox = document.getElementById('calendar-name');
   nameTextbox.addEventListener('input', cal3eCreation.computeUri, false);
 
   // sadly, this is better solution but cannot there's no way to make

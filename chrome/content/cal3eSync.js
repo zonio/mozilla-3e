@@ -22,4 +22,21 @@ window.addEventListener('load', function cal3eSync_onLoad() {
     Components.classes["@zonio.net/calendar3e/synchronization-service;1"]
     .getService(Components.interfaces.calEeeISynchronizationService);
   synchronizationService.register();
+
+  var manager =
+    Components.classes["@zonio.net/calendar3e/manager;1"]
+    .getService(Components.interfaces.calEeeIManager);
+  manager.register();
+}, false);
+
+window.addEventListener('unload', function cal3eSync_onUnload() {
+  var synchronizationService =
+    Components.classes["@zonio.net/calendar3e/synchronization-service;1"]
+    .getService(Components.interfaces.calEeeISynchronizationService);
+  synchronizationService.unregister();
+
+  var manager =
+    Components.classes["@zonio.net/calendar3e/manager;1"]
+    .getService(Components.interfaces.calEeeIManager);
+  manager.unregister();
 }, false);
