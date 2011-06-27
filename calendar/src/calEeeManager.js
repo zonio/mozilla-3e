@@ -96,9 +96,7 @@ calEeeManager.prototype = {
     }
 
     var listener = cal3e.createOperationListener(
-      function calEeeManager_create_onResult(methodQueue, result) {
-        dump("Calendar " + calendar.name + " created");
-      }
+      function calEeeManager_create_onResult(methodQueue, result) {}
     );
 
     this._generateUniqueUri(calendar);
@@ -123,7 +121,12 @@ calEeeManager.prototype = {
     if ('eee' != calendar.type) {
       return;
     }
-    calendar = calendar.QueryInterface(Ci.calEeeCalendar);
+    calendar = calendar.QueryInterface(Ci.calEeeICalendar);
+
+    // calendar is not registered if it has no calname set
+    if (!calendar.calname) {
+      return;
+    }
 
     var listener = cal3e.createOperationListener(
       function calEeeManager_delete_onResult(methodQueue, result) {}
