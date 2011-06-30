@@ -33,7 +33,7 @@
 #include <arpa/inet.h>
 #include <resolv.h>
 #include <sys/socket.h>
-#else
+#elif defined(XP_WIN32)
 #include <winsock2.h>
 #include <windns.h>
 #endif
@@ -144,7 +144,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 }
 
 /* windows implementation */
-#else
+#elif defined(XP_WIN32)
 
 dns_txt_t dns_txt_resolve(const char *zone) {
     PRUint16 num, i;
