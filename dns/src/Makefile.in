@@ -31,9 +31,16 @@ LIBRARY_NAME = calendar3edns
 IS_COMPONENT = 1
 USE_STATIC_LIBS = 1
 
+ifneq ($(OS_ARCH),WINNT)
 EXTRA_DSO_LIBS = \
 	resolv \
 	$(NULL)
+else
+EXTRA_LIBS += \
+	wsock32.lib \
+	dnsapi.lib \
+	$(NULL)
+endif
 
 REQUIRES = \
 	xpcom \

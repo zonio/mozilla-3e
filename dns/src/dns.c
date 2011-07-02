@@ -26,20 +26,20 @@
 #include "prnetdb.h"
 #include "plstr.h"
 
-#if defined(HAVE_RES_NINIT)
+#ifndef XP_WIN32
 #define BIND_8_COMPAT
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <arpa/inet.h>
 #include <resolv.h>
 #include <sys/socket.h>
-#elif defined(XP_WIN32)
+#else
 #include <winsock2.h>
 #include <windns.h>
 #endif
 
 /* unix implementation */
-#if defined(HAVE_RES_NINIT)
+#ifndef XP_WIN32
 
 typedef union {
     HEADER          hdr;
@@ -144,7 +144,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 }
 
 /* windows implementation */
-#elif defined(XP_WIN32)
+#else
 
 dns_txt_t dns_txt_resolve(const char *zone) {
     PRUint16 num, i;
@@ -178,7 +178,7 @@ dns_txt_t dns_txt_resolve(const char *zone) {
 
         /* copy answer data into the allocated area */
         reply[num]->rr = (char *) PR_Malloc(scan->wDataLength + 1);
-        PL_strncpyz(reply[num]->rr, scan->Data.TXT->pStringArray[0], scan->wDataLength + 1);
+        PL_strncpyz(reply[num]->rr, scan->Data.TXT.pStringArray[0], scan->wDataLength + 1);
 
         num++;
     }
