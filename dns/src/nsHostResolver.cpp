@@ -39,7 +39,7 @@
 #define FORCE_PR_LOG
 #endif
 
-#if defined(HAVE_RES_NINIT)
+#ifndef XP_WIN32
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>   

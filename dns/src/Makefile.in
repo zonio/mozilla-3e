@@ -60,8 +60,6 @@ CSRCS = \
 
 include $(topsrcdir)/config/rules.mk
 
-DEFINES += -DHAVE_RES_NINIT
-
 EXTRA_DSO_LDOPTS += \
 	$(XPCOM_GLUE_LDOPTS) \
 	$(NSPR_LIBS) \
