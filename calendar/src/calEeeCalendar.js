@@ -331,7 +331,11 @@ calEeeCalendar.prototype = {
   },
 
   getItem: function calEee_getItem(id, listener) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    this.notifyOperationComplete(listener,
+                                 Cr.NS_ERROR_NOT_IMPLEMENTED,
+                                 Ci.calIOperationListener.GET,
+                                 id,
+                                 "Not implemented");
   },
 
   getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
