@@ -157,7 +157,17 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    item = item.QueryInterface(Ci.calIEvent);
+    try {
+      item = item.QueryInterface(Ci.calIEvent);
+    } catch (e) {
+      this.notifyOperationComplete(listener,
+                                   e.result,
+                                   Ci.calIOperationListener.ADD,
+                                   null,
+                                   e.message);
+      return null;
+    }
+    item.calendar = this;
     if (item.id == null && item.isMutable) {
       item.id = getUUID();
     }
