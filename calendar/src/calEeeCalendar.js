@@ -136,7 +136,7 @@ calEeeCalendar.prototype = {
   },
 
   addItem: function calEee_addItem(item, listener) {
-    return this.adoptItem(item.clone(), listener);
+    return this.adoptItem(item, listener);
   },
 
   adoptItem: function calEee_adoptItem(item, listener) {
@@ -226,7 +226,16 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    newItem = newItem.QueryInterface(Ci.calIEvent);
+    try {
+      newItem = newItem.QueryInterface(Ci.calIEvent);
+    } catch (e) {
+      this.notifyOperationComplete(listener,
+                                   e.result,
+                                   Ci.calIOperationListener.MODIFY,
+                                   null,
+                                   e.message);
+      return null;
+    }
 
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
@@ -283,7 +292,16 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    item = item.QueryInterface(Ci.calIEvent);
+    try {
+      item = item.QueryInterface(Ci.calIEvent);
+    } catch (e) {
+      this.notifyOperationComplete(listener,
+                                   e.result,
+                                   Ci.calIOperationListener.DELETE,
+                                   null,
+                                   e.message);
+      return null;
+    }
 
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
