@@ -169,8 +169,8 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    if (item.isMutable && (this !== item.calendar)) {
-      item.calendar = this;
+    if (item.isMutable && (this.superCalendar !== item.calendar)) {
+      item.calendar = this.superCalendar;
     }
     if (item.isMutable && (null == item.id)) {
       item.id = cal.getUUID();
@@ -203,6 +203,7 @@ calEeeCalendar.prototype = {
                                          Ci.calIOperationListener.ADD,
                                          item.id,
                                          item);
+        calendar.mObservers.notify('onAddItem', [item]);
       });
 
     return this._getClient().addObject(
@@ -274,6 +275,7 @@ calEeeCalendar.prototype = {
                                          Ci.calIOperationListener.MODIFY,
                                          newItem.id,
                                          newItem);
+        calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
       });
 
     return this._getClient().updateObject(
@@ -341,6 +343,7 @@ calEeeCalendar.prototype = {
                                          Ci.calIOperationListener.DELETE,
                                          item.id,
                                          item);
+        calendar.mObservers.notify('onDeleteItem', [item]);
       });
 
     return this._getClient().deleteObject(
