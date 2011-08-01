@@ -142,9 +142,23 @@ calEeeMethodQueue.prototype = {
   },
 
   /**
+   * Checks whether last response was a fault or not.
+   *
+   * @property {Boolean}
+   * @throws {NS_ERROR_NOT_AVAILABLE} if called before all methods have been
+   * called
+   */
+  get isFault() {
+    try {
+      this.lastResponse.QueryInterface(Ci.nsIXmlRpcFault);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  /**
    * Puts a method to the end of this queue with its parameters.
-   *
-   *
    *
    * @param {String} methodName fully specified EEE method name
    * @param {Number} count number of arguments passed to the method
@@ -225,15 +239,7 @@ calEeeMethodQueue.prototype = {
       return;
     }
 
-    this._methodIdx += 1;
-    this._lastResponse = result;
-    if (this._methodCalls.length > this._methodIdx) {
-      this._listener.onResult(this, [methodName, this._context]);
-      this._executeNext();
-    } else {
-      this._pending = false;
-      this._listener.onResult(this, [methodName, this._context]);
-    }
+    this._passToListenerGoNext(methodName, result);
   },
 
   /**
@@ -249,10 +255,31 @@ calEeeMethodQueue.prototype = {
       return;
     }
 
-    this._lastResponse = null;
-    this._pending = false;
-    this._status = Cr.NS_ERROR_FAILURE;
-    this._listener.onResult(this, [methodName, this._context]);
+    this._lastResponse = fault;
+    this._passToListenerGoNext(methodName, fault);
+  },
+
+  _passToListenerGoNext: function calEeeMq_passToListenerGoNext(methodName,
+                                                                response) {
+    this._methodIdx += 1;
+    this._lastResponse = response;
+    try {
+      if (this._methodCalls.length <= this._methodIdx) {
+        this._pending = false;
+      }
+      this._listener.onResult(this, [methodName, this._context]);
+    } catch (e) {
+      let lastExec = this._pending;
+      this._lastResponse = null;
+      this._pending = false;
+      this._status = e.result;
+      if (lastExec) {
+        this._listener.onResult(this, [methodName, this._context]);
+      }
+    }
+    if (this._pending) {
+      this._executeNext();
+    }
   },
 
   /**

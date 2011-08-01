@@ -38,13 +38,22 @@ interface calEeeIMethodQueue: calIOperation {
     attribute nsIURI serverUri;
 
     /**
-     * Last repsonse from successful method call returned by the EEE server.
+     * Last repsonse from method call (success or fault) returned by
+     * the EEE server.
      *
      * @throws NS_ERROR_NOT_AVAILABLE if called before the first server
      * response to method calls has been returned fro the server
      * @todo nsIVariant
      */
     readonly attribute nsISupports lastResponse;
+
+    /**
+     * Indicator whether last response was a fault or not.
+     *
+     * @throws NS_ERROR_NOT_AVAILABLE if called before the first server
+     * response to method calls has been returned fro the server
+     */
+    readonly attribute PRBool isFault;
 
     /**
      * Puts a method to the end of this queue with its parameters.

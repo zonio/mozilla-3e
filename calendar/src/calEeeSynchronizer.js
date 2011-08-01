@@ -335,6 +335,7 @@ calEeeSynchronizer.prototype = {
       getService(Ci.calICalendarManager);
 
     var calendar = manager.createCalendar('eee', this._buildCalendarUri(data));
+    calendar.setProperty("cache.enabled", true);
     manager.registerCalendar(calendar);
 
     calendar.setProperty("imip.identity.key", this._identity.key);

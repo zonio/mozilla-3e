@@ -24,6 +24,7 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
+Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 /**
@@ -136,7 +137,7 @@ calEeeCalendar.prototype = {
   },
 
   addItem: function calEee_addItem(item, listener) {
-    return this.adoptItem(item, listener);
+    return this.adoptItem(item.clone(), listener);
   },
 
   adoptItem: function calEee_adoptItem(item, listener) {
@@ -167,15 +168,24 @@ calEeeCalendar.prototype = {
                                    e.message);
       return null;
     }
-    item.calendar = this;
-    if (item.id == null && item.isMutable) {
-      item.id = getUUID();
+
+    if (item.isMutable && (this !== item.calendar)) {
+      item.calendar = this;
+    }
+    if (item.isMutable && (null == item.id)) {
+      item.id = cal.getUUID();
     }
 
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
       function calEee_adoptItem_onResult(methodQueue, result) {
-        if (methodQueue.isPending) {
+        if (methodQueue.isFault && !methodQueue.isPending) {
+          result = result.QueryInterface(Ci.nsIXmlRpcFault);
+          //TODO needs to be more precise
+          if (13 /* COMPONENT_EXISTS */ != result.faultCode) {
+            throw Component.Exception();
+          }
+        } else if (methodQueue.isPending) {
           return;
         }
         if (Cr.NS_OK !== methodQueue.status) {
@@ -240,7 +250,13 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
       function calEee_modifyItem_onResult(methodQueue, result) {
-        if (methodQueue.isPending) {
+        if (methodQueue.isFault && !methodQueue.isPending) {
+          result = result.QueryInterface(Ci.nsIXmlRpcFault);
+          //TODO needs to be more precise
+          if (13 /* COMPONENT_EXISTS */ != result.faultCode) {
+            throw Component.Exception();
+          }
+        } else if (methodQueue.isPending) {
           return;
         }
         if (Cr.NS_OK !== methodQueue.status) {
@@ -265,7 +281,6 @@ calEeeCalendar.prototype = {
   },
 
   deleteItem: function calEee_deleteItem(item, listener) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     if (null === this._identity) {
       this.notifyOperationComplete(listener,
                                    Cr.NS_ERROR_NOT_INITIALIZED,
@@ -306,7 +321,9 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = cal3e.createOperationListener(
       function calEee_deleteItem_onResult(methodQueue, result) {
-        if (methodQueue.isPending) {
+        if (methodQueue.isFault && !methodQueue.isPending) {
+          throw Component.Exception();
+        } else if (methodQueue.isPending) {
           return;
         }
         if (Cr.NS_OK !== methodQueue.status) {
@@ -365,66 +382,72 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    var calendar = this,
-        clientListener = cal3e.createOperationListener(function calEee_getItems_onResult(methodQueue, result) {
-          if (methodQueue.isPending) {
-            return;
-          }
-          if (Cr.NS_OK !== methodQueue.status) {
-            calendar.notifyOperationComplete(
-              listener,
-              methodQueue.status,
-              Ci.calIOperationListener.GET,
-              null,
-              "Objects retrieval from EEE server failed");
-            return;
-          }
+    var calendar = this;
+    var clientListener = cal3e.createOperationListener(
+      function calEee_getItems_onResult(methodQueue, result) {
+        if (methodQueue.isFault && !methodQueue.isPending) {
+          throw Component.Exception();
+        } else if (methodQueue.isPending) {
+          return;
+        }
+        if (Cr.NS_OK !== methodQueue.status) {
+          calendar.notifyOperationComplete(
+            listener,
+            methodQueue.status,
+            Ci.calIOperationListener.GET,
+            null,
+            "Objects retrieval from EEE server failed");
+          return;
+        }
 
-          var rawItems;
-          try {
-            rawItems = result.QueryInterface(Ci.nsISupportsCString);
-          } catch (e) {
-            calendar.notifyOperationComplete(
-              listener,
-              methodQueue.status,
-              Ci.calIOperationListener.GET,
-              null,
-              "Objects retrieval from EEE server failed");
-            return;
-          }
+        var rawItems;
+        try {
+          rawItems = result.QueryInterface(Ci.nsISupportsCString);
+        } catch (e) {
+          calendar.notifyOperationComplete(
+            listener,
+            methodQueue.status,
+            Ci.calIOperationListener.GET,
+            null,
+            "Objects retrieval from EEE server failed");
+          return;
+        }
 
-          var parser = calendar._getIcsParser();
-          try {
-            parser.parseString(rawItems);
-          } catch (e) {
-            calendar.notifyOperationComplete(listener,
-                                             e.result,
-                                             Ci.calIOperationListener.GET,
-                                             null,
-                                             e.message);
-            return;
-          }
+        var parser = calendar._getIcsParser();
+        try {
+          parser.parseString(rawItems);
+        } catch (e) {
+          calendar.notifyOperationComplete(listener,
+                                           e.result,
+                                           Ci.calIOperationListener.GET,
+                                           null,
+                                           e.message);
+          return;
+        }
 
-          var itemsCount = {};
-          var items = parser.getItems(itemsCount);
-          var idx = itemsCount.value;
-          while (idx--) {
-            items[idx].calendar = calendar;
-          }
+        var itemsCount = {};
+        var items = parser.getItems(itemsCount);
+        var idx = itemsCount.value;
+        while (idx--) {
+          items[idx].calendar = calendar.superCalendar;
+          items[idx].makeImmutable();
 
-          listener.onGetResult(calendar,
+          listener.onGetResult(calendar.superCalendar,
                                Cr.NS_OK,
                                Ci.calIEvent,
                                null,
-                               itemsCount.value,
-                               items);
+                               1,
+                               [items[idx]]);
 
-          calendar.notifyOperationComplete(listener,
-                                           Cr.NS_OK,
-                                           Ci.calIOperationListener.GET,
-                                           null,
-                                           null);
-        });
+          cal.processPendingEvent();
+        }
+
+        calendar.notifyOperationComplete(listener,
+                                         Cr.NS_OK,
+                                         Ci.calIOperationListener.GET,
+                                         null,
+                                         null);
+      });
 
     return this._getClient().queryObjects(
       this._identity, clientListener, this,
