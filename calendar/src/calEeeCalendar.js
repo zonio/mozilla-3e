@@ -454,7 +454,8 @@ calEeeCalendar.prototype = {
 
     return this._getClient().queryObjects(
       this._identity, clientListener, this,
-      rangeStart.nativeTime, rangeEnd.nativeTime);
+      rangeStart ? rangeStart.nativeTime : null,
+      rangeStart ? rangeEnd.nativeTime : null);
   },
 
   /**
