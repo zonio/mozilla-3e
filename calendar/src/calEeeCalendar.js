@@ -462,7 +462,7 @@ calEeeCalendar.prototype = {
    * Refreshes this calendar by notifying its observer.
    */
   refresh: function calEee_refresh() {
-    this.observers.notify("onLoad", [this]);
+    this.mObservers.notify('onLoad', [this]);
   },
 
   _icsParser: null,
