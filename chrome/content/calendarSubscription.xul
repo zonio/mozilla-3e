@@ -22,24 +22,24 @@
 <!DOCTYPE dialog SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
 
 <dialog
-    id="calendar3e-subscribe-dialog"
-    title="&cal3eCalendarSubscribe.title;"
+    id="calendar3e-subscription-dialog"
+    title="&calendarSubscription.title;"
     buttons="accept,cancel"
     onload="cal3ePreferences.onLoad()"
     onunload="cal3ePreferences.onUnload()"
     ondialogaccept="return cal3ePreferences.onAccept()"
-    windowtype="Calendar3e:SubscribeDialog"
+    windowtype="Calendar3e:SubscriptionDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <grid id="calendar3e-subscribe-grid">
+  <grid id="calendar3e-subscription-grid">
     <columns>
       <column/>
       <column flex="1"/>
     </columns>
-    <rows id="calendar3e-subscribe-rows">
+    <rows id="calendar3e-subscription-rows">
       <row id="calendar3e-account-row" align="center">
         <label control="account-menulist"
-               value="&cal3eCalendarSubscribe.account.label;"/>
+               value="&calendarSubscription.account.label;"/>
         <menulist id="account-menulist">
           <menupopup id="account-menupopup">
             <menuitem value="bob.davis@mycompany.com"
@@ -51,7 +51,7 @@
       </row>
       <row id="calendar3e-search-row" align="center">
         <label control="search-pattern"
-               value="&cal3eCalendarSubscribe.account.label;"/>
+               value="&calendarSubscription.account.label;"/>
         <textbox id="search-pattern"/>
       </row>
       <row>
