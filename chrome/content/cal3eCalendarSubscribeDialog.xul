@@ -25,6 +25,9 @@
     id="calendar3e-subscribe-dialog"
     title="&cal3eCalendarSubscribe.title;"
     buttons="accept,cancel"
+    onload="cal3ePreferences.onLoad()"
+    onunload="cal3ePreferences.onUnload()"
+    ondialogaccept="return cal3ePreferences.onAccept()"
     windowtype="Calendar3e:SubscribeDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -55,7 +58,7 @@
         <spacer/>
         <tree id="calendars-tree" hidecolumnpicker="true" class="tree"
               rows="6">
-          <treecols id="calendars-tree-cols">  
+          <treecols id="calendars-tree-cols">
             <treecol id="calendar-tree-calendar-col" hideheader="true"
                      primary="true" flex="1" persist="width"/>
           </treecols>

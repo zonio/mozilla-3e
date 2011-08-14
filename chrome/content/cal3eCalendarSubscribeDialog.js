@@ -17,7 +17,40 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-function open3eCalendarSubscribeDialog() {
+const Ci = Components.interfaces;
+const Cc = Components.classes;
+
+function cal3eCalendarSubscribeDialog() {
+  this._client = Cc["@zonio.net/calendar3e/client-service;1"].
+    getService(Ci.calEeeIClient);
+}
+
+cal3eCalendarSubscribeDialog.prototype = {
+
+  getIdentity: function cal3eCalendarSubscribeDialog_getIdentity() {
+  },
+
+  loadUsers: function cal3eCalendarSubscribeDialog_loadUsers() {
+    this._client
+  }
+
+}
+
+
+var subscribeDialog;
+cal3eCalendarSubscribeDialog.open = function () {
   openDialog("chrome://calendar3e/content/cal3eCalendarSubscribeDialog.xul",
              "cal3eSubscribe", "chrome,titlebar,modal,resizable");
+}
+cal3eCalendarSubscribeDialog.onLoad = function () {
+  subscribeDialog = new cal3eCalendarSubscribeDialog();
+}
+cal3eCalendarSubscribeDialog.onAccept = function () {
+  subscribeDialog.store();
+
+  return true;
+}
+cal3eCalendarSubscribeDialog.onUnload = function () {
+  subscribeDialog.finalize();
+  subscribeDialog = null;
 }
