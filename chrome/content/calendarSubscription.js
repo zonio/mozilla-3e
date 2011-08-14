@@ -40,7 +40,7 @@ calendarSubscription.prototype = {
 var subscribeDialog;
 calendarSubscription.open = function () {
   openDialog("chrome://calendar3e/content/calendarSubscription.xul",
-             "cal3eSubscribe", "chrome,titlebar,modal,resizable");
+             "cal3eSubscription", "chrome,titlebar,modal,resizable");
 }
 calendarSubscription.onLoad = function () {
   subscribeDialog = new calendarSubscription();
