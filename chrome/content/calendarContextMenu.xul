@@ -28,11 +28,11 @@
       <menuitem id="list-calendars-context-subscribe"
                 label="&cal3eCalendarContext.subscribe.label;"
                 insertafter="list-calendars-context-delete"
-                oncommand="cal3eCalendarSubscribeDialog.open();"/>
+                oncommand="calendarSubscription.open();"/>
     </popup>
   </popupset>
 
   <script type="application/javascript"
-          src="chrome://calendar3e/content/cal3eCalendarSubscribeDialog.js"/>
+          src="chrome://calendar3e/content/calendarSubscription.js"/>
 
 </overlay>

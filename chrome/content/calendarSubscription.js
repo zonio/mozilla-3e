@@ -20,17 +20,17 @@
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 
-function cal3eCalendarSubscribeDialog() {
+function calendarSubscription() {
   this._client = Cc["@zonio.net/calendar3e/client-service;1"].
     getService(Ci.calEeeIClient);
 }
 
-cal3eCalendarSubscribeDialog.prototype = {
+calendarSubscription.prototype = {
 
-  getIdentity: function cal3eCalendarSubscribeDialog_getIdentity() {
+  getIdentity: function calendarSubscription_getIdentity() {
   },
 
-  loadUsers: function cal3eCalendarSubscribeDialog_loadUsers() {
+  loadUsers: function calendarSubscription_loadUsers() {
     this._client
   }
 
@@ -38,19 +38,19 @@ cal3eCalendarSubscribeDialog.prototype = {
 
 
 var subscribeDialog;
-cal3eCalendarSubscribeDialog.open = function () {
-  openDialog("chrome://calendar3e/content/cal3eCalendarSubscribeDialog.xul",
+calendarSubscription.open = function () {
+  openDialog("chrome://calendar3e/content/calendarSubscription.xul",
              "cal3eSubscribe", "chrome,titlebar,modal,resizable");
 }
-cal3eCalendarSubscribeDialog.onLoad = function () {
-  subscribeDialog = new cal3eCalendarSubscribeDialog();
+calendarSubscription.onLoad = function () {
+  subscribeDialog = new calendarSubscription();
 }
-cal3eCalendarSubscribeDialog.onAccept = function () {
+calendarSubscription.onAccept = function () {
   subscribeDialog.store();
 
   return true;
 }
-cal3eCalendarSubscribeDialog.onUnload = function () {
+calendarSubscription.onUnload = function () {
   subscribeDialog.finalize();
   subscribeDialog = null;
 }
