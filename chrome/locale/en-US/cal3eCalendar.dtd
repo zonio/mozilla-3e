@@ -31,5 +31,5 @@
 <!ENTITY cal3eCalendarContext.subscribe.label "Subscribe Calendar…">
 
 <!ENTITY cal3eCalendarSubscribe.title "Subscribe Calendar">
-<!ENTITY cal3eCalendarSubscribe.account.label "Account:">
+<!ENTITY cal3eCalendarSubscribe.subscriber.label "Account:">
 <!ENTITY cal3eCalendarSubscribe.search.label "Search:">

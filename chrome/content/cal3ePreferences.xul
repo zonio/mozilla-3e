@@ -44,7 +44,7 @@
 
       <label value="&cal3eEnabledAccounts.label;"/>
       <tree flex="1" id="cal3e-accounts-tree" rows="4"
-            seltype="single" hidecolumnpicker="true"> 
+            seltype="single" hidecolumnpicker="true">
         <treecols>
           <treecol id="cal3e-accounts-tree-col-name" primary="true" flex="3"/>
           <treecol id="cal3e-accounts-tree-col-enable" flex="1"/>

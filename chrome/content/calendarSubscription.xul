@@ -37,11 +37,11 @@
       <column flex="1"/>
     </columns>
     <rows id="calendar3e-subscription-rows">
-      <row id="calendar3e-account-row" align="center">
-        <label control="account-menulist"
-               value="&calendarSubscription.account.label;"/>
-        <menulist id="account-menulist">
-          <menupopup id="account-menupopup">
+      <row id="calendar3e-subscriber-row" align="center">
+        <label control="subscriber-menulist"
+               value="&calendarSubscription.subscriber.label;"/>
+        <menulist id="subscriber-menulist">
+          <menupopup id="subscriber-menupopup">
             <menuitem value="bob.davis@mycompany.com"
                       label="Bob Davis &lt;bob.davis@mycompany.com>"/>
             <menuitem value="jane.doe@domain.net"
@@ -51,7 +51,7 @@
       </row>
       <row id="calendar3e-search-row" align="center">
         <label control="search-pattern"
-               value="&calendarSubscription.account.label;"/>
+               value="&calendarSubscription.search.label;"/>
         <textbox id="search-pattern"/>
       </row>
       <row>
@@ -98,4 +98,8 @@
       </row>
     </rows>
   </grid>
+  <stringbundleset id="calendar3e-stringbundleset">
+    <stringbundle id="calendar3e-strings"
+                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+  </stringbundleset>
 </dialog>

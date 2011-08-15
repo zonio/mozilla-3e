@@ -23,15 +23,223 @@ const Cc = Components.classes;
 function calendarSubscription() {
   this._client = Cc["@zonio.net/calendar3e/client-service;1"].
     getService(Ci.calEeeIClient);
+  this._accountCollection = new cal3e.AccountCollection();
+  this._accountCollection.addObserver(this);
+  this._accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
+    getService(Ci.nsIMsgAccountManager);
+  this._stringBundle = document.getElementById('calendar3e-strings');
+  this._subscriberElement = document.getElementById('subscriber-menulist');
+  this._providerToTreeItemMap = {};
+
+  this._accountCollection.notify();
+  this.load();
 }
+
+calendarSubscription.LOADING = 0x0100;
+calendarSubscription.BROWSING = 0x0200;
+calendarSubscription.ERROR = 0xfe00;
 
 calendarSubscription.prototype = {
 
   getIdentity: function calendarSubscription_getIdentity() {
+    return this._subscriberElement.value ?
+      this._accountManager.getIdentity(this._subscriberElement.value) :
+      null ;
   },
 
-  loadUsers: function calendarSubscription_loadUsers() {
-    this._client
+  load: function calendarSubscription_load() {
+    this._state = calendarSubscription.LOADING;
+    this.loadProviders();
+    this.loadCalendars();
+  },
+
+  browse: function calendarSubscription_browse() {
+    this._state = calendarSubscription.BROWSING;
+  },
+
+  error: function calendarSubscription_error() {
+    this._state = calendarSubscription.ERROR;
+  },
+
+  loadProviders: function calendarSubscription_loadProviders() {
+    var identity = this.getIdentity();
+    if (null === identity) {
+      this._addItemToMenu(
+        this._providerElement,
+        [this._stringBundle.getString(
+          'cal3eCalendarProperties.providers.selectContextLabel'),
+         null],
+        true);
+      return;
+    }
+
+    this._addItemToMenu(
+      this._providerElement,
+      [this._stringBundle.getString(
+        'cal3eCalendarProperties.providers.loadingLabel'),
+       null],
+      true);
+    var calendarSubscription = this;
+    var listener = cal3e.createOperationListener(
+      function calEee_adoptItem_onResult(methodQueue, result) {
+        if (methodQueue.isPending) {
+          return;
+        }
+        if (Cr.NS_OK !== methodQueue.status) {
+          this._addItemToMenu(
+            this._providerElement,
+            [this._stringBundle.getString(
+              'cal3eCalendarProperties.providers.errorLabel'),
+             null],
+            true);
+          return;
+        }
+        calendarSubscription.onProvidersLoaded(
+          calendarSubscription._buildProviders(result));
+      });
+    this._client.getUsers(identity, listener,
+                          "NOT match_username(" + identity.email + ") AND " +
+                          "NOT match_user_alias(" + identity.email + ")");
+  },
+
+  loadCalendar: function calendarSubscription_loadCalendar() {
+  },
+
+  onAccountsChange: function calendarSubscription_onAccountsChange() {
+    var selectedIdentity = this._subscriberElement.value;
+    this._clearMenu(this._subscriberElement);
+
+    var subscribers = this._accountCollection.filter(
+      cal3e.AccountCollection.filterEnabled);
+    var idx = subscribers.length;
+    var account, identity, item;
+    while (idx--) {
+      account = subscribers[idx];
+      identity = account.defaultIdentity;
+      item = this._subscriberElement.appendItem(
+        identity.fullName + " <" + identity.email + ">",
+        identity.key);
+
+      if (identity.key == selectedIdentity) {
+        this._subscriberElement.selectedItem = item;
+      }
+    }
+  },
+
+  onProvidersLoaded:
+  function calendarSubscription_onProvidersLoaded(providers) {
+    this._clearMenu(this._providerElement);
+    providers.forEach(function (provider) {
+      this._addItemToTree(this._providerElement, provider, false);
+    }, this);
+  },
+
+  _addItemToMenu:
+  function calendarSubscription_addItemToMenu(menu, item, clear) {
+    if ('menupopup' != menu.tagName) {
+      menu = menu.firstChild;
+      while (menu && ('menupopup' !== menu.tagName)) {
+        menu = menu.nextSibling;
+      }
+    }
+    if (!menu || ('menupopup' != menu.tagName)) {
+      throw Component.Exception("Cannot find menupopup.");
+    }
+    if (clear) {
+      this._clearMenu(menu);
+    }
+    menu = menu.parentNode.appendItem.apply(menu.parentNode, item);
+  },
+
+  _clearMenu:
+  function calendarSubscription_clearMenu(menu) {
+    if ('menupopup' != menu.tagName) {
+      menu = menu.firstChild;
+      while (menu && ('menupopup' !== menu.tagName)) {
+        menu = menu.nextSibling;
+      }
+    }
+    if (!menu || ('menupopup' != menu.tagName)) {
+      throw Component.Exception("Cannot find menupopup.");
+    }
+    while (menu.lastChild) {
+      menu.removeChild(menu.lastChild);
+    }
+  },
+
+  _addItemToTree:
+  function calendarSubscription_addItemToTree(tree, item, parent) {
+    if ('treechildren' != tree.tagName) {
+      tree = tree.firstChild;
+      while (tree && ('treechildren' !== tree.tagName)) {
+        tree = tree.nextSibling;
+      }
+    }
+    if (!tree || ('treechildren' != tree.tagName)) {
+      throw Component.Exception("Cannot find treechildren.");
+    }
+  },
+
+  _clearTree:
+  function calendarSubscription_clearTree(tree) {
+    if ('treechildren' != tree.tagName) {
+      tree = tree.firstChild;
+      while (tree && ('treechildren' !== tree.tagName)) {
+        tree = tree.nextSibling;
+      }
+    }
+    if (!tree || ('treechildren' != tree.tagName)) {
+      throw Component.Exception("Cannot find treechildren.");
+    }
+    while (tree.lastChild) {
+      tree.removeChild(tree.lastChild);
+    }
+  },
+
+  _buildProviders:
+  function calendarSubscription_buildProviders(rawProviders) {
+    var providers = [];
+    var rawProviders = result.QueryInterface(Ci.nsISupportsArray);
+    var idx = rawProviders.Count(), rawProvider, uri;
+    while (idx--) {
+      providers.push(this._buildProvider(rawProviders.GetElementAt(idx)));
+    }
+
+    return providers;
+  },
+
+  _buildProvider: function calendarSubscription_buildProvider(rawProvider) {
+    var provider = [];
+    rawProvider = rawProvider.QueryInterface(Ci.nsIDictionary);
+
+    var username = rawProvider.getValue('username').
+      QueryInterface(Ci.nsISupportsCString);
+    var realname = null;
+    if (rawProvider.hasKey('attrs')) {
+      var rawAttrs = rawProvider.getKey('attrs').
+        QueryInterface(Ci.nsISupportsArray);
+      let idx = rawAttrs.Count(), rawAttr;
+      while (idx--) {
+        rawAttr = rawAttr.QueryElementAt(idx, Ci.nsIDictionary);
+        if ('realname' != rawAttr.getValue('name')) {
+          continue;
+        }
+        var realname = rawAttr.getValue('value').
+          QueryInterface(Ci.nsISupportsCString);
+      }
+    }
+    if (null !== realname) {
+      provider.push(realname + "<" + username + ">");
+    } else {
+      provider.push(username);
+    }
+    provider.push(username);
+
+    return provider;
+  },
+
+  finalize: function calendarSubscription_finalize() {
+    this._accountCollection.removeObserver(this);
   }
 
 }
