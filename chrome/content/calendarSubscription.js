@@ -29,6 +29,7 @@ function calendarSubscription() {
     getService(Ci.nsIMsgAccountManager);
   this._stringBundle = document.getElementById('calendar3e-strings');
   this._subscriberElement = document.getElementById('subscriber-menulist');
+  this._providerMap = {};
   this._providerToTreeItemMap = {};
 
   this._accountCollection.notify();
