@@ -5,8 +5,8 @@
 
   <Description about="urn:mozilla:install-manifest">
     <em:id>calendar3e@zonio.net</em:id>
-    <em:name>Provider for 3e Calendar</em:name>
-    <em:version>0.0.5pre1</em:version>
+    <em:name>3e Calendar</em:name>
+    <em:version>0.7.0</em:version>
     <em:description>Allows interaction with 3e calendaring system and
     other EEE servers.</em:description>
     <em:creator>Zonio s.r.o.</em:creator>

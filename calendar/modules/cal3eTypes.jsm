@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
- * Mozilla 3e Calendar Extension
+ * 3e Calendar
  * Copyright © 2011  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify

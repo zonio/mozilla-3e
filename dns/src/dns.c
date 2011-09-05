@@ -1,5 +1,5 @@
 /*
- * jabberd - Jabber Open Source Server & Mozilla 3e Plugin
+ * jabberd - Jabber Open Source Server & 3e Calendar
  * Copyright (c) 2002 Jeremie Miller, Thomas Muldowney,
  *                    Ryan Eatmon, Robert Norris
  * Copyright (c) 2011 Zonio s.r.o.
