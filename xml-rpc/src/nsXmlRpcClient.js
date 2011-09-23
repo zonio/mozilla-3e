@@ -43,6 +43,8 @@
  *  $Id: nsXmlRpcClient.js,v 1.39 2006/10/24 16:02:01 silver%warwickcompsoc.co.uk Exp $
  */
 
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 /*
  * Constants
  */
@@ -86,13 +88,17 @@ nsXmlRpcFault.prototype = {
             this.faultString + '>';
     },
 
-    // nsISupports interface
-    QueryInterface: function(iid) {
-        if (!iid.equals(Components.interfaces.nsISupports) &&
-            !iid.equals(XMLRPCFAULT_IID))
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-        return this;
-    }
+    classDescription: 'XML-RPC Fault JS component',
+
+    classID: XMLRPCFAULT_CID,
+
+    contractID: XMLRPCFAULT_CONTRACTID,
+
+    QueryInterface: XPCOMUtils.generateQI([
+        XMLRPCFAULT_IID,
+        Components.interfaces.nsISupports
+    ])
+
 };
 
 /* The nsXmlRpcClient class constructor. */
@@ -313,14 +319,17 @@ nsXmlRpcClient.prototype = {
         }
     },
 
-    // nsISupports interface
-    QueryInterface: function(iid) {
-        if (!iid.equals(Components.interfaces.nsISupports) &&
-            !iid.equals(XMLRPCCLIENT_IID) &&
-            !iid.equals(Components.interfaces.nsIInterfaceRequestor))
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-        return this;
-    },
+    classDescription: 'XML-RPC Client JS component',
+
+    classID: XMLRPCCLIENT_CID,
+
+    contractID: XMLRPCCLIENT_CONTRACTID,
+
+    QueryInterface: XPCOMUtils.generateQI([
+        XMLRPCCLIENT_IID,
+        Components.interfaces.nsIInterfaceRequestor,
+        Components.interfaces.nsISupports
+    ]),
 
     // nsIInterfaceRequester interface
     getInterface: function(iid, result){
@@ -711,6 +720,9 @@ nsXmlRpcClient.prototype = {
     }
 };
 
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([nsXmlRpcClient, nsXmlRpcFault]);
+
+
 /* The XMLWriter class constructor */
 function XMLWriter(encoding) {
     if (!encoding)
@@ -825,79 +837,6 @@ Value.prototype = {
         }
     }
 };
-
-/*
- * Objects
- */
-
-/* nsXmlRpcClient Module (for XPCOM registration) */
-var nsXmlRpcClientModule = {
-    registerSelf: function(compMgr, fileSpec, location, type) {
-        compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
-
-        compMgr.registerFactoryLocation(XMLRPCCLIENT_CID, 
-                                        'XML-RPC Client JS component', 
-                                        XMLRPCCLIENT_CONTRACTID, 
-                                        fileSpec,
-                                        location, 
-                                        type);
-        compMgr.registerFactoryLocation(XMLRPCFAULT_CID, 
-                                        'XML-RPC Fault JS component', 
-                                        XMLRPCFAULT_CONTRACTID, 
-                                        fileSpec,
-                                        location, 
-                                        type);
-    },
-
-    getClassObject: function(compMgr, cid, iid) {
-        if (!cid.equals(XMLRPCCLIENT_CID) && !cid.equals(XMLRPCFAULT_CID))
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-
-        if (!iid.equals(Components.interfaces.nsIFactory))
-            throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
-
-        if (cid.equals(XMLRPCCLIENT_CID))
-            return nsXmlRpcClientFactory
-        else return nsXmlRpcFaultFactory;
-    },
-
-    canUnload: function(compMgr) { return true; }
-};
-
-/* nsXmlRpcClient Class Factory */
-var nsXmlRpcClientFactory = {
-    createInstance: function(outer, iid) {
-        if (outer != null)
-            throw Components.results.NS_ERROR_NO_AGGREGATION;
-    
-        if (!iid.equals(XMLRPCCLIENT_IID) &&
-            !iid.equals(Components.interfaces.nsISupports))
-            throw Components.results.NS_ERROR_INVALID_ARG;
-
-        return new nsXmlRpcClient();
-    }
-}
-
-/* nsXmlRpcFault Class Factory */
-var nsXmlRpcFaultFactory = {
-    createInstance: function(outer, iid) {
-        if (outer != null)
-            throw Components.results.NS_ERROR_NO_AGGREGATION;
-
-        if (!iid.equals(XMLRPCFAULT_IID) &&
-            !iid.equals(Components.interfaces.nsISupports))
-            throw Components.results.NS_ERROR_INVALID_ARG;
-
-        return new nsXmlRpcFault();
-    }
-}
-
-/*
- * Functions
- */
-
-/* module initialisation */
-function NSGetModule(comMgr, fileSpec) { return nsXmlRpcClientModule; }
 
 /* Create an instance of the given ContractID, with given interface */
 function createInstance(contractId, intf) {

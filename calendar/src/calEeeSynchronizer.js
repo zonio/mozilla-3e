@@ -63,6 +63,12 @@ function calEeeSynchronizationService() {
 
 calEeeSynchronizationService.prototype = {
 
+  classDescription: "EEE calendar synchronization service",
+
+  classID: Components.ID("{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}"),
+
+  contractID: "@zonio.net/calendar3e/synchronization-service;1",
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeISynchronizationService,
     Ci.nsIObserver
@@ -235,7 +241,7 @@ calEeeSynchronizationService.prototype = {
     return found ? identityKey : null ;
   }
 
-};
+}
 
 /**
  * Synchronizer of calendars present in Mozilla client application
@@ -246,6 +252,12 @@ function calEeeSynchronizer() {
 }
 
 calEeeSynchronizer.prototype = {
+
+  classDescription: "EEE-enabled client calendar synchronizer",
+
+  classID: Components.ID("{9045ff85-9e1c-47e4-9872-44c5ab424b73}"),
+
+  contractID: "@zonio.net/calendar3e/synchronizer;1",
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeISynchronizer
@@ -433,8 +445,9 @@ calEeeSynchronizer.prototype = {
     return calendarsByUri;
   }
 
-};
+}
 
-EXPORTED_SYMBOLS = [
-  'calEeeSynchronizationService', 'calEeeSynchronizer'
-];
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([
+  calEeeSynchronizationService,
+  calEeeSynchronizer
+]);

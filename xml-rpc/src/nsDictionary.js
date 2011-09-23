@@ -42,6 +42,8 @@
  *  $Id: nsDictionary.js,v 1.7 2004/04/18 22:14:12 gerv%gerv.net Exp $
  */
 
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 /*
  * Constants
  */
@@ -87,62 +89,19 @@ nsDictionary.prototype= {
 
     clear: function() { this.hash = {}; },
 
-    QueryInterface: function(iid) {
-        if (!iid.equals(Components.interfaces.nsISupports) &&
-            !iid.equals(DICTIONARY_IID))
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-        return this;
-    }
+    classDescription: "nsDictionary JS component",
+
+    classID: DICTIONARY_CID,
+
+    contractID: DICTIONARY_CONTRACTID,
+
+    QueryInterface: XPCOMUtils.generateQI([
+        DICTIONARY_IID,
+        Components.interfaces.nsISupports
+    ])
+
 };
 
-/*
- * Objects
- */
-
-/* nsDictionary Module (for XPCOM registration) */
-var nsDictionaryModule = {
-    registerSelf: function(compMgr, fileSpec, location, type) {
-        compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
-        compMgr.registerFactoryLocation(DICTIONARY_CID, 
-                                        "nsDictionary JS component", 
-                                        DICTIONARY_CONTRACTID, 
-                                        fileSpec, 
-                                        location,
-                                        type);
-    },
-
-    getClassObject: function(compMgr, cid, iid) {
-        if (!cid.equals(DICTIONARY_CID))
-            throw Components.results.NS_ERROR_NO_INTERFACE;
-
-        if (!iid.equals(Components.interfaces.nsIFactory))
-            throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
-
-        return nsDictionaryFactory;
-    },
-
-    canUnload: function(compMgr) { return true; }
-};
-
-/* nsDictionary Class Factory */
-var nsDictionaryFactory = {
-    createInstance: function(outer, iid) {
-        if (outer != null)
-            throw Components.results.NS_ERROR_NO_AGGREGATION;
-    
-        if (!iid.equals(DICTIONARY_IID) &&
-            !iid.equals(Components.interfaces.nsISupports))
-            throw Components.results.NS_ERROR_INVALID_ARG;
-
-        return new nsDictionary();
-    }
-}
-
-/*
- * Functions
- */
-
-/* module initialisation */
-function NSGetModule(comMgr, fileSpec) { return nsDictionaryModule; }
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([nsDictionary]);
 
 // vim:sw=4:sr:sta:et:sts:

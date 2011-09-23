@@ -32,6 +32,12 @@ function calEeeProtocol() {
 
 calEeeProtocol.prototype = {
 
+  classDescription: "EEE protocol handler",
+
+  classID: Components.ID("{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}"),
+
+  contractID: "@mozilla.org/network/protocol;1?name=eee",
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIProtocolHandler
   ]),
@@ -89,6 +95,4 @@ calEeeProtocol.prototype = {
 
 }
 
-EXPORTED_SYMBOLS = [
-  'calEeeProtocol'
-];
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeProtocol]);

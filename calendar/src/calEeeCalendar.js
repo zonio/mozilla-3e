@@ -41,6 +41,12 @@ calEeeCalendar.prototype = {
 
   __proto__: cal.ProviderBase.prototype,
 
+  classDescription: "EEE calendar provider",
+
+  classID: Components.ID("{e2b342d0-6119-43d0-8fc6-6116876d2fdb}"),
+
+  contractID: "@mozilla.org/calendar/calendar;1?type=eee",
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeICalendar,
     Ci.calICalendar,
@@ -477,6 +483,4 @@ calEeeCalendar.prototype = {
 
 }
 
-EXPORTED_SYMBOLS = [
-  'calEeeCalendar'
-];
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeCalendar]);

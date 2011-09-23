@@ -48,6 +48,12 @@ function calEeeMethodQueue() {
 
 calEeeMethodQueue.prototype = {
 
+  classDescription: "Queue for methods to be executed on the EEE server",
+
+  classID: Components.ID("{bd47191f-9617-4a77-ae79-b7927b535f4c}"),
+
+  contractID: "@zonio.net/calendar3e/method-queue;1",
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeIMethodQueue,
     Ci.nsIXmlRpcClientListener
@@ -302,8 +308,6 @@ calEeeMethodQueue.prototype = {
     this._listener.onResult(this, [methodName, this._context]);
   }
 
-};
+}
 
-EXPORTED_SYMBOLS = [
-  'calEeeMethodQueue'
-];
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeMethodQueue]);

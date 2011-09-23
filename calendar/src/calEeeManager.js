@@ -34,6 +34,12 @@ function calEeeManager() {
 
 calEeeManager.prototype = {
 
+  classDescription: "EEE calendar manager",
+
+  classID: Components.ID("{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}"),
+
+  contractID: "@zonio.net/calendar3e/manager;1",
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeIManager,
     Ci.calICalendarManagerObserver,
@@ -216,6 +222,4 @@ calEeeManager.prototype = {
 
 }
 
-EXPORTED_SYMBOLS = [
-  'calEeeManager'
-];
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeManager]);

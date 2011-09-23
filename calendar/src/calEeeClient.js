@@ -35,6 +35,13 @@ function calEeeClient() {
 
 calEeeClient.prototype = {
 
+  classDescription: "EEE client simplifying server method calls to " +
+                    "prepared operations",
+
+  classID: Components.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
+
+  contractID: "@zonio.net/calendar3e/client-service;1",
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.calEeeIClient,
     Ci.calIGenericOperationListener,
@@ -453,7 +460,7 @@ calEeeClient.prototype = {
                         item.id);
   }
 
-};
+}
 
 /**
  * Converts XPCOM date which is UNIX timestamp to date formatted according to
@@ -487,6 +494,4 @@ function xpcomToEeeDate(xpcomDate) {
   return eeeDate;
 }
 
-EXPORTED_SYMBOLS = [
-  'calEeeClient'
-];
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeClient]);

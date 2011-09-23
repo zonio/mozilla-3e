@@ -17,16 +17,32 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsIGenericFactory.h"
+#include "mozilla/ModuleUtils.h"
+#include "nsIClassInfoImpl.h"
 
 #include "nsDNSTXTService.h"
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsDNSTXTService, Init)
+NS_DEFINE_NAMED_CID(NS_DNSTXTSERVICE_CID);
 
-static const nsModuleComponentInfo components[] = {
-     { NS_DNSTXTSERVICE_CLASSNAME,
-       NS_DNSTXTSERVICE_CID,
-       NS_DNSTXTSERVICE_CONTRACTID,
-       nsDNSTXTServiceConstructor }
+static const mozilla::Module::CIDEntry kDNSTXTCIDs[] = {
+    { &kNS_DNSTXTSERVICE_CID, false, NULL, nsDNSTXTServiceConstructor },
+    { NULL }
 };
 
-NS_IMPL_NSGETMODULE(calendar3edns, components)
+static const mozilla::Module::ContractIDEntry kDNSTXTContracts[] = {
+    { NS_DNSTXTSERVICE_CONTRACTID, &kNS_DNSTXTSERVICE_CID },
+    { NULL }
+};
+
+static const mozilla::Module::CategoryEntry kDNSTXTCategories[] = {
+    { NULL }
+}
+
+static const mozilla::Module kDNSTXTModule = {
+    mozilla::Module::kVersion,
+    kDNSTXTCIDs,
+    kDNSTXTContracts,
+    kDNSTXTCategories
+};
+
+NSMODULE_DEFN(nsDNSTXTModule) = &kDNSTXTModule;
