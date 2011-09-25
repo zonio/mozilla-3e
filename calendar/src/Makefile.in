@@ -28,20 +28,13 @@ MODULE = calendar3e
 XPI_NAME = calendar3e
 
 EXTRA_COMPONENTS = \
-	calEeeModule.js \
-	$(NULL)
-
-EXTRA_SCRIPTS = \
 	calEeeCalendar.js \
 	calEeeClient.js \
 	calEeeMethodQueue.js \
 	calEeeProtocol.js \
 	calEeeManager.js \
 	calEeeSynchronizer.js \
+	calEeeModule.manifest \
 	$(NULL)
-
-export:: $(EXTRA_SCRIPTS)
-	if test ! -d $(FINAL_TARGET)/js; then $(NSINSTALL) -D $(FINAL_TARGET)/js; fi
-	$(INSTALL) $^ $(FINAL_TARGET)/js
 
 include $(topsrcdir)/config/rules.mk

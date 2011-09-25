@@ -1,0 +1,8 @@
+component {4d7d15c0-3747-4f7f-b6b3-792a5ea1a9aa} nsXmlRpcClient.js
+contract @mozilla.org/xml-rpc/client;1 {4d7d15c0-3747-4f7f-b6b3-792a5ea1a9aa}
+
+component {691cb864-0a7e-448c-98ee-4a7f359cf145} nsXmlRpcClient.js
+contract @mozilla.org/xml-rpc/fault;1 {691cb864-0a7e-448c-98ee-4a7f359cf145}
+
+component {1dd0cb45-aea3-4a52-8b29-01429a542863} nsDictionary.js
+contract @mozilla.org/dictionary;1 {1dd0cb45-aea3-4a52-8b29-01429a542863}

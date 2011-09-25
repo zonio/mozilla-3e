@@ -30,6 +30,7 @@ XPI_NAME = calendar3e
 EXTRA_COMPONENTS = \
 	nsDictionary.js \
 	nsXmlRpcClient.js \
+	nsXmlRpcModule.manifest \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk
