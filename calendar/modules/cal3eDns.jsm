@@ -111,8 +111,12 @@ function ResolverMac() {
     closeLibrary();
 
     answer.length = len;
-    var qdcount = readNumberBytes(answer, 2, 2);
-    var ancount = readNumberBytes(answer, 3, 2);
+    var qdcount = readNumberBytes(
+      answer, 2 * ctypes.uint16_t.size, ctypes.uint16_t.size
+    );
+    var ancount = readNumberBytes(
+      answer, 3 * ctypes.uint16_t.size, ctypes.uint16_t.size
+    );
 
     //TODO implementation
 
