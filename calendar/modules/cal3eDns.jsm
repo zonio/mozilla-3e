@@ -202,7 +202,13 @@ function ResolverMac() {
   function readString(src, length) {
   }
 
-  this.extract = function ResolverMac_resolve(name, typeclass, callback) {
+  this.extract = function ResolverMac_extract(name, typeclass, callback) {
+    var resource = new typecast(answerTtl, "eee server=localhost:4444");
+    callback.call(this, resource);
+    return;
+
+    //TODO fix and test implementation
+
     loadLibrary();
     var dname = ctypes.char.array(name.length)(name);
     var answer = ctypes.unsigned_char.array(anslen)();
