@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>calendar3e@zonio.net</em:id>
     <em:name>3e Calendar</em:name>
-    <em:version>0.7.0</em:version>
+    <em:version>0.7.1</em:version>
     <em:description>Allows interaction with 3e calendaring system and
     other EEE servers.</em:description>
     <em:creator>Zonio s.r.o.</em:creator>
@@ -16,8 +16,8 @@
     <em:targetApplication>
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-        <em:minVersion>2.0</em:minVersion>
-        <em:maxVersion>6.0b2</em:maxVersion>
+        <em:minVersion>5.0</em:minVersion>
+        <em:maxVersion>9.0a1</em:maxVersion>
       </Description>
     </em:targetApplication>
 
