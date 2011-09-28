@@ -1,4 +1,5 @@
 calendar3e.jar:
+% resource calendar3e               .
 % content  calendar3e               %content/
 % locale   calendar3e   en-US       %locale/en-US/
 % skin     calendar3e   classic/1.0 %skin/

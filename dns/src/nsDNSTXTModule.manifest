@@ -1,3 +1,0 @@
-binary-component calendar3edns.dylib OS=Darwin
-binary-component calendar3edns.so OS=Linux
-binary-component calendar3edns.dll OS=WINNT

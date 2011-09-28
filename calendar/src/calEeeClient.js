@@ -23,6 +23,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://calendar3e/modules/cal3eDns.jsm");
 
 /**
  * EEE client simplifying server method calls to prepared operations.
@@ -31,6 +32,7 @@ function calEeeClient() {
   this._queues = [];
   this._activeQueue = null;
   this._timer = null;
+  this._dns = new cal3eDns();
 }
 
 calEeeClient.prototype = {
@@ -72,51 +74,12 @@ calEeeClient.prototype = {
    * @todo create EEE URI a let EEE protocol resolve it
    */
   _uriFromIdentity: function calEeeClient_uriFromIdentity(identity) {
-    var [host, port] = this._getEeeHostAndPort(
+    var [host, port] = this._dns.resolveServer(
       identity.email.substring(identity.email.indexOf("@") + 1));
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
         getService(Ci.nsIIOService);
     return ioService.newURI(url, null, null);
-  },
-
-  //TODO try move to EEE protocol
-  //TODO parametrize timeout and default port
-  _getEeeHostAndPort: function calEeeClient_getEeeHostAndPort(domainName) {
-    if (!this._resolver) {
-      this._resolver = Cc["@mozilla.org/network/dns-txt-service;1"]
-        .createInstance(Ci.nsIDNSTXTService);
-    }
-
-    try {
-      result = this._resolver.resolve(domainName, 0);
-    } catch (e) {
-      return [domainName, 4444];
-    }
-
-    var found = false, eeeRecord = null;
-    while (result.hasMore()) {
-      eeeRecord = result.getNextRecord();
-      if (0 > eeeRecord.indexOf("eee server=")) {
-        continue;
-      }
-      found = true;
-      break;
-    }
-
-    if (!found) {
-      return [domainName, 4444];
-    }
-
-    //FIXME fix resolver to allow /^...$/ regexp
-    eeeRecord = eeeRecord.match(/eee server=([^:]+)(?::(\d{1,5}))?/);
-    if (!eeeRecord) {
-      throw Components.Exception(
-        "Invalid EEE TXT record found for \"" + domainName + "\"",
-        Cr.NS_ERROR_UNKNOWN_HOST);
-    }
-
-    return [eeeRecord[1], eeeRecord[2] || 4444];
   },
 
   /**

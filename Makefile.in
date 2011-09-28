@@ -30,6 +30,6 @@ XPI_NAME = calendar3e
 INSTALL_EXTENSION_ID = calendar3e@zonio.net
 XPI_PKGNAME = calendar3e
 
-DIRS = xml-rpc dns calendar chrome
+DIRS = xml-rpc calendar chrome
 
 include $(topsrcdir)/config/rules.mk

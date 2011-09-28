@@ -29,21 +29,27 @@ EXPORTED_SYMBOLS = [
 function cal3eDns() {
 }
 
+cal3eDns.DEFAULT_PORT = 4444;
+
 cal3eDns.prototype = {
 
   resolveServer: function cal3eDns_resolveServer(domainName) {
     var foundEeeRecord = [null, null];
     var dns = new Resolv.DNS();
-    var eeeMatch = /\beee server=(\S+)(:(\d{1,4}))?/;
-    dns.each_resource(
+    var eeeServerRe = /\beee server=([^:]+)(?::(\d{1,5}))?/, match;
+    dns.getresource(
       domainName, Resolv.DNS.Resource.TXT, function (resource) {
-        if (foundEeeRecord[0])
-        let match = eeeMatch.exec(resource.data());
+        match = eeeServerRe.exec(resource.data());
         if (!match) return;
         foundEeeRecord[0] = match[1];
-        foundEeeRecord[1] = match[3];
+        foundEeeRecord[1] = match[2];
+        return false;
       }
     );
+    if (!foundEeeRecord[0]) foundEeeRecord[0] = domainName;
+    if (!foundEeeRecord[1]) foundEeeRecord[1] = this.constructor.DEFAULT_PORT;
+
+    return foundEeeRecord;
   }
 
 }
@@ -74,15 +80,15 @@ Resolv.DNS = function DNS() {
   }
 
   this.getresource = function DNS_getresource(name, typeclass) {
-    var found_resource;
+    var foundResource;
     this.each_resource(name, typeclass, function (resource) {
-      found_resource = resource;
+      foundResource = resource;
     });
-    if (!resources) {
+    if (!foundResource) {
       throw new Error("Resource for " + name + " not found.");
     }
 
-    return found_resource;
+    return foundResource;
   }
 
   this.getresources = function DNS_getresources(name, typeclass) {
