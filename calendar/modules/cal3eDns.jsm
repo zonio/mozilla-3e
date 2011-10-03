@@ -47,7 +47,7 @@ cal3eDns.prototype = {
       }
     );
     if (!foundEeeRecord[0]) foundEeeRecord[0] = domainName;
-    if (!foundEeeRecord[1]) foundEeeRecord[1] = this.constructor.DEFAULT_PORT;
+    if (!foundEeeRecord[1]) foundEeeRecord[1] = cal3eDns.DEFAULT_PORT;
 
     return foundEeeRecord;
   }
@@ -60,7 +60,7 @@ Resolv.DNS = function DNS() {
   var os = Components.classes["@mozilla.org/xre/app-info;1"].
     getService(Components.interfaces.nsIXULRuntime).OS;
   var resolver;
-  switch (this.os) {
+  switch (os) {
   case 'Darwin':
     resolver = new ResolverMac();
     break;
@@ -108,13 +108,13 @@ function DNS_Resource_TXT(ttl) {
   var instance_ttl = ttl;
   var instance_strings = Array.prototype.slice.call(arguments, 1);
 
-  get ttl() {
+  this.__defineGetter__('ttl', function DNS_Resource_TXT_getTtl() {
     return instance_ttl;
-  }
+  });
 
-  get strings() {
+  this.__defineGetter__('strings', function DNS_Resource_TXT_getStrings() {
     return instance_strings;
-  }
+  });
 
   this.data = function DNS_Resource_TXT_data() {
     return instance_strings[0];
@@ -182,7 +182,7 @@ function ResolverMac() {
       ctypes.unsigned_long,
       ctypes.unsigned_char.ptr
     );
-  },
+  }
 
   function closeLibrary() {
     libresolv.close();

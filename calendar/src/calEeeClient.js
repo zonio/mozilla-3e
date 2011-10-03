@@ -23,7 +23,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://calendar3e/modules/cal3eDns.jsm");
+//Cu.import("resource://calendar3e/modules/cal3eDns.jsm");
 
 /**
  * EEE client simplifying server method calls to prepared operations.
@@ -32,7 +32,9 @@ function calEeeClient() {
   this._queues = [];
   this._activeQueue = null;
   this._timer = null;
-  this._dns = new cal3eDns();
+  if (typeof cal3eDns !== 'undefined') {
+    this._dns = new cal3eDns();
+  }
 }
 
 calEeeClient.prototype = {
@@ -74,8 +76,13 @@ calEeeClient.prototype = {
    * @todo create EEE URI a let EEE protocol resolve it
    */
   _uriFromIdentity: function calEeeClient_uriFromIdentity(identity) {
-    var [host, port] = this._dns.resolveServer(
-      identity.email.substring(identity.email.indexOf("@") + 1));
+    if (!this._dns) {
+      var host = identity.email.substring(identity.email.indexOf("@") + 1);
+      var port = 4444;
+    } else {
+      var [host, port] = this._dns.resolveServer(
+        identity.email.substring(identity.email.indexOf("@") + 1));
+    }
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
         getService(Ci.nsIIOService);
@@ -193,7 +200,7 @@ calEeeClient.prototype = {
    * executed on the server
    * @throws {NS_ERROR_NOT_INITIALIZED} if called with no identity set
    */
-  authenticate: function cal3eClient_authenticate(identity, listener) {
+  authenticate: function calEeeClient_authenticate(identity, listener) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._queueExecution(methodQueue, listener);
@@ -220,7 +227,7 @@ calEeeClient.prototype = {
    * executed on the server
    * @see authenticate
    */
-  getUsers: function cal3eClient_getUsers(identity, listener, query) {
+  getUsers: function calEeeClient_getUsers(identity, listener, query) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueGetUsers(methodQueue, query);
@@ -245,7 +252,7 @@ calEeeClient.prototype = {
    * executed on the server
    * @see authenticate
    */
-  getCalendars: function cal3eClient_getCalendars(identity, listener, query) {
+  getCalendars: function calEeeClient_getCalendars(identity, listener, query) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueGetCalendars(methodQueue, query);
@@ -329,7 +336,7 @@ calEeeClient.prototype = {
    * @see authenticate
    */
   queryObjects:
-  function cal3eClient_queryObjects(identity, listener, calendar, from, to) {
+  function calEeeClient_queryObjects(identity, listener, calendar, from, to) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueQueryObjects(methodQueue, calendar, from, to);
@@ -358,7 +365,7 @@ calEeeClient.prototype = {
   },
 
   addObject:
-  function cal3eClient_addObject(identity, listener, calendar, item) {
+  function calEeeClient_addObject(identity, listener, calendar, item) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueAddObject(methodQueue, calendar, item);
@@ -383,7 +390,7 @@ calEeeClient.prototype = {
   },
 
   updateObject:
-  function cal3eClient_updateObject(identity, listener, calendar, item) {
+  function calEeeClient_updateObject(identity, listener, calendar, item) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueUpdateObject(methodQueue, calendar, item);
@@ -408,7 +415,8 @@ calEeeClient.prototype = {
   },
 
   deleteObject:
-  function cal3eClient_deleteObject(identity, listener, calendar, item) {
+  function calEeeClient_deleteObject(identity, listener, calendar,
+                                            item) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue);
     this._enqueueDeleteObject(methodQueue, calendar, item);

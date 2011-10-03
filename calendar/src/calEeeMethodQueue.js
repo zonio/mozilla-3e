@@ -67,7 +67,7 @@ calEeeMethodQueue.prototype = {
    * @property {String}
    * @todo add proper unique identifier (is it necessary?)
    */
-  get id calEeeMq_get_id() {
+  get id() {
     var uri = this._uri.spec,
         lastMethod = this._methodCalls[this._methodCalls.length - 1];
 
@@ -79,7 +79,7 @@ calEeeMethodQueue.prototype = {
    *
    * @property {Boolean}
    */
-  get isPending calEeeMq_get_isPending() {
+  get isPending() {
     return this._pending;
   },
 
@@ -90,7 +90,7 @@ calEeeMethodQueue.prototype = {
    *
    * @return {Number}
    */
-  get status calEeeMq_get_status() {
+  get status() {
     return this._status;
   },
 
@@ -114,7 +114,7 @@ calEeeMethodQueue.prototype = {
    * @throws {NS_ERROR_IN_PROGRESS} if called before the first server
    * response to method calls has been returned fro the server
    */
-  set serverUri calEeeMq_set_serverUri(uri) {
+  set serverUri(uri) {
     if (this._executing) {
       throw Cr.NS_ERROR_IN_PROGRESS;
     }
@@ -128,7 +128,7 @@ calEeeMethodQueue.prototype = {
    *
    * @property {nsIURI}
    */
-  get serverUri calEeeMq_get_serverUri() {
+  get serverUri() {
     return this._uri;
   },
 
@@ -139,7 +139,7 @@ calEeeMethodQueue.prototype = {
    * @throws {NS_ERROR_NOT_AVAILABLE} if called before all methods have been
    * called
    */
-  get lastResponse calEeeMq_get_lastResponse() {
+  get lastResponse() {
     if ('undefined' === typeof this._lastResponse) {
       throw Cr.NS_ERROR_NOT_AVAILABLE;
     }
