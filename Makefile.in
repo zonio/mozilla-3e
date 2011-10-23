@@ -24,12 +24,27 @@ VPATH = @srcdir@
 
 include $(DEPTH)/config/autoconf.mk
 
-DIST_FILES = install.rdf
+MODULE = calendar3e
 
-XPI_NAME = calendar3e
+export USE_EXTENSION_MANIFEST = 1
+export XPI_NAME = calendar3e-provider
+DIST_FILES = install.rdf
 INSTALL_EXTENSION_ID = calendar3e@zonio.net
-XPI_PKGNAME = calendar3e
+XPI_PKGNAME = calendar3e-provider
+
+CALENDAR_VERSION := $(shell cat $(topsrcdir)/calendar/sunbird/config/version.txt)
+THUNDERBIRD_VERSION := $(shell cat $(topsrcdir)/mail/config/version.txt)
+SEAMONKEY_VERSION := $(shell cat $(topsrcdir)/suite/config/version.txt)
+DEFINES += -DAB_CD=$(AB_CD) \
+           -DCALENDAR_VERSION=$(CALENDAR_VERSION) \
+           -DSEAMONKEY_VERSION=$(SEAMONKEY_VERSION) \
+           -DTHUNDERBIRD_VERSION=$(THUNDERBIRD_VERSION) \
+           -DCOMM_BUILD=$(COMM_BUILD) \
+           $(NULL)
 
 DIRS = xml-rpc calendar chrome
+
+libs-%:
+	$(MAKE) -C locales libs AB_CD=$* XPI_NAME=$(XPI_NAME) USE_EXTENSION_MANIFEST=1
 
 include $(topsrcdir)/config/rules.mk

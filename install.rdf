@@ -1,4 +1,23 @@
 <?xml version="1.0"?>
+#filter substitution
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - 3e Calendar
+   - Copyright © 2011  Zonio s.r.o.
+   -
+   - This program is free software: you can redistribute it and/or modify
+   - it under the terms of the GNU General Public License as published by
+   - the Free Software Foundation, either version 3 of the License, or
+   - (at your option) any later version.
+   -
+   - This program is distributed in the hope that it will be useful,
+   - but WITHOUT ANY WARRANTY; without even the implied warranty of
+   - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   - GNU General Public License for more details.
+   -
+   - You should have received a copy of the GNU General Public License
+   - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   -
+   - ***** END LICENSE BLOCK ***** -->
 
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
@@ -6,7 +25,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>calendar3e@zonio.net</em:id>
     <em:name>3e Calendar</em:name>
-    <em:version>0.7.1</em:version>
+    <em:version>0.7.2</em:version>
     <em:description>Allows interaction with 3e calendaring system and
     other EEE servers.</em:description>
     <em:creator>Zonio s.r.o.</em:creator>
@@ -17,7 +36,7 @@
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
         <em:minVersion>5.0</em:minVersion>
-        <em:maxVersion>9.0a1</em:maxVersion>
+        <em:maxVersion>@THUNDERBIRD_VERSION@</em:maxVersion>
       </Description>
     </em:targetApplication>
 
@@ -25,7 +44,7 @@
       <Description>
         <em:id>{e2fda1a4-762b-4020-b5ad-a41df1933103}</em:id>
         <em:minVersion>1.0b2</em:minVersion>
-        <em:maxVersion>1.0.*</em:maxVersion>
+        <em:maxVersion>@CALENDAR_VERSION@</em:maxVersion>
       </Description>
     </em:requires>
 

@@ -26,7 +26,7 @@ include $(DEPTH)/config/autoconf.mk
 
 MODULE = calendar3e
 XPIDL_MODULE = xmlrpc
-XPI_NAME = calendar3e
+XPI_NAME = calendar3e-provider
 
 XPIDLSRCS = \
 	nsIDictionary.idl \

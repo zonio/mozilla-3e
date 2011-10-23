@@ -17,24 +17,18 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../../../../..
-topsrcdir = @top_srcdir@
-srcdir = @srcdir@
-VPATH = @srcdir@
+# Originally from gdata provider.
 
-include $(DEPTH)/config/autoconf.mk
+ifndef OBJDIR
+OBJDIR_ARCH_1 = $(MOZ_OBJDIR)/$(firstword $(MOZ_BUILD_PROJECTS))
+OBJDIR_ARCH_2 = $(MOZ_OBJDIR)/$(word 2,$(MOZ_BUILD_PROJECTS))
+DIST_ARCH_1 = $(OBJDIR_ARCH_1)/mozilla/dist
+DIST_ARCH_2 = $(OBJDIR_ARCH_2)/mozilla/dist
+DIST_UNI = $(DIST_ARCH_1)/universal
+OBJDIR = $(OBJDIR_ARCH_1)
+endif
 
-MODULE = calendar3e
-XPI_NAME = calendar3e-provider
-
-EXTRA_COMPONENTS = \
-	calEeeCalendar.js \
-	calEeeClient.js \
-	calEeeMethodQueue.js \
-	calEeeProtocol.js \
-	calEeeManager.js \
-	calEeeSynchronizer.js \
-	calEeeModule.manifest \
-	$(NULL)
-
-include $(topsrcdir)/config/rules.mk
+# This is fine as long as the calendar3e provider has no binary components.
+postflight_all:
+	mkdir -p $(DIST_UNI)/xpi-stage
+	cp $(DIST_ARCH_1)/xpi-stage/calendar3e-provider.xpi $(DIST_UNI)/xpi-stage

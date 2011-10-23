@@ -25,7 +25,7 @@ VPATH = @srcdir@
 include $(DEPTH)/config/autoconf.mk
 
 MODULE = calendar3e
-XPI_NAME = calendar3e
+XPI_NAME = calendar3e-provider
 
 EXTRA_JS_MODULES = \
 	cal3eUtils.jsm \
