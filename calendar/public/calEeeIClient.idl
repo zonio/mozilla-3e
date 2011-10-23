@@ -129,7 +129,7 @@ interface calEeeIClient: nsISupports {
         in calEeeICalendar calendar,
         in ACString name,
         in ACString value,
-        in PRBool isPublic);
+        in boolean isPublic);
 
     /**
      * Retrieves calendar objects within given date and time range and

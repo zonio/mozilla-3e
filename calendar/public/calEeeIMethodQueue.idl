@@ -53,7 +53,7 @@ interface calEeeIMethodQueue: calIOperation {
      * @throws NS_ERROR_NOT_AVAILABLE if called before the first server
      * response to method calls has been returned fro the server
      */
-    readonly attribute PRBool isFault;
+    readonly attribute boolean isFault;
 
     /**
      * Puts a method to the end of this queue with its parameters.
