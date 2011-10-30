@@ -17,7 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/*
+//XXX This must be resolved using categories and observers.
+
 window.addEventListener('load', function cal3eSync_onLoad() {
   var synchronizationService =
     Components.classes["@zonio.net/calendar3e/synchronization-service;1"]
@@ -41,4 +42,3 @@ window.addEventListener('unload', function cal3eSync_onUnload() {
     .getService(Components.interfaces.calEeeIManager);
   manager.unregister();
 }, false);
- */
