@@ -32,20 +32,30 @@ Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
 function calEeeManager() {
 }
 
+calEeeManager.classInfo = XPCOMUtils.generateCI({
+  classID: Components.ID("{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}"),
+  contractID: "@zonio.net/calendar3e/manager;1",
+  classDescription: "EEE calendar manager",
+  interfaces: [Ci.calEeeIManager,
+               Ci.calICalendarManagerObserver,
+               Ci.calIObserver,
+               Ci.nsIObserver,
+               Ci.nsIClassInfo],
+  flags: Ci.nsIClassInfo.SINGLETON
+});
+
 calEeeManager.prototype = {
 
-  classDescription: "EEE calendar manager",
+  classDescription: calEeeManager.classInfo.classDescription,
 
-  classID: Components.ID("{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}"),
+  classID: calEeeManager.classInfo.classID,
 
-  contractID: "@zonio.net/calendar3e/manager;1",
+  contractID: calEeeManager.classInfo.contractID,
 
-  QueryInterface: XPCOMUtils.generateQI([
-    Ci.calEeeIManager,
-    Ci.calICalendarManagerObserver,
-    Ci.calIObserver,
-    Ci.nsIObserver
-  ]),
+  QueryInterface: XPCOMUtils.generateQI(
+    calEeeManager.classInfo.getInterfaces({})),
+
+  classInfo: calEeeManager.classInfo,
 
   /**
    * Calls {@link register} when Thunderbird starts.
@@ -56,7 +66,7 @@ calEeeManager.prototype = {
    */
   observe: function calEeeManager_observe(subject, topic, data) {
     switch (topic) {
-    case 'profile-after-change':
+    case 'calendar-startup':
       this.register();
       break;
     }
@@ -68,6 +78,11 @@ calEeeManager.prototype = {
    * This is done by becoming a calendar manager observer.
    */
   register: function calEeeManager_register() {
+    if (this._registered) {
+      return this;
+    }
+    this._registered = true;
+
     var calendarManager = Cc["@mozilla.org/calendar/manager;1"]
       .getService(Ci.calICalendarManager);
     calendarManager.addObserver(this);

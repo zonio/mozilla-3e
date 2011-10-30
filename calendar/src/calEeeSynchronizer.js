@@ -61,18 +61,28 @@ function calEeeSynchronizationService() {
   this._accountCollection = new cal3e.AccountCollection();
 }
 
+calEeeSynchronizationService.classInfo = XPCOMUtils.generateCI({
+  classID: Components.ID("{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}"),
+  contractID: "@zonio.net/calendar3e/synchronization-service;1",
+  classDescription: "EEE calendar synchronization service",
+  interfaces: [Ci.calEeeISynchronizationService,
+               Ci.nsIObserver,
+               Ci.nsIClassInfo],
+  flags: Ci.nsIClassInfo.SINGLETON
+});
+
 calEeeSynchronizationService.prototype = {
 
-  classDescription: "EEE calendar synchronization service",
+  classDescription: calEeeSynchronizationService.classInfo.classDescription,
 
-  classID: Components.ID("{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}"),
+  classID: calEeeSynchronizationService.classInfo.classID,
 
-  contractID: "@zonio.net/calendar3e/synchronization-service;1",
+  contractID: calEeeSynchronizationService.classInfo.contractID,
 
-  QueryInterface: XPCOMUtils.generateQI([
-    Ci.calEeeISynchronizationService,
-    Ci.nsIObserver
-  ]),
+  QueryInterface: XPCOMUtils.generateQI(
+    calEeeSynchronizationService.classInfo.getInterfaces({})),
+
+  classInfo: calEeeSynchronizationService.classInfo,
 
   /**
    * Adds or removes identities according to state of account
@@ -123,7 +133,7 @@ calEeeSynchronizationService.prototype = {
    */
   observe: function calEeeSyncService_observe(subject, topic, data) {
     switch (topic) {
-    case 'profile-after-change':
+    case 'calendar-startup':
       this.register();
       break;
     case 'timer-callback':
