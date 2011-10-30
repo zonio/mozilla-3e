@@ -104,9 +104,13 @@ calEeeManager.prototype = {
    * Unregisters EEE calendar manager.
    */
   unregister: function calEeeManager_register() {
+    if (!this._registered) {
+      return this;
+    }
     var calendarManager = Cc["@mozilla.org/calendar/manager;1"]
       .getService(Ci.calICalendarManager);
     calendarManager.removeObserver(this);
+    this._registered = false;
 
     return this;
   },
