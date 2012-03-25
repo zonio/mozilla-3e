@@ -17,8 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
 const Cr = Components.results;
 
 Components.utils.import("resource:///modules/iteratorUtils.jsm");
@@ -86,7 +84,7 @@ cal3eProperties._loadUsers = function loadUsers() {
 
       var users;
       try {
-        users = result.QueryInterface(Ci.nsISupportsArray);
+        users = result.QueryInterface(Components.interfaces.nsISupportsArray);
       } catch (e) {
         //TODO can't get list of users
         return;
@@ -99,16 +97,16 @@ cal3eProperties._loadUsers = function loadUsers() {
     });
 
   var client = Cc["@zonio.net/calendar3e/client-service;1"]
-    .createInstance(Ci.calEeeIClient);
+    .createInstance(Components.interfaces.calEeeIClient);
 
   var uriSpec = cal3eProperties._calendar.uri.spec,
       uriParts = uriSpec.split('/', 4),
       eeeUser = uriParts[2];
   var accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
-    getService(Ci.nsIMsgAccountManager);
-  var identities = [i for each (
-    i in fixIterator(accountManager.allIdentities, Ci.nsIMsgIdentity)
-  )];
+    getService(Components.interfaces.nsIMsgAccountManager);
+  var identities = [i for each (i in fixIterator(
+    accountManager.allIdentities, Components.interfaces.nsIMsgIdentity
+  ))];
   var idx = identities.length;
   var identity = null;
   while (idx--) {
@@ -122,7 +120,7 @@ cal3eProperties._loadUsers = function loadUsers() {
 };
 
 cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
-  user = user.QueryInterface(Ci.nsIDictionary);
+  user = user.QueryInterface(Components.interfaces.nsIDictionary);
 
   var listItem = document.createElement("listitem");
   listItem.allowevents = 'true';
@@ -130,11 +128,19 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   var nameListCell = document.createElement("listcell");
   var realname = null;
   if (user.hasKey('attrs')) {
-    var userAttrs = user.getValue('attrs').QueryInterface(Ci.nsISupportsArray);
+    var userAttrs = user.getValue('attrs').QueryInterface(
+      Components.interfaces.nsISupportsArray
+    );
     for (var idx = 0, attr; idx < userAttrs.Count(); idx++) {
-      attr = userAttrs.QueryElementAt(idx, Ci.nsIDictionary);
-      if ('realname' == attr.getValue('name').QueryInterface(Ci.nsISupportsCString)) {
-        realname = attr.getValue('value').QueryInterface(Ci.nsISupportsCString);
+      attr = userAttrs.QueryElementAt(
+        idx, Components.interfaces.nsIDictionary
+      );
+      if ('realname' == attr.getValue('name').QueryInterface(
+        Components.interfaces.nsISupportsCString
+      )) {
+        realname = attr.getValue('value').QueryInterface(
+          Components.interfaces.nsISupportsCString
+        );
         break;
       }
     }
@@ -143,7 +149,9 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   if (realname) {
     userLabel += realname + " <";
   }
-  userLabel += user.getValue('username').QueryInterface(Ci.nsISupportsCString);
+  userLabel += user.getValue('username').QueryInterface(
+    Components.interfaces.nsISupportsCString
+  );
   if (realname) {
     userLabel += ">";
   }

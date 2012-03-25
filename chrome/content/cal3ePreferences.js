@@ -17,9 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 /**

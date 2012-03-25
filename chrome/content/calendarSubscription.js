@@ -17,16 +17,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-
 function calendarSubscription() {
   this._client = Cc["@zonio.net/calendar3e/client-service;1"].
-    getService(Ci.calEeeIClient);
+    getService(Components.interfaces.calEeeIClient);
   this._accountCollection = new cal3e.AccountCollection();
   this._accountCollection.addObserver(this);
   this._accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
-    getService(Ci.nsIMsgAccountManager);
+    getService(Components.interfaces.nsIMsgAccountManager);
   this._stringBundle = document.getElementById('calendar3e-strings');
   this._subscriberElement = document.getElementById('subscriber-menulist');
   this._providerMap = {};
@@ -200,7 +197,9 @@ calendarSubscription.prototype = {
   _buildProviders:
   function calendarSubscription_buildProviders(rawProviders) {
     var providers = [];
-    var rawProviders = result.QueryInterface(Ci.nsISupportsArray);
+    var rawProviders = result.QueryInterface(
+      Components.interfaces.nsISupportsArray
+    );
     var idx = rawProviders.Count(), rawProvider, uri;
     while (idx--) {
       providers.push(this._buildProvider(rawProviders.GetElementAt(idx)));
@@ -211,22 +210,26 @@ calendarSubscription.prototype = {
 
   _buildProvider: function calendarSubscription_buildProvider(rawProvider) {
     var provider = [];
-    rawProvider = rawProvider.QueryInterface(Ci.nsIDictionary);
+    rawProvider = rawProvider.QueryInterface(
+      Components.interfaces.nsIDictionary
+    );
 
     var username = rawProvider.getValue('username').
-      QueryInterface(Ci.nsISupportsCString);
+      QueryInterface(Components.interfaces.nsISupportsCString);
     var realname = null;
     if (rawProvider.hasKey('attrs')) {
       var rawAttrs = rawProvider.getKey('attrs').
-        QueryInterface(Ci.nsISupportsArray);
+        QueryInterface(Components.interfaces.nsISupportsArray);
       let idx = rawAttrs.Count(), rawAttr;
       while (idx--) {
-        rawAttr = rawAttr.QueryElementAt(idx, Ci.nsIDictionary);
+        rawAttr = rawAttr.QueryElementAt(
+          idx, Components.interfaces.nsIDictionary
+        );
         if ('realname' != rawAttr.getValue('name')) {
           continue;
         }
         var realname = rawAttr.getValue('value').
-          QueryInterface(Ci.nsISupportsCString);
+          QueryInterface(Components.interfaces.nsISupportsCString);
       }
     }
     if (null !== realname) {
