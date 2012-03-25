@@ -17,8 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Cr = Components.results;
-
 Components.utils.import("resource:///modules/iteratorUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
@@ -77,7 +75,7 @@ cal3eProperties._loadUsers = function loadUsers() {
 
   var clientListener = cal3e.createOperationListener(
     function cal3eProperties_loadUsers_onResult(methodQueue, result) {
-      if (Cr.NS_OK !== methodQueue.status) {
+      if (Components.results.NS_OK !== methodQueue.status) {
         //TODO can't get list of users
         return;
       }
@@ -89,7 +87,7 @@ cal3eProperties._loadUsers = function loadUsers() {
         //TODO can't get list of users
         return;
       }
-        
+
       for (var idx = 0; idx < users.Count(); idx++) {
         permissionsListBox.appendChild(
           cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
