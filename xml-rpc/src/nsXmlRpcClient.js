@@ -44,6 +44,7 @@
  */
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://calendar/modules/calUtils.jsm");
 
 /*
  * Constants
@@ -138,6 +139,8 @@ nsXmlRpcClient.prototype = {
     _listener: null,
 
     asyncCall: function(listener, context, methodName, methodArgs, count) {
+        this._lastAsyncCallArgs = arguments;
+        
         debug('asyncCall');
         // Check for call in progress.
         if (this._inProgress)
@@ -183,9 +186,9 @@ nsXmlRpcClient.prototype = {
         this.xmlhttp.onerror = this._onerror;
         this.xmlhttp.parent = this;
         this.xmlhttp.setRequestHeader('Content-Type','text/xml');
-        this.xmlhttp.send(requestBody);
         var chan = this.xmlhttp.channel.QueryInterface(NSICHANNEL);
         chan.notificationCallbacks = this;
+        this.xmlhttp.send(requestBody);
     },
 
     _onload: function(e) {
@@ -333,7 +336,8 @@ nsXmlRpcClient.prototype = {
 
     // nsIInterfaceRequester interface
     getInterface: function(iid, result){
-        if (iid.equals(Components.interfaces.nsIAuthPrompt)){
+        if (iid.equals(Components.interfaces.nsIAuthPrompt) ||
+            iid.equals(Components.interfaces.nsIBadCertListener2)) {
             return this;
         }
         Components.returnCode = Components.results.NS_ERROR_NO_INTERFACE;
@@ -355,6 +359,35 @@ nsXmlRpcClient.prototype = {
             return true;
         }
         return false;
+    },
+    
+    // nsIBadCertListener2 interface
+    notifyCertProblem: function(socketInfo, status, targetSite) {
+        if (!status)
+            return true;
+        
+        var xmlrpcclient = this;
+        var win = cal.getCalendarWindow();
+        
+        function InformUserOfCertError(params) {
+            win.openDialog("chrome://pippki/content/exceptionDialog.xul",
+                    "", "chrome,centerscreen,modal", params);
+            if (!params.exceptionAdded) {
+                xmlrpcclient._listener.onError(xmlrpcclient, xmlrpcclient._context,
+                    Components.result.NS_ERROR_FAILURE, 'Untrusted certificate');
+            } else {
+                xmlrpcclient.asyncCall.apply(xmlrpcclient, xmlrpcclient._lastAsyncCallArgs);
+            }
+        };
+        
+        var params = { 
+            exceptionAdded : false,
+            prefetchCert : true,
+            location : targetSite
+        };
+        win.setTimeout(InformUserOfCertError, 0, params);
+        
+        return true;
     },
 
     /* Generate the XML-RPC request body */
