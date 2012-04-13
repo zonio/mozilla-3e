@@ -202,16 +202,57 @@ calEeeClient.prototype = {
    */
   authenticate: function calEeeClient_authenticate(identity, listener) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
   _enqueueAuthenticate:
-  function calEeeClient_enqueueAuthenticate(identity, methodQueue) {
-    //TODO password manager
-    var password = "qwe";
+  function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) { // dale param listener
+    var loginManager = Cc["@mozilla.org/login-manager;1"]
+							.getService(Ci.nsILoginManager);
+	var fullUri = methodQueue.serverUri.scheme + "://" + methodQueue.serverUri.host +
+                   methodQueue.serverUri.path;
+	
+	var count = { value : 0 };
+    var logins = loginManager.findLogins(count, fullUri, fullUri, null);
+
+    if (count.value > 0) {
+		var i = 0;
+		while ((i < logins.length) && (logins[i].username !== identity.email)) i++;
+		
+		if (i === logins.length) {
+			// Login not found.
+			count.value = 0; // so next if statement is executed.
+		}
+		var password = logins[i].password;
+	}
+	
+	if (count.value === 0) {
+		// Login not found in login manager. Ask user for password.
+		var promptService = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+                              .getService(Ci.nsIPromptService);
+        var password = {value: ""}; // default the password to empty string  
+		var check = {value: true}; // default the checkbox to true  
+		var result = promptService.promptPassword(null, "3e calendar",
+			"Enter password to your 3e calendar:", password, "Save password", check);  
+		password = password.value;
+		
+		if (result) {
+			// user clicked on OK
+			if (check.value) {
+				// user wants to save the password
+				var loginInfo = Cc["@mozilla.org/login-manager/loginInfo;1"]
+								 .createInstance(Ci.nsILoginInfo);
+				loginInfo.init(fullUri, fullUri, null, identity.email, password, "", "");
+				loginManager.addLogin(loginInfo);
+			}
+		} else {
+			// user clicked on cancel
+			listener.onResult(methodQueue, null);
+		}
+	}
 
     this._enqueueMethod(methodQueue, 'authenticate', identity.email, password);
   },
@@ -229,7 +270,7 @@ calEeeClient.prototype = {
    */
   getUsers: function calEeeClient_getUsers(identity, listener, query) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueGetUsers(methodQueue, query);
     this._queueExecution(methodQueue, listener);
 
@@ -254,7 +295,7 @@ calEeeClient.prototype = {
    */
   getCalendars: function calEeeClient_getCalendars(identity, listener, query) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueGetCalendars(methodQueue, query);
     this._queueExecution(methodQueue, listener);
 
@@ -269,7 +310,7 @@ calEeeClient.prototype = {
   createCalendar:
   function calEeeClient_createCalendar(identity, listener, calendar) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueCreateCalendar(methodQueue, calendar);
     this._queueExecution(methodQueue, listener);
 
@@ -292,7 +333,7 @@ calEeeClient.prototype = {
   deleteCalendar:
   function calEeeClient_deleteCalendar(identity, listener, calendar) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueDeleteCalendar(methodQueue, calendar);
     this._queueExecution(methodQueue, listener);
 
@@ -308,7 +349,7 @@ calEeeClient.prototype = {
   function calEeeClient_setCalendarAttribute(
     identity, listener, calendar, name, value, isPublic) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueSetCalendarAttribute(
       methodQueue, calendar, name, value, isPublic);
     this._queueExecution(methodQueue, listener);
@@ -338,7 +379,7 @@ calEeeClient.prototype = {
   queryObjects:
   function calEeeClient_queryObjects(identity, listener, calendar, from, to) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueQueryObjects(methodQueue, calendar, from, to);
     this._queueExecution(methodQueue, listener);
 
@@ -367,7 +408,7 @@ calEeeClient.prototype = {
   addObject:
   function calEeeClient_addObject(identity, listener, calendar, item) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueAddObject(methodQueue, calendar, item);
     this._queueExecution(methodQueue, listener);
 
@@ -392,7 +433,7 @@ calEeeClient.prototype = {
   updateObject:
   function calEeeClient_updateObject(identity, listener, calendar, item) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueUpdateObject(methodQueue, calendar, item);
     this._queueExecution(methodQueue, listener);
 
@@ -418,7 +459,7 @@ calEeeClient.prototype = {
   function calEeeClient_deleteObject(identity, listener, calendar,
                                             item) {
     var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueDeleteObject(methodQueue, calendar, item);
     this._queueExecution(methodQueue, listener);
 
