@@ -372,11 +372,11 @@ nsXmlRpcClient.prototype = {
         function InformUserOfCertError(params) {
             win.openDialog("chrome://pippki/content/exceptionDialog.xul",
                     "", "chrome,centerscreen,modal", params);
-            if (!params.exceptionAdded) {
+            if (params.exceptionAdded) {
+                xmlrpcclient.asyncCall.apply(xmlrpcclient, xmlrpcclient._lastAsyncCallArgs);
+            } else {
                 xmlrpcclient._listener.onError(xmlrpcclient, xmlrpcclient._context,
                     Components.result.NS_ERROR_FAILURE, 'Untrusted certificate');
-            } else {
-                xmlrpcclient.asyncCall.apply(xmlrpcclient, xmlrpcclient._lastAsyncCallArgs);
             }
         };
         
