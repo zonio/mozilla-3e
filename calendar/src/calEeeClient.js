@@ -235,8 +235,15 @@ calEeeClient.prototype = {
                               .getService(Ci.nsIPromptService);
         var password = {value: ""}; // default the password to empty string  
 		var check = {value: true}; // default the checkbox to true  
-		var result = promptService.promptPassword(null, "3e calendar",
-			"Enter password to your 3e calendar:", password, "Save password", check);  
+        
+        var fcBundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
+               .getService(Components.interfaces.nsIStringBundleService)
+               .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
+        
+		var result = promptService.promptPassword(null,
+            fcBundle.GetStringFromName('cal3ePasswordDialog.title'),
+			fcBundle.GetStringFromName('cal3ePasswordDialog.content'), password,
+            fcBundle.GetStringFromName('cal3ePasswordDialog.save'), check);  
 		password = password.value;
 		
 		if (result) {
