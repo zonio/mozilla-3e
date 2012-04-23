@@ -212,8 +212,7 @@ calEeeClient.prototype = {
   function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
     var loginManager = Cc["@mozilla.org/login-manager;1"]
 							.getService(Ci.nsILoginManager);
-	var fullUri = methodQueue.serverUri.scheme + "://" + methodQueue.serverUri.host +
-                   methodQueue.serverUri.path;
+	var fullUri = "eee://" + methodQueue.serverUri.host;
 	
 	var count = { value : 0 };
     var logins = loginManager.findLogins(count, fullUri, fullUri, null);
