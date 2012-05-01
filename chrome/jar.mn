@@ -7,6 +7,7 @@ calendar3e.jar:
 % overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 % overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
 % overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
+% overlay chrome://calendar/content/calendar-event-dialog.xul      chrome://calendar3e/content/calendarNewEventAttach.xul
 
   content/cal3ePreferences.js      (content/cal3ePreferences.js)
   content/cal3ePreferences.xul     (content/cal3ePreferences.xul)
@@ -19,6 +20,8 @@ calendar3e.jar:
   content/calendarProperties.xul   (content/calendarProperties.xul)
   content/calendarSubscription.js  (content/calendarSubscription.js)
   content/calendarSubscription.xul (content/calendarSubscription.xul)
+  content/calendarNewEventAttach.js (content/calendarNewEventAttach.js)
+  content/calendarNewEventAttach.xul (content/calendarNewEventAttach.xul)
 
   skin/cal3eGlobal.css (skin/cal3eGlobal.css)
 
