@@ -56,15 +56,10 @@ cal3eDns.prototype = {
 
 Resolv = {};
 
-Resolv.DNS = function DNS() {
-  var os = Components.classes["@mozilla.org/xre/app-info;1"].
-    getService(Components.interfaces.nsIXULRuntime).OS;
-
-  if (!Resolv.DNS.Resolver[os]) {
-    throw new Error("Unsupported operating system '" + os + "'.");
+Resolv.DNS = function DNS(resolver) {
+  if (!resolver) {
+    resolver = Resolv.DNS.Resolver.find();
   }
-
-  var resolver = new Resolv.DNS.Resolver[os]();
 
   this.each_resource = function DNS_each_resource(name, typeclass, callback) {
     resolver.extract(name, typeclass, callback);
@@ -114,6 +109,17 @@ function DNS_Resource_TXT(ttl) {
 }
 
 Resolv.DNS.Resolver = {}
+
+Resolv.DNS.Resolver.find = function Resolver_find() {
+  var os = Components.classes["@mozilla.org/xre/app-info;1"].
+    getService(Components.interfaces.nsIXULRuntime).OS;
+
+  if (!Resolv.DNS.Resolver[os]) {
+    throw new Error("Unsupported operating system '" + os + "'.");
+  }
+
+  return new Resolv.DNS.Resolver[os]();
+}
 
 Resolv.DNS.Resolver.Darwin = Resolver_Darwin() {
   var ns_c_in = 1;
