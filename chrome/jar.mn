@@ -19,6 +19,8 @@ calendar3e.jar:
   content/calendarProperties.xul   (content/calendarProperties.xul)
   content/calendarSubscription.js  (content/calendarSubscription.js)
   content/calendarSubscription.xul (content/calendarSubscription.xul)
+  content/am-enable3e.js           (content/am-enable3e.js)
+  content/am-enable3e.xul          (content/am-enable3e.xul)
 
   skin/cal3eGlobal.css (skin/cal3eGlobal.css)
 

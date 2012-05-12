@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - 3e Calendar
+   - Copyright © 2011  Zonio s.r.o.
+   -
+   - This program is free software: you can redistribute it and/or modify
+   - it under the terms of the GNU General Public License as published by
+   - the Free Software Foundation, either version 3 of the License, or
+   - (at your option) any later version.
+   -
+   - This program is distributed in the hope that it will be useful,
+   - but WITHOUT ANY WARRANTY; without even the implied warranty of
+   - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   - GNU General Public License for more details.
+   -
+   - You should have received a copy of the GNU General Public License
+   - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<?xml-stylesheet href="chrome://messenger/skin/accountManage.css" type="text/css"?>
+
+<page xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      title="&cal3eEnable.title;"
+      onload="parent.onPanelLoaded('am-enable3e.xul');">
+  
+    <script type="application/javascript" src="chrome://messenger/content/AccountManager.js"/>
+    <script type="application/javascript" src="chrome://calendar3e/content/am-enable3e.js"/>
+    
+    <dialogheader title="&cal3eEnable.title;"/>
+    
+    <description>&cal3eEnable.description.found;</description>
+    <checkbox id="cal3e-enable-checkbox" label="&cal3eEnable.checkbox;" checked="true" />
+    
+</page>  
