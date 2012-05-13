@@ -24,12 +24,4 @@
   <script type="application/x-javascript"
           src="chrome://calendar3e/content/calendarNewEventAttach.js"/>
 
-<dialog id="calendar-event-dialog">
-    
-    <toolbox id="event-toolbox">
-        <toolbar id="event-toolbar">
-            <toolbarbutton id="button-url" class="cal-event-toolbarbutton toolbarbutton-1" label="Attach" oncommand="attachFile()" />
-        </toolbar>
-    </toolbox>
-</dialog>
 </overlay>

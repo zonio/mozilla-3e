@@ -17,33 +17,20 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+var gEventDialog = document.getElementById("calendar-event-dialog");
 
 cal3eSelectAttach = function() {
-  
-    var fcBundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
-               .getService(Components.interfaces.nsIStringBundleService)
-               .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
+    // XXX When called more than once error occurs
+    var calendar = getCurrentCalendar();
     
-    var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    fp.init(window, fcBundle.GetStringFromName("cal3eAttach.selectFile"), Ci.nsIFilePicker.modeOpen);
-    
-    var res = fp.show();
-    
-    if (res != Ci.nsIFilePicker.returnCancel) {
-        dump("file: " + fp.file.path + "\n");
-        
-        var result = { value : "file://" + fp.file.path };
-        try {
-            // If something bogus was entered, makeURL may fail.
-            var attachment = createAttachment();
-            attachment.uri = makeURL(result.value);
-            addAttachment(attachment);
-        } catch (e) {
-            // TODO We might want to show a warning instead of just not
-            // adding the file
-        }
+    if (calendar.type == "eee") {
+        var attachButton = document.getElementById("button-url");
+        //attachButton.removeAttribute("oncommand");
+        attachButton.setAttribute("oncommand", "attachFile()");
+        //attachButton.oncommand = "attachFile()";
+        attachButton.label = "Attach File";
     }
     
 };
+
+gEventDialog.addEventListener("load", cal3eSelectAttach, false);
