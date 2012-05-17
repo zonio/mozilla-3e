@@ -18,8 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-cal3e.EEE_ENABLED_KEY = 'eee_enabled';
-
+var EEE_ENABLED_KEY = 'eee_enabled';
 var gIdentity = null;
 
 function onPreInit(account, accountValues) {
@@ -27,7 +26,7 @@ function onPreInit(account, accountValues) {
 }
 
 function onInit() {
-    var enableState = gIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
+    var enableState = gIdentity.getBoolAttribute(EEE_ENABLED_KEY);
     var checkbox = document.getElementById("cal3e-enable-checkbox");
     
     if (!enableState) {
@@ -42,8 +41,8 @@ function onSave() {
     var enableState = checkBox.getAttribute("checked");
         
     if (enableState == "true") {
-        gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, true);
+        gIdentity.setBoolAttribute(EEE_ENABLED_KEY, true);
     } else {
-        gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, false);
+        gIdentity.setBoolAttribute(EEE_ENABLED_KEY, false);
     }
 }
