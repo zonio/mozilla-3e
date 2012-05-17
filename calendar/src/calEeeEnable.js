@@ -27,8 +27,8 @@ calEeeEnable.prototype = {
     chromePackageName: "calendar3e",
     classDescription: "Enable 3e calendar - Account Manager Extension",
     classID: Components.ID("{3892b01b-7e8f-4727-9087-ef4d814f7456}"),
-    contractID: "@zonio.net/calendar3e/enable3e;1",
-    //contractID: "@mozilla.org/accountmanager/extension;1?name=enable3e",
+    //contractID: "@zonio.net/calendar3e/enable3e;1",
+    contractID: "@mozilla.org/accountmanager/extension;1?name=enable3e",
     
     // Add the component to the mailnews-accountmanager-extensions category
     _xpcom_categories: [{
@@ -39,11 +39,10 @@ calEeeEnable.prototype = {
         Components.interfaces.nsIMsgAccountManagerExtension
     ]),
     
-    // don't show the panel for news, rss, //or local accounts
+    // don't show the panel for news, rss, or local accounts
     showPanel: function(server) {
         dump("calEeeEnable showPanel() called.\n");
-        return (server.type != "nntp" && server.type != "rss");
-                // && server.type != "none");
+        return (server.type != "nntp" && server.type != "rss" && server.type != "none");
     }
 };
 

@@ -20,6 +20,8 @@
 
 <?xml-stylesheet href="chrome://messenger/skin/accountManage.css" type="text/css"?>
 
+<!DOCTYPE page SYSTEM "chrome://calendar3e/locale/cal3eEnable.dtd">
+
 <page xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
       title="&cal3eEnable.title;"
       onload="parent.onPanelLoaded('am-enable3e.xul');">
