@@ -31,7 +31,7 @@
     
     <dialogheader title="&cal3eEnable.title;"/>
     
-    <description>&cal3eEnable.description.found;</description>
+    <description>&cal3eEnable.description;</description>
     <checkbox id="cal3e-enable-checkbox" label="&cal3eEnable.checkbox;" checked="true" />
     
 </page>  

@@ -18,7 +18,5 @@
    - ***** END LICENSE BLOCK ***** -->
 
 <!ENTITY cal3eEnable.title "3e Calendar">
-<!ENTITY cal3eEnable.description.found "3e calendar has been found for your domain. You can enable 3e calendar for your account. If you are not sure you have 3e calendar, ask your system administrator or provider of your email service.">
-<!ENTITY cal3eEnable.description.notFound "No 3e calendar server has been found for your domain. Ask your system administrator or provider of your email service for more about 3e calendar.">
+<!ENTITY cal3eEnable.description "You can enable 3e calendar for your account. If you are not sure you have 3e calendar, ask your system administrator or provider of your email service.">
 <!ENTITY cal3eEnable.checkbox "Enable 3e calendar">
-
