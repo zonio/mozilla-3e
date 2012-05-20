@@ -19,9 +19,9 @@
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");  
 
-function calEeeEnable() {}
+function cal3eEnable() {}
 
-calEeeEnable.prototype = {
+cal3eEnable.prototype = {
     
     name: "enable3e",
     chromePackageName: "calendar3e",
@@ -44,4 +44,4 @@ calEeeEnable.prototype = {
     }
 };
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeEnable]);
+const NSGetFactory = XPCOMUtils.generateNSGetFactory([cal3eEnable]);

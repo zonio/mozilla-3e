@@ -34,7 +34,7 @@ EXTRA_COMPONENTS = \
 	calEeeProtocol.js \
 	calEeeManager.js \
 	calEeeSynchronizer.js \
-	calEeeEnable.js \
+	cal3eEnable.js \
 	calEeeModule.manifest \
 	$(NULL)
 
