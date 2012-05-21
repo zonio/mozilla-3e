@@ -34,6 +34,7 @@ XPIDLSRCS = \
 	calEeeIMethodQueue.idl \
 	calEeeIManager.idl \
 	calEeeISynchronizer.idl \
+	calEeeIFreeBusyProvider.idl \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

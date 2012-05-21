@@ -201,6 +201,31 @@ var components = {
     constructor: "calEeeSynchronizer",
     flags: 0,
     resource: "resource://calendar3e/js/calEeeSynchronizer.js"
+  },
+  
+  calEeeFreeBusyProvider: {
+    getInterfaces: function calEeeFreeBusyProvider_getInterfaces(count) {
+      var interfaces = [
+        Ci.calEeeIFreeBusyProvider,
+        Ci.nsIObserver,
+        Ci.nsIClassInfo
+      ];
+      count.value = interfaces.length;
+      return interfaces;
+    },
+
+    getHelperForLanguage:
+    function calEeeFreeBusyProvider_getHelperForLanguage(language) {
+      return null;
+    },
+
+    classDescription: "EEE calendar freebusy provider",
+    contractID: "@zonio.net/calendar3e/freebusy-provider;1",
+    classID: Components.ID("{310e5872-2101-40cc-8315-a05578f3e5df}"),
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    constructor: "calEeeFreeBusyProvider",
+    flags: Ci.nsIClassInfo.SINGLETON,
+    resource: "resource://calendar3e/js/calEeeFreeBusyProvider.js"
   }
 };
 
