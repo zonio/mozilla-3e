@@ -8,8 +8,6 @@ calendar3e.jar:
 % overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
 % overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
 
-  content/cal3ePreferences.js      (content/cal3ePreferences.js)
-  content/cal3ePreferences.xul     (content/cal3ePreferences.xul)
   content/cal3eSync.js             (content/cal3eSync.js)
   content/cal3eSync.xul            (content/cal3eSync.xul)
   content/calendarContextMenu.xul  (content/calendarContextMenu.xul)
@@ -26,6 +24,5 @@ calendar3e.jar:
 
   locale/en-US/cal3eCalendar.dtd        (locale/en-US/cal3eCalendar.dtd)
   locale/en-US/cal3eCalendar.properties (locale/en-US/cal3eCalendar.properties)
-  locale/en-US/cal3ePreferences.dtd     (locale/en-US/cal3ePreferences.dtd)
   locale/en-US/am-enable3e.properties   (locale/en-US/am-enable3e.properties)
   locale/en-US/cal3eEnable.dtd          (locale/en-US/cal3eEnable.dtd)

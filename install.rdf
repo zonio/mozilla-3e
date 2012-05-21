@@ -30,7 +30,6 @@
     other EEE servers.</em:description>
     <em:creator>Zonio s.r.o.</em:creator>
     <em:type>2</em:type>
-    <em:optionsURL>chrome://calendar3e/content/cal3ePreferences.xul</em:optionsURL>
 
     <em:targetApplication>
       <Description>
