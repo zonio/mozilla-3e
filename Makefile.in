@@ -98,7 +98,4 @@ DEFINES += -DTHUNDERBIRD_VERSION=$(THUNDERBIRD_VERSION) \
 GRE_BUILDID = $(shell $(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build BuildID)
 DEFINES += -DGRE_BUILDID=$(GRE_BUILDID)
 
-libs-%:
-	$(MAKE) -C locales libs AB_CD=$* XPI_NAME=$(XPI_NAME) USE_EXTENSION_MANIFEST=1
-
 include $(topsrcdir)/config/rules.mk
