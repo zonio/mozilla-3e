@@ -109,14 +109,3 @@ ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
 libs::
 	[ -d $(DIST)/$(MOZ_MACBUNDLE_NAME) ] && rsync -a $(FINAL_TARGET) $(DIST)/$(MOZ_MACBUNDLE_NAME)/Contents/MacOS/extensions/$(XPI_EM_ID) || true
 endif
-
-ident:
-	@printf "comm_revision "
-	@$(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py \
-	    $(FINAL_TARGET)/application.ini App SourceStamp
-	@printf "moz_revision "
-	@$(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py \
-	    $(FINAL_TARGET)/application.ini Build SourceStamp
-	@printf "buildid "
-	@$(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py \
-	    $(FINAL_TARGET)/application.ini App BuildID
