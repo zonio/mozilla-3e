@@ -102,7 +102,6 @@ libs-%:
 	$(MAKE) -C locales libs AB_CD=$* XPI_NAME=$(XPI_NAME) USE_EXTENSION_MANIFEST=1
 
 include $(topsrcdir)/config/rules.mk
-include $(srcdir)/build/calendar3e-packager.mk
 
 ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
 # If the macbundle dist dir was already created, sync lightning here to avoid
@@ -121,5 +120,3 @@ ident:
 	@printf "buildid "
 	@$(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py \
 	    $(FINAL_TARGET)/application.ini App BuildID
-
-include $(srcdir)/calendar3e-symbols.mk
