@@ -60,7 +60,7 @@ ifdef SOURCE_STAMP
 DEFINES += -DSOURCE_STAMP="$(SOURCE_STAMP)"
 endif
 
-SOURCE_REPO := $(shell git config remote.origin.url 2>/dev/null)
+SOURCE_REPO := $(shell git --git-dir=$(srcdir)/.git config remote.origin.url 2>/dev/null)
 ifdef SOURCE_REPO
 DEFINES += -DSOURCE_REPO="$(SOURCE_REPO)"
 endif
