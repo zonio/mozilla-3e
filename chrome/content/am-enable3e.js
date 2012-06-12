@@ -17,35 +17,35 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-
 Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
-var gIdentity = null;
+function amEnable3e() {
+  var identity, enableState;
 
-function onPreInit(account, accountValues) {
-  gIdentity = account.defaultIdentity;
-}
-
-function onInit() {
-  var enableState = gIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
-  var checkbox = document.getElementById("cal3e-enable-checkbox");
-
-  if (!enableState) {
-    checkbox.setAttribute("checked", "false");
+  this.onPreInit = function amEnable3e_onPreInit(account, accountValues) {
+    identity = account.defaultIdentity;
   }
 
-  return true;
+  this.onInit = function amEnable3e_onInit() {
+    return true;
+  }
+
+  this.onSave = function amEnable3e_onSave() {
+    identity.setBoolAttribute(
+      cal3e.EEE_ENABLED_KEY,
+      document.getElementById("cal3e-enable-checkbox").checked
+    );
+  }
+
 }
 
-function onSave() {
-  var checkBox = document.getElementById("cal3e-enable-checkbox");
-  var enableState = 'true' == checkBox.getAttribute("checked") ?
-    true :
-    false ;
+var onPreInit, onInit, onSave;
 
-  if (enableState) {
-    gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, true);
-  } else {
-    gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, false);
-  }
+amEnable3e.onLoad = function () {
+  var controller = new amEnable3e();
+  onPreInit = controller.onPreInit;
+  onInit = controller.onInit;
+  onSave = controller.onSave;
+
+  parent.onPanelLoaded('am-enable3e.xul');
 }

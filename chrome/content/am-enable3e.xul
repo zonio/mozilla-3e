@@ -28,7 +28,7 @@
 
 <page xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
       title="&cal3eCalendarEnable.title;"
-      onload="parent.onPanelLoaded('am-enable3e.xul');">
+      onload="cal3ePreferences.onLoad()">
 
   <script type="application/javascript"
           src="chrome://messenger/content/AccountManager.js"/>
