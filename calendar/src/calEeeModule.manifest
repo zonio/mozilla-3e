@@ -24,4 +24,4 @@ contract @zonio.net/calendar3e/synchronizer;1 {9045ff85-9e1c-47e4-9872-44c5ab424
 # Account Manager Extension
 component {3892b01b-7e8f-4727-9087-ef4d814f7456} cal3eEnable.js
 contract @mozilla.org/accountmanager/extension;1?name=enable3e {3892b01b-7e8f-4727-9087-ef4d814f7456}
-category mailnews-accountmanager-extensions calendar3e-account-manager-extension @mozilla.org/accountmanager/extension;1?name=enable3e
+category mailnews-accountmanager-extensions @mozilla.org/accountmanager/extension;1?name=enable3e
