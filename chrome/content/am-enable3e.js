@@ -20,7 +20,7 @@
 Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 function amEnable3e() {
-  var identity, enableState;
+  var identity;
 
   this.onPreInit = function amEnable3e_onPreInit(account, accountValues) {
     identity = account.defaultIdentity;
