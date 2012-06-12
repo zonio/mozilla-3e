@@ -26,10 +26,6 @@ function amEnable3e() {
     identity = account.defaultIdentity;
   }
 
-  this.onInit = function amEnable3e_onInit() {
-    return true;
-  }
-
   this.onSave = function amEnable3e_onSave() {
     identity.setBoolAttribute(
       cal3e.EEE_ENABLED_KEY,
@@ -39,12 +35,11 @@ function amEnable3e() {
 
 }
 
-var onPreInit, onInit, onSave;
+var onPreInit, onSave;
 
 amEnable3e.onLoad = function () {
   var controller = new amEnable3e();
   onPreInit = controller.onPreInit;
-  onInit = controller.onInit;
   onSave = controller.onSave;
 
   parent.onPanelLoaded('am-enable3e.xul');
