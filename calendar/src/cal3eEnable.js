@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2012  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,31 +17,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");  
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 function cal3eEnable() {}
 
 cal3eEnable.prototype = {
-    
-    name: "enable3e",
-    chromePackageName: "calendar3e",
-    classDescription: "Enable 3e calendar - Account Manager Extension",
-    classID: Components.ID("{3892b01b-7e8f-4727-9087-ef4d814f7456}"),
-    contractID: "@mozilla.org/accountmanager/extension;1?name=enable3e",
-    
-    // Add the component to the mailnews-accountmanager-extensions category
-    _xpcom_categories: [{
-        category: "mailnews-accountmanager-extensions"
-    }],
 
-    QueryInterface: XPCOMUtils.generateQI([
-        Components.interfaces.nsIMsgAccountManagerExtension
-    ]),
-    
-    // don't show the panel for news, rss, or local accounts
-    showPanel: function(server) {
-        return (server.type != "nntp" && server.type != "rss" && server.type != "none");
-    }
+  name: "enable3e",
+  chromePackageName: "calendar3e",
+  classDescription: "Enable 3e calendar - Account Manager Extension",
+  classID: Components.ID("{3892b01b-7e8f-4727-9087-ef4d814f7456}"),
+  contractID: "@mozilla.org/accountmanager/extension;1?name=enable3e",
+
+  _xpcom_categories: [{
+    category: "mailnews-accountmanager-extensions"
+  }],
+
+  QueryInterface: XPCOMUtils.generateQI([
+    Components.interfaces.nsIMsgAccountManagerExtension
+  ]),
+
+  showPanel: function(server) {
+    return server.type != "nntp" &&
+      server.type != "rss" &&
+      server.type != "none";
+  }
 };
 
 const NSGetFactory = XPCOMUtils.generateNSGetFactory([cal3eEnable]);

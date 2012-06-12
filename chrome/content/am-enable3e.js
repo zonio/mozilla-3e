@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2012  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,27 +23,29 @@ Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 var gIdentity = null;
 
 function onPreInit(account, accountValues) {
-    gIdentity = account.defaultIdentity;
+  gIdentity = account.defaultIdentity;
 }
 
 function onInit() {
-    var enableState = gIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
-    var checkbox = document.getElementById("cal3e-enable-checkbox");
-    
-    if (!enableState) {
-        checkbox.setAttribute("checked", "false");
-    }
-    
-    return true;
+  var enableState = gIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
+  var checkbox = document.getElementById("cal3e-enable-checkbox");
+
+  if (!enableState) {
+    checkbox.setAttribute("checked", "false");
+  }
+
+  return true;
 }
 
 function onSave() {
-    var checkBox = document.getElementById("cal3e-enable-checkbox");
-    var enableState = checkBox.getAttribute("checked");
-        
-    if (enableState == "true") {
-        gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, true);
-    } else {
-        gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, false);
-    }
+  var checkBox = document.getElementById("cal3e-enable-checkbox");
+  var enableState = 'true' == checkBox.getAttribute("checked") ?
+    true :
+    false ;
+
+  if (enableState) {
+    gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, true);
+  } else {
+    gIdentity.setBoolAttribute(cal3e.EEE_ENABLED_KEY, false);
+  }
 }
