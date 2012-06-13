@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
-#filter substitution
 <!-- ***** BEGIN LICENSE BLOCK *****
    - 3e Calendar
-   - Copyright © 2011  Zonio s.r.o.
+   - Copyright © 2012  Zonio s.r.o.
    -
    - This program is free software: you can redistribute it and/or modify
    - it under the terms of the GNU General Public License as published by
@@ -19,33 +18,53 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
+
+#filter substitution
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
-    <em:id>calendar3e@zonio.net</em:id>
-    <em:name>3e Calendar</em:name>
-    <em:version>0.7.2</em:version>
-    <em:description>Allows interaction with 3e calendaring system and
-    other EEE servers.</em:description>
-    <em:creator>Zonio s.r.o.</em:creator>
-    <em:type>2</em:type>
+    <em:targetApplication>
+      <Description>
+        <!-- thunderbird -->
+        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
+        <em:minVersion>10.0</em:minVersion>
+        <em:maxVersion>@THUNDERBIRD_VERSION@</em:maxVersion>
+      </Description>
+    </em:targetApplication>
 
     <em:targetApplication>
       <Description>
-        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-        <em:minVersion>5.0</em:minVersion>
-        <em:maxVersion>@THUNDERBIRD_VERSION@</em:maxVersion>
+        <!-- seamonkey -->
+        <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
+        <em:minVersion>2.7</em:minVersion>
+        <em:maxVersion>@SEAMONKEY_VERSION@</em:maxVersion>
       </Description>
     </em:targetApplication>
 
     <em:requires>
       <Description>
+        <!-- lightning -->
         <em:id>{e2fda1a4-762b-4020-b5ad-a41df1933103}</em:id>
-        <em:minVersion>1.0b2</em:minVersion>
-        <em:maxVersion>@CALENDAR_VERSION@</em:maxVersion>
+        <em:minVersion>1.2</em:minVersion>
+        <em:maxVersion>@LIGHTNING_VERSION@</em:maxVersion>
       </Description>
     </em:requires>
 
+    <em:id>@XPI_EM_ID@</em:id>
+    <em:name>3e Calendar</em:name>
+    <em:version>@CALENDAR_3E_VERSION@</em:version>
+    <em:description>Allows interaction with 3e calendaring system and
+    other EEE servers.</em:description>
+#ifdef CALENDAR_3E_PRERELEASE_VERSION
+    <em:developer>Build ID: @GRE_BUILDID@</em:developer>
+#endif
+    <em:creator>Zonio s.r.o.</em:creator>
+    <em:homepageURL>http://www.zonio.net/</em:homepageURL>
+    <em:optionsURL>chrome://calendar3e/content/cal3ePreferences.xul</em:optionsURL>
+#ifdef LIGHTNING_UPDATE_LOCATION
+    <!-- TODO em:updateURL>@LIGHTNING_UPDATE_LOCATION@?buildID=@GRE_BUILDID@&amp;appABI=%APP_ABI%&amp;appOS=%APP_OS%&amp;locale=%APP_LOCALE%&amp;appVersion=%APP_VERSION%&amp;appID=%APP_ID%</em:updateURL -->
+#endif
+    <em:unpack>true</em:unpack>
   </Description>
 </RDF>

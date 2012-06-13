@@ -17,17 +17,27 @@
 #
 # ***** END LICENSE BLOCK *****
 
-ifndef COMM_BUILD # Mozilla Makefile
+MOZ_APP_NAME=calendar3e
+MOZ_CHROME_FILE_FORMAT=omni
+MOZ_NO_ACTIVEX_SUPPORT=1
+MOZ_ACTIVEX_SCRIPTING_SUPPORT=
+MOZ_APP_VERSION_TXT=${_topsrcdir}/$MOZ_BUILD_APP/config/version.txt
+MOZ_APP_VERSION=`cat $MOZ_APP_VERSION_TXT`
+CALENDAR_3E_VERSION=$MOZ_APP_VERSION
 
-ifndef LIBXUL_SDK
-include $(topsrcdir)/toolkit/toolkit-tiers.mk
-endif
-
-TIERS += app
-
-else # toplevel Makefile
-
-TIERS += app
-tier_app_dirs += calendar/providers/calendar3e
-
-endif
+# Disabled to improve build speed
+MOZ_FEEDS=
+MOZ_PLACES=
+MOZ_SMIL=
+MOZ_TOOLKIT_SEARCH=
+MOZ_ZIPWRITER=
+MOZ_MORK=
+MOZ_MORKREADER=
+MOZ_OGG=
+MOZ_SYDNEYAUDIO=
+MOZ_WAVE=
+MOZ_MEDIA=
+MOZ_VORBIS=
+MOZ_WEBM=
+MOZ_WEBGL=
+MOZ_XTF=

@@ -56,23 +56,9 @@ cal3eDns.prototype = {
 
 Resolv = {};
 
-Resolv.DNS = function DNS() {
-  var os = Components.classes["@mozilla.org/xre/app-info;1"].
-    getService(Components.interfaces.nsIXULRuntime).OS;
-  var resolver;
-  switch (os) {
-  case 'Darwin':
-    resolver = new ResolverMac();
-    break;
-  case 'Linux':
-    resolver = new ResolverLin();
-    break;
-  case 'WINNT':
-    resolver = new ResolverWin();
-    break;
-  default:
-    resolver = null;
-    break;
+Resolv.DNS = function DNS(resolver) {
+  if (!resolver) {
+    resolver = Resolv.DNS.Resolver.find();
   }
 
   this.each_resource = function DNS_each_resource(name, typeclass, callback) {
@@ -122,7 +108,20 @@ function DNS_Resource_TXT(ttl) {
 
 }
 
-function ResolverMac() {
+Resolv.DNS.Resolver = {}
+
+Resolv.DNS.Resolver.find = function Resolver_find() {
+  var os = Components.classes["@mozilla.org/xre/app-info;1"].
+    getService(Components.interfaces.nsIXULRuntime).OS;
+
+  if (!Resolv.DNS.Resolver[os]) {
+    throw new Error("Unsupported operating system '" + os + "'.");
+  }
+
+  return new Resolv.DNS.Resolver[os]();
+}
+
+Resolv.DNS.Resolver.Darwin = Resolver_Darwin() {
   var ns_c_in = 1;
   var ns_t_txt = 16;
   var ns_s_qd = 0;
@@ -208,7 +207,7 @@ function ResolverMac() {
   function readString(src, length) {
   }
 
-  this.extract = function ResolverMac_extract(name, typeclass, callback) {
+  this.extract = function Resolver_Darwin_extract(name, typeclass, callback) {
     var resource = new typecast(answerTtl, "eee server=localhost:4444");
     callback.call(this, resource);
     return;
@@ -262,7 +261,7 @@ function ResolverMac() {
 
 }
 
-ResolverLin = ResolverMac
+Resolv.DNS.Resolver.Linux = Resolv.DNS.Resolver.Darwin;
 
-function ResolverWin() {
+Resolv.DNS.Resolver.WINNT = function Resolver_WINNT() {
 }

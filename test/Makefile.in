@@ -17,17 +17,14 @@
 #
 # ***** END LICENSE BLOCK *****
 
-ifndef COMM_BUILD # Mozilla Makefile
+DEPTH = ../../../..
+topsrcdir = @top_srcdir@
+srcdir = @srcdir@
+VPATH = @srcdir@
+relativesrcdir = calendar/providers/calendar3e/test
 
-ifndef LIBXUL_SDK
-include $(topsrcdir)/toolkit/toolkit-tiers.mk
-endif
+include $(DEPTH)/config/autoconf.mk
 
-TIERS += app
+XPCSHELL_TESTS = unit
 
-else # toplevel Makefile
-
-TIERS += app
-tier_app_dirs += calendar/providers/calendar3e
-
-endif
+include $(topsrcdir)/config/rules.mk
