@@ -197,13 +197,15 @@ interface calEeeIClient: nsISupports {
         in calIGenericOperationListener listener,
         in calEeeICalendar calendar,
         in calIItemBase item);
-    
+
     /**
-     * Obtains free/busy information from server.
-     * 
+     * Retrieves busy-time from a server.
+     *
      * @param identity event organizer
      * @param listener object which gets notified after methods call is
      * finished
+     * @param attendee email address of a person whose busy-time is
+     * requested
      * @param from range start
      * @param to range end
      * @param defaultTimezone

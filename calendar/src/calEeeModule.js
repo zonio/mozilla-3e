@@ -202,12 +202,13 @@ var components = {
     flags: 0,
     resource: "resource://calendar3e/js/calEeeSynchronizer.js"
   },
-  
+
   calEeeFreeBusyProvider: {
     getInterfaces: function calEeeFreeBusyProvider_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeIFreeBusyProvider,
-        Ci.nsIObserver,
+        Ci.calIFreeBusyProvider,
+        //Ci.nsIObserver,
         Ci.nsIClassInfo
       ];
       count.value = interfaces.length;
@@ -225,6 +226,7 @@ var components = {
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeFreeBusyProvider",
     flags: Ci.nsIClassInfo.SINGLETON,
+    //categories: ['profile-after-change'],
     resource: "resource://calendar3e/js/calEeeFreeBusyProvider.js"
   }
 };
