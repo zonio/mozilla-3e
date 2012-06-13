@@ -29,6 +29,11 @@ window.addEventListener('load', function cal3eSync_onLoad() {
     Components.classes["@zonio.net/calendar3e/manager;1"]
     .getService(Components.interfaces.calEeeIManager);
   manager.register();
+
+  var freeBusyProvider =
+    Components.classes["@zonio.net/calendar3e/freebusy-provider;1"]
+    .getService(Components.interfaces.calEeeIFreeBusyProvider);
+  freeBusyProvider.register();
 }, false);
 
 window.addEventListener('unload', function cal3eSync_onUnload() {

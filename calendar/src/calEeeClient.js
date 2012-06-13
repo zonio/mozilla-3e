@@ -476,6 +476,28 @@ calEeeClient.prototype = {
     this._enqueueMethod(methodQueue, 'deleteObject',
                         calendar.calspec,
                         item.id);
+  },
+
+  freeBusy:
+  function calEeeClient_getFreebusy(identity, listener, attendee, from, to,
+                                    defaultTimezone) {
+    var methodQueue = this._prepareMethodQueue(identity);
+    this._enqueueAuthenticate(identity, methodQueue, listener);
+    this._enqueueGetFreeBusy(methodQueue, attendee, from, to, defaultTimezone);
+    this._queueExecution(methodQueue, listener);
+
+    return methodQueue;
+
+  },
+
+  _enqueueGetFreeBusy:
+  function(methodQueue, attendee, from, to, defaultTimezone) {
+
+    var fromEee = xpcomToEeeDate(from);
+    var toEee = xpcomToEeeDate(to);
+
+    this._enqueueMethod(methodQueue, 'freeBusy', attendee, fromEee, toEee,
+                        defaultTimezone);
   }
 
 }
