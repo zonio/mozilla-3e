@@ -41,6 +41,13 @@ calEeeFreeBusyProvider.classInfo = XPCOMUtils.generateCI({
   flags: Ci.nsIClassInfo.SINGLETON
 });
 
+calEeeFreeBusyProvider.TYPES = {
+  "FREE": Ci.calIFreeBusyInterval.FREE,
+  "BUSY": Ci.calIFreeBusyInterval.BUSY,
+  "BUSY-UNAVAILABLE": Ci.calIFreeBusyInterval.BUSY_UNAVAILABLE,
+  "BUSY-TENTATIVE": Ci.calIFreeBusyInterval.BUSY_TENTATIVE
+}
+
 calEeeFreeBusyProvider.prototype = {
 
   classDescription: calEeeFreeBusyProvider.classInfo.classDescription,
@@ -61,6 +68,8 @@ calEeeFreeBusyProvider.prototype = {
   },
 
   getFreeBusyIntervals: function(calId, start, end, busyTypes, listener) {
+    var freeBusyProvider = this;
+
     var clientListener = cal3e.createOperationListener(
       function calEee_getFreeBusy_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
@@ -87,98 +96,68 @@ calEeeFreeBusyProvider.prototype = {
         }
 
         var periodsToReturn = [];
-        var fbTypeMap = {
-          "FREE": Ci.calIFreeBusyInterval.FREE,
-          "BUSY": Ci.calIFreeBusyInterval.BUSY,
-          "BUSY-UNAVAILABLE": Ci.calIFreeBusyInterval.BUSY_UNAVAILABLE,
-          "BUSY-TENTATIVE": Ci.calIFreeBusyInterval.BUSY_TENTATIVE
-        };
+
+        //TODO wrap try over possible exception throwers only
         try {
-          let calComp = cal.getIcsService().parseICS(rawItems, null);
-          for (let fbComp in cal.ical.calendarComponentIterator(calComp)) {
+          for (let component in
+               cal.ical.calendarComponentIterator(
+                 cal.getIcsService().parseICS(rawItems, null)
+               )) {
             let interval;
 
-            if (fbComp.startTime && (start.compare(fbComp.startTime) == -1)) {
-              interval = new cal.FreeBusyInterval(
+            if (component.startTime &&
+                (start.compare(component.startTime) == -1)) {
+              periodsToReturn.push(new cal.FreeBusyInterval(
                 calId,
                 Ci.calIFreeBusyInterval.UNKNOWN,
                 start,
-                fbComp.startTime
-              );
-              periodsToReturn.push(interval);
+                component.startTime
+              ));
             }
 
-            if (fbComp.endTime && (end.compare(fbComp.endTime) == 1)) {
-              interval = new cal.FreeBusyInterval(
+            if (component.endTime &&
+                (end.compare(component.endTime) == 1)) {
+              periodsToReturn.push(new cal.FreeBusyInterval(
                 calId,
                 Ci.calIFreeBusyInterval.UNKNOWN,
-                fbComp.endTime,
+                component.endTime,
                 end
-              );
-              periodsToReturn.push(interval);
+              ));
             }
 
-            for (let fbProp in cal.ical.propertyIterator(fbComp, "FREEBUSY")) {
-              let fbType = fbProp.getParameter("FBTYPE") ?
-                fbTypeMap[fbType] :
-                Ci.calIFreeBusyInterval.BUSY ;
-              let parts = fbProp.value.split("/");
-              let begin = cal.createDateTime(parts[0]);
-              let end;
-              if (parts[1].charAt(0) == "P") {
-                // duration
-                end = begin.clone();
-                end.addDuration(cal.createDuration(parts[1]));
-              } else {
-                // date
-                end = cal.createDateTime(parts[1]);
-              }
-              interval = new cal.FreeBusyInterval(calId,
-                                                  fbType,
-                                                  begin,
-                                                  end);
-              periodsToReturn.push(interval);
+            for (let property in
+                 cal.ical.propertyIterator(
+                   component, "FREEBUSY"
+                 )) {
+              periodsToReturn.push(
+                freeBusyProvider._buildFreeBusyIntervalFromProperty(
+                  calId,
+                  property
+                )
+              );
             }
           }
         } catch (exc) {
           cal.ERROR("3e Calendar: Error parsing free-busy info.");
         }
-        listener.onResult(null, periodsToReturn);
 
+        listener.onResult(null, periodsToReturn);
       }
     );
 
-    var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-      .getService(Ci.nsIWindowMediator);
-    var winAttendees = wm.getMostRecentWindow("Calendar:EventDialog:Attendees");
-    var attendeesList = winAttendees.document.getElementById("attendees-list");
-
-    var organizer = String(attendeesList.organizer);
-    organizer = organizer.split(" ")[1];
-    organizer = organizer.replace("<", "").replace(">", "");
-
-    var accountCollection = new cal3e.AccountCollection();
-    var accounts = accountCollection.filter(function (a) {
-      return a.defaultIdentity.email == organizer;
-    });
-
-    var identity;
-    if (accounts.length > 0) {
-      identity = accounts[0].defaultIdentity;
-    } else {
+    var organizer = this._getOrganizer();
+    if (!organizer) {
       listener.onResult(null, null);
       return;
     }
 
-    var calIdParts = calId.split(":", 2);
-    calIdParts[0] = calIdParts[0].toLowerCase();
-    if (calIdParts[0] != "mailto") {
+    var attendee = this._parseAttendeeEmail(calId);
+    if (!attendee) {
       listener.onResult(null, null);
       return;
     }
-    var attendee = calIdParts[1];
 
-    if (!identity.getBoolAttribute(cal3e.EEE_ENABLED_KEY)) {
+    if (!organizer.defaultIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY)) {
       listener.onResult(null, null);
       return;
     }
@@ -186,13 +165,55 @@ calEeeFreeBusyProvider.prototype = {
     Cc["@zonio.net/calendar3e/client-service;1"].
       getService(Ci.calEeeIClient).
       freeBusy(
-        identity,
+        organizer.defaultIdentity,
         clientListener,
         attendee,
         start.nativeTime,
         end.nativeTime,
         cal.calendarDefaultTimezone().icalComponent.serializeToICS()
       );
+  },
+
+  _getOrganizer: function () {
+    var organizerEmail = Cc["@mozilla.org/appshell/window-mediator;1"].
+      getService(Ci.nsIWindowMediator).
+      getMostRecentWindow("Calendar:EventDialog:Attendees").
+      document.getElementById("attendees-list").
+      organizer.id;
+
+    var accountCollection = new cal3e.AccountCollection();
+    var accounts = accountCollection.filter(function (a) {
+      return a.defaultIdentity.email == organizerEmail;
+    });
+
+    return accounts.length > 0 ?
+      accounts[0] :
+      null ;
+  },
+
+  _parseAttendeeEmail: function (calId) {
+    var parts = calId.split(":", 2);
+
+    return parts[0].toLowerCase() !== "mailto" ?
+      parts[1] :
+      null ;
+  },
+
+  _buildFreeBusyIntervalFromProperty: function (property) {
+    var parts = property.value.split("/");
+    var begin = cal.createDateTime(parts[0]);
+    var end = parts[1].charAt(0) == "P" ?
+      begin.clone().addDuration(cal.createDuration(parts[1])) :
+      cal.createDateTime(parts[1]) ;
+
+    return new cal.FreeBusyInterval(
+      calId,
+      property.getParameter("FBTYPE") ?
+        calEeeFreeBusyProvider.TYPES[property.getParameter("FBTYPE")] :
+        Ci.calIFreeBusyInterval.BUSY,
+      begin,
+      end
+    );
   }
 
 }
