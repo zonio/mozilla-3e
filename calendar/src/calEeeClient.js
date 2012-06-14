@@ -96,7 +96,8 @@ calEeeClient.prototype = {
    * @param {String} methodName
    * @param {nsIVariant[]} [parameters] method parameters
    */
-  _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue, methodName) {
+  _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue,
+                                                      methodName) {
     var parameters = Array.prototype.slice.call(arguments, 2).map(
       function (parameter) {
         var instance = null;
@@ -211,56 +212,62 @@ calEeeClient.prototype = {
   _enqueueAuthenticate:
   function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
     var loginManager = Cc["@mozilla.org/login-manager;1"]
-							.getService(Ci.nsILoginManager);
-	var fullUri = "eee://" + methodQueue.serverUri.host;
-	
-	var count = { value : 0 };
+      .getService(Ci.nsILoginManager);
+    var fullUri = "eee://" + methodQueue.serverUri.host;
+
+    var count = { value : 0 };
     var logins = loginManager.findLogins(count, fullUri, fullUri, null);
 
     if (count.value > 0) {
-		var i = 0;
-		while ((i < logins.length) && (logins[i].username !== identity.email)) i++;
-		
-		if (i === logins.length) {
-			// Login not found.
-			count.value = 0; // so next if statement is executed.
-		}
-		var password = logins[i].password;
-	}
-	
-	if (count.value === 0) {
-		// Login not found in login manager. Ask user for password.
-		var promptService = Cc["@mozilla.org/embedcomp/prompt-service;1"]
-                              .getService(Ci.nsIPromptService);
-        var password = {value: ""}; // default the password to empty string  
-		var check = {value: true}; // default the checkbox to true  
-        
-        var fcBundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
-               .getService(Components.interfaces.nsIStringBundleService)
-               .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
-        
-		var result = promptService.promptPassword(null,
-            fcBundle.GetStringFromName('cal3ePasswordDialog.title'),
-			fcBundle.GetStringFromName('cal3ePasswordDialog.content'), password,
-            fcBundle.GetStringFromName('cal3ePasswordDialog.save'), check);  
-		password = password.value;
-		
-		if (result) {
-			// user clicked on OK
-			if (check.value) {
-				// user wants to save the password
-				var loginInfo = Cc["@mozilla.org/login-manager/loginInfo;1"]
-								 .createInstance(Ci.nsILoginInfo);
-				loginInfo.init(fullUri, fullUri, null, identity.email, password, "", "");
-				loginManager.addLogin(loginInfo);
-			}
-		} else {
-			// user clicked on cancel
-			listener.onResult(methodQueue, null);
-		}
-	}
+      var i = 0;
+      while ((i < logins.length) && (logins[i].username !== identity.email)) i++;
 
-    this._enqueueMethod(methodQueue, 'authenticate', identity.email, password);
+      if (i === logins.length) {
+        // Login not found.
+        count.value = 0; // so next if statement is executed.
+      }
+      var password = logins[i].password;
+    }
+
+    if (count.value === 0) {
+      // Login not found in login manager. Ask user for password.
+      var promptService = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+        .getService(Ci.nsIPromptService);
+      var password = {value: ""}; // default the password to empty string
+      var check = {value: true}; // default the checkbox to true
+
+      var fcBundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
+        .getService(Components.interfaces.nsIStringBundleService)
+        .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
+
+      var result = promptService.promptPassword(
+        null,
+        fcBundle.GetStringFromName('cal3ePasswordDialog.title'),
+        fcBundle.GetStringFromName('cal3ePasswordDialog.content'),
+        password,
+        fcBundle.GetStringFromName('cal3ePasswordDialog.save'),
+        check
+      );
+      password = password.value;
+
+      if (result) {
+        // user clicked on OK
+        if (check.value) {
+          // user wants to save the password
+          var loginInfo = Cc["@mozilla.org/login-manager/loginInfo;1"]
+            .createInstance(Ci.nsILoginInfo);
+          loginInfo.init(fullUri, fullUri, null, identity.email,
+                         password.value, "", "");
+          loginManager.addLogin(loginInfo);
+        }
+      } else {
+        // user clicked on cancel
+        listener.onResult(methodQueue, null);
+      }
+    }
+
+    this._enqueueMethod(methodQueue, 'authenticate', identity.email,
+                        password.value);
   },
 
   /**
@@ -463,7 +470,7 @@ calEeeClient.prototype = {
 
   deleteObject:
   function calEeeClient_deleteObject(identity, listener, calendar,
-                                            item) {
+                                     item) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue, listener);
     this._enqueueDeleteObject(methodQueue, calendar, item);
