@@ -360,34 +360,45 @@ nsXmlRpcClient.prototype = {
         }
         return false;
     },
-    
+
     // nsIBadCertListener2 interface
     notifyCertProblem: function(socketInfo, status, targetSite) {
-        if (!status)
+        if (!status) {
             return true;
-        
-        var xmlrpcclient = this;
-        var win = cal.getCalendarWindow();
-        
-        function InformUserOfCertError(params) {
-            win.openDialog("chrome://pippki/content/exceptionDialog.xul",
-                    "", "chrome,centerscreen,modal", params);
-            if (params.exceptionAdded) {
-                xmlrpcclient.asyncCall.apply(xmlrpcclient, xmlrpcclient._lastAsyncCallArgs);
-            } else {
-                xmlrpcclient._listener.onError(xmlrpcclient, xmlrpcclient._context,
-                    Components.result.NS_ERROR_FAILURE, 'Untrusted certificate');
-            }
-        };
-        
-        var params = { 
+        }
+
+        var xmlRpcClient = this;
+        cal.getCalendarWindow().setTimeout(function() {
+            xmlRpcClient._showBadCertDialogAndRetryCall()
+        }, 0);
+
+        return true;
+    },
+
+    _showBadCertDialogAndRetryCall: function(params) {
+        var params = {
             exceptionAdded : false,
             prefetchCert : true,
             location : targetSite
-        };
-        win.setTimeout(InformUserOfCertError, 0, params);
-        
-        return true;
+        }
+
+        cal.getCalendarWindow().openDialog(
+            "chrome://pippki/content/exceptionDialog.xul",
+            "",
+            "chrome,centerscreen,modal",
+            params
+        );
+
+        if (!params.exceptionAdded) {
+            this.asyncCall.apply(this, this._lastAsyncCallArgs);
+        } else {
+            this._listener.onError(
+                this,
+                this._context,
+                Components.result.NS_ERROR_FAILURE,
+                'Untrusted certificate'
+            );
+        }
     },
 
     /* Generate the XML-RPC request body */
