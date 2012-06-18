@@ -267,14 +267,14 @@ calEeeClient.prototype = {
   },
 
   _storePassword: function calEeeClient_storePassword(identity, password) {
+    var loginInfo = Cc["@mozilla.org/login-manager/loginInfo;1"]
+      .createInstance(Ci.nsILoginInfo);
+    loginInfo.init(this._passwordUri(identity), this._passwordUri(identity),
+                   null, identity.email, password, "", "")
+
     Cc["@mozilla.org/login-manager;1"]
       .getService(Ci.nsILoginManager)
-      .addLogin(
-        Cc["@mozilla.org/login-manager/loginInfo;1"]
-          .createInstance(Ci.nsILoginInfo)
-          .init(this._passwordUri(identity), this._passwordUri(identity),
-                null, identity.email, password, "", "")
-      );
+      .addLogin(loginInfo);
   },
 
   /**
