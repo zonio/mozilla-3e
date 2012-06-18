@@ -211,63 +211,60 @@ calEeeClient.prototype = {
 
   _enqueueAuthenticate:
   function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
-    var loginManager = Cc["@mozilla.org/login-manager;1"]
-      .getService(Ci.nsILoginManager);
-    var fullUri = "eee://" + methodQueue.serverUri.host;
+    if (this._findPassword(identity)) {
+      var password = { value: "" }; // default the password to empty string
+      var doSavePassword = { value: true }; // default the checkbox to true
 
-    var count = { value : 0 };
-    var logins = loginManager.findLogins(count, fullUri, fullUri, null);
-
-    if (count.value > 0) {
-      var i = 0;
-      while ((i < logins.length) && (logins[i].username !== identity.email)) i++;
-
-      if (i === logins.length) {
-        // Login not found.
-        count.value = 0; // so next if statement is executed.
-      }
-      var password = logins[i].password;
-    }
-
-    if (count.value === 0) {
-      // Login not found in login manager. Ask user for password.
-      var promptService = Cc["@mozilla.org/embedcomp/prompt-service;1"]
-        .getService(Ci.nsIPromptService);
-      var password = {value: ""}; // default the password to empty string
-      var check = {value: true}; // default the checkbox to true
-
-      var fcBundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
-        .getService(Components.interfaces.nsIStringBundleService)
+      var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
+        .getService(Ci.nsIStringBundleService)
         .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
 
-      var result = promptService.promptPassword(
-        null,
-        fcBundle.GetStringFromName('cal3ePasswordDialog.title'),
-        fcBundle.GetStringFromName('cal3ePasswordDialog.content'),
-        password,
-        fcBundle.GetStringFromName('cal3ePasswordDialog.save'),
-        check
-      );
-      password = password.value;
+      var didEnterPassword = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+        .getService(Ci.nsIPromptService)
+        .promptPassword(
+          null,
+          stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
+          stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+          password,
+          stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
+          doSavePassword
+        );
 
-      if (result) {
-        // user clicked on OK
-        if (check.value) {
-          // user wants to save the password
-          var loginInfo = Cc["@mozilla.org/login-manager/loginInfo;1"]
-            .createInstance(Ci.nsILoginInfo);
-          loginInfo.init(fullUri, fullUri, null, identity.email,
-                         password.value, "", "");
-          loginManager.addLogin(loginInfo);
-        }
-      } else {
-        // user clicked on cancel
+      if (didEnterPassword && doSavePassword.value) {
+        this._storePassword(methodQueue.serverUri, identity, password.value);
+      } else if (!didEnterPassword) {
         listener.onResult(methodQueue, null);
       }
     }
 
     this._enqueueMethod(methodQueue, 'authenticate', identity.email,
                         password.value);
+  },
+
+  _passwordUri: function calEeeClient_passwordUri(identity) {
+    //XXX not DRY - somehow use EeeProtocol class
+    return "eee://" +
+      identity.email.substring(identity.email.indexOf("@") + 1);
+  },
+
+  _findPassword: function calEeeClient_findPassword(identity) {
+    var logins = Cc["@mozilla.org/login-manager;1"]
+      .getService(Ci.nsILoginManager)
+      .findLogins({}, this._passwordUri(uri), this._passwordUri(uri), null);
+
+    return logins.length > 0 ? logins[0].password : null ;
+  },
+
+  _storePassword: function calEeeClient_storePassword(uri, identity,
+                                                      password) {
+    Cc["@mozilla.org/login-manager;1"]
+      .getService(Ci.nsILoginManager)
+      .addLogin(
+        Cc["@mozilla.org/login-manager/loginInfo;1"]
+          .createInstance(Ci.nsILoginInfo)
+          .init(this._passwordUri(uri), this._passwordUri(uri), null,
+                identity.email, password, "", "");
+      );
   },
 
   /**
