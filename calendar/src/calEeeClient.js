@@ -272,7 +272,7 @@ calEeeClient.prototype = {
         Cc["@mozilla.org/login-manager/loginInfo;1"]
           .createInstance(Ci.nsILoginInfo)
           .init(this._passwordUri(identity), this._passwordUri(identity),
-                null, identity.email, password, "", "");
+                null, identity.email, password, "", "")
       );
   },
 
