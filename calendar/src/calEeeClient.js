@@ -213,7 +213,8 @@ calEeeClient.prototype = {
   function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
     //XXX move the whole password prompt/store/... functionality to
     // separate class
-    if (this._findPassword(identity)) {
+    var password = this._findPassword(identity)
+    if (null === password) {
       var [password, didEnterPassword, savePassword] =
         this._promptForPassword();
 
