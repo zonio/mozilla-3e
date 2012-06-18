@@ -365,3 +365,11 @@ cal3e.Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth,
     this.dump(name + " is empty");
   }
 }
+cal3e.Debug.dumpStack = function Debug_dumpStack() {
+  if (!this.enable) {
+    return;
+  }
+
+  for (var frame = Components.stack; frame; frame = frame.caller)
+    dump(frame.filename + ":" + frame.lineNumber + "\n");
+};
