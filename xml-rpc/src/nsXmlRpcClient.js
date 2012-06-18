@@ -369,19 +369,17 @@ nsXmlRpcClient.prototype = {
 
         var xmlRpcClient = this;
         cal.getCalendarWindow().setTimeout(function() {
-            xmlRpcClient._showBadCertDialogAndRetryCall()
+            xmlRpcClient._showBadCertDialogAndRetryCall({
+                exceptionAdded : false,
+                prefetchCert : true,
+                location : targetSite
+            })
         }, 0);
 
         return true;
     },
 
     _showBadCertDialogAndRetryCall: function(params) {
-        var params = {
-            exceptionAdded : false,
-            prefetchCert : true,
-            location : targetSite
-        }
-
         cal.getCalendarWindow().openDialog(
             "chrome://pippki/content/exceptionDialog.xul",
             "",
