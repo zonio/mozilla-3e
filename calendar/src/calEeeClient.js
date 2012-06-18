@@ -211,34 +211,21 @@ calEeeClient.prototype = {
 
   _enqueueAuthenticate:
   function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
+    //XXX move the whole password prompt/store/... functionality to
+    // separate class
     if (this._findPassword(identity)) {
-      var password = { value: "" }; // default the password to empty string
-      var doSavePassword = { value: true }; // default the checkbox to true
+      var [password, didEnterPassword, savePassword] =
+        this._promptForPassword();
 
-      var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
-        .getService(Ci.nsIStringBundleService)
-        .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
-
-      var didEnterPassword = Cc["@mozilla.org/embedcomp/prompt-service;1"]
-        .getService(Ci.nsIPromptService)
-        .promptPassword(
-          null,
-          stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-          stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
-          password,
-          stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
-          doSavePassword
-        );
-
-      if (didEnterPassword && doSavePassword.value) {
-        this._storePassword(methodQueue.serverUri, identity, password.value);
+      //TODO store unsaved password temporarily
+      if (didEnterPassword && savePassword) {
+        this._storePassword(identity, password);
       } else if (!didEnterPassword) {
         listener.onResult(methodQueue, null);
       }
     }
 
-    this._enqueueMethod(methodQueue, 'authenticate', identity.email,
-                        password.value);
+    this._enqueueMethod(methodQueue, 'authenticate', identity.email, password);
   },
 
   _passwordUri: function calEeeClient_passwordUri(identity) {
@@ -250,20 +237,42 @@ calEeeClient.prototype = {
   _findPassword: function calEeeClient_findPassword(identity) {
     var logins = Cc["@mozilla.org/login-manager;1"]
       .getService(Ci.nsILoginManager)
-      .findLogins({}, this._passwordUri(uri), this._passwordUri(uri), null);
+      .findLogins({}, this._passwordUri(identity), this._passwordUri(identity),
+                  null);
 
     return logins.length > 0 ? logins[0].password : null ;
   },
 
-  _storePassword: function calEeeClient_storePassword(uri, identity,
-                                                      password) {
+  _promptForPassword: function calEeeClient_promptForPassword() {
+    var password = { value: "" }; // default the password to empty string
+    var savePassword = { value: true }; // default the checkbox to true
+
+    var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"]
+      .getService(Ci.nsIStringBundleService)
+      .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
+
+    var didEnterPassword = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+      .getService(Ci.nsIPromptService)
+      .promptPassword(
+        null,
+        stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
+        stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+        password,
+        stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
+        savePassword
+      );
+
+    return [password.value, didEnterPassword, savePassword.value];
+  },
+
+  _storePassword: function calEeeClient_storePassword(identity, password) {
     Cc["@mozilla.org/login-manager;1"]
       .getService(Ci.nsILoginManager)
       .addLogin(
         Cc["@mozilla.org/login-manager/loginInfo;1"]
           .createInstance(Ci.nsILoginInfo)
-          .init(this._passwordUri(uri), this._passwordUri(uri), null,
-                identity.email, password, "", "");
+          .init(this._passwordUri(identity), this._passwordUri(identity),
+                null, identity.email, password, "", "");
       );
   },
 
