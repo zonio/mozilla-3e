@@ -56,6 +56,8 @@
     <em:version>@CALENDAR_3E_VERSION@</em:version>
     <em:description>Allows interaction with 3e calendaring system and
     other EEE servers.</em:description>
+    <em:iconURL>chrome://calendar3e/skin/cal3eIcon.png</em:iconURL>
+    <em:icon64URL>chrome://calendar3e/skin/cal3eIcon64.png</em:icon64URL>
 #ifdef CALENDAR_3E_PRERELEASE_VERSION
     <em:developer>Build ID: @GRE_BUILDID@</em:developer>
 #endif

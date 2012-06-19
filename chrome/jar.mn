@@ -21,6 +21,8 @@ calendar3e.jar:
   content/am-enable3e.xul          (content/am-enable3e.xul)
 
   skin/cal3eGlobal.css (skin/cal3eGlobal.css)
+  skin/cal3eIcon.png   (skin/cal3eIcon.png)
+  skin/cal3eIcon64.png (skin/cal3eIcon64.png)
 
   locale/en-US/cal3eCalendar.dtd        (locale/en-US/cal3eCalendar.dtd)
   locale/en-US/cal3eCalendar.properties (locale/en-US/cal3eCalendar.properties)
