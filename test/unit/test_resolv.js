@@ -20,24 +20,28 @@
 Components.utils.import("resource://calendar3e/modules/resolv.jsm");
 
 function test_resolver_injection() {
-  var resolver = create_resolver_spy();
+  var domain = "nightly.zonio.net";
+  var type = Resolv.DNS.Resource.TXT;
+  var callback = function() {};
+  var resolver = create_resolver_spy(domain, type, callback);
   var dns = new Resolv.DNS(resolver);
 
-  dns.each_resource(
-    "nightly.zonio.net",
-    Resolv.DNS.Resource.TXT,
-    function() {}
-  );
+  dns.each_resource(domain, type, callback);
 
   resolver.check();
 }
 
 function create_resolver_spy() {
+  var callArgs = arguments;
+
   return new (function() {
     var called = false;
 
     this.extract = function() {
-      called = true;
+      called = arguments.length == callArgs.length;
+      for (var i = 0; called && (i < arguments.length); i++) {
+        called = arguments[i] === callArgs[i];
+      }
       return;
     }
 
