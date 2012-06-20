@@ -86,7 +86,7 @@ Resolv.DNS.Resolver.find = function Resolver_find() {
   return new Resolv.DNS.Resolver[os]();
 }
 
-Resolv.DNS.Resolver.Darwin = Resolver_Darwin() {
+Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
   var ns_c_in = 1;
   var ns_t_txt = 16;
   var ns_s_qd = 0;
