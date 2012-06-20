@@ -28,6 +28,14 @@
 })();
 
 (function load_calendar3e_manifest() {
-  do_load_manifest("../../../../../../../dist/bin/" +
-                   "extensions/calendar3e@zonio.net/chrome.manifest");
+  let bindir = Components.classes["@mozilla.org/file/directory_service;1"].
+    getService(Components.interfaces.nsIProperties).
+    get("CurWorkD", Components.interfaces.nsIFile).
+    parent.parent.parent.parent.parent.parent.parent;
+  bindir.append("dist");
+  bindir.append("bin");
+  bindir.append("extensions");
+  bindir.append("calendar3e@zonio.net");
+  bindir.append("chrome.manifest");
+  Components.manager.autoRegister(bindir);
 })();

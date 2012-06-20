@@ -28,7 +28,9 @@ MODULE = calendar3e
 XPI_NAME = calendar3e-provider
 
 EXTRA_JS_MODULES = \
+	cal3eDns.jsm \
 	cal3eUtils.jsm \
+	resolv.jsm \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk
