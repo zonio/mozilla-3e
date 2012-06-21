@@ -31,6 +31,15 @@ function test_resolver_injection() {
   resolver.check();
 }
 
+function test_library_detection() {
+  var resolver = Resolv.DNS.Resolver.find();
+  do_check_eq(
+    resolver.constructor,
+    Resolv.DNS.Resolver[Components.classes["@mozilla.org/xre/app-info;1"].
+                        getService(Components.interfaces.nsIXULRuntime).OS]
+  );
+}
+
 function create_resolver_spy() {
   var callArgs = arguments;
 
