@@ -447,8 +447,6 @@ calEeeCalendar.prototype = {
                                null,
                                1,
                                [items[idx]]);
-
-          cal.processPendingEvent();
         }
 
         calendar.notifyOperationComplete(listener,
