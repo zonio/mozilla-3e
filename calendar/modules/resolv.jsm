@@ -86,7 +86,7 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
   var ns_get32 = null;
 
   function loadLibrary() {
-    libresolv = ctypes.open("resolv");
+    libresolv = ctypes.open("/usr/lib/libresolv.dylib");
     res_query = libresolv.declare(
       'res_query',
       ctypes.default_abi,
@@ -140,7 +140,7 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
 
   function typeclassToConstant(typeclass) {
     var constants;
-    if (typeclass instanceof Resolv.DNS.Resource.TXT) {
+    if (typeclass === Resolv.DNS.Resource.TXT) {
       constant = ns_t_txt;
     } else {
       constant = null;
