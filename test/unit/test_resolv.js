@@ -62,4 +62,5 @@ function create_resolver_spy() {
 
 function run_test() {
   test_resolver_injection();
+  test_library_detection();
 }
