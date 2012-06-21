@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/cal3eDns.jsm");
+Components.utils.import("resource://calendar3e/modules/resolv.jsm");
 
 function run_test() {
   todo_check_true(false);
