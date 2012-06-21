@@ -66,7 +66,12 @@ Resolv.DNS.Resolver.find = function Resolver_find() {
   return new Resolv.DNS.Resolver[os]();
 }
 
-Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
+Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
+  var suffix = "Darwin" == Components.classes["@mozilla.org/xre/app-info;1"].
+    getService(Components.interfaces.nsIXULRuntime).OS ?
+    ".dylib" :
+    ".so" ;
+
   var ns_c_in = 1;
   var ns_t_txt = 16;
   var ns_s_qd = 0;
@@ -86,7 +91,7 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
   var ns_get32 = null;
 
   function loadLibrary() {
-    libresolv = ctypes.open("/usr/lib/libresolv.dylib");
+    libresolv = ctypes.open("libresolv" + suffix);
     res_query = libresolv.declare(
       'res_query',
       ctypes.default_abi,
@@ -152,7 +157,8 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
   function readString(src, length) {
   }
 
-  this.extract = function Resolver_Darwin_extract(name, typeclass, callback) {
+  this.extract = function Resolver_libresolv_extract(name, typeclass,
+                                                     callback) {
     loadLibrary();
     var dname = ctypes.char.array(name.length)(name);
     var answer = ctypes.unsigned_char.array(anslen)();
@@ -200,10 +206,13 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
 
 }
 
-Resolv.DNS.Resolver.Linux = Resolv.DNS.Resolver.Darwin;
+Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;
+Resolv.DNS.Resolver['Darwin'] = Resolv.DNS.Resolver.libresolv;
 
-Resolv.DNS.Resolver.WINNT = function Resolver_WINNT() {
+Resolv.DNS.Resolver.WinDns = function Resolver_WinDns() {
 }
+
+Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
 
 EXPORTED_SYMBOLS = [
   'Resolv'
