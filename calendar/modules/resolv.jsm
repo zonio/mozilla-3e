@@ -30,26 +30,6 @@ Resolv.DNS = function DNS(resolver) {
     resolver.extract(name, typeclass, callback);
   }
 
-  this.getresource = function DNS_getresource(name, typeclass) {
-    var foundResource;
-    this.each_resource(name, typeclass, function (resource) {
-      foundResource = resource;
-    });
-    if (!foundResource) {
-      throw new Error("Resource for " + name + " not found.");
-    }
-
-    return foundResource;
-  }
-
-  this.getresources = function DNS_getresources(name, typeclass) {
-    var resources = [];
-    this.each_resource(name, typeclass, function (resource) {
-      resources.push(resource);
-    });
-
-    return resources;
-  }
 }
 
 Resolv.DNS.Resource = {}
