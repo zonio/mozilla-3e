@@ -153,12 +153,6 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
   }
 
   this.extract = function Resolver_Darwin_extract(name, typeclass, callback) {
-    var resource = new typecast(answerTtl, "eee server=localhost:4444");
-    callback.call(this, resource);
-    return;
-
-    //TODO fix and test implementation
-
     loadLibrary();
     var dname = ctypes.char.array(name.length)(name);
     var answer = ctypes.unsigned_char.array(anslen)();
@@ -196,7 +190,7 @@ Resolv.DNS.Resolver.Darwin = function Resolver_Darwin() {
         continue;
       }
 
-      resource = new typecast(answerTtl, readString(src, rdataLength));
+      resource = new typeclass(answerTtl, readString(src, rdataLength));
       returnValue = callback.call(this, resource);
       if (false === returnValue) break;
     }
