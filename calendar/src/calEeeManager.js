@@ -124,11 +124,10 @@ calEeeManager.prototype = {
     if ('eee' != calendar.type) {
       return;
     }
-    calendar = calendar.QueryInterface(Ci.calEeeICalendar);
     calendar.addObserver(this);
 
     // calendar already is registered if it has calname set
-    if (calendar.calname) {
+    if (this._getCalname(calendar)) {
       return;
     }
 
@@ -136,7 +135,11 @@ calEeeManager.prototype = {
       function calEeeManager_create_onResult(methodQueue, result) {}
     );
     this._generateUniqueUri(calendar);
-    this._getClient().createCalendar(calendar.identity, listener, calendar);
+    this._getClient().createCalendar(
+      this._getIdentity(calendar),
+      listener,
+      calendar
+    );
   },
 
   /**
@@ -157,18 +160,21 @@ calEeeManager.prototype = {
     if ('eee' != calendar.type) {
       return;
     }
-    calendar = calendar.QueryInterface(Ci.calEeeICalendar);
     calendar.removeObserver(this);
 
     // calendar is not registered if it has no calname set
-    if (!calendar.calname) {
+    if (!this._getCalname(calendar)) {
       return;
     }
 
     var listener = cal3e.createOperationListener(
       function calEeeManager_delete_onResult(methodQueue, result) {}
     );
-    this._getClient().deleteCalendar(calendar.identity, listener, calendar);
+    this._getClient().deleteCalendar(
+      this._getIdentity(calendar),
+      listener,
+      calendar
+    );
   },
 
   onPropertyChanged: function calEeeManager_onPropertyChanged(
@@ -176,10 +182,9 @@ calEeeManager.prototype = {
     if ('eee' != calendar.type) {
       return;
     }
-    calendar = calendar.QueryInterface(Ci.calEeeICalendar);
 
     // calendar is not registered if it has no calname set
-    if (!calendar.calname) {
+    if (!this._getCalname(calendar)) {
       return;
     }
 
@@ -204,7 +209,13 @@ calEeeManager.prototype = {
       function calEeeManager_update_onResult(methodQueue, result) {}
     );
     this._getClient().setCalendarAttribute(
-      calendar.identity, listener, calendar, attrName, attrValue, isPublic);
+      this._getIdentity(calendar),
+      listener,
+      calendar,
+      attrName,
+      attrValue,
+      isPublic
+    );
   },
 
   onStartBatch: function calEeeManager_onStartBatch() {},
@@ -231,12 +242,36 @@ calEeeManager.prototype = {
       .getService(Components.interfaces.nsIUUIDGenerator);
 
     var uri = "eee://" +
-      calendar.identity.email + "/" +
+      this._getIdentity(calendar).email + "/" +
       generator.generateUUID().toString().substring(1, 36);
 
     var ioService = Components.classes["@mozilla.org/network/io-service;1"]
       .getService(Components.interfaces.nsIIOService);
     calendar.uri = ioService.newURI(uri, null, null);
+  },
+
+  _getIdentity: function calEeeManager_getIdentity(calendar) {
+    var uriParts = calendar.uri.spec.split('/', 4),
+        eeeUser = uriParts[2];
+
+    var accountCollection = new cal3e.AccountCollection();
+    var accounts = accountCollection.filter(
+      cal3e.AccountCollection.filterEnabled);
+    var idx = accounts.length, identity = null;
+    while (idx--) {
+      if (eeeUser == accounts[idx].defaultIdentity.email) {
+        identity = accounts[idx].defaultIdentity;
+        break;
+      }
+    }
+
+    return identity;
+  },
+
+  _getCalname: function calEeeManager_getCalname(calendar) {
+    var uriParts = calendar.uri.spec.split('/', 5);
+
+    return uriParts[4] || uriParts[3];
   }
 
 }
