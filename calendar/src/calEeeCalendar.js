@@ -446,16 +446,18 @@ calEeeCalendar.prototype = {
         var itemsCount = {};
         var items = parser.getItems(itemsCount);
         var idx = itemsCount.value;
+        var item;
         while (idx--) {
-          items[idx].calendar = calendar.superCalendar;
-          items[idx].makeImmutable();
+          item = items[idx].clone();
+          item.calendar = calendar.superCalendar;
+          item.makeImmutable();
 
           listener.onGetResult(calendar.superCalendar,
                                Cr.NS_OK,
                                Ci.calIEvent,
                                null,
                                1,
-                               [items[idx]]);
+                               [item]);
         }
 
         calendar.notifyOperationComplete(listener,
