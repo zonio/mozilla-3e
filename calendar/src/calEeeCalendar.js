@@ -142,6 +142,15 @@ calEeeCalendar.prototype = {
     return uriParts[4] || uriParts[3];
   },
 
+  getProperty: function calEee_getProperty(name) {
+    switch (name) {
+    case "cache.supported":
+      return false;
+    }
+
+    return this.__proto__.__proto__.getProperty.apply(this, arguments);
+  },
+
   addItem: function calEee_addItem(item, listener) {
     return this.adoptItem(item.clone(), listener);
   },
