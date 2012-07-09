@@ -60,13 +60,18 @@ calEeeManager.prototype = {
   /**
    * Calls {@link register} when Thunderbird starts.
    *
+   * We're observing profile-after-change to recognize Thunderbird
+   * startup.  There's also calendar-startup-done but it actually
+   * occurs before profile-after-change from our components'
+   * perspective.
+   *
    * @param {nsISupports} subject
    * @param {String} topic
    * @param {String} data
    */
   observe: function calEeeManager_observe(subject, topic, data) {
     switch (topic) {
-    case 'calendar-startup':
+    case 'profile-after-change':
       this.register();
       break;
     }

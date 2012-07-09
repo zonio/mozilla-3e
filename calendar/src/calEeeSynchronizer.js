@@ -125,7 +125,13 @@ calEeeSynchronizationService.prototype = {
   },
 
   /**
-   * Calls {@link register} when Thunderbird starts.
+   * Calls {@link register} when Thunderbird starts and runs
+   * synchronization regularly.
+   *
+   * We're observing profile-after-change to recognize Thunderbird
+   * startup.  There's also calendar-startup-done but it actually
+   * occurs before profile-after-change from our components'
+   * perspective.
    *
    * @param {nsISupports} subject
    * @param {String} topic
@@ -133,7 +139,7 @@ calEeeSynchronizationService.prototype = {
    */
   observe: function calEeeSyncService_observe(subject, topic, data) {
     switch (topic) {
-    case 'calendar-startup':
+    case 'profile-after-change':
       this.register();
       break;
     case 'timer-callback':

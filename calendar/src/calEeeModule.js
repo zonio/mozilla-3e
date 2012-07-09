@@ -175,7 +175,6 @@ var components = {
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeSynchronizationService",
     flags: Ci.nsIClassInfo.SINGLETON,
-    categories: ['profile-after-change'],
     resource: "resource://calendar3e/js/calEeeSynchronizer.js"
   },
 
@@ -226,7 +225,6 @@ var components = {
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeFreeBusyProvider",
     flags: Ci.nsIClassInfo.SINGLETON,
-    //categories: ['profile-after-change'],
     resource: "resource://calendar3e/js/calEeeFreeBusyProvider.js"
   }
 };
@@ -272,9 +270,8 @@ var calEeeModule = {
                                                    location,
                                                    type) {
     componentManager = componentManager.QueryInterface(
-      Ci.nsIComponentRegistrar);
-    var categoryManager = Cc["@mozilla.org/categorymanager;1"]
-      .getService(Ci.nsICategoryManager);
+      Ci.nsIComponentRegistrar
+    );
 
     for each (var component in components) {
       componentManager.registerFactoryLocation(
@@ -283,16 +280,8 @@ var calEeeModule = {
           component.contractID,
           fileSpec,
           location,
-          type);
-      for each (var category in component.categories) {
-        categoryManager.addCategoryEntry(
-          category,
-          component.constructor,
-          (component.flags & Ci.nsIClassInfo.SINGLETON ? "service," : "") +
-            component.contractID,
-          true,
-          true);
-      }
+          type
+      );
     }
   },
 

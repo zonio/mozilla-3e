@@ -3,13 +3,10 @@ calendar3e.jar:
 % content  calendar3e               %content/
 % locale   calendar3e   en-US       %locale/en-US/
 % skin     calendar3e   classic/1.0 %skin/
-% overlay chrome://lightning/content/messenger-overlay-toolbar.xul chrome://calendar3e/content/cal3eSync.xul
 % overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 % overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
 % overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
 
-  content/cal3eSync.js             (content/cal3eSync.js)
-  content/cal3eSync.xul            (content/cal3eSync.xul)
   content/calendarContextMenu.xul  (content/calendarContextMenu.xul)
   content/calendarCreation.js      (content/calendarCreation.js)
   content/calendarCreation.xul     (content/calendarCreation.xul)
