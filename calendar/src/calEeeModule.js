@@ -208,7 +208,7 @@ var components = {
       var interfaces = [
         Ci.calEeeIFreeBusyProvider,
         Ci.calIFreeBusyProvider,
-        //Ci.nsIObserver,
+        Ci.nsIObserver,
         Ci.nsIClassInfo
       ];
       count.value = interfaces.length;

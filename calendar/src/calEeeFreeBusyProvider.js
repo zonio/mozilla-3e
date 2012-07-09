@@ -37,6 +37,7 @@ calEeeFreeBusyProvider.classInfo = XPCOMUtils.generateCI({
   classDescription: "EEE calendar freebusy provider",
   interfaces: [Ci.calEeeIFreeBusyProvider,
                Ci.calIFreeBusyProvider,
+               Ci.nsIObserver,
                Ci.nsIClassInfo],
   flags: Ci.nsIClassInfo.SINGLETON
 });
@@ -56,6 +57,26 @@ calEeeFreeBusyProvider.prototype = {
   QueryInterface: XPCOMUtils.generateQI(
     calEeeFreeBusyProvider.classInfo.getInterfaces({})),
   classInfo: calEeeFreeBusyProvider.classInfo,
+
+  /**
+   * Calls {@link register} when Thunderbird starts.
+   *
+   * We're observing profile-after-change to recognize Thunderbird
+   * startup.  There's also calendar-startup-done but it actually
+   * occurs before profile-after-change from our components'
+   * perspective.
+   *
+   * @param {nsISupports} subject
+   * @param {String} topic
+   * @param {String} data
+   */
+  observe: function calEeeManager_observe(subject, topic, data) {
+    switch (topic) {
+    case 'profile-after-change':
+      this.register();
+      break;
+    }
+  },
 
   register: function calEeeFreeBusyProvider_register() {
     if (this._registered) {
