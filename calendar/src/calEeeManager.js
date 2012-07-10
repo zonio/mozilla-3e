@@ -23,6 +23,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 /**
@@ -137,7 +138,12 @@ calEeeManager.prototype = {
     }
 
     var listener = cal3e.createOperationListener(
-      function calEeeManager_create_onResult(methodQueue, result) {}
+      function calEeeManager_create_onResult(methodQueue, result) {
+        Services.prefs.setCharPref(
+          "calendar.registry." + calendar.id + ".uri",
+          calendar.uri.spec
+        );
+      }
     );
     this._generateUniqueUri(calendar);
     this._getClient().createCalendar(
@@ -250,9 +256,7 @@ calEeeManager.prototype = {
       this._getIdentity(calendar).email + "/" +
       generator.generateUUID().toString().substring(1, 36);
 
-    var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-      .getService(Components.interfaces.nsIIOService);
-    calendar.uri = ioService.newURI(uri, null, null);
+    calendar.uri = Services.io.newURI(uri, null, null);
   },
 
   _getIdentity: function calEeeManager_getIdentity(calendar) {

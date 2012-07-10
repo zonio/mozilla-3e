@@ -17,7 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 function cal3eCreation() {
