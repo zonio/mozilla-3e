@@ -21,7 +21,6 @@ Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 function cal3eCreation() {
   var originalUri = "";
-  var uriComputed = false;
   var ltn_initCustomizePage;
 
   /**
@@ -214,9 +213,6 @@ function cal3eCreation() {
     if ('eee' != calendarFormat.value) {
       return;
     }
-    if (uriComputed) {
-      return;
-    }
 
     var account = document.getElementById('calendar3e-account'),
     uri = "eee://";
@@ -235,10 +231,6 @@ function cal3eCreation() {
       }
     }
     uri += '/';
-
-    if (found) {
-      uriComputed = true;
-    }
 
     document.getElementById('calendar-uri').value = uri;
 
