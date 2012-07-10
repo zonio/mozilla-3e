@@ -175,8 +175,8 @@ function cal3eCreation() {
     accountRow.insertBefore(accountMenuList, null);
     accountRow.insertBefore(accountLabel, accountMenuList);
 
-    var notifications = document.getElementById('location-notifications');
-    notifications.parentNode.insertBefore(accountRow, notifications);
+    var cacheRow = document.getElementById('cache').parentNode;
+    cacheRow.parentNode.insertBefore(accountRow, cacheRow);
 
     // doesn't work when set before actually being in the document
     var stringBundle = document.getElementById('calendar3e-strings');
