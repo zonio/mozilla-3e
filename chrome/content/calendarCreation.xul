@@ -19,7 +19,8 @@
    - ***** END LICENSE BLOCK ***** -->
 
 <!DOCTYPE overlay [
-  <!ENTITY % cal3eCalendar SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+  <!ENTITY % cal3eCalendar
+    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
   %cal3eCalendar;
 ]>
 
