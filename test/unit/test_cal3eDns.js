@@ -17,6 +17,23 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://calendar3e/modules/cal3eDns.jsm");
+
+function test_successful_dns_resolv() {
+  var dns = new cal3eDns();
+  var [host, port] = dns.resolveServer("nightly.zonio.net");
+  do_check_eq(host, "nightly.zonio.net");
+  do_check_eq(port, 4445);
+}
+
+function test_default_response() {
+  var dns = new cal3eDns();
+  var [host, port] = dns.resolveServer("3e.nonexistent");
+  do_check_eq(host, "3e.nonexistent");
+  do_check_eq(port, 4444);
+}
+
 function run_test() {
-  do_check_true(true);
+  test_successful_dns_resolv();
+  test_default_response();
 }

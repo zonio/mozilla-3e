@@ -142,6 +142,15 @@ calEeeCalendar.prototype = {
     return uriParts[4] || uriParts[3];
   },
 
+  getProperty: function calEee_getProperty(name) {
+    switch (name) {
+    case "cache.supported":
+      return false;
+    }
+
+    return this.__proto__.__proto__.getProperty.apply(this, arguments);
+  },
+
   addItem: function calEee_addItem(item, listener) {
     return this.adoptItem(item.clone(), listener);
   },
@@ -437,18 +446,18 @@ calEeeCalendar.prototype = {
         var itemsCount = {};
         var items = parser.getItems(itemsCount);
         var idx = itemsCount.value;
+        var item;
         while (idx--) {
-          items[idx].calendar = calendar.superCalendar;
-          items[idx].makeImmutable();
+          item = items[idx].clone();
+          item.calendar = calendar.superCalendar;
+          item.makeImmutable();
 
           listener.onGetResult(calendar.superCalendar,
                                Cr.NS_OK,
                                Ci.calIEvent,
                                null,
                                1,
-                               [items[idx]]);
-
-          cal.processPendingEvent();
+                               [item]);
         }
 
         calendar.notifyOperationComplete(listener,
