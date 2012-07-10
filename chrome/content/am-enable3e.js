@@ -24,6 +24,8 @@ function amEnable3e() {
 
   this.onPreInit = function amEnable3e_onPreInit(account, accountValues) {
     identity = account.defaultIdentity;
+    document.getElementById("cal3e-enable-checkbox").checked =
+      identity.getBoolAttribute(cal3e.EEE_ENABLED_KEY) || false;
   }
 
   this.onSave = function amEnable3e_onSave() {
@@ -32,7 +34,6 @@ function amEnable3e() {
       document.getElementById("cal3e-enable-checkbox").checked
     );
   }
-
 }
 
 var onPreInit, onSave;
