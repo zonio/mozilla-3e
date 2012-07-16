@@ -260,21 +260,13 @@ calEeeManager.prototype = {
   },
 
   _getIdentity: function calEeeManager_getIdentity(calendar) {
-    var uriParts = calendar.uri.spec.split('/', 4),
-        eeeUser = uriParts[2];
+    var eeeUser = calendar.uri.spec.split('/', 4)[2];
 
-    var accountCollection = new cal3e.AccountCollection();
-    var accounts = accountCollection.filter(
-      cal3e.AccountCollection.filterEnabled);
-    var idx = accounts.length, identity = null;
-    while (idx--) {
-      if (eeeUser == accounts[idx].defaultIdentity.email) {
-        identity = accounts[idx].defaultIdentity;
-        break;
-      }
-    }
+    var identities = cal3e.IdentityCollection().
+      getEnabled().
+      findByEmail(eeeUser);
 
-    return identity;
+    return identities.length > 0 ? identities[0] : null ;
   },
 
   _getCalname: function calEeeManager_getCalname(calendar) {
