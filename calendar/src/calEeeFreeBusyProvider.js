@@ -94,7 +94,7 @@ calEeeFreeBusyProvider.prototype = {
     var clientListener = cal3e.createOperationListener(
       function calEee_getFreeBusy_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
-          throw Component.Exception();
+          throw Components.Exception();
         } else if (methodQueue.isPending) {
           return;
         }

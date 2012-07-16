@@ -141,7 +141,7 @@ calendarSubscription.prototype = {
       }
     }
     if (!menu || ('menupopup' != menu.tagName)) {
-      throw Component.Exception("Cannot find menupopup.");
+      throw Components.Exception("Cannot find menupopup.");
     }
     if (clear) {
       this._clearMenu(menu);
@@ -158,7 +158,7 @@ calendarSubscription.prototype = {
       }
     }
     if (!menu || ('menupopup' != menu.tagName)) {
-      throw Component.Exception("Cannot find menupopup.");
+      throw Components.Exception("Cannot find menupopup.");
     }
     while (menu.lastChild) {
       menu.removeChild(menu.lastChild);
@@ -174,7 +174,7 @@ calendarSubscription.prototype = {
       }
     }
     if (!tree || ('treechildren' != tree.tagName)) {
-      throw Component.Exception("Cannot find treechildren.");
+      throw Components.Exception("Cannot find treechildren.");
     }
   },
 
@@ -187,7 +187,7 @@ calendarSubscription.prototype = {
       }
     }
     if (!tree || ('treechildren' != tree.tagName)) {
-      throw Component.Exception("Cannot find treechildren.");
+      throw Components.Exception("Cannot find treechildren.");
     }
     while (tree.lastChild) {
       tree.removeChild(tree.lastChild);

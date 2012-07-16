@@ -189,7 +189,7 @@ calEeeCalendar.prototype = {
           result = result.QueryInterface(Ci.nsIXmlRpcFault);
           //TODO needs to be more precise
           if (13 /* COMPONENT_EXISTS */ != result.faultCode) {
-            throw Component.Exception();
+            throw Components.Exception();
           }
         } else if (methodQueue.isPending) {
           return;
@@ -261,7 +261,7 @@ calEeeCalendar.prototype = {
           result = result.QueryInterface(Ci.nsIXmlRpcFault);
           //TODO needs to be more precise
           if (13 /* COMPONENT_EXISTS */ != result.faultCode) {
-            throw Component.Exception();
+            throw Components.Exception();
           }
         } else if (methodQueue.isPending) {
           return;
@@ -330,7 +330,7 @@ calEeeCalendar.prototype = {
     var clientListener = cal3e.createOperationListener(
       function calEee_deleteItem_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
-          throw Component.Exception();
+          throw Components.Exception();
         } else if (methodQueue.isPending) {
           return;
         }
@@ -395,7 +395,7 @@ calEeeCalendar.prototype = {
     var clientListener = cal3e.createOperationListener(
       function calEee_getItems_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
-          throw Component.Exception();
+          throw Components.Exception();
         } else if (methodQueue.isPending) {
           return;
         }
