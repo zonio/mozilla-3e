@@ -112,6 +112,12 @@ function IdentityCollection() {
     return getAllIdentities().filter.apply(thisObject, arguments);
   }
 
+  function getEnabled() {
+    return filter(function(identity) {
+      return identity.getBoolAttribute(EEE_ENABLED_KEY);
+    });
+  }
+
   function init() {
     accountManager = Components.classes[
       "@mozilla.org/messenger/account-manager;1"
@@ -120,6 +126,7 @@ function IdentityCollection() {
     return {
       forEach: forEach,
       filter: filter,
+      getEnabled: getEnabled,
       toArray: getAllIdentities
     };
   }

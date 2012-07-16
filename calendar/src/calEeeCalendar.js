@@ -61,21 +61,14 @@ calEeeCalendar.prototype = {
   },
 
   _findAndSetIdentity: function calEee_findAndSetIdentity() {
-    var uriParts = this._uri.spec.split('/', 4),
-        eeeUser = uriParts[2];
+    var eeeUser = this._uri.spec.split('/', 4)[2];
+    var identities = cal3e.IdentityCollection().
+      getEnabled().
+      filter(function(identity) {
+        return eeeUser === identity.email;
+      });
 
-    var accountCollection = new cal3e.AccountCollection();
-    var accounts = accountCollection.filter(
-      cal3e.AccountCollection.filterEnabled);
-    var idx = accounts.length, identity = null;
-    while (idx--) {
-      if (eeeUser == accounts[idx].defaultIdentity.email) {
-        identity = accounts[idx].defaultIdentity;
-        break;
-      }
-    }
-
-    this._identity = identity;
+    this._identity = identities.length > 0 ? identity[0] : null ;
   },
 
   set uri(uri) {
