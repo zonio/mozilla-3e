@@ -116,13 +116,15 @@ function IdentityCollection() {
     accountManager = Components.classes[
       "@mozilla.org/messenger/account-manager;1"
     ].getService(Components.interfaces.nsIMsgAccountManager);
+
+    return {
+      forEach: forEach,
+      filter: filter,
+      toArray: getAllIdentities
+    };
   }
 
-  this.forEach = forEach;
-  this.filter = filter;
-  this.toArray = getAllIdentities;
-
-  init();
+  return init();
 }
 
 /**
@@ -134,7 +136,6 @@ function IdentityCollection() {
  * a unified way whather there are any changes in identities.
  */
 function IdentityObserver() {
-  var identityObserver = this;
   var PREF_BRANCH = "mail.identity";
   var accountManager;
   var accountObserver;
@@ -203,9 +204,11 @@ function IdentityObserver() {
 
     observers = [];
 
-    identityObserver.addObserver = addObserver;
-    identityObserver.removeObserver = removeObserver;
-    identityObserver.destroy = destroy;
+    return {
+      addObserver: addObserver,
+      removeObserver: removeObserver,
+      destroy: destroy
+    };
   }
 
   /**
@@ -215,9 +218,9 @@ function IdentityObserver() {
    * After call it, this object can't be used.
    */
   function destroy() {
-    delete identityObserver.addObserver;
-    delete identityObserver.removeObserver;
-    delete identityObserver.destroy;
+    delete this.addObserver;
+    delete this.removeObserver;
+    delete this.destroy;
 
     observers.forEach(removeObserver);
     observers = null;
@@ -232,7 +235,7 @@ function IdentityObserver() {
     accountObserver = null;
   }
 
-  init();
+  return init();
 }
 
 /**
