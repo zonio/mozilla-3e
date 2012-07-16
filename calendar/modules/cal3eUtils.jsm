@@ -332,23 +332,17 @@ function PrefObserver(notify) {
   };
 }
 
-var cal3e = {};
-cal3e.IdentityCollection = IdentityCollection;
-cal3e.IdentityObserver = IdentityObserver;
-
 /**
  * Wraps given function to object acting as calIGenericOperationListener
  *
  * @param {Function} onResult
  * @returns {calIGenericOperationListener}
  */
-cal3e.createOperationListener = function
-cal3eCreateOperationListener(onResult) {
+function createOperationListener(onResult) {
   return {
     QueryInterface: XPCOMUtils.generateQI([
       Components.interfaces.calIGenericOperationListener
     ]),
-
     onResult: onResult
   };
 }
@@ -357,15 +351,14 @@ cal3eCreateOperationListener(onResult) {
  * Debugging object with methods heavily inspired by ddump function
  * from session roaming extension.
  */
-cal3e.Debug = {};
-cal3e.Debug.enable = true;
-cal3e.Debug.dump = function Debug_dump(text) {
+Debug = {};
+Debug.enable = true;
+Debug.dump = function Debug_dump(text) {
   if (this.enable) {
     dump(text + "\n");
   }
 }
-cal3e.Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth,
-                                                   curDepth) {
+Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth, curDepth) {
   if (!this.enable) {
     return;
   }
@@ -397,7 +390,7 @@ cal3e.Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth,
     this.dump(name + " is empty");
   }
 }
-cal3e.Debug.dumpStack = function Debug_dumpStack() {
+Debug.dumpStack = function Debug_dumpStack() {
   if (!this.enable) {
     return;
   }
@@ -406,6 +399,11 @@ cal3e.Debug.dumpStack = function Debug_dumpStack() {
     dump(frame.filename + ":" + frame.lineNumber + "\n");
 };
 
+var cal3e = {};
+cal3e.IdentityCollection = IdentityCollection;
+cal3e.IdentityObserver = IdentityObserver;
+cal3e.createOperationListener = createOperationListener;
+cal3e.Debug = Debug;
 
 EXPORTED_SYMBOLS = [
   'cal3e'
