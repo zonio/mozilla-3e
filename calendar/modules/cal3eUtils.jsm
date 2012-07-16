@@ -17,292 +17,324 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-EXPORTED_SYMBOLS = [
-  'cal3e'
-];
+var EEE_ENABLED_KEY = 'eee_enabled';
 
 /**
- * Utility prototypes and functions for 3e calendar provider.
+ * Checks whether account can possibly become EEE account.
  *
- * @namespace
- * @todo implement as some kind of service.
+ * @returns {Boolean}
  */
-var cal3e = {};
-
-cal3e.EEE_ENABLED_KEY = 'eee_enabled';
-
-cal3e.AccountCollection = function cal3eAccountCollection() {
-  var accountManager = Cc["@mozilla.org/messenger/account-manager;1"]
-    .getService(Ci.nsIMsgAccountManager);
-  this._accountManager = accountManager;
-  this._accounts = [];
-  this._observers = [];
-
-  var prefService = Cc["@mozilla.org/preferences-service;1"].
-    getService(Ci.nsIPrefService);
-  this._prefBranch = prefService.getBranch("mail.identity");
-
-  this._loadAccounts();
-  accountManager.addIncomingServerListener(this);
+function isSupportedAccount(account) {
+  return account.incomingServer &&
+    ("nntp" != account.incomingServer.type) &&
+    ("none" != account.incomingServer.type);
 }
 
-cal3e.AccountCollection.filterAll =
-function cal3eAccountCollection_filterAll(account) {
-  return true;
+/**
+ * Returns account's identity wchich will be used for EEE requests.
+ *
+ * @returns {nsIMsgIdentity}
+ */
+function getIdentityFromAccount(account) {
+  return account.defaultIdentity;
 }
 
-cal3e.AccountCollection.filterEnabled =
-function cal3eAccountCollection_filterEnabled(account) {
-  return account.defaultIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
-}
-
-cal3e.AccountCollection.filterCandidate =
-function cal3eAccountCollection_filterCandidate(account) {
-  return !account.defaultIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY);
-}
-
-cal3e.AccountCollection.prototype = {
-
-  QueryInterface: XPCOMUtils.generateQI([
-    Ci.nsIIncomingServerListener,
-    Ci.nsIObserver
-  ]),
+/**
+ * Helper to access account's EEE identities or identities that can
+ * become EEE identities.
+ */
+function IdentityCollection() {
+  var accountManager;
 
   /**
-   * Adds collection observer.
+   * Sorts accounts based on their key.
    *
-   * @param {Object} observer
-   * @see notify
+   * @returns {Number}
    */
-  addObserver: function cal3eAccountCollection_addObserver(observer) {
-    if (0 <= this._observers.indexOf(observer)) {
-      return;
+  function sortAccounts(a, b) {
+    if (a.key == accountManager.defaultAccount.key) {
+      return -1;
     }
-    this._observers.push(observer);
-  },
-
-  /**
-   * Removes collection observer.
-   *
-   * @param {Object} observer
-   */
-  removeObserver: function cal3eAccountCollection_removeObserver(observer) {
-    var idx = this._observers.indexOf(observer);
-    if (0 > idx) {
-      return;
+    if (b.key == accountManager.defaultAccount.key) {
+      return  1;
     }
-    this._observers = this._observers.splice(idx, 1);
-  },
-
-  /**
-   * Notifies all observers that something in collection might change.
-   *
-   * Method name onAccountsChange is called on observer. But observer
-   * doesn't have any information which account changed, what changed
-   * on it or whether any account was removed or added.
-   */
-  notify: function cal3eAccountCollection_notify() {
-    var observers = this._observers,
-        observer, idx = observers.length;
-    while (idx--) {
-      observer = observers[idx];
-      if ('function' !== typeof observer.onAccountsChange) {
-        continue;
-      }
-
-      observer.onAccountsChange(this);
-    }
-  },
-
-  /**
-   * Filters accounts for which callback returns false value from
-   * collection.
-   * 
-   * @param {Function} callback
-   * @param {Object} thisObject used as this inside callback
-   */
-  filter: function cal3eAccountCollection_filter(callback, thisObject) {
-    var filtered = [];
-    var accounts = this._accounts,
-        account, idx = -1, limit = accounts.length;
-    while (++idx < limit) {
-      account = accounts[idx];
-      if (callback.call(thisObject, account, idx, this)) {
-        filtered.push(account);
-      }
-    }
-
-    return filtered;
-  },
-
-  /**
-   * Iterates over all accounts in collection passing each to callback.
-   *
-   * @param {Function} callback
-   * @param {Object} thisObject used as this inside callback
-   */
-  forEach: function cal3eAccountCollection_forEach(callback, thisObject) {
-    var accounts = this._accounts,
-        idx = -1, limit = accounts.length;
-    while (++idx < limit) {
-      callback.call(thisObject, accounts[idx], idx, this);
-    }
-  },
-
-  /**
-   * Initially loads accounts registred in Thunderbird.
-   */
-  _loadAccounts: function cal3eAccountCollection_loadAccounts() {
-    var accountManager = this._accountManager;
-    var accounts = [
-      a for each (a in fixIterator(accountManager.accounts, Ci.nsIMsgAccount))
-    ];
-    //XXX incomingServer server check due to 41133
-    this._accounts = accounts.filter(function (account) {
-      return account.incomingServer &&
-        this._isSupportedIncomingServer(account.incomingServer);
-    }, this);
-
-    this._sortAccounts();
-
-    this._accounts.forEach(function (account) {
-      this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).addObserver(
-        account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
-        this,
-        false);
-    }, this);
-  },
-
-  /**
-   * Adds account to collection and adds observer to watch for EEE
-   * enabled status.
-   *
-   * @param {nsIMsgAccount} account
-   */
-  _addAccount: function cal3eAccountCollection_addAccount(account) {
-    this._accounts.push(account);
-    //XXX too lazy
-    this._sortAccounts();
-    this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).addObserver(
-      account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
-      this,
-      false);
-    this.notify();
-  },
-
-  /**
-   * Removes account from collection and removes observer from
-   * watching for EEE enabled status.
-   *
-   * @param {nsIMsgAccount} account
-   */
-  _removeAccount: function cal3eAccountCollection_removeAccount(account) {
-    var idx = this._accounts.indexOf(account);
-    if (0 > idx) {
-      return;
-    }
-
-    this._accounts.splice(idx, 1);
-    this._prefBranch.QueryInterface(Ci.nsIPrefBranch2).removeObserver(
-      account.defaultIdentity.key + "." + cal3e.EEE_ENABLED_KEY,
-      this);
-    this.notify();
-  },
-
-  /**
-   * Sorts accounts in collection by their keys.
-   */
-  _sortAccounts: function cal3eAccountCollection_sortAccounts() {
-    var accountManager = this._accountManager;
-    function sortAccounts(a, b) {
-      if (a.key == accountManager.defaultAccount.key) {
-        return -1;
-      }
-      if (b.key == accountManager.defaultAccount.key) {
-        return  1;
-      }
-      return 0;
-    }
-
-    this._accounts.sort(sortAccounts);
-  },
-
-  /**
-   * Checks whether given account as owner of given server can be used
-   * as EEE account.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  _isSupportedIncomingServer:
-  function cal3eAccountCollection_isSupportedIncomingServer(server) {
-    return ("nntp" != server.type) && ("none" != server.type);
-  },
-
-  /**
-   * Notifies this preference handler that accounts probably changed.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerLoaded: function cal3eAccountCollection_onServerLoaded(server) {
-    if (!this._isSupportedIncomingServer(server)) {
-      return;
-    }
-    this._addAccount(this._accountManager.FindAccountForServer(server));
-  },
-
-  /**
-   * Notifies this preference handler that accounts probably changed.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerUnloaded: function cal3eAccountCollection_onServerUnloaded(server) {
-    if (!this._isSupportedIncomingServer(server)) {
-      return;
-    }
-    this._removeAccount(this._accountManager.FindAccountForServer(server));
-  },
-
-  /**
-   * Notifies this preference handler that accounts parameters
-   * probably changed and their representation should be rebuild.
-   *
-   * Implemented according to nsIIncomingServerListener.
-   *
-   * @param {nsIMsgIncomingServer} server
-   */
-  onServerChanged: function cal3eAccountCollection_onServerChanged(server) {
-    this.notify();
-  },
-
-  /**
-   * Notifies this preference handler that accounts parameters
-   * probably changed and their representation should be rebuild.
-   *
-   * Implemented according to nsIIObserver.
-   *
-   * @param {nsISupports} subject pref branch is expected
-   * @param {String} topic
-   * @param {String} data name of changed preference in pref branch
-   */
-  observe: function cal3eAccountCollection_observer(subject, topic, data) {
-    switch (topic) {
-    case 'nsPref:changed':
-      this.notify();
-      break;
-    }
+    return 0;
   }
 
+  /**
+   * Returns all accounts (including those not supporting EEE).
+   *
+   * @return {Array}
+   */
+  function loadAccounts() {
+    return [
+      a for each (
+        a in fixIterator(
+          accountManager.accounts, Components.interfaces.nsIMsgAccount
+        )
+      )
+    ];
+  }
+
+  /**
+   * Loads all accounts, filters supported ones, sorts them and
+   * retrieves all identities.
+   */
+  function getAllIdentities() {
+    return loadAccounts().
+      filter(isSupportedAccount).
+      sort(sortAccounts).
+      map(getIdentityFromAccount);
+  }
+
+  /**
+   * Applies callback on each identity.
+   *
+   * It works in the same way as standard JavaScript Array#forEach.
+   */
+  function forEach(callback, thisObject) {
+    return getAllIdentities().forEach.apply(thisObject, arguments);
+  }
+
+  /**
+   * Applies callback on each identity and returns only those for
+   * which callback returned true.
+   *
+   * It works in the same way as standard JavaScript Array#filter.
+   *
+   * @returns {Array}
+   */
+  function filter(callback, thisObject) {
+    return getAllIdentities().filter.apply(thisObject, arguments);
+  }
+
+  function init() {
+    accountManager = Components.classes[
+      "@mozilla.org/messenger/account-manager;1"
+    ].getService(Components.interfaces.nsIMsgAccountManager);
+  }
+
+  this.forEach = forEach;
+  this.filter = filter;
+  this.toArray = getAllIdentities;
+
+  init();
 }
+
+/**
+ * Observes changes on identities.
+ *
+ * This observer starts observing global state automatically so
+ * there's no need to register it somewhere.  It can be observed
+ * itself.  This way it acts as a convenient proxy that can notify in
+ * a unified way whather there are any changes in identities.
+ */
+function IdentityObserver() {
+  var identityObserver = this;
+  var PREF_BRANCH = "mail.identity";
+  var accountManager;
+  var accountObserver;
+  var prefBranch;
+  var prefObserver;
+  var observers;
+
+  /**
+   * Adds the observer that will be notified when there changes in
+   * identities.
+   *
+   * @param {Function} observer receive one parameter {@link
+   * IdentityChange}
+   */
+  function addObserver(observer) {
+    observers.push(observer);
+  }
+
+  /**
+   * Removes the observer from the list of observers that gets
+   * notified when identities change.
+   *
+   * @param {Function} observer function that was registered with
+   * {@link addObserver}
+   * @throws {Error} when observer not previously registered is
+   * requested to remove
+   */
+  function removeObserver(observer) {
+    var idx = observers.indexOf(observer);
+    if (idx < 0) {
+      throw new Error("Unknown observer to remove.");
+    }
+
+    observers.splice(idx, 1);
+  }
+
+  /**
+   * Notifies all observer about change of certain identity.
+   *
+   * @param {String} type one of "create", "update", "delete"
+   * @param {nsIMsgIdentity} identity
+   */
+  function notify(type, identity) {
+    observers.forEach(function(observer) {
+      observer(Event(type, identity));
+    });
+  }
+
+  /**
+   * Registers observers of global state which can affect identities.
+   *
+   * It registeres incoming server observer on account manager and
+   * observer on preference branch.
+   */
+  function init() {
+    accountObserver = AccountObserver(notify);
+    prefObserver = PrefObserver(notify);
+
+    accountManager = Components.classes[
+      "@mozilla.org/messenger/account-manager;1"
+    ].getService(Components.interfaces.nsIMsgAccountManager);
+    accountManager.addIncomingServerListener(accountObserver);
+
+    prefBranch = Services.prefs.getBranch(PREF_BRANCH);
+    prefBranch.addObserver("", prefObserver, false);
+
+    observers = [];
+
+    identityObserver.addObserver = addObserver;
+    identityObserver.removeObserver = removeObserver;
+    identityObserver.destroy = destroy;
+  }
+
+  /**
+   * Removes all observers and listeners registered by {@link init}
+   * and cleans up after init.
+   *
+   * After call it, this object can't be used.
+   */
+  function destroy() {
+    delete identityObserver.addObserver;
+    delete identityObserver.removeObserver;
+    delete identityObserver.destroy;
+
+    observers.forEach(removeObserver);
+    observers = null;
+
+    prefBranch.removeObserver("", prefObserver);
+    prefBranch = null;
+
+    accountManager.removeIncomingServerListener(accountObserver);
+    accountManager = null;
+
+    prefObserver = null;
+    accountObserver = null;
+  }
+
+  init();
+}
+
+/**
+ * Returns convenient observer acting as nsIIncomingServerListener.
+ *
+ * It will call notify function on every change it registers for any
+ * server belonging to supported account ({@link isSupportedAccount}).
+ * The notify function receives two parameters:
+ * - {@link String} type: one of "create", "update", or "delete"
+ * - {@link nsIMsgIdentity} identity: identity that can support EEE
+ *   calendar of the account that changed
+ *
+ * @param {Function} notify
+ * @returns {nsIIncomingServerListener}
+ */
+function AccountObserver(notify) {
+  var accountManager = Components.classes[
+    "@mozilla.org/messenger/account-manager;1"
+  ].getService(Components.interfaces.nsIMsgAccountManager);
+
+  return {
+    "QueryInterface": XPCOMUtils.generateQI([
+      Components.interfaces.nsIIncomingServerListener
+    ]),
+    "onServerLoaded": function(server) {
+      if (isSupportedAccount(accountManager.FindAccountForServer(server))) {
+        return;
+      }
+
+      notify(
+        "create",
+        getIdentityFromAccount(accountManager.FindAccountForServer(server))
+      );
+    },
+    "onServerUnloaded": function(server) {
+      if (isSupportedAccount(accountManager.FindAccountForServer(server))) {
+        return;
+      }
+
+      notify(
+        "delete",
+        getIdentityFromAccount(accountManager.FindAccountForServer(server))
+      );
+    },
+    "onServerChanged": function(server) {
+      if (isSupportedAccount(accountManager.FindAccountForServer(server))) {
+        return;
+      }
+
+      notify(
+        "update",
+        getIdentityFromAccount(accountManager.FindAccountForServer(server))
+      );
+    }
+  }
+}
+
+/**
+ * Returns convenient observer acting as nsIObserver.
+ *
+ * It will call notify function on every change it registers for any
+ * identity which EEE enabled settings changed.
+ * The notify function receives two parameters:
+ * - {@link String} type: always "update"
+ * - {@link nsIMsgIdentity} identity: identity that can support EEE
+ *   calendar and changed
+ *
+ * @param {Function} notify
+ * @returns {nsIObserver}
+ */
+function PrefObserver(notify) {
+  var accountManager = Components.classes[
+    "@mozilla.org/messenger/account-manager;1"
+  ].getService(Components.interfaces.nsIMsgAccountManager);
+
+  return {
+    "QueryInterface": XPCOMUtils.generateQI([
+      Components.interfaces.nsIObserver
+    ]),
+    "observe": function(prefBranch, topic, prefName) {
+      if (topic !== "nsPref:changed") {
+        return;
+      }
+
+      var parts = prefName.split(".");
+      if ((parts[2] !== EEE_ENABLED_KEY) || (parts.length !== 3)) {
+        return;
+      }
+
+      var identity = accountManager.getIdentity(parts[1]);
+      if (!identity.getBoolAttribute(EEE_ENABLED_KEY)) {
+        return;
+      }
+
+      notify("update", identity);
+    }
+  };
+}
+
+var cal3e = {};
+cal3e.IdentityCollection = IdentityCollection;
+cal3e.IdentityObserver = IdentityObserver;
 
 /**
  * Wraps given function to object acting as calIGenericOperationListener
@@ -314,7 +346,7 @@ cal3e.createOperationListener = function
 cal3eCreateOperationListener(onResult) {
   return {
     QueryInterface: XPCOMUtils.generateQI([
-      Ci.calIGenericOperationListener
+      Components.interfaces.calIGenericOperationListener
     ]),
 
     onResult: onResult
@@ -373,3 +405,8 @@ cal3e.Debug.dumpStack = function Debug_dumpStack() {
   for (var frame = Components.stack; frame; frame = frame.caller)
     dump(frame.filename + ":" + frame.lineNumber + "\n");
 };
+
+
+EXPORTED_SYMBOLS = [
+  'cal3e'
+];
