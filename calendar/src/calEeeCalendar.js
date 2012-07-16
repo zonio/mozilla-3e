@@ -64,9 +64,7 @@ calEeeCalendar.prototype = {
     var eeeUser = this._uri.spec.split('/', 4)[2];
     var identities = cal3e.IdentityCollection().
       getEnabled().
-      filter(function(identity) {
-        return eeeUser === identity.email;
-      });
+      findByEmail(eeeUser);
 
     this._identity = identities.length > 0 ? identity[0] : null ;
   },

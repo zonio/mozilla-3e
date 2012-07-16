@@ -98,7 +98,7 @@ calEeeFreeBusyProvider.prototype = {
         } else if (methodQueue.isPending) {
           return;
         }
-        if (Cr.NS_OK !== methodQueue.status) {
+        if (Components.results.NS_OK !== methodQueue.status) {
           listener.onResult(null, null);
           return;
         }
@@ -166,7 +166,7 @@ calEeeFreeBusyProvider.prototype = {
       }
     );
 
-    var organizer = this._getOrganizer();
+    var organizer = this._getEeeOrganizer();
     if (!organizer) {
       listener.onResult(null, null);
       return;
@@ -178,15 +178,11 @@ calEeeFreeBusyProvider.prototype = {
       return;
     }
 
-    if (!organizer.defaultIdentity.getBoolAttribute(cal3e.EEE_ENABLED_KEY)) {
-      listener.onResult(null, null);
-      return;
-    }
-
-    Cc["@zonio.net/calendar3e/client-service;1"].
-      getService(Ci.calEeeIClient).
+    Components.classes[
+      "@zonio.net/calendar3e/client-service;1"
+    ].getService(Components.interfaces.calEeeIClient).
       freeBusy(
-        organizer.defaultIdentity,
+        organizer,
         clientListener,
         attendee,
         start.nativeTime,
@@ -195,20 +191,20 @@ calEeeFreeBusyProvider.prototype = {
       );
   },
 
-  _getOrganizer: function () {
-    var organizerEmail = Cc["@mozilla.org/appshell/window-mediator;1"].
-      getService(Ci.nsIWindowMediator).
+  _getEeeOrganizer: function () {
+    var organizerEmail = Components.classes[
+      "@mozilla.org/appshell/window-mediator;1"
+    ].getService(Components.interfaces.nsIWindowMediator).
       getMostRecentWindow("Calendar:EventDialog:Attendees").
       document.getElementById("attendees-list").
       organizer.id;
 
-    var accountCollection = new cal3e.AccountCollection();
-    var accounts = accountCollection.filter(function (a) {
-      return a.defaultIdentity.email == organizerEmail;
-    });
+    var identities = cal3e.IdentityCollection().
+      getEnabled().
+      findByEmail(organizerEmail);
 
-    return accounts.length > 0 ?
-      accounts[0] :
+    return identities.length > 0 ?
+      identities[0] :
       null ;
   },
 
