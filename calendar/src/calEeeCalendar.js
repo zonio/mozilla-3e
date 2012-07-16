@@ -66,7 +66,7 @@ calEeeCalendar.prototype = {
       getEnabled().
       findByEmail(eeeUser);
 
-    this._identity = identities.length > 0 ? identity[0] : null ;
+    this._identity = identities.length > 0 ? identities[0] : null ;
   },
 
   set uri(uri) {
