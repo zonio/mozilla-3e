@@ -46,6 +46,8 @@ function getIdentityFromAccount(account) {
 /**
  * Helper to access account's EEE identities or identities that can
  * become EEE identities.
+ *
+ * @returns {Object}
  */
 function IdentityCollection() {
   var accountManager;
@@ -112,9 +114,25 @@ function IdentityCollection() {
     return getAllIdentities().filter.apply(thisObject, arguments);
   }
 
+  /**
+   * Returns identities which are EEE enabled only.
+   *
+   * @return {Array}
+   */
   function getEnabled() {
     return filter(function(identity) {
       return identity.getBoolAttribute(EEE_ENABLED_KEY);
+    });
+  }
+
+  /**
+   * Returns identities which have given email.
+   *
+   * @return {Array}
+   */
+  function findByEmail(email) {
+    return filter(function(identity) {
+      return email === identity.email;
     });
   }
 
@@ -127,6 +145,7 @@ function IdentityCollection() {
       forEach: forEach,
       filter: filter,
       getEnabled: getEnabled,
+      findByEmail: findByEmail,
       toArray: getAllIdentities
     };
   }
@@ -141,6 +160,8 @@ function IdentityCollection() {
  * there's no need to register it somewhere.  It can be observed
  * itself.  This way it acts as a convenient proxy that can notify in
  * a unified way whather there are any changes in identities.
+ *
+ * @returns {Object}
  */
 function IdentityObserver() {
   var PREF_BRANCH = "mail.identity";
