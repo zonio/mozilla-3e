@@ -71,23 +71,18 @@ function cal3eCreation() {
       menuPopup.removeChild(menuPopup.lastChild);
     }
 
-    var accountCollection = new cal3e.AccountCollection();
-    var accounts = accountCollection.filter(
-      cal3e.AccountCollection.filterEnabled
-    );
-    var idx = accounts.length;
-    var account, identity, item;
-    while (idx--) {
-      account = accounts[idx];
-      identity = account.defaultIdentity;
-      item = calendar3eAccounts.appendItem(
-        identity.fullName + " <" + identity.email + ">",
-        identity.key);
+    cal3e.IdentityCollection().
+      getEnabled().
+      forEach(function(identity) {
+        var item = calendar3eAccounts.appendItem(
+          identity.fullName + " <" + identity.email + ">",
+          identity.key
+        );
 
-      if (identity.key == selectedIdentity) {
-        calendar3eAccounts.selectedItem = item;
-      }
-    }
+        if (identity.key == selectedIdentity) {
+          calendar3eAccounts.selectedItem = item;
+        }
+      });
   }
 
   /**
