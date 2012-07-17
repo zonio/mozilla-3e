@@ -99,7 +99,9 @@ function IdentityCollection() {
    * It works in the same way as standard JavaScript Array#forEach.
    */
   function forEach(callback, context) {
-    return getAllIdentities().forEach(callback, context);
+    return extendArray(
+      getIdentitiesFromContext(this).forEach(callback, context)
+    );
   }
 
   /**
@@ -111,7 +113,9 @@ function IdentityCollection() {
    * @returns {Array}
    */
   function filter(callback, context) {
-    return getAllIdentities().filter(callback, context);
+    return extendArray(
+      getIdentitiesFromContext(this).filter(callback, context)
+    );
   }
 
   /**
@@ -120,7 +124,7 @@ function IdentityCollection() {
    * @return {Array}
    */
   function getEnabled() {
-    return filter(function(identity) {
+    return filter.call(this, function(identity) {
       return identity.getBoolAttribute(EEE_ENABLED_KEY);
     });
   }
@@ -131,9 +135,37 @@ function IdentityCollection() {
    * @return {Array}
    */
   function findByEmail(email) {
-    return filter(function(identity) {
+    return filter.call(this, function(identity) {
       return email === identity.email;
     });
+  }
+
+  /**
+   * Extends array which is result of forEach and filter calls with
+   * our custom filters.
+   *
+   * @param {nsIMsgIdentity[]} array
+   * @return {nsIMsgIdentity[]}
+   */
+  function extendArray(array) {
+    array.getEnabled = getEnabled;
+    array.findByEmail = findByEmail;
+
+    return array;
+  }
+
+  /**
+   * Returns an array of identities based on given context.
+   *
+   * This is a helper for iterator methods like {@link forEach} which
+   * can be called from array modified by {@link extendArray} or from
+   * what {@link IdentityCollection} returns.
+   *
+   * @param {Array|Object} context this from iterator methods
+   * @returns {nsIMsgIdentity[]}
+   */
+  function getIdentitiesFromContext(context) {
+    return context instanceof Array ? context : getAllIdentities() ;
   }
 
   function init() {
@@ -145,8 +177,7 @@ function IdentityCollection() {
       forEach: forEach,
       filter: filter,
       getEnabled: getEnabled,
-      findByEmail: findByEmail,
-      toArray: getAllIdentities
+      findByEmail: findByEmail
     };
   }
 
@@ -227,7 +258,9 @@ function IdentityObserver() {
     ].getService(Components.interfaces.nsIMsgAccountManager);
     accountManager.addIncomingServerListener(accountObserver);
 
-    prefBranch = Services.prefs.getBranch(PREF_BRANCH);
+    prefBranch = Services.prefs.getBranch(PREF_BRANCH).QueryInterface(
+      Components.interfaces.nsIPrefBranch2
+    );
     prefBranch.addObserver("", prefObserver, false);
 
     observers = [];
