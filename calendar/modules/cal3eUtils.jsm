@@ -463,12 +463,13 @@ Debug.dumpStack = function Debug_dumpStack() {
     dump(frame.filename + ":" + frame.lineNumber + "\n");
 };
 
-var cal3e = {};
-cal3e.IdentityCollection = IdentityCollection;
-cal3e.IdentityObserver = IdentityObserver;
-cal3e.createOperationListener = createOperationListener;
-cal3e.Debug = Debug;
-
+var cal3e = {
+  "EEE_ENABLED_KEY": EEE_ENABLED_KEY,
+  "IdentityCollection": IdentityCollection,
+  "IdentityObserver": IdentityObserver,
+  "createOperationListener": createOperationListener,
+  "Debug": Debug
+};
 EXPORTED_SYMBOLS = [
   'cal3e'
 ];
