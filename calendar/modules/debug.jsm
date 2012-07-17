@@ -21,14 +21,15 @@
  * Debugging object with methods heavily inspired by ddump function
  * from session roaming extension.
  */
-Debug = {};
-Debug.enable = true;
-Debug.dump = function Debug_dump(text) {
+cal3eDebug = {};
+cal3eDebug.enable = true;
+cal3eDebug.dump = function Debug_dump(text) {
   if (this.enable) {
     dump(text + "\n");
   }
 }
-Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth, curDepth) {
+cal3eDebug.dumpObject =
+function Debug_dumpObject(obj, name, maxDepth, curDepth) {
   if (!this.enable) {
     return;
   }
@@ -60,7 +61,7 @@ Debug.dumpObject = function Debug_dumpObject(obj, name, maxDepth, curDepth) {
     this.dump(name + " is empty");
   }
 }
-Debug.dumpStack = function Debug_dumpStack() {
+cal3eDebug.dumpStack = function Debug_dumpStack() {
   if (!this.enable) {
     return;
   }
@@ -69,9 +70,6 @@ Debug.dumpStack = function Debug_dumpStack() {
     dump(frame.filename + ":" + frame.lineNumber + "\n");
 };
 
-var cal3e = {
-  "Debug": Debug
-};
 EXPORTED_SYMBOLS = [
-  'cal3e'
+  'cal3eDebug'
 ];
