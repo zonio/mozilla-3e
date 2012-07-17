@@ -199,7 +199,7 @@ function Collection() {
 function Observer(options) {
   options = options || {};
 
-  var PREF_BRANCH = "mail.identity";
+  var PREF_BRANCH = "mail.identity.";
   var accountManager;
   var accountObserver;
   var prefBranch;
@@ -387,11 +387,11 @@ function PrefObserver(notify) {
       }
 
       var parts = prefName.split(".");
-      if ((parts[2] !== EEE_ENABLED_KEY) || (parts.length !== 3)) {
+      if ((parts.length !== 2) || (parts[1] !== EEE_ENABLED_KEY)) {
         return;
       }
 
-      notify("update", accountManager.getIdentity(parts[1]));
+      notify("update", accountManager.getIdentity(parts[0]));
     }
   };
 }
