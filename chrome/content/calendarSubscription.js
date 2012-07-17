@@ -31,6 +31,7 @@ function calendarSubscription() {
   this._providerMap = {};
   this._providerToTreeItemMap = {};
 
+  this.onIdentityChange();
   this.load();
 }
 
