@@ -391,12 +391,7 @@ function PrefObserver(notify) {
         return;
       }
 
-      var identity = accountManager.getIdentity(parts[1]);
-      if (!identity.getBoolAttribute(EEE_ENABLED_KEY)) {
-        return;
-      }
-
-      notify("update", identity);
+      notify("update", accountManager.getIdentity(parts[1]));
     }
   };
 }
