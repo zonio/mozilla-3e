@@ -18,18 +18,19 @@
  * ***** END LICENSE BLOCK ***** */
 
 function calendarSubscription() {
-  this._client = Cc["@zonio.net/calendar3e/client-service;1"].
-    getService(Components.interfaces.calEeeIClient);
-  this._accountCollection = new cal3e.AccountCollection();
-  this._accountCollection.addObserver(this);
-  this._accountManager = Cc["@mozilla.org/messenger/account-manager;1"].
-    getService(Components.interfaces.nsIMsgAccountManager);
+  this._client = Components.classes[
+    "@zonio.net/calendar3e/client-service;1"
+  ].getService(Components.interfaces.calEeeIClient);
+  this._identityObserver = new cal3e.IdentityObserver();
+  this._identityObserver.addObserver(this.onIdentityChange.bind(this));
+  this._accountManager = Components.classes[
+    "@mozilla.org/messenger/account-manager;1"
+  ].getService(Components.interfaces.nsIMsgAccountManager);
   this._stringBundle = document.getElementById('calendar3e-strings');
   this._subscriberElement = document.getElementById('subscriber-menulist');
   this._providerMap = {};
   this._providerToTreeItemMap = {};
 
-  this._accountCollection.notify();
   this.load();
 }
 
@@ -103,25 +104,21 @@ calendarSubscription.prototype = {
   loadCalendar: function calendarSubscription_loadCalendar() {
   },
 
-  onAccountsChange: function calendarSubscription_onAccountsChange() {
-    var selectedIdentity = this._subscriberElement.value;
+  onIdentityChange: function calendarSubscription_onIdentityChange() {
     this._clearMenu(this._subscriberElement);
 
-    var subscribers = this._accountCollection.filter(
-      cal3e.AccountCollection.filterEnabled);
-    var idx = subscribers.length;
-    var account, identity, item;
-    while (idx--) {
-      account = subscribers[idx];
-      identity = account.defaultIdentity;
-      item = this._subscriberElement.appendItem(
-        identity.fullName + " <" + identity.email + ">",
-        identity.key);
+    cal3e.IdentityCollection().
+      getEnabled().
+      forEach(function(identity) {
+        var item = this._subscriberElement.appendItem(
+          identity.fullName + " <" + identity.email + ">",
+          identity.key
+        );
 
-      if (identity.key == selectedIdentity) {
-        this._subscriberElement.selectedItem = item;
-      }
-    }
+        if (identity.key == this._subscriberElement.value) {
+          this._subscriberElement.selectedItem = item;
+        }
+      });
   },
 
   onProvidersLoaded:
@@ -243,7 +240,8 @@ calendarSubscription.prototype = {
   },
 
   finalize: function calendarSubscription_finalize() {
-    this._accountCollection.removeObserver(this);
+    this._identityObserver.destroy();
+    this._identityObserver = null;
   }
 
 }
