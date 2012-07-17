@@ -49,7 +49,7 @@ function getIdentityFromAccount(account) {
  *
  * @returns {Object}
  */
-function IdentityCollection() {
+function Collection() {
   var accountManager;
 
   /**
@@ -159,7 +159,7 @@ function IdentityCollection() {
    *
    * This is a helper for iterator methods like {@link forEach} which
    * can be called from array modified by {@link extendArray} or from
-   * what {@link IdentityCollection} returns.
+   * what {@link Collection} returns.
    *
    * @param {Array|Object} context this from iterator methods
    * @returns {nsIMsgIdentity[]}
@@ -194,7 +194,7 @@ function IdentityCollection() {
  *
  * @returns {Object}
  */
-function IdentityObserver() {
+function Observer() {
   var PREF_BRANCH = "mail.identity";
   var accountManager;
   var accountObserver;
@@ -396,11 +396,11 @@ function PrefObserver(notify) {
   };
 }
 
-var cal3e = {
+var cal3eIdentity = {
   "EEE_ENABLED_KEY": EEE_ENABLED_KEY,
-  "IdentityCollection": IdentityCollection,
-  "IdentityObserver": IdentityObserver
+  "Collection": Collection,
+  "Observer": Observer
 };
 EXPORTED_SYMBOLS = [
-  'cal3e'
+  'cal3eIdentity'
 ];

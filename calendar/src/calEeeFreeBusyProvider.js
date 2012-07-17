@@ -26,7 +26,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar/modules/calIteratorUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
-Cu.import("resource://calendar3e/modules/identities.jsm");
+Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
 
 
@@ -200,7 +200,7 @@ calEeeFreeBusyProvider.prototype = {
       document.getElementById("attendees-list").
       organizer.id;
 
-    var identities = cal3e.IdentityCollection().
+    var identities = cal3eIdentity.Collection().
       getEnabled().
       findByEmail(organizerEmail);
 

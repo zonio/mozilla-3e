@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/identities.jsm");
+Components.utils.import("resource://calendar3e/modules/identity.jsm");
 
 function cal3eCreation() {
   var originalUri = "";
@@ -71,7 +71,7 @@ function cal3eCreation() {
       menuPopup.removeChild(menuPopup.lastChild);
     }
 
-    cal3e.IdentityCollection().
+    cal3eIdentity.Collection().
       getEnabled().
       forEach(function(identity) {
         var item = calendar3eAccounts.appendItem(
@@ -208,7 +208,7 @@ function cal3eCreation() {
       return;
     }
 
-    var identities = cal3e.IdentityCollection().
+    var identities = cal3eIdentity.Collection().
       getEnabled().
       findByEmail(document.getElementById('calendar3e-account').value);
 

@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/identities.jsm");
+Components.utils.import("resource://calendar3e/modules/identity.jsm");
 
 function amEnable3e() {
   var identity;
@@ -25,12 +25,12 @@ function amEnable3e() {
   this.onPreInit = function amEnable3e_onPreInit(account, accountValues) {
     identity = account.defaultIdentity;
     document.getElementById("cal3e-enable-checkbox").checked =
-      identity.getBoolAttribute(cal3e.EEE_ENABLED_KEY) || false;
+      identity.getBoolAttribute(cal3eIdentity.EEE_ENABLED_KEY) || false;
   }
 
   this.onSave = function amEnable3e_onSave() {
     identity.setBoolAttribute(
-      cal3e.EEE_ENABLED_KEY,
+      cal3eIdentity.EEE_ENABLED_KEY,
       document.getElementById("cal3e-enable-checkbox").checked
     );
   }

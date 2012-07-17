@@ -24,7 +24,7 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://calendar3e/modules/identities.jsm");
+Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
 
 /**
@@ -263,7 +263,7 @@ calEeeManager.prototype = {
   _getIdentity: function calEeeManager_getIdentity(calendar) {
     var eeeUser = calendar.uri.spec.split('/', 4)[2];
 
-    var identities = cal3e.IdentityCollection().
+    var identities = cal3eIdentity.Collection().
       getEnabled().
       findByEmail(eeeUser);
 

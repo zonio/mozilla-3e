@@ -23,7 +23,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://calendar3e/modules/identities.jsm");
+Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
 
 /**
@@ -98,7 +98,7 @@ calEeeSynchronizationService.prototype = {
       knownIdentities[identityKey] = true;
     }
 
-    var identities = cal3e.IdentityCollection().
+    var identities = cal3eIdentity.Collection().
       getEnabled().
       filter(function(identity) {
         return !knownIdentities[identity.key];
@@ -153,7 +153,7 @@ calEeeSynchronizationService.prototype = {
       return this;
     }
     this._registered = true;
-    this._identityObserver = cal3e.IdentityObserver()
+    this._identityObserver = cal3eIdentity.Observer()
     this._identityObserver.addObserver(this.onIdentityChange.bind(this));
     this.onIdentityChange();
 

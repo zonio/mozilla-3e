@@ -25,7 +25,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
-Cu.import("resource://calendar3e/modules/identities.jsm");
+Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
 
 /**
@@ -63,7 +63,7 @@ calEeeCalendar.prototype = {
 
   _findAndSetIdentity: function calEee_findAndSetIdentity() {
     var eeeUser = this._uri.spec.split('/', 4)[2];
-    var identities = cal3e.IdentityCollection().
+    var identities = cal3eIdentity.Collection().
       getEnabled().
       findByEmail(eeeUser);
 
