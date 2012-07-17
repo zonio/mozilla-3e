@@ -17,11 +17,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://calendar3e/modules/identity.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
+
 function calendarSubscription() {
   this._client = Components.classes[
     "@zonio.net/calendar3e/client-service;1"
   ].getService(Components.interfaces.calEeeIClient);
-  this._identityObserver = new cal3e.IdentityObserver();
+  this._identityObserver = cal3eIdentity.Observer();
   this._identityObserver.addObserver(this.onIdentityChange.bind(this));
   this._accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
@@ -80,7 +83,7 @@ calendarSubscription.prototype = {
        null],
       true);
     var calendarSubscription = this;
-    var listener = cal3e.createOperationListener(
+    var listener = cal3eUtils.createOperationListener(
       function calEee_adoptItem_onResult(methodQueue, result) {
         if (methodQueue.isPending) {
           return;
@@ -108,7 +111,7 @@ calendarSubscription.prototype = {
   onIdentityChange: function calendarSubscription_onIdentityChange() {
     this._clearMenu(this._subscriberElement);
 
-    cal3e.IdentityCollection().
+    cal3eIdentity.Collection().
       getEnabled().
       forEach(function(identity) {
         var item = this._subscriberElement.appendItem(
