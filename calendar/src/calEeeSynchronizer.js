@@ -53,12 +53,11 @@ function calEeeSynchronizationService() {
     createInstance(Ci.calEeeISynchronizer);
 
   /**
-   * Collection of account dynamically notifying of changes in
-   * accounts settings.
+   * Observer of changes in identities.
    *
-   * @type cal3e.AccountCollection
+   * @type Object
    */
-  this._accountCollection = new cal3e.AccountCollection();
+  this._identityObserver = null;
 }
 
 calEeeSynchronizationService.classInfo = XPCOMUtils.generateCI({
@@ -85,13 +84,10 @@ calEeeSynchronizationService.prototype = {
   classInfo: calEeeSynchronizationService.classInfo,
 
   /**
-   * Adds or removes identities according to state of account
+   * Adds or removes identities according to state of identity
    * collection.
-   *
-   * @param {cal3e.AccountCollection} accountCollection
    */
-  onAccountsChange:
-  function calEeeSyncService_onAccountsChange(accountCollection) {
+  onIdentityChange: function calEeeSyncService_onIdentityChange() {
     var knownIdentities = {};
     var identityKey;
     for (identityKey in this._timersByIdentity) {
@@ -101,12 +97,9 @@ calEeeSynchronizationService.prototype = {
       knownIdentities[identityKey] = true;
     }
 
-    var identities = accountCollection.
-      filter(cal3e.AccountCollection.filterEnabled).
-      map(function calEeeSyncService_mapAccountsToIdentities(account) {
-        return account.defaultIdentity;
-      }).
-      filter(function calEeeSyncService_filterUnknownIdentities(identity) {
+    var identities = cal3e.IdentityCollection().
+      getEnabled().
+      filter(function(identity) {
         return !knownIdentities[identity.key];
       });
     var identity;
@@ -149,8 +142,8 @@ calEeeSynchronizationService.prototype = {
   },
 
   /**
-   * Registers synchronization service to globally observe account changes
-   * and synchronize their EEE calendars.
+   * Registers synchronization service to globally observe identity
+   * changes and synchronize their EEE calendars.
    *
    * @returns {calEeeISynchronizationService} receiver
    */
@@ -159,8 +152,9 @@ calEeeSynchronizationService.prototype = {
       return this;
     }
     this._registered = true;
-    this._accountCollection.addObserver(this);
-    this.onAccountsChange(this._accountCollection);
+    this._identityObserver = cal3e.IdentityObserver()
+    this._identityObserver.addObserver(this.onIdentityChange.bind(this));
+    this.onIdentityChange();
 
     return this;
   },
@@ -175,7 +169,7 @@ calEeeSynchronizationService.prototype = {
     if (!this._registered) {
       return this;
     }
-    this._accountCollection.removeObserver(this);
+    this._identityObserver.destroy();
     this._registered = false;
 
     return this;
@@ -209,7 +203,7 @@ calEeeSynchronizationService.prototype = {
    * @param {String} identity
    * @returns {calEeeISynchronizationService} receiver
    */
-  removeIdentity: function calEeeSyncService_removeAccount(identityKey) {
+  removeIdentity: function calEeeSyncService_removeIdentity(identityKey) {
     this._timersByIdentity[identityKey].cancel();
     delete this._timersByIdentity[identityKey];
     delete this._synchronizersByIdentity[identityKey];
