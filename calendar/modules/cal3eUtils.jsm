@@ -17,6 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 /**
  * Wraps given function to object acting as calIGenericOperationListener
  *
