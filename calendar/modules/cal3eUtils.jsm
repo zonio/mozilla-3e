@@ -98,8 +98,8 @@ function IdentityCollection() {
    *
    * It works in the same way as standard JavaScript Array#forEach.
    */
-  function forEach(callback, thisObject) {
-    return getAllIdentities().forEach.apply(thisObject, arguments);
+  function forEach(callback, context) {
+    return getAllIdentities().forEach(callback, context);
   }
 
   /**
@@ -110,8 +110,8 @@ function IdentityCollection() {
    *
    * @returns {Array}
    */
-  function filter(callback, thisObject) {
-    return getAllIdentities().filter.apply(thisObject, arguments);
+  function filter(callback, context) {
+    return getAllIdentities().filter(callback, context);
   }
 
   /**
