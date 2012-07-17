@@ -192,9 +192,13 @@ function Collection() {
  * itself.  This way it acts as a convenient proxy that can notify in
  * a unified way whather there are any changes in identities.
  *
+ * @param {nsIMsgAccountManager} [options.accountManager]
+ * @param {nsIPrefBranch2} [options.prefBranch]
  * @returns {Object}
  */
-function Observer() {
+function Observer(options) {
+  options = options || {};
+
   var PREF_BRANCH = "mail.identity";
   var accountManager;
   var accountObserver;
@@ -252,14 +256,16 @@ function Observer() {
     accountObserver = AccountObserver(notify);
     prefObserver = PrefObserver(notify);
 
-    accountManager = Components.classes[
-      "@mozilla.org/messenger/account-manager;1"
-    ].getService(Components.interfaces.nsIMsgAccountManager);
+    accountManager = options["accountManager"] ||
+      Components.classes[
+        "@mozilla.org/messenger/account-manager;1"
+      ].getService(Components.interfaces.nsIMsgAccountManager) ;
     accountManager.addIncomingServerListener(accountObserver);
 
-    prefBranch = Services.prefs.getBranch(PREF_BRANCH).QueryInterface(
-      Components.interfaces.nsIPrefBranch2
-    );
+    prefBranch = options["prefBranch"] ||
+      Services.prefs.getBranch(PREF_BRANCH).QueryInterface(
+        Components.interfaces.nsIPrefBranch2
+      ) ;
     prefBranch.addObserver("", prefObserver, false);
 
     observers = [];
