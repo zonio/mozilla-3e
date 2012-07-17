@@ -24,6 +24,7 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://calendar3e/modules/cal3eIdentity.jsm");
 Cu.import("resource://calendar3e/modules/cal3eUtils.jsm");
 
 /**

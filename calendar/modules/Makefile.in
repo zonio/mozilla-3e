@@ -28,7 +28,9 @@ MODULE = calendar3e
 XPI_NAME = calendar3e-provider
 
 EXTRA_JS_MODULES = \
+	cal3eDebug.jsm
 	cal3eDns.jsm \
+	cal3eIdentity.jsm \
 	cal3eUtils.jsm \
 	resolv.jsm \
 	$(NULL)
