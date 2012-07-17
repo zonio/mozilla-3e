@@ -34,9 +34,9 @@ function createOperationListener(onResult) {
   };
 }
 
-var cal3e = {
+var cal3eUtils = {
   "createOperationListener": createOperationListener
 };
 EXPORTED_SYMBOLS = [
-  'cal3e'
+  'cal3eUtils'
 ];

@@ -293,7 +293,7 @@ calEeeSynchronizer.prototype = {
     var synchronizer = this;
     var client = Cc["@zonio.net/calendar3e/client-service;1"].
       getService(Ci.calEeeIClient);
-    client.getCalendars(this._identity, cal3e.createOperationListener(
+    client.getCalendars(this._identity, cal3eUtils.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
         if (methodQueue.isPending) {
           return;

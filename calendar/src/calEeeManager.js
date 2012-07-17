@@ -138,7 +138,7 @@ calEeeManager.prototype = {
       return;
     }
 
-    var listener = cal3e.createOperationListener(
+    var listener = cal3eUtils.createOperationListener(
       function calEeeManager_create_onResult(methodQueue, result) {
         Services.prefs.setCharPref(
           "calendar.registry." + calendar.id + ".uri",
@@ -179,7 +179,7 @@ calEeeManager.prototype = {
       return;
     }
 
-    var listener = cal3e.createOperationListener(
+    var listener = cal3eUtils.createOperationListener(
       function calEeeManager_delete_onResult(methodQueue, result) {}
     );
     this._getClient().deleteCalendar(
@@ -217,7 +217,7 @@ calEeeManager.prototype = {
       break;
     }
 
-    var listener = cal3e.createOperationListener(
+    var listener = cal3eUtils.createOperationListener(
       function calEeeManager_update_onResult(methodQueue, result) {}
     );
     this._getClient().setCalendarAttribute(

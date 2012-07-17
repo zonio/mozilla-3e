@@ -184,7 +184,7 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this;
-    var clientListener = cal3e.createOperationListener(
+    var clientListener = cal3eUtils.createOperationListener(
       function calEee_adoptItem_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
           result = result.QueryInterface(Ci.nsIXmlRpcFault);
@@ -256,7 +256,7 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this;
-    var clientListener = cal3e.createOperationListener(
+    var clientListener = cal3eUtils.createOperationListener(
       function calEee_modifyItem_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
           result = result.QueryInterface(Ci.nsIXmlRpcFault);
@@ -328,7 +328,7 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this;
-    var clientListener = cal3e.createOperationListener(
+    var clientListener = cal3eUtils.createOperationListener(
       function calEee_deleteItem_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
           throw Components.Exception();
@@ -393,7 +393,7 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this;
-    var clientListener = cal3e.createOperationListener(
+    var clientListener = cal3eUtils.createOperationListener(
       function calEee_getItems_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
           throw Components.Exception();
