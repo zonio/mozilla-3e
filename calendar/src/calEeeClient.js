@@ -23,7 +23,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-//Cu.import("resource://calendar3e/modules/cal3eDns.jsm");
+//Cu.import("resource://calendar3e/modules/dns.jsm");
 
 /**
  * EEE client simplifying server method calls to prepared operations.

@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/cal3eDns.jsm");
+Components.utils.import("resource://calendar3e/modules/dns.jsm");
 
 function test_successful_dns_resolv() {
   var dns = new cal3eDns();

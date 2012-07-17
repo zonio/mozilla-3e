@@ -18,7 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
-Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 var cal3eProperties = {};
 

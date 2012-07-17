@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/cal3eIdentity.jsm");
+Components.utils.import("resource://calendar3e/modules/identities.jsm");
 
 function amEnable3e() {
   var identity;
