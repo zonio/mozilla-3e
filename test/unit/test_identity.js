@@ -19,6 +19,22 @@
 
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 
+function test_observer_pref_change() {
+  var account, identity;
+  var accountManager = Components.classes[
+    "@mozilla.org/messenger/account-manager;1"
+  ].getService(Components.interfaces.nsIMsgAccountManager);
+  var observer = cal3eIdentity.Observer();
+
+  observer.addObserver(function(change) {
+    do_check_eq(change.type, "add");
+    do_check_eq(change.identity, account.defaultIdentity);
+  });
+
+  account = accountManager.createAccount();
+  accountManager.removeAccount(account);
+}
+
 function run_test() {
-  do_check_true(true);
+  test_observer_pref_change();
 }
