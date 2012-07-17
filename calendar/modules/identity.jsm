@@ -206,8 +206,7 @@ function Observer() {
    * Adds the observer that will be notified when there changes in
    * identities.
    *
-   * @param {Function} observer receive one parameter {@link
-   * IdentityChange}
+   * @param {Function} observer receive one parameter {@link Change}
    */
   function addObserver(observer) {
     observers.push(observer);
@@ -239,7 +238,7 @@ function Observer() {
    */
   function notify(type, identity) {
     observers.forEach(function(observer) {
-      observer(Event(type, identity));
+      observer(Change(type, identity));
     });
   }
 
@@ -394,6 +393,18 @@ function PrefObserver(notify) {
       notify("update", identity);
     }
   };
+}
+
+/**
+ * Holds the type and the identity that was changed.
+ */
+function Change(type, identity) {
+  Object.defineProperty(this, "type", {
+    value: type
+  });
+  Object.defineProperty(this, "identity", {
+    value: identity
+  });
 }
 
 var cal3eIdentity = {
