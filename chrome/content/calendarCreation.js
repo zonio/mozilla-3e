@@ -204,34 +204,25 @@ function cal3eCreation() {
    * Does nothing if created calendar isn't 3e calendar.
    */
   function computeUri() {
-    var calendarFormat = document.getElementById('calendar-format');
-    if ('eee' != calendarFormat.value) {
+    if ('eee' !== document.getElementById('calendar-format').value) {
       return;
     }
 
-    var account = document.getElementById('calendar3e-account'),
-    uri = "eee://";
+    var identities = cal3e.IdentityCollection().
+      getEnabled().
+      findByEmail(document.getElementById('calendar3e-account').value);
 
-    var accountCollection = new cal3e.AccountCollection();
-    var accounts = accountCollection.filter(
-      cal3e.AccountCollection.filterEnabled
-    );
-    var idx = accounts.length;
-    var found = false
-    while (idx--) {
-      if (accounts[idx].defaultIdentity.key == account.value) {
-        uri += accounts[idx].defaultIdentity.email;
-        found = true;
-        break;
-      }
+    uri = "eee://";
+    if (identities.length > 0) {
+      uri += identities[0].email;
     }
     uri += '/';
-
     document.getElementById('calendar-uri').value = uri;
 
     if (gCalendar) {
-      var ioService = Components.classes["@mozilla.org/network/io-service;1"].
-        getService(Components.interfaces.nsIIOService);
+      var ioService = Components.classes[
+        "@mozilla.org/network/io-service;1"
+      ].getService(Components.interfaces.nsIIOService);
       gCalendar.uri = ioService.newURI(uri, null, null);
     }
   }
