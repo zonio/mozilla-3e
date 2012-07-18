@@ -17,24 +17,95 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 
-function test_observer_pref_change() {
-  var account, identity;
+function test_account_create() {
+  var observer = cal3eIdentity.Observer();
+  var account = create_normal_account();
+  var called = false;
+
+  observer.addObserver(function() {
+    called = true;
+  });
+
+  account.defaultIdentity.setBoolAttribute(
+    cal3eIdentity.EEE_ENABLED_KEY, false
+  );
+  do_check_true(called);
+
+  remove_account(account);
+}
+
+function test_account_update() {
+  var observer = cal3eIdentity.Observer();
+  var account = create_normal_account();
+  var counter = 0;
+
+  account.defaultIdentity.setBoolAttribute(
+    cal3eIdentity.EEE_ENABLED_KEY, false
+  );
+
+  observer.addObserver(function() {
+    counter += 1;
+  });
+
+  account.defaultIdentity.setBoolAttribute(
+    cal3eIdentity.EEE_ENABLED_KEY, true
+  );
+  account.defaultIdentity.setBoolAttribute(
+    cal3eIdentity.EEE_ENABLED_KEY, false
+  );
+  do_check_eq(2, counter);
+
+  remove_account(account);
+}
+
+function test_account_delete() {
+  var observer = cal3eIdentity.Observer();
+  var account = create_normal_account();
+  var called = false;
+
+  account.defaultIdentity.setBoolAttribute(
+    cal3eIdentity.EEE_ENABLED_KEY, false
+  );
+
+  observer.addObserver(function() {
+    called = true;
+  });
+
+  remove_account(account);
+  do_check_true(called);
+}
+
+function create_normal_account() {
+  var account, server, identity;
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
   ].getService(Components.interfaces.nsIMsgAccountManager);
-  var observer = cal3eIdentity.Observer();
 
-  observer.addObserver(function(change) {
-    do_check_eq(change.type, "add");
-    do_check_eq(change.identity, account.defaultIdentity);
-  });
-
+  server = accountManager.createIncomingServer("test", "example.com", "pop3");
   account = accountManager.createAccount();
+  identity = accountManager.createIdentity();
+  account.addIdentity(identity);
+  account.defaultIdentity = identity;
+  server.valid = false;
+  account.incomingServer = server;
+  server.valid = true;
+
+  return account;
+}
+
+function remove_account(account) {
+  var accountManager = Components.classes[
+    "@mozilla.org/messenger/account-manager;1"
+  ].getService(Components.interfaces.nsIMsgAccountManager);
+
   accountManager.removeAccount(account);
 }
 
 function run_test() {
-  test_observer_pref_change();
+  test_account_create();
+  test_account_update();
+  test_account_delete();
 }

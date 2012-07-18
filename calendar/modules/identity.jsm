@@ -201,7 +201,6 @@ function Observer(options) {
 
   var PREF_BRANCH = "mail.identity.";
   var accountManager;
-  var accountObserver;
   var prefBranch;
   var prefObserver;
   var observers;
@@ -236,13 +235,10 @@ function Observer(options) {
 
   /**
    * Notifies all observer about change of certain identity.
-   *
-   * @param {String} type one of "create", "update", "delete"
-   * @param {nsIMsgIdentity} identity
    */
-  function notify(type, identity) {
+  function notify() {
     observers.forEach(function(observer) {
-      observer(Change(type, identity));
+      observer();
     });
   }
 
@@ -253,14 +249,12 @@ function Observer(options) {
    * observer on preference branch.
    */
   function init() {
-    accountObserver = AccountObserver(notify);
-    prefObserver = PrefObserver(notify);
+    prefObserver = EnabledObserver(notify);
 
     accountManager = options["accountManager"] ||
       Components.classes[
         "@mozilla.org/messenger/account-manager;1"
       ].getService(Components.interfaces.nsIMsgAccountManager) ;
-    accountManager.addIncomingServerListener(accountObserver);
 
     prefBranch = options["prefBranch"] ||
       Services.prefs.getBranch(PREF_BRANCH).QueryInterface(
@@ -294,69 +288,12 @@ function Observer(options) {
     prefBranch.removeObserver("", prefObserver);
     prefBranch = null;
 
-    accountManager.removeIncomingServerListener(accountObserver);
     accountManager = null;
 
     prefObserver = null;
-    accountObserver = null;
   }
 
   return init();
-}
-
-/**
- * Returns convenient observer acting as nsIIncomingServerListener.
- *
- * It will call notify function on every change it registers for any
- * server belonging to supported account ({@link isSupportedAccount}).
- * The notify function receives two parameters:
- * - {@link String} type: one of "create", "update", or "delete"
- * - {@link nsIMsgIdentity} identity: identity that can support EEE
- *   calendar of the account that changed
- *
- * @param {Function} notify
- * @returns {nsIIncomingServerListener}
- */
-function AccountObserver(notify) {
-  var accountManager = Components.classes[
-    "@mozilla.org/messenger/account-manager;1"
-  ].getService(Components.interfaces.nsIMsgAccountManager);
-
-  return {
-    "QueryInterface": XPCOMUtils.generateQI([
-      Components.interfaces.nsIIncomingServerListener
-    ]),
-    "onServerLoaded": function(server) {
-      if (isSupportedAccount(accountManager.FindAccountForServer(server))) {
-        return;
-      }
-
-      notify(
-        "create",
-        getIdentityFromAccount(accountManager.FindAccountForServer(server))
-      );
-    },
-    "onServerUnloaded": function(server) {
-      if (isSupportedAccount(accountManager.FindAccountForServer(server))) {
-        return;
-      }
-
-      notify(
-        "delete",
-        getIdentityFromAccount(accountManager.FindAccountForServer(server))
-      );
-    },
-    "onServerChanged": function(server) {
-      if (isSupportedAccount(accountManager.FindAccountForServer(server))) {
-        return;
-      }
-
-      notify(
-        "update",
-        getIdentityFromAccount(accountManager.FindAccountForServer(server))
-      );
-    }
-  }
 }
 
 /**
@@ -364,15 +301,12 @@ function AccountObserver(notify) {
  *
  * It will call notify function on every change it registers for any
  * identity which EEE enabled settings changed.
- * The notify function receives two parameters:
- * - {@link String} type: always "update"
- * - {@link nsIMsgIdentity} identity: identity that can support EEE
- *   calendar and changed
+ * The notify function has no arguments.
  *
  * @param {Function} notify
  * @returns {nsIObserver}
  */
-function PrefObserver(notify) {
+function EnabledObserver(notify) {
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
   ].getService(Components.interfaces.nsIMsgAccountManager);
@@ -391,7 +325,7 @@ function PrefObserver(notify) {
         return;
       }
 
-      notify("update", accountManager.getIdentity(parts[0]));
+      notify();
     }
   };
 }
