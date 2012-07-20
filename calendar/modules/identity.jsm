@@ -35,6 +35,20 @@ function isSupportedAccount(account) {
 }
 
 /**
+ * Returns all accounts (including those not supporting EEE).
+ *
+ * @return {Array}
+ */
+function getAccounts() {
+  return toArray(fixIterator(
+    Components.classes["@mozilla.org/messenger/account-manager;1"].
+      getService(Components.interfaces.nsIMsgAccountManager).
+      accounts,
+    Components.interfaces.nsIMsgAccount
+  ));
+}
+
+/**
  * Returns account's identity wchich will be used for EEE requests.
  *
  * @returns {nsIMsgIdentity}
@@ -68,26 +82,11 @@ function Collection() {
   }
 
   /**
-   * Returns all accounts (including those not supporting EEE).
-   *
-   * @return {Array}
-   */
-  function loadAccounts() {
-    return [
-      a for each (
-        a in fixIterator(
-          accountManager.accounts, Components.interfaces.nsIMsgAccount
-        )
-      )
-    ];
-  }
-
-  /**
    * Loads all accounts, filters supported ones, sorts them and
    * retrieves all identities.
    */
   function getAllIdentities() {
-    return loadAccounts().
+    return getAccounts().
       filter(isSupportedAccount).
       sort(sortAccounts).
       map(getIdentityFromAccount);
@@ -192,15 +191,12 @@ function Collection() {
  * itself.  This way it acts as a convenient proxy that can notify in
  * a unified way whather there are any changes in identities.
  *
- * @param {nsIMsgAccountManager} [options.accountManager]
- * @param {nsIPrefBranch2} [options.prefBranch]
  * @returns {Object}
  */
-function Observer(options) {
-  options = options || {};
-
+function Observer() {
   var PREF_BRANCH = "mail.identity.";
   var accountManager;
+  var accountObserver;
   var prefBranch;
   var prefObserver;
   var observers;
@@ -249,17 +245,21 @@ function Observer(options) {
    * observer on preference branch.
    */
   function init() {
-    prefObserver = EnabledObserver(notify);
+    accountObserver = AccountObserver(notify);
+    prefObserver = PrefObserver(
+      notify, new RegExp("^[^.]+\\\." + EEE_ENABLED_KEY + "$")
+    );
 
-    accountManager = options["accountManager"] ||
-      Components.classes[
-        "@mozilla.org/messenger/account-manager;1"
-      ].getService(Components.interfaces.nsIMsgAccountManager) ;
+    accountManager = Components.classes[
+      "@mozilla.org/messenger/account-manager;1"
+    ].getService(Components.interfaces.nsIMsgAccountManager) ;
+    accountManager.addIncomingServerListener(
+      accountObserver.getServerListener()
+    );
 
-    prefBranch = options["prefBranch"] ||
-      Services.prefs.getBranch(PREF_BRANCH).QueryInterface(
-        Components.interfaces.nsIPrefBranch2
-      ) ;
+    prefBranch = Services.prefs.getBranch(
+      PREF_BRANCH
+    ).QueryInterface(Components.interfaces.nsIPrefBranch2);
     prefBranch.addObserver("", prefObserver, false);
 
     observers = [];
@@ -275,7 +275,7 @@ function Observer(options) {
    * Removes all observers and listeners registered by {@link init}
    * and cleans up after init.
    *
-   * After call it, this object can't be used.
+   * This object can't be used after this call.
    */
   function destroy() {
     delete this.addObserver;
@@ -288,25 +288,164 @@ function Observer(options) {
     prefBranch.removeObserver("", prefObserver);
     prefBranch = null;
 
+    accountManager.removeIncomingServerListener(accountObserver);
     accountManager = null;
 
     prefObserver = null;
+    accountObserver.destroy();
+    accountObserver = null;
   }
 
   return init();
 }
 
 /**
- * Returns convenient observer acting as nsIObserver.
+ * Returns an object able to create nsIIncomingServerListener.
  *
- * It will call notify function on every change it registers for any
- * identity which EEE enabled settings changed.
- * The notify function has no arguments.
+ * It will call notify function if it registers deletion of of
+ * supported account ({@link isSupportedAccount}).
+ *
+ * Internally, it uses a combination of incoming server listener which
+ * needs to be attached by a client to the account manager and
+ * preferences observing to keep track of supported accounts and their
+ * incoming servers.  That's because when account is deleted, the only
+ * clue we can get incoming server unload "event" and at that time we
+ * can't get account which owned the server.
+ *
+ * You must manually call {@link destroy} on returned object otherwise
+ * you risk memory leaks.
  *
  * @param {Function} notify
+ * @returns {Object}
+ */
+function AccountObserver(notify) {
+  var accountManager;
+  var prefBranch;
+  var prefObserver;
+  var serverToAccount;
+
+  /**
+   * Updates server to account map.
+   *
+   * It maps accounts by their incoming server key.  Only supported
+   * accounts are used.
+   */
+  function updateServerToAccountMap() {
+    serverToAccount = {};
+
+    getAccounts().
+      filter(isSupportedAccount).
+      forEach(function(account) {
+        serverToAccount[account.incomingServer.key] = account;
+      });
+  }
+
+  /**
+   * Checks whather given server was owned by supported account.
+   *
+   * @returns {Boolean}
+   */
+  function hadSupportedAccount(server) {
+    return serverToAccount.hasOwnProperty(server.key);
+  }
+
+  /**
+   * Builds an incoming server listener.
+   *
+   * It observer mainly server unloaded "event" which triggers notify
+   * function if unloaded server belonged to supported account.  Other
+   * events trigger {@link updateServerToAccountMap} just in case.
+   *
+   * @returns {nsIIncomingServerListener}
+   */
+  function getServerListener() {
+    return {
+      "QueryInterface": XPCOMUtils.generateQI([
+        Components.interfaces.nsIIncomingServerListener
+      ]),
+      "onServerLoaded": function(server) {
+        updateServerToAccountMap();
+        if (!hadSupportedAccount(server)) {
+          return;
+        }
+
+        notify();
+      },
+      "onServerUnloaded": function(server) {
+        if (!hadSupportedAccount(server)) {
+          return;
+        }
+
+        updateServerToAccountMap();
+        notify();
+      },
+      "onServerChanged": updateServerToAccountMap
+    };
+  }
+
+  /**
+   * Registers observers of global state which can affect internal
+   * state.
+   *
+   * It registeres observer on preference branch.
+   */
+  function init() {
+    prefObserver = PrefObserver(
+      updateServerToAccountMap, /^[^.]+\.server$/
+    );
+
+    accountManager = Components.classes[
+      "@mozilla.org/messenger/account-manager;1"
+    ].getService(Components.interfaces.nsIMsgAccountManager);
+
+    prefBranch = Services.prefs.getBranch(
+      "mail.account."
+    ).QueryInterface(Components.interfaces.nsIPrefBranch2);
+    prefBranch.addObserver("", prefObserver, false);
+
+    updateServerToAccountMap();
+
+    return {
+      getServerListener: getServerListener,
+      destroy: destroy
+    };
+  }
+
+  /**
+   * Removes all observers registered by {@link init}
+   * and cleans up after init.
+   *
+   * This object can't be used after this call.
+   */
+  function destroy() {
+    delete this.getServerListener;
+    delete this.destroy;
+
+    prefBranch.removeObserver("", prefObserver);
+    prefBranch = null;
+
+    accountManager = null;
+
+    prefObserver = null;
+
+    serverToAccount = null;
+  }
+
+  return init();
+}
+
+/**
+ * Returns convenient preferences observer acting as nsIObserver.
+ *
+ * It will call notify function on every change it receives a
+ * preference branch that matches given regular expression.  The
+ * notify function has no arguments.
+ *
+ * @param {Function} notify
+ * @param {RegExp} regExp
  * @returns {nsIObserver}
  */
-function EnabledObserver(notify) {
+function PrefObserver(notify, regExp) {
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
   ].getService(Components.interfaces.nsIMsgAccountManager);
@@ -316,12 +455,7 @@ function EnabledObserver(notify) {
       Components.interfaces.nsIObserver
     ]),
     "observe": function(prefBranch, topic, prefName) {
-      if (topic !== "nsPref:changed") {
-        return;
-      }
-
-      var parts = prefName.split(".");
-      if ((parts.length !== 2) || (parts[1] !== EEE_ENABLED_KEY)) {
+      if ((topic !== "nsPref:changed") || !prefName.match(regExp)) {
         return;
       }
 
