@@ -22,24 +22,25 @@ Components.utils.import("resource://calendar3e/modules/identity.jsm");
 
 function test_account_create() {
   var observer = cal3eIdentity.Observer();
-  var account = create_normal_account();
-  var called = false;
+  var account = create_supported_account();
+  var counter = 0;
 
   observer.addObserver(function() {
-    called = true;
+    counter += 1;
   });
 
   account.defaultIdentity.setBoolAttribute(
     cal3eIdentity.EEE_ENABLED_KEY, false
   );
-  do_check_true(called);
+  do_check_eq(1, counter);
 
   remove_account(account);
+  observer.destroy();
 }
 
 function test_account_update() {
   var observer = cal3eIdentity.Observer();
-  var account = create_normal_account();
+  var account = create_supported_account();
   var counter = 0;
 
   account.defaultIdentity.setBoolAttribute(
@@ -59,26 +60,60 @@ function test_account_update() {
   do_check_eq(2, counter);
 
   remove_account(account);
+  observer.destroy();
 }
 
 function test_account_delete() {
   var observer = cal3eIdentity.Observer();
-  var account = create_normal_account();
-  var called = false;
+  var account = create_supported_account();
+  var counter = 0;
 
   account.defaultIdentity.setBoolAttribute(
     cal3eIdentity.EEE_ENABLED_KEY, false
   );
 
   observer.addObserver(function() {
-    called = true;
+    counter += 1;
   });
 
   remove_account(account);
-  do_check_true(called);
+  observer.destroy();
+
+  do_check_eq(1, counter);
 }
 
-function create_normal_account() {
+function test_account_create_during_observer_life() {
+  var observer = cal3eIdentity.Observer();
+  var counter = 0;
+  observer.addObserver(function() {
+    counter += 1;
+  });
+
+  var account = create_supported_account();
+
+  observer.destroy();
+
+  remove_account(account);
+
+  do_check_eq(1, counter);
+}
+
+function test_account_delete_during_observer_life() {
+  var observer = cal3eIdentity.Observer();
+  var counter = 0;
+  observer.addObserver(function() {
+    counter += 1;
+  });
+
+  var account = create_supported_account();
+  remove_account(account);
+
+  observer.destroy();
+
+  do_check_eq(2, counter);
+}
+
+function create_supported_account() {
   var account, server, identity;
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
@@ -108,4 +143,6 @@ function run_test() {
   test_account_create();
   test_account_update();
   test_account_delete();
+  test_account_create_during_observer_life();
+  test_account_delete_during_observer_life();
 }
