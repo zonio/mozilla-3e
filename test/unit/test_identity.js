@@ -17,7 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://test/modules/accounts.jsm");
 

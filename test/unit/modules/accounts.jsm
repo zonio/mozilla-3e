@@ -17,8 +17,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/Services.jsm");
-
 /**
  * Creates a trinity: account, incoming server and identity.
  *
