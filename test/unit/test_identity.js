@@ -23,7 +23,7 @@ Components.utils.import("resource://test/modules/accounts.jsm");
 
 function test_account_create() {
   var observer = cal3eIdentity.Observer();
-  var account = test3eAccounts.create_supported_account();
+  var account = test3eAccounts.createSupportedAccount();
   var counter = 0;
 
   observer.addObserver(function() {
@@ -35,13 +35,13 @@ function test_account_create() {
   );
   do_check_eq(1, counter);
 
-  test3eAccounts.remove_account(account);
+  test3eAccounts.removeAccount(account);
   observer.destroy();
 }
 
 function test_account_update() {
   var observer = cal3eIdentity.Observer();
-  var account = test3eAccounts.create_supported_account();
+  var account = test3eAccounts.createSupportedAccount();
   var counter = 0;
 
   account.defaultIdentity.setBoolAttribute(
@@ -60,13 +60,13 @@ function test_account_update() {
   );
   do_check_eq(2, counter);
 
-  test3eAccounts.remove_account(account);
+  test3eAccounts.removeAccount(account);
   observer.destroy();
 }
 
 function test_account_delete() {
   var observer = cal3eIdentity.Observer();
-  var account = test3eAccounts.create_supported_account();
+  var account = test3eAccounts.createSupportedAccount();
   var counter = 0;
 
   account.defaultIdentity.setBoolAttribute(
@@ -77,7 +77,7 @@ function test_account_delete() {
     counter += 1;
   });
 
-  test3eAccounts.remove_account(account);
+  test3eAccounts.removeAccount(account);
   observer.destroy();
 
   do_check_eq(1, counter);
@@ -90,11 +90,11 @@ function test_account_create_during_observer_life() {
     counter += 1;
   });
 
-  var account = test3eAccounts.create_supported_account();
+  var account = test3eAccounts.createSupportedAccount();
 
   observer.destroy();
 
-  test3eAccounts.remove_account(account);
+  test3eAccounts.removeAccount(account);
 
   do_check_eq(1, counter);
 }
@@ -106,8 +106,8 @@ function test_account_delete_during_observer_life() {
     counter += 1;
   });
 
-  var account = test3eAccounts.create_supported_account();
-  test3eAccounts.remove_account(account);
+  var account = test3eAccounts.createSupportedAccount();
+  test3eAccounts.removeAccount(account);
 
   observer.destroy();
 

@@ -19,7 +19,7 @@
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-function create_supported_account() {
+function createSupportedAccount() {
   var account, server, identity;
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
@@ -37,7 +37,7 @@ function create_supported_account() {
   return account;
 }
 
-function remove_account(account) {
+function removeAccount(account) {
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
   ].getService(Components.interfaces.nsIMsgAccountManager);
@@ -46,8 +46,8 @@ function remove_account(account) {
 }
 
 var test3eAccounts = {
-  "create_supported_account": create_supported_account,
-  "remove_account": remove_account
+  "createSupportedAccount": createSupportedAccount,
+  "removeAccount": removeAccount
 };
 EXPORTED_SYMBOLS = [
   'test3eAccounts'
