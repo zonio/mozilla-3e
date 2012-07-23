@@ -19,6 +19,21 @@
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 
+/**
+ * Creates a trinity: account, incoming server and identity.
+ *
+ * They're created in the same order as account wizard creates them.
+ * 1. Creates incoming server, in our case POP3
+ * 2. Creates account
+ * 3. Creates identity
+ * 4. Adds identity to account
+ * 5. Sets default identity on account
+ * 6. Marks server as invalid
+ * 7. Sets incoming server to account
+ * 8. Marks server as valid
+ *
+ * @returns {nsIMsgAccount}
+ */
 function createSupportedAccount() {
   var account, server, identity;
   var accountManager = Components.classes[
@@ -37,6 +52,11 @@ function createSupportedAccount() {
   return account;
 }
 
+/**
+ * Removes given account.
+ *
+ * @param {nsIMsgAccount} account
+ */
 function removeAccount(account) {
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
