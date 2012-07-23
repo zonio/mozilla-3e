@@ -19,10 +19,11 @@
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
+Components.utils.import("resource://test/modules/accounts.jsm");
 
 function test_account_create() {
   var observer = cal3eIdentity.Observer();
-  var account = create_supported_account();
+  var account = test3eAccounts.create_supported_account();
   var counter = 0;
 
   observer.addObserver(function() {
@@ -34,13 +35,13 @@ function test_account_create() {
   );
   do_check_eq(1, counter);
 
-  remove_account(account);
+  test3eAccounts.remove_account(account);
   observer.destroy();
 }
 
 function test_account_update() {
   var observer = cal3eIdentity.Observer();
-  var account = create_supported_account();
+  var account = test3eAccounts.create_supported_account();
   var counter = 0;
 
   account.defaultIdentity.setBoolAttribute(
@@ -59,13 +60,13 @@ function test_account_update() {
   );
   do_check_eq(2, counter);
 
-  remove_account(account);
+  test3eAccounts.remove_account(account);
   observer.destroy();
 }
 
 function test_account_delete() {
   var observer = cal3eIdentity.Observer();
-  var account = create_supported_account();
+  var account = test3eAccounts.create_supported_account();
   var counter = 0;
 
   account.defaultIdentity.setBoolAttribute(
@@ -76,7 +77,7 @@ function test_account_delete() {
     counter += 1;
   });
 
-  remove_account(account);
+  test3eAccounts.remove_account(account);
   observer.destroy();
 
   do_check_eq(1, counter);
@@ -89,11 +90,11 @@ function test_account_create_during_observer_life() {
     counter += 1;
   });
 
-  var account = create_supported_account();
+  var account = test3eAccounts.create_supported_account();
 
   observer.destroy();
 
-  remove_account(account);
+  test3eAccounts.remove_account(account);
 
   do_check_eq(1, counter);
 }
@@ -105,38 +106,12 @@ function test_account_delete_during_observer_life() {
     counter += 1;
   });
 
-  var account = create_supported_account();
-  remove_account(account);
+  var account = test3eAccounts.create_supported_account();
+  test3eAccounts.remove_account(account);
 
   observer.destroy();
 
   do_check_eq(2, counter);
-}
-
-function create_supported_account() {
-  var account, server, identity;
-  var accountManager = Components.classes[
-    "@mozilla.org/messenger/account-manager;1"
-  ].getService(Components.interfaces.nsIMsgAccountManager);
-
-  server = accountManager.createIncomingServer("test", "example.com", "pop3");
-  account = accountManager.createAccount();
-  identity = accountManager.createIdentity();
-  account.addIdentity(identity);
-  account.defaultIdentity = identity;
-  server.valid = false;
-  account.incomingServer = server;
-  server.valid = true;
-
-  return account;
-}
-
-function remove_account(account) {
-  var accountManager = Components.classes[
-    "@mozilla.org/messenger/account-manager;1"
-  ].getService(Components.interfaces.nsIMsgAccountManager);
-
-  accountManager.removeAccount(account);
 }
 
 function run_test() {
