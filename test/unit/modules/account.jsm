@@ -32,7 +32,7 @@
  *
  * @returns {nsIMsgAccount}
  */
-function createSupportedAccount() {
+function create() {
   var account, server, identity;
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
@@ -55,7 +55,7 @@ function createSupportedAccount() {
  *
  * @param {nsIMsgAccount} account
  */
-function removeAccount(account) {
+function remove(account) {
   var accountManager = Components.classes[
     "@mozilla.org/messenger/account-manager;1"
   ].getService(Components.interfaces.nsIMsgAccountManager);
@@ -63,10 +63,10 @@ function removeAccount(account) {
   accountManager.removeAccount(account);
 }
 
-var test3eAccounts = {
+var test3eAccount = {
   "createSupportedAccount": createSupportedAccount,
   "removeAccount": removeAccount
 };
 EXPORTED_SYMBOLS = [
-  'test3eAccounts'
+  'test3eAccount'
 ];
