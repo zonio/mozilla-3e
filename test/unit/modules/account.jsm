@@ -64,8 +64,8 @@ function remove(account) {
 }
 
 var test3eAccount = {
-  "createSupportedAccount": createSupportedAccount,
-  "removeAccount": removeAccount
+  "create": create,
+  "remove": remove
 };
 EXPORTED_SYMBOLS = [
   'test3eAccount'
