@@ -206,6 +206,7 @@ calEeeSynchronizationService.prototype = {
     this._timersByIdentity[identityKey].cancel();
     delete this._timersByIdentity[identityKey];
     delete this._synchronizersByIdentity[identityKey];
+    this._unregisterCalendarsOfIdentity(identityKey);
 
     return this;
   },
@@ -248,6 +249,28 @@ calEeeSynchronizationService.prototype = {
     }
 
     return found ? identityKey : null ;
+  },
+
+  /**
+   * Unregisters all identity's calendars.
+   *
+   * @param {String} identityKey
+   */
+  _unregisterCalendarsOfIdentity:
+  function calEeeService_unregisterCalendarsOfIdentity(identityKey) {
+    var manager = Components.classes[
+      "@mozilla.org/calendar/manager;1"
+    ].getService(Components.interfaces.calICalendarManager);
+    manager.
+      getCalendars({}).
+      filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
+        return ('eee' == calendar.type) &&
+          calendar.getProperty("imip.identity") &&
+          (calendar.getProperty("imip.identity").key === identityKey);
+      }).
+      forEach(function(calendar) {
+        manager.unregisterCalendar(calendar);
+      });
   }
 
 }
