@@ -19,6 +19,63 @@
 
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 
+function test_response_success() {
+  var xmlRpc = create_xml_rpc_success_response();
+  var eee = cal3eResponse.factory(xmlRpc);
+
+  do_check_true(eee.isSuccess);
+  do_check_false(eee.isError);
+  do_check_false(eee.isTransportError);
+  do_check_eq(xmlRpc, eee.data);
+}
+
+function test_response_error() {
+  var xmlRpc = create_xml_rpc_fault_response();
+  var eee = cal3eResponse.factory(xmlRpc);
+
+  do_check_false(eee.isSuccess);
+  do_check_true(eee.isError);
+  do_check_false(eee.isTransportError);
+  do_check_null(eee.data);
+  do_check_eq(cal3eResponse.errors.AUTH_FAILED.code, eee.code);
+  do_check_eq(cal3eResponse.errors.AUTH_FAILED.name, eee.name);
+  do_check_eq(cal3eResponse.errors.AUTH_FAILED.description, eee.description);
+}
+
+function test_response_transport_error() {
+  var xmlRpc = create_xml_rpc_error_response();
+  var eee = cal3eResponse.factory(xmlRpc);
+
+  do_check_false(eee.isSuccess);
+  do_check_false(eee.isError);
+  do_check_true(eee.isTransportError);
+  do_check_null(eee.data);
+}
+
+function create_xml_rpc_success_response() {
+  var value = Components.classes[
+    "@mozilla.org/supports-PRBool;1"
+  ].createInstance(Components.interfaces.nsISupportsPRBool);
+  value.data = true;
+
+  return value;
+}
+
+function create_xml_rpc_fault_response() {
+  var fault = Components.classes[
+    "@mozilla.org/xml-rpc/fault;1"
+  ].createInstance(Components.interfaces.nsIXmlRpcFault);
+  fault.init(2, "./server.xdl:1181:Authentication failed.")
+
+  return fault;
+}
+
+function create_xml_rpc_error_response() {
+  return null;
+}
+
 function run_test() {
-  do_check_true(true);
+  test_response_success();
+  test_response_error();
+  test_response_transport_error();
 }
