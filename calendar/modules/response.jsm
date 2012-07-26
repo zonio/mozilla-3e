@@ -17,7 +17,55 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var cal3eResponse = {};
+function Success(data) {
+  return Object.create(Object.prototype, {
+    "isSuccess": { "value": true },
+    "isEeeError": { "value": false },
+    "isTransportError": { "value": false },
+    "data": { "value": data }
+  });
+}
+
+function EeeError(data) {
+  return Object.create(Object.prototype, {
+    "isSuccess": { "value": false },
+    "isEeeError": { "value": true },
+    "isTransportError": { "value": false },
+    "data": { "value": null },
+    "code": { "value": data.faultCode },
+    "name": { "value": "Not Yet Implemented" },
+    "description": { "value": "Not Yet Implemented" }
+  });
+}
+
+function TransportError(data) {
+  return Object.create(Object.prototype, {
+    "isSuccess": { "value": false },
+    "isEeeError": { "value": false },
+    "isTransportError": { "value": true },
+    "data": { "value": null }
+  });
+}
+
+function factory(xmlRpcResponse) {
+
+  function getEeeResponseType(xmlRpcResponse) {
+    if (null === xmlRpcResponse) {
+      return TransportError;
+    }
+    if (xmlRpcResponse instanceof Components.interfaces.nsIXmlRpcFault) {
+      return EeeError;
+    }
+
+    return Success;
+  }
+
+  return getEeeResponseType(xmlRpcResponse)(xmlRpcResponse);
+}
+
+var cal3eResponse = {
+  "factory": factory
+};
 EXPORTED_SYMBOLS = [
   'cal3eResponse'
 ];
