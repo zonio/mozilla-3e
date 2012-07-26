@@ -29,7 +29,7 @@ function test_response_success() {
   do_check_eq(xmlRpc, eee.data);
 }
 
-function test_response_error() {
+function test_response_eee_error() {
   var xmlRpc = create_xml_rpc_fault_response();
   var eee = cal3eResponse.factory(xmlRpc);
 
@@ -76,6 +76,6 @@ function create_xml_rpc_error_response() {
 
 function run_test() {
   test_response_success();
-  test_response_error();
+  test_response_eee_error();
   test_response_transport_error();
 }
