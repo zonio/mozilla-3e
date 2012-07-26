@@ -24,7 +24,7 @@ function test_response_success() {
   var eee = cal3eResponse.factory(xmlRpc);
 
   do_check_true(eee.isSuccess);
-  do_check_false(eee.isError);
+  do_check_false(eee.isEeeError);
   do_check_false(eee.isTransportError);
   do_check_eq(xmlRpc, eee.data);
 }
@@ -34,7 +34,7 @@ function test_response_eee_error() {
   var eee = cal3eResponse.factory(xmlRpc);
 
   do_check_false(eee.isSuccess);
-  do_check_true(eee.isError);
+  do_check_true(eee.isEeeError);
   do_check_false(eee.isTransportError);
   do_check_null(eee.data);
   do_check_eq(cal3eResponse.errors.AUTH_FAILED.code, eee.code);
@@ -47,7 +47,7 @@ function test_response_transport_error() {
   var eee = cal3eResponse.factory(xmlRpc);
 
   do_check_false(eee.isSuccess);
-  do_check_false(eee.isError);
+  do_check_false(eee.isEeeError);
   do_check_true(eee.isTransportError);
   do_check_null(eee.data);
 }
