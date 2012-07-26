@@ -36,7 +36,7 @@ function test_response_eee_error() {
   do_check_false(eee.isSuccess);
   do_check_true(eee.isEeeError);
   do_check_false(eee.isTransportError);
-  do_check_null(eee.data);
+  do_check_true(null === eee.data);
   do_check_eq(cal3eResponse.errors.AUTH_FAILED.code, eee.code);
   do_check_eq(cal3eResponse.errors.AUTH_FAILED.name, eee.name);
   do_check_eq(cal3eResponse.errors.AUTH_FAILED.description, eee.description);
@@ -49,7 +49,7 @@ function test_response_transport_error() {
   do_check_false(eee.isSuccess);
   do_check_false(eee.isEeeError);
   do_check_true(eee.isTransportError);
-  do_check_null(eee.data);
+  do_check_true(null === eee.data);
 }
 
 function create_xml_rpc_success_response() {
