@@ -47,6 +47,15 @@ function test_response_transport_error() {
   do_check_eq(Components.results.NS_ERROR_FAILURE, eee.errorCode);
 }
 
+function test_response_user_error() {
+  var response = new cal3eResponse.UserError(
+    cal3eResponse.userErrors.NO_PASSWORD
+  );
+
+  do_check_true(null === eee.data);
+  do_check_eq(cal3eResponse.userErrors.NO_PASSWORD, eee.errorCode);
+}
+
 function create_success_method_queue() {
   return Object.create({
     "QueryInterface": XPCOMUtils.generateQI([
