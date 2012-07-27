@@ -37,9 +37,7 @@ function test_response_eee_error() {
   do_check_true(eee.isEeeError);
   do_check_false(eee.isTransportError);
   do_check_true(null === eee.data);
-  do_check_eq(cal3eResponse.errors.AUTH_FAILED.code, eee.code);
-  do_check_eq(cal3eResponse.errors.AUTH_FAILED.name, eee.name);
-  do_check_eq(cal3eResponse.errors.AUTH_FAILED.description, eee.description);
+  do_check_eq(cal3eResponse.errors.AUTH_FAILED, eee.errorCode);
 }
 
 function test_response_transport_error() {
