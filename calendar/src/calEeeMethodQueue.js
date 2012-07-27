@@ -69,7 +69,7 @@ calEeeMethodQueue.prototype = {
    */
   get id() {
     var uri = this._uri.spec,
-        lastMethod = this._methodCalls[this._methodCalls.length - 1];
+        lastMethod = this._methodCalls[this._methodCalls.length - 1][0];
 
     return uri + ':' + lastMethod;
   },
