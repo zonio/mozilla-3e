@@ -17,37 +17,67 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 
 function test_response_success() {
-  var xmlRpc = create_xml_rpc_success_response();
-  var eee = cal3eResponse.factory(xmlRpc);
+  var methodQueue = create_success_method_queue();
+  var response = cal3eResponse.fromMethodQueue(methodQueue);
 
-  do_check_true(eee.isSuccess);
-  do_check_false(eee.isEeeError);
-  do_check_false(eee.isTransportError);
-  do_check_eq(xmlRpc, eee.data);
+  do_check_true(response instanceof cal3eResponse.Success);
+  do_check_eq(methodQueue.lastResponse, eee.data);
 }
 
 function test_response_eee_error() {
-  var xmlRpc = create_xml_rpc_fault_response();
-  var eee = cal3eResponse.factory(xmlRpc);
+  var methodQueue = create_fault_method_queue();
+  var response = cal3eResponse.fromMethodQueue(methodQueue);
 
-  do_check_false(eee.isSuccess);
-  do_check_true(eee.isEeeError);
-  do_check_false(eee.isTransportError);
+  do_check_true(response instanceof cal3eResponse.EeeError);
   do_check_true(null === eee.data);
-  do_check_eq(cal3eResponse.errors.AUTH_FAILED, eee.errorCode);
+  do_check_eq(cal3eResponse.eeeErrors.AUTH_FAILED, eee.errorCode);
 }
 
 function test_response_transport_error() {
-  var xmlRpc = create_xml_rpc_error_response();
-  var eee = cal3eResponse.factory(xmlRpc);
+  var methodQueue = create_transport_error_method_queue();
+  var response = cal3eResponse.fromMethodQueue(methodQueue);
 
-  do_check_false(eee.isSuccess);
-  do_check_false(eee.isEeeError);
-  do_check_true(eee.isTransportError);
+  do_check_true(response instanceof cal3eResponse.TransportError);
   do_check_true(null === eee.data);
+  do_check_eq(Components.results.NS_ERROR_FAILURE, eee.errorCode);
+}
+
+function create_success_method_queue() {
+  return Object.create({
+    "QueryInterface": XPCOMUtils.generateQI([
+      Components.interfaces.calEeeIMethodQueue
+    ]),
+    "enqueueMethod": function() { },
+    "execute": function() { },
+    "cancel": function(status) { }
+  }, {
+    "serverUri": {
+      "value": Services.io.newURI(
+        "https://alfa.zonio.net:4444/RPC2", null, null
+      ),
+      "writable": true
+    },
+    "lastResponse": {
+      "value": create_xml_rpc_success_response()
+    },
+    "isFault": {
+      "value": false
+    },
+    "id": {
+      "value": "https://alfa.zonio.net:4444/RPC2:ESClient.authenticate"
+    },
+    "isPending": {
+      "value": false
+    },
+    "status": {
+      "value": Components.results.NS_OK
+    }
+  });
 }
 
 function create_xml_rpc_success_response() {
@@ -59,6 +89,39 @@ function create_xml_rpc_success_response() {
   return value;
 }
 
+function create_fault_method_queue() {
+  return Object.create({
+    "QueryInterface": XPCOMUtils.generateQI([
+      Components.interfaces.calEeeIMethodQueue
+    ]),
+    "enqueueMethod": function() { },
+    "execute": function() { },
+    "cancel": function(status) { }
+  }, {
+    "serverUri": {
+      "value": Services.io.newURI(
+        "https://alfa.zonio.net:4444/RPC2", null, null
+      ),
+      "writable": true
+    },
+    "lastResponse": {
+      "value": create_xml_rpc_fault_response()
+    },
+    "isFault": {
+      "value": true
+    },
+    "id": {
+      "value": "https://alfa.zonio.net:4444/RPC2:ESClient.authenticate"
+    },
+    "isPending": {
+      "value": false
+    },
+    "status": {
+      "value": Components.results.NS_OK
+    }
+  });
+}
+
 function create_xml_rpc_fault_response() {
   var fault = Components.classes[
     "@mozilla.org/xml-rpc/fault;1"
@@ -68,8 +131,37 @@ function create_xml_rpc_fault_response() {
   return fault;
 }
 
-function create_xml_rpc_error_response() {
-  return null;
+function create_transport_error_method_queue() {
+  return Object.create({
+    "QueryInterface": XPCOMUtils.generateQI([
+      Components.interfaces.calEeeIMethodQueue
+    ]),
+    "enqueueMethod": function() { },
+    "execute": function() { },
+    "cancel": function(status) { }
+  }, {
+    "serverUri": {
+      "value": Services.io.newURI(
+        "https://alfa.zonio.net:4444/RPC2", null, null
+      ),
+      "writable": true
+    },
+    "lastResponse": {
+      "value": null
+    },
+    "isFault": {
+      "value": false
+    },
+    "id": {
+      "value": "https://alfa.zonio.net:4444/RPC2:ESClient.authenticate"
+    },
+    "isPending": {
+      "value": false
+    },
+    "status": {
+      "value": Components.results.NS_ERROR_FAILURE
+    }
+  });
 }
 
 function run_test() {
