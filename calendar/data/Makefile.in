@@ -1,6 +1,6 @@
 # ***** BEGIN LICENSE BLOCK *****
 # 3e Calendar
-# Copyright © 2011  Zonio s.r.o.
+# Copyright © 2012  Zonio s.r.o.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../../../..
+DEPTH = ../../../../..
 topsrcdir = @top_srcdir@
 srcdir = @srcdir@
 VPATH = @srcdir@
@@ -27,6 +27,9 @@ include $(DEPTH)/config/autoconf.mk
 MODULE = calendar3e
 XPI_NAME = calendar3e-provider
 
-DIRS = public modules src data
+EEE_ERRORS_XML =  $(srcdir)/eeeErrors.xml
+
+libs::
+	$(NSINSTALL) -m 0644 $(EEE_ERRORS_XML) $(FINAL_TARGET)
 
 include $(topsrcdir)/config/rules.mk

@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+<eeeErrors>
+  <error>
+    <code>1</code>
+    <name>NOT_AUTHORIZED</name>
+    <description>Method requires authentication and a user is not logged in.</description>
+  </error>
+  <error>
+    <code>2</code>
+    <name>AUTH_FAILED</name>
+    <description>Authentication failed (wrong password).</description>
+  </error>
+  <error>
+    <code>3</code>
+    <name>INVALID_PARAMETER</name>
+    <description>Given parameter has invalid format.</description>
+  </error>
+  <error>
+    <code>4</code>
+    <name>NO_EFFECTIVE_USER</name>
+    <description>Root user does not call sudo before calling method with flag S.</description>
+  </error>
+  <error>
+    <code>5</code>
+    <name>USER_EXISTS</name>
+    <description>User already exists.</description>
+  </error>
+  <error>
+    <code>6</code>
+    <name>UNKNOWN_USER</name>
+    <description>User does not exist.</description>
+  </error>
+  <error>
+    <code>7</code>
+    <name>INVALID_PASSWORD</name>
+    <description>Weak password.</description>
+  </error>
+  <error>
+    <code>8</code>
+    <name>NO_PERMISSION</name>
+    <description>User does not have permissions to access the calendar.</description>
+  </error>
+  <error>
+    <code>9</code>
+    <name>CALENDAR_EXISTS</name>
+    <description>Calendar already exists.</description>
+  </error>
+  <error>
+    <code>10</code>
+    <name>UNKNOWN_CALENDAR</name>
+    <description>Requested calendar does not exist.</description>
+  </error>
+  <error>
+    <code>11</code>
+    <name>ALREADY_SUBSCRIBED</name>
+    <description>Calendar is already subscribed.</description>
+  </error>
+  <error>
+    <code>12</code>
+    <name>NOT_SUBSCRIBED</name>
+    <description>Calendar is not yet subscribed.</description>
+  </error>
+  <error>
+    <code>13</code>
+    <name>COMPONENT_EXISTS</name>
+    <description>Calendar object already exists in the calendar.</description>
+  </error>
+  <error>
+    <code>14</code>
+    <name>UNKNOWN_COMPONENT</name>
+    <description>Calendar object was not found in the calendar.</description>
+  </error>
+  <error>
+    <code>15</code>
+    <name>GROUP_EXISTS</name>
+    <description>Group already exists.</description>
+  </error>
+  <error>
+    <code>16</code>
+    <name>UNKNOWN_GROUP</name>
+    <description>Group does not exist.</description>
+  </error>
+  <error>
+    <code>17</code>
+    <name>ALIAS_EXISTS</name>
+    <description>Alias already exists.</description>
+  </error>
+  <error>
+    <code>18</code>
+    <name>UNKNOWN_ALIAS</name>
+    <description>Alias does not exist.</description>
+  </error>
+  <error>
+    <code>19</code>
+    <name>INVALID_QUERY</name>
+    <description>Given query function does not exist or is not implemented.</description>
+  </error>
+  <error>
+    <code>20</code>
+    <name>READ_ONLY</name>
+    <description>Read-only backend is used for users, groups etc. (e.g. LDAP)</description>
+  </error>
+  <error>
+    <code>21</code>
+    <name>DOMAIN_EXISTS</name>
+    <description>Domain already exists.</description>
+  </error>
+  <error>
+    <code>22</code>
+    <name>DOMAIN_VIOLATION</name>
+    <description>Foreign domain violated. (e.g. user from different domain tried to create.)</description>
+  </error>
+  <error>
+    <code>23</code>
+    <name>SPF_VIOLATION</name>
+    <description>SP method violates DNS TXT record.</description>
+  </error>
+  <error>
+    <code>24</code>
+    <name>NOT_MEMBER</name>
+    <description>User is not member of group.</description>
+  </error>
+  <error>
+    <code>99</code>
+    <name>UNKNOWN_METHOD</name>
+    <description>Method does not exist or is not implemented.</description>
+  </error>
+  <error>
+    <code>100</code>
+    <name>INTERNAL_SERVER_ERROR</name>
+    <description>Server error. (DB failures, disk full conditions, etc.)</description>
+  </error>
+  <error>
+    <code>101</code>
+    <name>CLIENT_ERROR</name>
+    <description>Client error. (Errors caused by caller not covered by another error code)</description>
+  </error>
+</eeeErrors>

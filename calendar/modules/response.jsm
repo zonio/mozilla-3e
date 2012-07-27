@@ -17,6 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+
 function Success(data) {
   return Object.create(Object.prototype, {
     "isSuccess": { "value": true },
@@ -32,9 +34,7 @@ function EeeError(data) {
     "isEeeError": { "value": true },
     "isTransportError": { "value": false },
     "data": { "value": null },
-    "code": { "value": data.faultCode },
-    "name": { "value": "Not Yet Implemented" },
-    "description": { "value": "Not Yet Implemented" }
+    "errorCode": { "value": data.faultCode }
   });
 }
 
@@ -45,6 +45,64 @@ function TransportError(data) {
     "isTransportError": { "value": true },
     "data": { "value": null }
   });
+}
+
+var errors = { "notLoaded": true };
+
+function loadErrors() {
+  if (!errors["notLoaded"]) {
+    return;
+  }
+
+  var errorDocument = Components.classes[
+    "@mozilla.org/xmlextras/domparser;1"
+  ].createInstance(Components.interfaces.nsIDOMParser).
+    parseFromString(getErrorsXml(), "text/xml");
+
+  var errorElement = errorDocument.documentElement;
+  if ('eeeErrors' !== errorElement.tagName) {
+    throw Components.Exception(
+      "Unexpected document element '" + errorElement.tagName + "'"
+    );
+  }
+
+  var errorList = errorElement.getElementsByTagName('error');
+  var codeElement, nameElement;
+  for (var idx = 0; idx < errorList.length; idx += 1) {
+    codeElement = errorList.item(idx).firstElementChild;
+    if ('code' !== codeElement.tagName) {
+      throw Components.Exception(
+        "Unexpected element '" + codeElement.tagName + "' instead of 'code'"
+      );
+    }
+    nameElement = codeElement.nextElementSibling
+    if ('name' !== nameElement.tagName) {
+      throw Components.Exception(
+        "Unexpected element '" + nameElement.tagName + "' instead of 'code'"
+      );
+    }
+
+    errors[nameElement.textContent] = 1 * codeElement.textContent;
+  }
+
+  delete errors["notLoaded"];
+}
+
+function getErrorsXml() {
+  var stream = Components.classes[
+    "@mozilla.org/scriptableinputstream;1"
+  ].getService(Components.interfaces.nsIScriptableInputStream);
+
+  var channel = Services.io.newChannel(
+    "resource://calendar3e/eeeErrors.xml", null, null
+  );
+  var input = channel.open();
+  stream.init(input);
+  var str = stream.read(input.available());
+  stream.close();
+  input.close();
+
+  return str;
 }
 
 function factory(xmlRpcResponse) {
@@ -63,9 +121,16 @@ function factory(xmlRpcResponse) {
   return getEeeResponseType(xmlRpcResponse)(xmlRpcResponse);
 }
 
-var cal3eResponse = {
+var cal3eResponse = Object.create({
   "factory": factory
-};
+}, {
+  "errors": {
+    "get": function() {
+      loadErrors();
+      return errors;
+    }
+  }
+});
 EXPORTED_SYMBOLS = [
   'cal3eResponse'
 ];
