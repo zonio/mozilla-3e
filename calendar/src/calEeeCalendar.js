@@ -138,6 +138,9 @@ calEeeCalendar.prototype = {
     switch (name) {
     case "cache.supported":
       return false;
+    case "itip.transport":
+      dump("itip.transport\n");
+      return Cc["@zonio.net/calendar3e/itip;1"].createInstance(Ci.calIItipTransport)
     }
 
     return this.__proto__.__proto__.getProperty.apply(this, arguments);

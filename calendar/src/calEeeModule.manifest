@@ -28,3 +28,6 @@ category profile-after-change calendar3e-freebusy-provider @zonio.net/calendar3e
 component {3892b01b-7e8f-4727-9087-ef4d814f7456} cal3eEnable.js
 contract @mozilla.org/accountmanager/extension;1?name=enable3e {3892b01b-7e8f-4727-9087-ef4d814f7456}
 category mailnews-accountmanager-extensions calendar3e-account-manager-extension @mozilla.org/accountmanager/extension;1?name=enable3e
+
+component {ee2d0640-a786-4caf-ad54-1cc51f251ba8} calEeeItip.js
+contract @zonio.net/calendar3e/itip;1 {ee2d0640-a786-4caf-ad54-1cc51f251ba8}

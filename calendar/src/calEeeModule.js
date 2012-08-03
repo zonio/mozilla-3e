@@ -226,6 +226,30 @@ var components = {
     constructor: "calEeeFreeBusyProvider",
     flags: Ci.nsIClassInfo.SINGLETON,
     resource: "resource://calendar3e/js/calEeeFreeBusyProvider.js"
+  },
+  
+  calEeeItip: {
+    getInterfaces: function calEeeItip_getInterfaces(count) {
+      var interfaces = [
+        Ci.calIItipTransport,
+        Ci.nsIClassInfo
+      ];
+      count.value = interfaces.length;
+      return interfaces;
+    },
+
+    getHelperForLanguage:
+    function calEeeItip_getHelperForLanguage(language) {
+      return null;
+    },
+
+    classDescription: "EEE calendar iTip",
+    contractID: "@zonio.net/calendar3e/itip;1",
+    classID: Components.ID("{ee2d0640-a786-4caf-ad54-1cc51f251ba8}"),
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    constructor: "calEeeItip",
+    flags: 0,
+    resource: "resource://calendar3e/js/calEeeItip.js"
   }
 };
 
