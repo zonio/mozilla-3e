@@ -24,6 +24,7 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 //Cu.import("resource://calendar3e/modules/dns.jsm");
+Cu.import("resource://calendar3e/modules/response.jsm");
 
 /**
  * EEE client simplifying server method calls to prepared operations.
@@ -182,12 +183,13 @@ calEeeClient.prototype = {
    */
   onResult: function calEeeClient_onResult(operation, context) {
     var methodQueue = operation.QueryInterface(Ci.calEeeIMethodQueue),
-        methodName = context[0].QueryInterface(Ci.nsISupportsCString),
         listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
 
     if (!methodQueue.isPending) {
       this._activeQueue = null;
-      listener.onResult(methodQueue, methodQueue.lastResponse);
+      listener.onResult(
+        methodQueue, cal3eResponse.fromMethodQueue(methodQueue)
+      );
     }
   },
 
@@ -222,7 +224,10 @@ calEeeClient.prototype = {
       if (didEnterPassword && savePassword) {
         this._storePassword(identity, password);
       } else if (!didEnterPassword) {
-        listener.onResult(methodQueue, null);
+        listener.onResult(
+          methodQueue,
+          new cal3eResponse.UserError(cal3eResponse.userErrors.NO_PASSWORD)
+        );
       }
     }
 

@@ -75,14 +75,16 @@ cal3eProperties._loadUsers = function loadUsers() {
 
   var clientListener = cal3eUtils.createOperationListener(
     function cal3eProperties_loadUsers_onResult(methodQueue, result) {
-      if (Components.results.NS_OK !== methodQueue.status) {
+      if (!(result instanceof cal3eResponse.Success)) {
         //TODO can't get list of users
         return;
       }
 
       var users;
       try {
-        users = result.QueryInterface(Components.interfaces.nsISupportsArray);
+        users = result.data.QueryInterface(
+          Components.interfaces.nsISupportsArray
+        );
       } catch (e) {
         //TODO can't get list of users
         return;

@@ -28,6 +28,7 @@ Cu.import("resource://calendar/modules/calIteratorUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
+Cu.import("resource://calendar3e/modules/response.jsm");
 
 
 function calEeeFreeBusyProvider() {}
@@ -94,19 +95,16 @@ calEeeFreeBusyProvider.prototype = {
 
     var clientListener = cal3eUtils.createOperationListener(
       function calEee_getFreeBusy_onResult(methodQueue, result) {
-        if (methodQueue.isFault && !methodQueue.isPending) {
+        if (result instanceof cal3eResponse.EeeError) {
           throw Components.Exception();
-        } else if (methodQueue.isPending) {
-          return;
-        }
-        if (Components.results.NS_OK !== methodQueue.status) {
+        } else if (result instanceof cal3eResponse.TransportError) {
           listener.onResult(null, null);
           return;
         }
 
         var rawItems;
         try {
-          rawItems = result.QueryInterface(Ci.nsISupportsCString);
+          rawItems = result.data.QueryInterface(Ci.nsISupportsCString);
           rawItems =
             "BEGIN:VCALENDAR\nVERSION:2.0\n" +
             "PRODID:-//Zonio//mozilla-3e//EN\n" +

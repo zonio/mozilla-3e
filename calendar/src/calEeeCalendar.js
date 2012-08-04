@@ -27,6 +27,7 @@ Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
+Cu.import("resource://calendar3e/modules/response.jsm");
 
 /**
  * Implementation of EEE calendar.
@@ -186,16 +187,11 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = cal3eUtils.createOperationListener(
       function calEee_adoptItem_onResult(methodQueue, result) {
-        if (methodQueue.isFault && !methodQueue.isPending) {
-          result = result.QueryInterface(Ci.nsIXmlRpcFault);
-          //TODO needs to be more precise
-          if (13 /* COMPONENT_EXISTS */ != result.faultCode) {
+        if (result instanceof cal3eResponse.EeeError) {
+          if (cal3eResponse.eeeErrors.COMPONENT_EXISTS !== result.errorCode) {
             throw Components.Exception();
           }
-        } else if (methodQueue.isPending) {
-          return;
-        }
-        if (Cr.NS_OK !== methodQueue.status) {
+        } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
             methodQueue.status,
@@ -258,16 +254,11 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = cal3eUtils.createOperationListener(
       function calEee_modifyItem_onResult(methodQueue, result) {
-        if (methodQueue.isFault && !methodQueue.isPending) {
-          result = result.QueryInterface(Ci.nsIXmlRpcFault);
-          //TODO needs to be more precise
-          if (13 /* COMPONENT_EXISTS */ != result.faultCode) {
+        if (result instanceof cal3eResponse.EeeError) {
+          if (cal3eResponse.eeeErrors.COMPONENT_EXISTS !== result.errorCode) {
             throw Components.Exception();
           }
-        } else if (methodQueue.isPending) {
-          return;
-        }
-        if (Cr.NS_OK !== methodQueue.status) {
+        } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
             methodQueue.status,
@@ -330,12 +321,9 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = cal3eUtils.createOperationListener(
       function calEee_deleteItem_onResult(methodQueue, result) {
-        if (methodQueue.isFault && !methodQueue.isPending) {
+        if (result instanceof cal3eResponse.EeeError) {
           throw Components.Exception();
-        } else if (methodQueue.isPending) {
-          return;
-        }
-        if (Cr.NS_OK !== methodQueue.status) {
+        } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
             methodQueue.status,
@@ -395,12 +383,9 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = cal3eUtils.createOperationListener(
       function calEee_getItems_onResult(methodQueue, result) {
-        if (methodQueue.isFault && !methodQueue.isPending) {
+        if (result instanceof cal3eResponse.EeeError) {
           throw Components.Exception();
-        } else if (methodQueue.isPending) {
-          return;
-        }
-        if (Cr.NS_OK !== methodQueue.status) {
+        } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
             methodQueue.status,
@@ -412,7 +397,7 @@ calEeeCalendar.prototype = {
 
         var rawItems;
         try {
-          rawItems = result.QueryInterface(Ci.nsISupportsCString);
+          rawItems = result.data.QueryInterface(Ci.nsISupportsCString);
         } catch (e) {
           calendar.notifyOperationComplete(
             listener,

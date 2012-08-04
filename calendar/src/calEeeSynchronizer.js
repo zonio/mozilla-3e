@@ -20,6 +20,7 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import("resource://calendar3e/modules/response.jsm");
 
 /**
  * Synchronizer of calendars present in Mozilla client application
@@ -317,16 +318,13 @@ calEeeSynchronizer.prototype = {
     ].getService(Components.interfaces.calEeeIClient);
     client.getCalendars(this._identity, cal3eUtils.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
-        if (methodQueue.isPending) {
-          return;
-        }
-        if (Components.results.NS_OK !== methodQueue.status) {
+        if (!(result instanceof cal3eResponse.Success)) {
           throw Components.Exception("Cannot retrieve calendar",
-                                     methodQueue.status);
+                                     result.errorCode);
         }
 
         var knownCalendars = synchronizer._loadEeeCalendarsByUri();
-        var calendars = result.QueryInterface(
+        var calendars = result.data.QueryInterface(
           Components.interfaces.nsISupportsArray
         );
         var idx = calendars.Count(), data, uri;

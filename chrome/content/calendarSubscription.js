@@ -85,20 +85,21 @@ calendarSubscription.prototype = {
     var calendarSubscription = this;
     var listener = cal3eUtils.createOperationListener(
       function calEee_adoptItem_onResult(methodQueue, result) {
-        if (methodQueue.isPending) {
-          return;
-        }
-        if (Cr.NS_OK !== methodQueue.status) {
+        if (!(result instanceof cal3eResponse.Success)) {
           this._addItemToMenu(
             this._providerElement,
-            [this._stringBundle.getString(
-              'cal3eCalendarProperties.providers.errorLabel'),
-             null],
+            [
+              this._stringBundle.getString(
+                'cal3eCalendarProperties.providers.errorLabel'
+              ),
+              null
+            ],
             true);
           return;
         }
         calendarSubscription.onProvidersLoaded(
-          calendarSubscription._buildProviders(result));
+          calendarSubscription._buildProviders(result)
+        );
       });
     this._client.getUsers(identity, listener,
                           "NOT match_username(" + identity.email + ") AND " +
@@ -196,9 +197,9 @@ calendarSubscription.prototype = {
   },
 
   _buildProviders:
-  function calendarSubscription_buildProviders(rawProviders) {
+  function calendarSubscription_buildProviders(result) {
     var providers = [];
-    var rawProviders = result.QueryInterface(
+    var rawProviders = result.data.QueryInterface(
       Components.interfaces.nsISupportsArray
     );
     var idx = rawProviders.Count(), rawProvider, uri;
