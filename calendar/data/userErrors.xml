@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<userErrors>
+  <error>
+    <code>1</code>
+    <name>NO_PASSWORD</name>
+    <description>User didn't answer password prompt.</description>
+  </error>
+  <error>
+    <code>2</code>
+    <name>BAD_CERT</name>
+    <description>User doesn't trust server's certificate.</description>
+  </error>
+</userErrors>

@@ -27,9 +27,12 @@ include $(DEPTH)/config/autoconf.mk
 MODULE = calendar3e
 XPI_NAME = calendar3e-provider
 
-EEE_ERRORS_XML =  $(srcdir)/eeeErrors.xml
+ERROR_XMLS = \
+	$(srcdir)/eeeErrors.xml \
+	$(srcdir)/userErrors.xml \
+	$(NULL)
 
 libs::
-	$(NSINSTALL) -m 0644 $(EEE_ERRORS_XML) $(FINAL_TARGET)
+	$(NSINSTALL) -m 0644 $(ERROR_XMLS) $(FINAL_TARGET)
 
 include $(topsrcdir)/config/rules.mk

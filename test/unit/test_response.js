@@ -26,7 +26,7 @@ function test_response_success() {
   var response = cal3eResponse.fromMethodQueue(methodQueue);
 
   do_check_true(response instanceof cal3eResponse.Success);
-  do_check_eq(methodQueue.lastResponse, eee.data);
+  do_check_eq(methodQueue.lastResponse, response.data);
 }
 
 function test_response_eee_error() {
@@ -34,8 +34,8 @@ function test_response_eee_error() {
   var response = cal3eResponse.fromMethodQueue(methodQueue);
 
   do_check_true(response instanceof cal3eResponse.EeeError);
-  do_check_true(null === eee.data);
-  do_check_eq(cal3eResponse.eeeErrors.AUTH_FAILED, eee.errorCode);
+  do_check_true(null === response.data);
+  do_check_eq(cal3eResponse.eeeErrors.AUTH_FAILED, response.errorCode);
 }
 
 function test_response_transport_error() {
@@ -43,8 +43,8 @@ function test_response_transport_error() {
   var response = cal3eResponse.fromMethodQueue(methodQueue);
 
   do_check_true(response instanceof cal3eResponse.TransportError);
-  do_check_true(null === eee.data);
-  do_check_eq(Components.results.NS_ERROR_FAILURE, eee.errorCode);
+  do_check_true(null === response.data);
+  do_check_eq(Components.results.NS_ERROR_FAILURE, response.errorCode);
 }
 
 function test_response_user_error() {
@@ -52,8 +52,8 @@ function test_response_user_error() {
     cal3eResponse.userErrors.NO_PASSWORD
   );
 
-  do_check_true(null === eee.data);
-  do_check_eq(cal3eResponse.userErrors.NO_PASSWORD, eee.errorCode);
+  do_check_true(null === response.data);
+  do_check_eq(cal3eResponse.userErrors.NO_PASSWORD, response.errorCode);
 }
 
 function create_success_method_queue() {
@@ -177,4 +177,5 @@ function run_test() {
   test_response_success();
   test_response_eee_error();
   test_response_transport_error();
+  test_response_user_error();
 }

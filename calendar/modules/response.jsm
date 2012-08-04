@@ -19,48 +19,101 @@
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-function Success(data) {
-  return Object.create(Object.prototype, {
-    "isSuccess": { "value": true },
-    "isEeeError": { "value": false },
-    "isTransportError": { "value": false },
-    "data": { "value": data }
+/**
+ * Representation of successful response from EEE server.
+ *
+ * @param {nsISupports} xmlRpcResult result from {@link
+ * nsIXmlRpcClient}
+ *
+ * @property {nsISupports} data
+ * @class
+ */
+function Success(xmlRpcResult) {
+  Object.defineProperty(this, "data", {
+    "value": xmlRpcResult.lastResponse
   });
 }
 
-function EeeError(data) {
-  return Object.create(Object.prototype, {
-    "isSuccess": { "value": false },
-    "isEeeError": { "value": true },
-    "isTransportError": { "value": false },
-    "data": { "value": null },
-    "errorCode": { "value": data.faultCode }
+/**
+ * Representation of error response on level of EEE protocol.
+ *
+ * @param {nsIXmlRpcFault} xmlRpcFault fault from {@link
+ * nsIXmlRpcClient}
+ *
+ * @property {nsISupports} data always null
+ * @property {Number} errorCode should be one of {@see eeeErrors}
+ * @class
+ */
+function EeeError(xmlRpcFault) {
+  Object.defineProperty(this, "data", {
+    "value": null
+  });
+  Object.defineProperty(this, "errorCode", {
+    "value": xmlRpcFault.lastResponse.faultCode
   });
 }
 
-function TransportError(data) {
-  return Object.create(Object.prototype, {
-    "isSuccess": { "value": false },
-    "isEeeError": { "value": false },
-    "isTransportError": { "value": true },
-    "data": { "value": null }
+/**
+ * Representation of transport response on level below EEE protocol.
+ *
+ * @param {calEeeIMethodQueue} methodQueue method queue which executed
+ * errorneous request
+ *
+ * @property {nsISupports} data always null
+ * @property {Number} errorCode should be one of {@see eeeErrors}
+ * @class
+ */
+function TransportError(methodQueue) {
+  Object.defineProperty(this, "data", {
+    "value": null
+  });
+  Object.defineProperty(this, "errorCode", {
+    "value": methodQueue.status
   });
 }
 
-var errors = { "notLoaded": true };
+/**
+ * Representation of transport response on level below EEE protocol.
+ *
+ * @param {Number} errorCode one of errors from {@link userErrors}
+ *
+ * @property {nsISupports} data always null
+ * @property {Number} errorCode exactly the same as constructor's
+ * parameter
+ * @class
+ */
+function UserError(errorCode) {
+  Object.defineProperty(this, "data", {
+    "value": null
+  });
+  Object.defineProperty(this, "errorCode", {
+    "value": errorCode
+  });
+}
 
-function loadErrors() {
-  if (!errors["notLoaded"]) {
+/**
+ * Dynamically loaded error code maps.
+ *
+ * @property {Object} eeeErrors
+ * @property {Object} userErrors
+ */
+var errors = {
+  "eeeErrors": { "notLoaded": true },
+  "userErrors": { "notLoaded": true }
+}
+
+function loadErrors(errorListName) {
+  if (!errors[errorListName]["notLoaded"]) {
     return;
   }
 
   var errorDocument = Components.classes[
     "@mozilla.org/xmlextras/domparser;1"
   ].createInstance(Components.interfaces.nsIDOMParser).
-    parseFromString(getErrorsXml(), "text/xml");
+    parseFromString(getErrorsXml(errorListName), "text/xml");
 
   var errorElement = errorDocument.documentElement;
-  if ('eeeErrors' !== errorElement.tagName) {
+  if (errorListName !== errorElement.tagName) {
     throw Components.Exception(
       "Unexpected document element '" + errorElement.tagName + "'"
     );
@@ -82,19 +135,20 @@ function loadErrors() {
       );
     }
 
-    errors[nameElement.textContent] = 1 * codeElement.textContent;
+    errors[errorListName][nameElement.textContent] =
+      1 * codeElement.textContent;
   }
 
-  delete errors["notLoaded"];
+  delete errors["eeeErrors"]["notLoaded"];
 }
 
-function getErrorsXml() {
+function getErrorsXml(errorListName) {
   var stream = Components.classes[
     "@mozilla.org/scriptableinputstream;1"
   ].getService(Components.interfaces.nsIScriptableInputStream);
 
   var channel = Services.io.newChannel(
-    "resource://calendar3e/eeeErrors.xml", null, null
+    "resource://calendar3e/" + errorListName + ".xml", null, null
   );
   var input = channel.open();
   stream.init(input);
@@ -105,32 +159,46 @@ function getErrorsXml() {
   return str;
 }
 
-function factory(xmlRpcResponse) {
+function fromMethodQueue(methodQueue) {
 
-  function getEeeResponseType(xmlRpcResponse) {
-    if (null === xmlRpcResponse) {
-      return TransportError;
-    }
-    if (xmlRpcResponse instanceof Components.interfaces.nsIXmlRpcFault) {
+  function getEeeResponseType() {
+    if (methodQueue.isFault) {
       return EeeError;
+    } else if (!Components.isSuccessCode(methodQueue.status)) {
+      return TransportError;
     }
 
     return Success;
   }
 
-  return getEeeResponseType(xmlRpcResponse)(xmlRpcResponse);
+  return new (getEeeResponseType())(methodQueue);
 }
 
-var cal3eResponse = Object.create({
-  "factory": factory
-}, {
-  "errors": {
-    "get": function() {
-      loadErrors();
-      return errors;
-    }
+function createErrorsGetter(errorListName) {
+  return function errorsGetter() {
+    loadErrors(errorListName);
+    return errors[errorListName];
   }
-});
+}
+
+function getExportedErrorProperties(errorListNames) {
+  var properties = {};
+  errorListNames.forEach(function(errorListName) {
+    properties[errorListName] = { "get": createErrorsGetter(errorListName) };
+  });
+
+  return properties;
+}
+
+var properties = getExportedErrorProperties(["eeeErrors", "userErrors"]);
+properties["Success"] = { "value": Success };
+properties["EeeError"] = { "value": EeeError };
+properties["TransportError"] = { "value": TransportError };
+properties["UserError"] = { "value": UserError };
+
+var cal3eResponse = Object.create({
+  "fromMethodQueue": fromMethodQueue
+}, properties);
 EXPORTED_SYMBOLS = [
   'cal3eResponse'
 ];
