@@ -43,7 +43,9 @@ function calEeeMethodQueue() {
   this._methodCalls = [];
   this._pending = true;
   this._status = Cr.NS_OK;
+  this._errorDescription = null;
   this._executing = false;
+  this._timestamp = 1 * (new Date());
 }
 
 calEeeMethodQueue.prototype = {
@@ -68,10 +70,13 @@ calEeeMethodQueue.prototype = {
    * @todo add proper unique identifier (is it necessary?)
    */
   get id() {
-    var uri = this._uri.spec,
-        lastMethod = this._methodCalls[this._methodCalls.length - 1][0];
+    var uri = this._uri.spec;
+    var lastMethod = "-- not initialized --";
+    if (this._methodCalls.length > 0) {
+      lastMethod = this._methodCalls[this._methodCalls.length - 1][0];
+    }
 
-    return uri + ':' + lastMethod;
+    return uri + ':' + lastMethod + '.' + this._timestamp;
   },
 
   /**
@@ -92,6 +97,17 @@ calEeeMethodQueue.prototype = {
    */
   get status() {
     return this._status;
+  },
+
+  /**
+   * Current method queue error description.
+   *
+   * This is a complement to method queue's status.
+   *
+   * @return {String}
+   */
+  get errorDescription() {
+    return this._errorDescription;
   },
 
   /**
@@ -305,6 +321,7 @@ calEeeMethodQueue.prototype = {
     this._lastResponse = null;
     this._pending = false;
     this._status = status;
+    this._errorDescription = message;
     this._listener.onResult(this, [methodName, this._context]);
   }
 

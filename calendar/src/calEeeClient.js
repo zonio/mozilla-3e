@@ -61,10 +61,15 @@ calEeeClient.prototype = {
    * @param {nsIMsgIdentity} identity
    * @returns {calEeeIMethodQueue}
    */
-  _prepareMethodQueue: function calEeeClient_prepareMethodQueue(identity) {
+  _prepareMethodQueue:
+  function calEeeClient_prepareMethodQueue(identity, listener) {
     var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"].
         createInstance(Ci.calEeeIMethodQueue);
     methodQueue.serverUri = this._uriFromIdentity(identity);
+
+    this._checkUserError(
+      methodQueue, listener, cal3eResponse.userErrors.BAD_CERT
+    );
 
     return methodQueue;
   },
@@ -187,12 +192,18 @@ calEeeClient.prototype = {
       return;
     }
 
-    var listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
-    var result = methodQueue.status !== Cr.NS_ERROR_CMS_VERIFY_UNTRUSTED ?
-      cal3eResponse.fromMethodQueue(methodQueue) :
-      new cal3eResponse.UserError(cal3eResponse.userErrors.BAD_CERT) ;
-
     this._activeQueue = null;
+
+    var listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
+    var result;
+    if ((methodQueue.status === Cr.NS_ERROR_FAILURE) &&
+        (methodQueue.errorDescription === 'Exception not added')) {
+      result = this._setLastUserError(
+        methodQueue, cal3eResponse.userErrors.BAD_CERT
+      );
+    } else {
+      result = cal3eResponse.fromMethodQueue(methodQueue);
+    }
     listener.onResult(methodQueue, result);
   },
 
@@ -218,6 +229,11 @@ calEeeClient.prototype = {
   function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
     //XXX move the whole password prompt/store/... functionality to
     // separate class
+
+    this._checkUserError(
+      methodQueue, listener, cal3eResponse.userErrors.NO_PASSWORD
+    );
+
     var password = this._findPassword(identity)
     if (null === password) {
       var [password, didEnterPassword, savePassword] =
@@ -229,7 +245,9 @@ calEeeClient.prototype = {
       } else if (!didEnterPassword) {
         listener.onResult(
           methodQueue,
-          new cal3eResponse.UserError(cal3eResponse.userErrors.NO_PASSWORD)
+          this._setLastUserError(
+            methodQueue, cal3eResponse.userErrors.NO_PASSWORD
+          )
         );
       }
     }
@@ -283,6 +301,65 @@ calEeeClient.prototype = {
     Cc["@mozilla.org/login-manager;1"]
       .getService(Ci.nsILoginManager)
       .addLogin(loginInfo);
+  },
+
+  _checkUserError:
+  function calEeeClient_checkUserError(methodQueue, listener, errorCode) {
+    var error = this._findLastUserError(methodQueue.serverUri.spec, errorCode);
+    //TODO move such constants to preferences
+    var threshold = new Date(Date.now - 5 * 60 * 1000);
+    if (error && error.timestamp > threshold) {
+      listener.onResult(methodQueue.serverUri.spec, error);
+    } else if (error) {
+      this._cleanLastUserError(methodQueue.serverUri.spec, errorCode);
+    }
+  },
+
+  _setLastUserError:
+  function calEeeClient_setLastUserError(methodQueue, errorCode) {
+    this._prepareLastUserErrorMap(methodQueue.serverUri.spec, errorCode);
+
+    this._lastUserErrors[methodQueue.serverUri.spec][errorCode] =
+      new cal3eResponse.UserError(errorCode);
+
+    return this._lastUserErrors[methodQueue.serverUri.spec][errorCode];
+  },
+
+  _findLastUserError:
+  function calEeeClient_findLastUserError(errorsId, errorCode) {
+    return this._lastUserErrors &&
+        this._lastUserErrors[errorsId] &&
+        this._lastUserErrors[errorsId][errorCode] ?
+      this._lastUserErrors[errorsId][errorCode] :
+      null ;
+  },
+
+  _prepareLastUserErrorMap:
+  function calEeeClient_prepareLastUserErrorMap(errorsId, errorCode) {
+    if (!this._lastUserErrors) {
+      this._lastUserErrors = {};
+      this._lastUserErrors.length = 0;
+    }
+    if (!this._lastUserErrors[errorsId]) {
+      this._lastUserErrors[errorsId] = {};
+      this._lastUserErrors[errorsId].length = 0;
+      this._lastUserErrors.length += 1;
+    }
+
+    this._lastUserErrors[methodQueue.serverUri.spec].length += 1;
+  },
+
+  _cleanLastUserError:
+  function calEeeClient_cleanLastUserError(errorsId, errorCode) {
+    delete this._lastUserErrors[errorsId][errorCode];
+    this._lastUserErrors[errorsId].length -= 1;
+    if (this._lastUserErrors[errorsId].length === 0) {
+      delete this._lastUserErrors[errorsId];
+      this._lastUserErrors.length -= 1;
+    }
+    if (this._lastUserErrors.length === 0) {
+      delete this._lastUserErrors;
+    }
   },
 
   /**

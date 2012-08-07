@@ -48,6 +48,13 @@ interface calEeeIMethodQueue: calIOperation {
     readonly attribute nsISupports lastResponse;
 
     /**
+     * Current method queue error description.
+     *
+     * This is a complement to method queue's status.
+     */
+    readonly attribute ACString errorDescription;
+
+    /**
      * Indicator whether last response was a fault or not.
      *
      * @throws NS_ERROR_NOT_AVAILABLE if called before the first server

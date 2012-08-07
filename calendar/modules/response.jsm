@@ -86,6 +86,9 @@ function UserError(errorCode) {
   Object.defineProperty(this, "data", {
     "value": null
   });
+  Object.defineProperty(this, "timestamp", {
+    "value": new Date()
+  });
   Object.defineProperty(this, "errorCode", {
     "value": errorCode
   });

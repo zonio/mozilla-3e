@@ -387,14 +387,14 @@ nsXmlRpcClient.prototype = {
             params
         );
 
-        if (!params.exceptionAdded) {
+        if (params.exceptionAdded) {
             this.asyncCall.apply(this, this._lastAsyncCallArgs);
         } else {
             this._listener.onError(
                 this,
                 this._context,
-                Components.results.NS_ERROR_CMS_VERIFY_UNTRUSTED,
-                'Untrusted certificate'
+                Components.results.NS_ERROR_FAILURE,
+                'Exception not added'
             );
         }
     },
