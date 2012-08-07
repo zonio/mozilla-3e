@@ -27,6 +27,7 @@ Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
+Cu.import("resource://calendar3e/modules/debug.jsm");
 
 /**
  * Implementation of EEE calendar.
@@ -465,7 +466,7 @@ calEeeCalendar.prototype = {
     return this._getClient().queryObjects(
       this._identity, clientListener, this,
       rangeStart ? rangeStart.nativeTime : null,
-      rangeStart ? rangeEnd.nativeTime : null);
+      rangeEnd ? rangeEnd.nativeTime : null);
   },
 
   /**
