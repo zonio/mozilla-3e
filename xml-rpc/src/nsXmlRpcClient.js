@@ -393,7 +393,7 @@ nsXmlRpcClient.prototype = {
             this._listener.onError(
                 this,
                 this._context,
-                Components.result.NS_ERROR_FAILURE,
+                Components.results.NS_ERROR_CMS_VERIFY_UNTRUSTED,
                 'Untrusted certificate'
             );
         }

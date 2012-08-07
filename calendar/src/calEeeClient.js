@@ -182,15 +182,18 @@ calEeeClient.prototype = {
    * specialized Mozilla instances
    */
   onResult: function calEeeClient_onResult(operation, context) {
-    var methodQueue = operation.QueryInterface(Ci.calEeeIMethodQueue),
-        listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
-
-    if (!methodQueue.isPending) {
-      this._activeQueue = null;
-      listener.onResult(
-        methodQueue, cal3eResponse.fromMethodQueue(methodQueue)
-      );
+    var methodQueue = operation.QueryInterface(Ci.calEeeIMethodQueue);
+    if (methodQueue.isPending) {
+      return;
     }
+
+    var listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
+    var result = methodQueue.status !== Cr.NS_ERROR_CMS_VERIFY_UNTRUSTED ?
+      cal3eResponse.fromMethodQueue(methodQueue) :
+      new cal3eResponse.UserError(cal3eResponse.userErrors.BAD_CERT) ;
+
+    this._activeQueue = null;
+    listener.onResult(methodQueue, result);
   },
 
   /**
