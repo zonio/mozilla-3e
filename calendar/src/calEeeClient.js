@@ -55,6 +55,21 @@ calEeeClient.prototype = {
 
   _interface_name: 'ESClient',
 
+  _prepareMethodQueueAndAuthenticate:
+  function calEeeClient_prepareMethodQueueAndAuthenticate(identity, listener) {
+    var methodQueue = this._prepareMethodQueue(identity, listener);
+    if (!methodQueue) {
+      return null;
+    }
+
+    methodQueue = this._enqueueAuthenticate(identity, methodQueue, listener);
+    if (!methodQueue) {
+      return null;
+    }
+
+    return methodQueue;
+  },
+
   /**
    * Prepares new method queue for operation on EEE server.
    *
@@ -63,15 +78,13 @@ calEeeClient.prototype = {
    */
   _prepareMethodQueue:
   function calEeeClient_prepareMethodQueue(identity, listener) {
-    var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"].
-        createInstance(Ci.calEeeIMethodQueue);
+    var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"]
+      .createInstance(Ci.calEeeIMethodQueue);
     methodQueue.serverUri = this._uriFromIdentity(identity);
 
-    this._checkUserError(
+    return this._validateMethodQueue(
       methodQueue, listener, cal3eResponse.userErrors.BAD_CERT
     );
-
-    return methodQueue;
   },
 
   /**
@@ -127,8 +140,10 @@ calEeeClient.prototype = {
         }
         return parameter;
       });
-    methodQueue.enqueueMethod(this._interface_name + "." + methodName,
-                              parameters.length, parameters);
+
+    return methodQueue.enqueueMethod(
+      this._interface_name + "." + methodName, parameters.length, parameters
+    );
   },
 
   /**
@@ -146,7 +161,7 @@ calEeeClient.prototype = {
       this._timer.init(this, 1, Ci.nsITimer.TYPE_ONE_SHOT);
     }
 
-    return this;
+    return methodQueue;
   },
 
   /**
@@ -218,8 +233,12 @@ calEeeClient.prototype = {
    * @throws {NS_ERROR_NOT_INITIALIZED} if called with no identity set
    */
   authenticate: function calEeeClient_authenticate(identity, listener) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
@@ -230,9 +249,10 @@ calEeeClient.prototype = {
     //XXX move the whole password prompt/store/... functionality to
     // separate class
 
-    this._checkUserError(
-      methodQueue, listener, cal3eResponse.userErrors.NO_PASSWORD
-    );
+    if (!this._validateMethodQueue(methodQueue, listener,
+                                   cal3eResponse.userErrors.NO_PASSWORD)) {
+      return null;
+    }
 
     var password = this._findPassword(identity)
     if (null === password) {
@@ -252,7 +272,9 @@ calEeeClient.prototype = {
       }
     }
 
-    this._enqueueMethod(methodQueue, 'authenticate', identity.email, password);
+    return this._enqueueMethod(
+      methodQueue, 'authenticate', identity.email, password
+    );
   },
 
   _passwordUri: function calEeeClient_passwordUri(identity) {
@@ -303,16 +325,19 @@ calEeeClient.prototype = {
       .addLogin(loginInfo);
   },
 
-  _checkUserError:
-  function calEeeClient_checkUserError(methodQueue, listener, errorCode) {
+  _validateMethodQueue:
+  function calEeeClient_validateMethodQueue(methodQueue, listener, errorCode) {
     var error = this._findLastUserError(methodQueue.serverUri.spec, errorCode);
     //TODO move such constants to preferences
     var threshold = new Date(Date.now() - 5 * 60 * 1000);
     if (error && error.timestamp > threshold) {
-      listener.onResult(methodQueue.serverUri.spec, error);
+      listener.onResult(methodQueue, error);
     } else if (error) {
       this._cleanLastUserError(methodQueue.serverUri.spec, errorCode);
+      error = null;
     }
+
+    return !error ? methodQueue : null ;
   },
 
   _setLastUserError:
@@ -374,8 +399,12 @@ calEeeClient.prototype = {
    * @see authenticate
    */
   getUsers: function calEeeClient_getUsers(identity, listener, query) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueGetUsers(methodQueue, query);
     this._queueExecution(methodQueue, listener);
 
@@ -383,7 +412,7 @@ calEeeClient.prototype = {
   },
 
   _enqueueGetUsers: function calEeeClient_enqueueGetUsers(methodQueue, query) {
-    this._enqueueMethod(methodQueue, 'getUsers', query);
+    return this._enqueueMethod(methodQueue, 'getUsers', query);
   },
 
   /**
@@ -399,8 +428,12 @@ calEeeClient.prototype = {
    * @see authenticate
    */
   getCalendars: function calEeeClient_getCalendars(identity, listener, query) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueGetCalendars(methodQueue, query);
     this._queueExecution(methodQueue, listener);
 
@@ -409,13 +442,17 @@ calEeeClient.prototype = {
 
   _enqueueGetCalendars:
   function calEeeClient_enqueueGetCalendars(methodQueue, query) {
-    this._enqueueMethod(methodQueue, 'getCalendars', query);
+    return this._enqueueMethod(methodQueue, 'getCalendars', query);
   },
 
   createCalendar:
   function calEeeClient_createCalendar(identity, listener, calendar) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueCreateCalendar(methodQueue, calendar);
     this._queueExecution(methodQueue, listener);
 
@@ -427,18 +464,26 @@ calEeeClient.prototype = {
     this._enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
     if (calendar.calname != calendar.name) {
       this._enqueueSetCalendarAttribute(
-        methodQueue, calendar, 'title', calendar.name, true);
+        methodQueue, calendar, 'title', calendar.name, true
+      );
     }
     if (calendar.getProperty('color')) {
       this._enqueueSetCalendarAttribute(
-        methodQueue, calendar, 'color', calendar.getProperty('color'), true);
+        methodQueue, calendar, 'color', calendar.getProperty('color'), true
+      );
     }
+
+    return methodQueue;
   },
 
   deleteCalendar:
   function calEeeClient_deleteCalendar(identity, listener, calendar) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueDeleteCalendar(methodQueue, calendar);
     this._queueExecution(methodQueue, listener);
 
@@ -447,26 +492,34 @@ calEeeClient.prototype = {
 
   _enqueueDeleteCalendar:
   function calEeeClient_enqueueDeleteCalendar(methodQueue, calendar) {
-    this._enqueueMethod(methodQueue, 'deleteCalendar', calendar.calname);
+    return this._enqueueMethod(
+      methodQueue, 'deleteCalendar', calendar.calname
+    );
   },
 
   setCalendarAttribute:
   function calEeeClient_setCalendarAttribute(
     identity, listener, calendar, name, value, isPublic) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
-    this._enqueueSetCalendarAttribute(
-      methodQueue, calendar, name, value, isPublic);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
+    this._enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
+                                      isPublic);
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
   _enqueueSetCalendarAttribute:
-  function calEeeClient_enqueueSetCalendarAttribute(
-    methodQueue, calendar, name, value, isPublic) {
-    this._enqueueMethod(methodQueue, 'setCalendarAttribute',
-                        calendar.calspec, name, value, isPublic);
+  function calEeeClient_enqueueSetCalendarAttribute(methodQueue, calendar,
+                                                    name, value, isPublic) {
+    return this._enqueueMethod(
+      methodQueue, 'setCalendarAttribute', calendar.calspec, name, value,
+      isPublic
+    );
   },
 
   /**
@@ -483,8 +536,12 @@ calEeeClient.prototype = {
    */
   queryObjects:
   function calEeeClient_queryObjects(identity, listener, calendar, from, to) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueQueryObjects(methodQueue, calendar, from, to);
     this._queueExecution(methodQueue, listener);
 
@@ -507,13 +564,19 @@ calEeeClient.prototype = {
     }
     query += "NOT deleted()";
 
-    this._enqueueMethod(methodQueue, 'queryObjects', calendar.calspec, query);
+    return this._enqueueMethod(
+      methodQueue, 'queryObjects', calendar.calspec, query
+    );
   },
 
   addObject:
   function calEeeClient_addObject(identity, listener, calendar, item) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueAddObject(methodQueue, calendar, item);
     this._queueExecution(methodQueue, listener);
 
@@ -525,20 +588,26 @@ calEeeClient.prototype = {
     var timezones = item.icalComponent.getReferencedTimezones(count);
     var idx = count.value;
     while (idx--) {
-      this._enqueueMethod(methodQueue, 'addObject',
-                          calendar.calspec,
-                          timezones[idx].icalComponent.serializeToICS());
+      this._enqueueMethod(
+        methodQueue, 'addObject', calendar.calspec,
+        timezones[idx].icalComponent.serializeToICS()
+      );
     }
 
-    this._enqueueMethod(methodQueue, 'addObject',
-                        calendar.calspec,
-                        item.icalComponent.serializeToICS());
+    return this._enqueueMethod(
+      methodQueue, 'addObject', calendar.calspec,
+      item.icalComponent.serializeToICS()
+    );
   },
 
   updateObject:
   function calEeeClient_updateObject(identity, listener, calendar, item) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueUpdateObject(methodQueue, calendar, item);
     this._queueExecution(methodQueue, listener);
 
@@ -550,21 +619,26 @@ calEeeClient.prototype = {
     var timezones = item.icalComponent.getReferencedTimezones(count);
     var idx = count.value;
     while (idx--) {
-      this._enqueueMethod(methodQueue, 'addObject',
-                          calendar.calspec,
-                          timezones[idx].icalComponent.serializeToICS());
+      this._enqueueMethod(
+        methodQueue, 'addObject', calendar.calspec,
+        timezones[idx].icalComponent.serializeToICS()
+      );
     }
 
-    this._enqueueMethod(methodQueue, 'updateObject',
-                        calendar.calspec,
-                        item.icalComponent.serializeToICS());
+    return this._enqueueMethod(
+      methodQueue, 'updateObject', calendar.calspec,
+      item.icalComponent.serializeToICS()
+    );
   },
 
   deleteObject:
-  function calEeeClient_deleteObject(identity, listener, calendar,
-                                     item) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+  function calEeeClient_deleteObject(identity, listener, calendar, item) {
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueDeleteObject(methodQueue, calendar, item);
     this._queueExecution(methodQueue, listener);
 
@@ -572,31 +646,34 @@ calEeeClient.prototype = {
   },
 
   _enqueueDeleteObject: function(methodQueue, calendar, item) {
-    this._enqueueMethod(methodQueue, 'deleteObject',
-                        calendar.calspec,
-                        item.id);
+    return this._enqueueMethod(
+      methodQueue, 'deleteObject', calendar.calspec, item.id
+    );
   },
 
   freeBusy:
   function calEeeClient_getFreebusy(identity, listener, attendee, from, to,
                                     defaultTimezone) {
-    var methodQueue = this._prepareMethodQueue(identity);
-    this._enqueueAuthenticate(identity, methodQueue, listener);
+    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+      identity, listener
+    );
+    if (!methodQueue) {
+      return null;
+    }
     this._enqueueGetFreeBusy(methodQueue, attendee, from, to, defaultTimezone);
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
-
   },
 
   _enqueueGetFreeBusy:
   function(methodQueue, attendee, from, to, defaultTimezone) {
-
     var fromEee = xpcomToEeeDate(from);
     var toEee = xpcomToEeeDate(to);
 
-    this._enqueueMethod(methodQueue, 'freeBusy', attendee, fromEee, toEee,
-                        defaultTimezone);
+    return this._enqueueMethod(
+      methodQueue, 'freeBusy', attendee, fromEee, toEee, defaultTimezone
+    );
   }
 
 }
