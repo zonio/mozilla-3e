@@ -18,6 +18,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/response.jsm");
@@ -318,9 +320,23 @@ calEeeSynchronizer.prototype = {
     ].getService(Components.interfaces.calEeeIClient);
     client.getCalendars(this._identity, cal3eUtils.createOperationListener(
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
-        if (!(result instanceof cal3eResponse.Success)) {
-          throw Components.Exception("Cannot retrieve calendar",
-                                     result.errorCode);
+        if (result instanceof cal3eResponse.UserError) {
+          return;
+        } else if (!(result instanceof cal3eResponse.Success)) {
+          var bundle = Services.strings.createBundle(
+            "chrome://calendar3e/locale/cal3eCalendar.properties"
+          );
+          Services.prompt.alert(
+            cal.getCalendarWindow(),
+            bundle.GetStringFromName("cal3eAlertDialog.calendarSync.title"),
+            bundle.formatStringFromName(
+              "cal3eAlertDialog.calendarSync.text",
+              [synchronizer._identity.fullName +
+               " <" + synchronizer._identity.email + ">"],
+              1
+            )
+          );
+          return;
         }
 
         var knownCalendars = synchronizer._loadEeeCalendarsByUri();
