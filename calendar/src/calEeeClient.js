@@ -307,7 +307,7 @@ calEeeClient.prototype = {
   function calEeeClient_checkUserError(methodQueue, listener, errorCode) {
     var error = this._findLastUserError(methodQueue.serverUri.spec, errorCode);
     //TODO move such constants to preferences
-    var threshold = new Date(Date.now - 5 * 60 * 1000);
+    var threshold = new Date(Date.now() - 5 * 60 * 1000);
     if (error && error.timestamp > threshold) {
       listener.onResult(methodQueue.serverUri.spec, error);
     } else if (error) {
@@ -346,7 +346,7 @@ calEeeClient.prototype = {
       this._lastUserErrors.length += 1;
     }
 
-    this._lastUserErrors[methodQueue.serverUri.spec].length += 1;
+    this._lastUserErrors[errorsId].length += 1;
   },
 
   _cleanLastUserError:
