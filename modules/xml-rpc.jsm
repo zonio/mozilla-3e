@@ -90,9 +90,9 @@ function Client() {
 
   function passResultToListener() {
     if (isSuccess()) {
-      listener.onResult(client, response.value());
+      listener.onResult(client, response);
     } else {
-      listener.onFault(client, response.faultCode(), response.faultString());
+      listener.onFault(client, response);
     }
   }
 
@@ -303,14 +303,27 @@ function Response(xmlDocument) {
     return parameter.value();
   }
 
+  function isSuccess() {
+    return true;
+  }
+
+  function isFault() {
+    return false;
+  }
+
   function init() {
     parseDocument();
   }
+
+  faultResponse.parameter = value;
+  faultResponse.isSuccess = isSuccess;
+  faultResponse.isFault = isFault;
 
   init();
 }
 
 function FaultResponse(xmlDocument) {
+  var faultResponse = this;
   var fault;
 
   function parseDocument() {
@@ -340,9 +353,22 @@ function FaultResponse(xmlDocument) {
     return fault.value()["faultString"];
   }
 
+  function isSuccess() {
+    return false;
+  }
+
+  function isFault() {
+    return true;
+  }
+
   function init() {
     parseDocument();
   }
+
+  faultResponse.faultCode = value;
+  faultResponse.faultString = faultString;
+  faultResponse.isSuccess = isSuccess;
+  faultResponse.isFault = isFault;
 
   init();
 }
