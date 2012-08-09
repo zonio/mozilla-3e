@@ -140,8 +140,7 @@ calEeeCalendar.prototype = {
     case "cache.supported":
       return false;
     case "itip.transport":
-      dump("itip.transport\n");
-      return Cc["@zonio.net/calendar3e/itip;1"].createInstance(Ci.calIItipTransport)
+      return Cc["@zonio.net/calendar3e/itip;1"].createInstance(Ci.calIItipTransport);
     }
 
     return this.__proto__.__proto__.getProperty.apply(this, arguments);
@@ -180,11 +179,24 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    if (item.isMutable && (this.superCalendar !== item.calendar)) {
-      item.calendar = this.superCalendar;
+    var newItem = item.clone();
+    if (newItem.isMutable && (this.superCalendar !== newItem.calendar)) {
+      newItem.calendar = this.superCalendar;
     }
-    if (item.isMutable && (null == item.id)) {
-      item.id = cal.getUUID();
+    if (newItem.isMutable && (null == newItem.id)) {
+      newItem.id = cal.getUUID();
+    }
+
+    // We only care about last occurrence of ATTENDEE property for
+    // each attendee.
+    for each (var attendee in item.getAttendees({})) {
+      var att = newItem.getAttendeeById(attendee.id);
+      if (att) {
+        newItem.removeAttendee(att);
+        att = att.clone();
+        att.participationStatus = attendee.participationStatus;
+        newItem.addAttendee(att);
+      }
     }
 
     var calendar = this;
@@ -204,21 +216,20 @@ calEeeCalendar.prototype = {
             listener,
             methodQueue.status,
             Ci.calIOperationListener.ADD,
-            item.id,
+            newItem.id,
             "Object addition to EEE server failed");
           return;
         }
-
         calendar.notifyOperationComplete(listener,
                                          Cr.NS_OK,
                                          Ci.calIOperationListener.ADD,
-                                         item.id,
-                                         item);
-        calendar.mObservers.notify('onAddItem', [item]);
+                                         newItem.id,
+                                         newItem);
+        calendar.mObservers.notify('onAddItem', [newItem]);
       });
 
     return this._getClient().addObject(
-      this._identity, clientListener, this, item);
+      this._identity, clientListener, this, newItem);
   },
 
   modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
@@ -361,43 +372,10 @@ calEeeCalendar.prototype = {
       this._identity, clientListener, this, item);
   },
 
-  getItem: function calEee_getItem(id, listener) {
-    this.notifyOperationComplete(listener,
-                                 Cr.NS_ERROR_NOT_IMPLEMENTED,
-                                 Ci.calIOperationListener.GET,
-                                 id,
-                                 "Not implemented");
-  },
-
-  getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
-      listener) {
-    if (null === this._identity) {
-      this.notifyOperationComplete(listener,
-                                   Cr.NS_ERROR_NOT_INITIALIZED,
-                                   Ci.calIOperationListener.GET,
-                                   null,
-                                   "Unknown identity");
-      return null;
-    }
-
-    var wantEvents = ((itemFilter &
-      Ci.calICalendar.ITEM_FILTER_TYPE_EVENT) != 0);
-    var wantInvitations = ((itemFilter &
-      Ci.calICalendar.ITEM_FILTER_REQUEST_NEEDS_ACTION) != 0);
-
-    if (!wantEvents) {
-      // Events are not wanted, nothing to do.
-      this.notifyOperationComplete(
-        listener,
-        Cr.NS_OK,
-        Ci.calIOperationListener.GET, null,
-        "Bad item filter passed to getItems"
-      );
-      return null;
-    }
-
+  _getQueryObjectsListener:
+  function calEeeCalendar_getQueryObjectsListener(listener) {
     var calendar = this;
-    var clientListener = cal3eUtils.createOperationListener(
+    return cal3eUtils.createOperationListener(
       function calEee_getItems_onResult(methodQueue, result) {
         if (methodQueue.isFault && !methodQueue.isPending) {
           throw Components.Exception();
@@ -462,6 +440,44 @@ calEeeCalendar.prototype = {
                                          null,
                                          null);
       });
+  },
+
+  getItem: function calEee_getItem(id, listener) {
+    this.notifyOperationComplete(listener,
+                                 Cr.NS_ERROR_NOT_IMPLEMENTED,
+                                 Ci.calIOperationListener.GET,
+                                 id,
+                                 "Not implemented");
+  },
+
+  getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
+      listener) {
+    if (null === this._identity) {
+      this.notifyOperationComplete(listener,
+                                   Cr.NS_ERROR_NOT_INITIALIZED,
+                                   Ci.calIOperationListener.GET,
+                                   null,
+                                   "Unknown identity");
+      return null;
+    }
+
+    var wantEvents = ((itemFilter &
+      Ci.calICalendar.ITEM_FILTER_TYPE_EVENT) != 0);
+    var wantInvitations = ((itemFilter &
+      Ci.calICalendar.ITEM_FILTER_REQUEST_NEEDS_ACTION) != 0);
+
+    if (!wantEvents) {
+      // Events are not wanted, nothing to do.
+      this.notifyOperationComplete(
+        listener,
+        Cr.NS_OK,
+        Ci.calIOperationListener.GET, null,
+        "Bad item filter passed to getItems"
+      );
+      return null;
+    }
+
+    var clientListener = this._getQueryObjectsListener(listener);
 
     return this._getClient().queryObjects(
       this._identity, clientListener, this,

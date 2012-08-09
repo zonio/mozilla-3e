@@ -21,7 +21,7 @@
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-function calEeeItip () {};
+function calEeeItip() {}
 
 calEeeItip.classInfo = XPCOMUtils.generateCI({
   classID: Components.ID("{ee2d0640-a786-4caf-ad54-1cc51f251ba8}"),
@@ -39,7 +39,7 @@ calEeeItip.prototype = {
   QueryInterface: XPCOMUtils.generateQI(
     calEeeItip.classInfo.getInterfaces({})),
   classInfo: calEeeItip.classInfo,
-  
+
   get scheme() {
       return "mailto";
   },
@@ -48,7 +48,7 @@ calEeeItip.prototype = {
   get senderAddress() {
     return this._senderAddress;
   },
-  
+
   set senderAddress(value) {
     this._senderAddress = value
     return this._senderAddress;
@@ -57,10 +57,9 @@ calEeeItip.prototype = {
   get type() {
     return "email";
   },
-  
+
   sendItems: function calEeeItip_sendItems(aCount, aRecipients, aItipItem) {
-    dump("sendItems called\n");
-    
+    // Sending messages is handled in 3e-server.
   }
 };
 
