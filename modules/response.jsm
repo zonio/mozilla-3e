@@ -22,34 +22,32 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 /**
  * Representation of successful response from EEE server.
  *
- * @param {nsISupports} xmlRpcResult result from {@link
- * nsIXmlRpcClient}
+ * @param {calEeeIMethodQueue} methodQueue
  *
  * @property {nsISupports} data
  * @class
  */
-function Success(xmlRpcResult) {
+function Success(methodQueue) {
   Object.defineProperty(this, "data", {
-    "value": xmlRpcResult.lastResponse
+    "value": methodQueue.lastResponse.value()
   });
 }
 
 /**
  * Representation of error response on level of EEE protocol.
  *
- * @param {nsIXmlRpcFault} xmlRpcFault fault from {@link
- * nsIXmlRpcClient}
+ * @param {calEeeIMethodQueue} methodQueue
  *
  * @property {nsISupports} data always null
  * @property {Number} errorCode should be one of {@see eeeErrors}
  * @class
  */
-function EeeError(xmlRpcFault) {
+function EeeError(methodQueue) {
   Object.defineProperty(this, "data", {
     "value": null
   });
   Object.defineProperty(this, "errorCode", {
-    "value": xmlRpcFault.lastResponse.faultCode
+    "value": methodQueue.lastResponse.faultCode()
   });
 }
 
