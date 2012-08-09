@@ -79,10 +79,10 @@ endif
 # include config.mk here so myconfig or app-config can set DISABLE_LIGHTNING_INSTALL
 include $(topsrcdir)/config/config.mk
 
-DIRS = calendar chrome
+DIRS = public modules src data chrome
 
 ifdef ENABLE_TESTS
-DIRS += ./test
+DIRS += test
 endif
 
 
