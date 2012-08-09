@@ -27,9 +27,10 @@ function Client() {
   var listener;
   var window;
   var request;
+  var xhr;
   var response;
 
-  function call(methodName) {
+  function send(methodName) {
     if (request) {
       throw Components.Exception(
         "Can be called only once.",
@@ -42,11 +43,23 @@ function Client() {
       Array.prototype.slice.call(arguments, 1)
     );
 
-    return doXhrCall();
+    prepareXhr();
+    doXhrSend();
+
+    return client;
   }
 
-  function doXhrCall() {
-    var xhr = Components.classes[
+  function abort() {
+    request = null;
+    xhr.abort();
+  }
+
+  function doXhrSend() {
+    xhr.send(request.body());
+  }
+
+  function prepareXhr() {
+    xhr = Components.classes[
       "@mozilla.org/xmlextras/xmlhttprequest;1"
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
     xhr.open("POST", uri.spec);
@@ -54,13 +67,10 @@ function Client() {
     xhr.addEventListener("load", onXhrLoad, false);
     xhr.addEventListener("error", onXhrError, false);
     xhr.channel.notificationCallbacks = new ChannelCallbacks(
-      doXhrCall,
+      doXhrSend,
       passErrorToListener,
       window
     );
-    xhr.send(request.body());
-
-    return client;
   }
 
   function onXhrLoad(event) {
@@ -89,6 +99,7 @@ function Client() {
   }
 
   function passResultToListener() {
+    request = null;
     if (isSuccess()) {
       listener.onResult(client, response);
     } else {
@@ -97,6 +108,7 @@ function Client() {
   }
 
   function passErrorToListener(result, description) {
+    request = null;
     listener.onError(client, result, description);
   }
 
@@ -122,7 +134,8 @@ function Client() {
     return response && (response instanceof Response);
   }
 
-  client.call = call;
+  client.send = send;
+  client.abort = abort;
   client.setUri = setUri;
   client.setListener = setListener;
   client.setWindow = setWindow;
@@ -564,7 +577,7 @@ function ChannelCallbacks(repeatCall, onError, window) {
       );
     }
 
-    return new BadCertListener(repeatCall, onError);
+    return new BadCertListener(repeatCall, onError, window);
   }
 
   channelCallbacks.QueryInterface = XPCOMUtils.generateQI([
