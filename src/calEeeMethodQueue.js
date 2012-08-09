@@ -23,6 +23,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://calendar3e/modules/xml-rpc.jsm");
 
 /**
  * Queue holding methods to be called on EEE server and their responses.
@@ -57,8 +58,7 @@ calEeeMethodQueue.prototype = {
   contractID: "@zonio.net/calendar3e/method-queue;1",
 
   QueryInterface: XPCOMUtils.generateQI([
-    Ci.calEeeIMethodQueue,
-    Ci.nsIXmlRpcClientListener
+    Ci.calEeeIMethodQueue
   ]),
 
   /**
@@ -171,12 +171,7 @@ calEeeMethodQueue.prototype = {
    * called
    */
   get isFault() {
-    try {
-      this.lastResponse.QueryInterface(Ci.nsIXmlRpcFault);
-      return true;
-    } catch (e) {
-      return false;
-    }
+    return this.lastResponse && this.lastResponse.isFault();
   },
 
   /**
@@ -220,9 +215,21 @@ calEeeMethodQueue.prototype = {
       throw Cr.NS_ERROR_NOT_INITIALIZED;
     }
 
-    var server = Cc["@mozilla.org/xml-rpc/client;1"].
-        createInstance(Ci.nsIXmlRpcClient);
-    server.init(this._uri.spec);
+    var methodQueue = this;
+    var server = new cal3eXmlRpc.Client();
+    server.setUri(this._uri);
+    this._server.setListener({
+      "onResult": function(server, result) {
+        methodQueue.onResult(server, result);
+      },
+      "onFault": function(server, fault) {
+        methodQueue.onFault(server, fault);
+      },
+      "onError": function(server, status, description) {
+        methodQueue.onError(server, status, description);
+      }
+    });
+
     this._executing = true;
     this._server = server;
     this._listener = listener;
@@ -241,7 +248,7 @@ calEeeMethodQueue.prototype = {
 
     var callArguments = [ this, context ];
     callArguments = callArguments.concat(this._methodCalls[this._methodIdx]);
-    this._server.asyncCall.apply(this._server, callArguments);
+    this._server.call.apply(this._server, callArguments);
   },
 
   /**
@@ -252,51 +259,48 @@ calEeeMethodQueue.prototype = {
    * during execution.
    *
    * @param {nsIXmlRpcClient} server XML-RPC client
-   * @param {String} methodName name of method successfully called
    * @param {nsISupports} result result returned by the method call
    */
-  onResult: function calEeeMq_onResult(server, methodName, result) {
+  onResult: function calEeeMq_onResult(server, result) {
     // skip handling of responses from canceled requests
     if (server !== this._server) {
       return;
     }
 
-    this._passToListenerGoNext(methodName, result);
+    this._passToListenerGoNext(result);
   },
 
   /**
    * Notifies listener that method was called and sets queue to failure state.
    *
    * @param {nsIXmlRpcClient} server XML-RPC client
-   * @param {String} methodName name of method which caused a failure
    * @param {nsIXmlRpcFault} fault
    */
-  onFault: function calEeeMq_onFault(server, methodName, fault) {
+  onFault: function calEeeMq_onFault(server, fault) {
     // skip handling of responses from canceled requests
     if (server !== this._server) {
       return;
     }
 
     this._lastResponse = fault;
-    this._passToListenerGoNext(methodName, fault);
+    this._passToListenerGoNext(fault);
   },
 
-  _passToListenerGoNext: function calEeeMq_passToListenerGoNext(methodName,
-                                                                response) {
+  _passToListenerGoNext: function calEeeMq_passToListenerGoNext(response) {
     this._methodIdx += 1;
     this._lastResponse = response;
     try {
       if (this._methodCalls.length <= this._methodIdx) {
         this._pending = false;
       }
-      this._listener.onResult(this, [methodName, this._context]);
+      this._listener.onResult(this, this._context);
     } catch (e) {
       let lastExec = this._pending;
       this._lastResponse = null;
       this._pending = false;
       this._status = e.result;
       if (lastExec) {
-        this._listener.onResult(this, [methodName, this._context]);
+        this._listener.onResult(this, this._context);
       }
     }
     if (this._pending) {
@@ -308,11 +312,10 @@ calEeeMethodQueue.prototype = {
    * Notifies listener that method was called and sets queue to not OK state.
    *
    * @param {nsIXmlRpcClient} server XML-RPC client
-   * @param {String} methodName name of method which caused an error
    * @param {Number} status error code
    * @param {String} message description of error
    */
-  onError: function calEeeMq_onError(server, methodName, status, message) {
+  onError: function calEeeMq_onError(server, status, message) {
     // skip handling of responses from canceled requests
     if (server !== this._server) {
       return;
@@ -322,7 +325,7 @@ calEeeMethodQueue.prototype = {
     this._pending = false;
     this._status = status;
     this._errorDescription = message;
-    this._listener.onResult(this, [methodName, this._context]);
+    this._listener.onResult(this, this._context);
   }
 
 }

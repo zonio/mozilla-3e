@@ -45,7 +45,7 @@ interface calEeeIMethodQueue: calIOperation {
      * response to method calls has been returned fro the server
      * @todo nsIVariant
      */
-    readonly attribute nsISupports lastResponse;
+    readonly attribute nsIVariant lastResponse;
 
     /**
      * Current method queue error description.

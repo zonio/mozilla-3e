@@ -131,7 +131,6 @@ var components = {
     function calEeeMethodQueue_getInterfaces(count) {
       var interfaces = [
         Ci.calEeeIMethodQueue,
-        Ci.nsIXmlRpcClientListener,
         Ci.nsIClassInfo
       ];
       count.value = interfaces.length;
