@@ -42,23 +42,16 @@ function Client() {
       methodName,
       Array.prototype.slice.call(arguments, 1)
     );
-
-    prepareXhr();
     doXhrSend();
 
     return client;
   }
 
   function abort() {
-    request = null;
     xhr.abort();
   }
 
   function doXhrSend() {
-    xhr.send(request.body());
-  }
-
-  function prepareXhr() {
     xhr = Components.classes[
       "@mozilla.org/xmlextras/xmlhttprequest;1"
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -71,6 +64,7 @@ function Client() {
       passErrorToListener,
       window
     );
+    xhr.send(request.body());
   }
 
   function onXhrLoad(event) {
@@ -99,7 +93,6 @@ function Client() {
   }
 
   function passResultToListener() {
-    request = null;
     if (isSuccess()) {
       listener.onResult(client, response);
     } else {
@@ -108,7 +101,6 @@ function Client() {
   }
 
   function passErrorToListener(result, description) {
-    request = null;
     listener.onError(client, result, description);
   }
 
