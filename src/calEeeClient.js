@@ -209,7 +209,7 @@ calEeeClient.prototype = {
 
     this._activeQueue = null;
 
-    var listener = context[1].QueryInterface(Ci.calIGenericOperationListener);
+    var listener = context.QueryInterface(Ci.calIGenericOperationListener);
     var result;
     if ((methodQueue.status === Cr.NS_ERROR_FAILURE) &&
         (methodQueue.errorDescription === 'Exception not added')) {
