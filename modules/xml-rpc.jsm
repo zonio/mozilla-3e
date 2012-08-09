@@ -125,6 +125,7 @@ function Client() {
   client.call = call;
   client.setUri = setUri;
   client.setListener = setListener;
+  client.setWindow = setWindow;
 }
 
 function Request(name, parameters) {
