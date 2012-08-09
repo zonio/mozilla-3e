@@ -26,7 +26,7 @@ function test_response_success() {
   var response = cal3eResponse.fromMethodQueue(methodQueue);
 
   do_check_true(response instanceof cal3eResponse.Success);
-  do_check_eq(methodQueue.lastResponse, response.data);
+  do_check_eq(methodQueue.lastResponse.value(), response.data);
 }
 
 function test_response_eee_error() {
@@ -90,12 +90,11 @@ function create_success_method_queue() {
 }
 
 function create_xml_rpc_success_response() {
-  var value = Components.classes[
-    "@mozilla.org/supports-PRBool;1"
-  ].createInstance(Components.interfaces.nsISupportsPRBool);
-  value.data = true;
-
-  return value;
+  return {
+    "value": function() {
+      return true;
+    }
+  };
 }
 
 function create_fault_method_queue() {
@@ -132,12 +131,14 @@ function create_fault_method_queue() {
 }
 
 function create_xml_rpc_fault_response() {
-  var fault = Components.classes[
-    "@mozilla.org/xml-rpc/fault;1"
-  ].createInstance(Components.interfaces.nsIXmlRpcFault);
-  fault.init(2, "./server.xdl:1181:Authentication failed.")
-
-  return fault;
+  return {
+    "faultCode": function() {
+      return 2;
+    },
+    "faultString": function() {
+      return "./server.xdl:1181:Authentication failed.";
+    }
+  };
 }
 
 function create_transport_error_method_queue() {
