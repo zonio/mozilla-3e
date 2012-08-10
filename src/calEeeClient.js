@@ -219,7 +219,7 @@ calEeeClient.prototype = {
     } else {
       result = cal3eResponse.fromMethodQueue(methodQueue);
     }
-    listener.onResult(methodQueue, result);
+    listener(methodQueue, result);
   },
 
   /**
@@ -263,7 +263,7 @@ calEeeClient.prototype = {
       if (didEnterPassword && savePassword) {
         this._storePassword(identity, password);
       } else if (!didEnterPassword) {
-        listener.onResult(
+        listener(
           methodQueue,
           this._setLastUserError(
             methodQueue, cal3eResponse.userErrors.NO_PASSWORD
@@ -333,7 +333,7 @@ calEeeClient.prototype = {
     //TODO move such constants to preferences
     var threshold = new Date(Date.now() - 5 * 60 * 1000);
     if (error && error.timestamp > threshold) {
-      listener.onResult(methodQueue, error);
+      listener(methodQueue, error);
     } else if (error) {
       this._cleanLastUserError(methodQueue.serverUri().spec, errorCode);
       error = null;
