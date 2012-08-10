@@ -22,21 +22,21 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 /**
  * Representation of successful response from EEE server.
  *
- * @param {calEeeIMethodQueue} methodQueue
+ * @param {cal3eRequest.Queue} methodQueue
  *
  * @property {nsISupports} data
  * @class
  */
 function Success(methodQueue) {
   Object.defineProperty(this, "data", {
-    "value": methodQueue.lastResponse.value()
+    "value": methodQueue.lastResponse().value()
   });
 }
 
 /**
  * Representation of error response on level of EEE protocol.
  *
- * @param {calEeeIMethodQueue} methodQueue
+ * @param {cal3eRequest.Queue} methodQueue
  *
  * @property {nsISupports} data always null
  * @property {Number} errorCode should be one of {@see eeeErrors}
@@ -47,14 +47,14 @@ function EeeError(methodQueue) {
     "value": null
   });
   Object.defineProperty(this, "errorCode", {
-    "value": methodQueue.lastResponse.faultCode()
+    "value": methodQueue.lastResponse().faultCode()
   });
 }
 
 /**
  * Representation of transport response on level below EEE protocol.
  *
- * @param {calEeeIMethodQueue} methodQueue method queue which executed
+ * @param {cal3eRequest.Queue} methodQueue method queue which executed
  * errorneous request
  *
  * @property {nsISupports} data always null
@@ -66,7 +66,7 @@ function TransportError(methodQueue) {
     "value": null
   });
   Object.defineProperty(this, "errorCode", {
-    "value": methodQueue.status
+    "value": methodQueue.status()
   });
 }
 
@@ -163,9 +163,9 @@ function getErrorsXml(errorListName) {
 function fromMethodQueue(methodQueue) {
 
   function getEeeResponseType() {
-    if (methodQueue.isFault) {
+    if (methodQueue.isFault()) {
       return EeeError;
-    } else if (!Components.isSuccessCode(methodQueue.status)) {
+    } else if (!Components.isSuccessCode(methodQueue.status())) {
       return TransportError;
     }
 
