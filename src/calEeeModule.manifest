@@ -11,9 +11,6 @@ component {b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b} calEeeManager.js
 contract @zonio.net/calendar3e/manager;1 {b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}
 category profile-after-change calendar3e-manager @zonio.net/calendar3e/manager;1
 
-component {bd47191f-9617-4a77-ae79-b7927b535f4c} calEeeMethodQueue.js
-contract @zonio.net/calendar3e/method-queue;1 {bd47191f-9617-4a77-ae79-b7927b535f4c}
-
 component {d7a08a5f-46ad-4a84-ad66-1cc27e9f388e} calEeeSynchronizer.js
 contract @zonio.net/calendar3e/synchronization-service;1 {d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}
 category profile-after-change calendar3e-synchronization-service @zonio.net/calendar3e/synchronization-service;1

@@ -126,31 +126,6 @@ var components = {
     resource: "resource://calendar3e/js/calEeeManager.js"
   },
 
-  calEeeMethodQueue: {
-    getInterfaces:
-    function calEeeMethodQueue_getInterfaces(count) {
-      var interfaces = [
-        Ci.calEeeIMethodQueue,
-        Ci.nsIClassInfo
-      ];
-      count.value = interfaces.length;
-      return interfaces;
-    },
-
-    getHelperForLanguage:
-    function calEeeMethodQueue_getHelperForLanguage(language) {
-      return null;
-    },
-
-    classDescription: "Queue for methods to be executed on the EEE server",
-    contractID: "@zonio.net/calendar3e/method-queue;1",
-    classID: Components.ID("{bd47191f-9617-4a77-ae79-b7927b535f4c}"),
-    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
-    constructor: "calEeeMethodQueue",
-    flags: 0,
-    resource: "resource://calendar3e/js/calEeeMethodQueue.js"
-  },
-
   calEeeSynchronizationService: {
     getInterfaces:
     function calEeeSynchronizationService_getInterfaces(count) {
