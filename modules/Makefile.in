@@ -32,8 +32,10 @@ EXTRA_JS_MODULES = \
 	dns.jsm \
 	identity.jsm \
 	resolv.jsm \
+	request.jsm \
 	response.jsm \
 	utils.jsm \
+	xml-rpc.jsm \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk
