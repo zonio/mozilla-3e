@@ -373,7 +373,7 @@ calEeeCalendar.prototype = {
   },
 
   _getQueryObjectsListener:
-  function calEeeCalendar_getQueryObjectsListener(listener) {
+  function calEeeCalendar_getQueryObjectsListener(id, listener) {
     var calendar = this;
     return cal3eUtils.createOperationListener(
       function calEee_getItems_onResult(methodQueue, result) {
@@ -387,7 +387,7 @@ calEeeCalendar.prototype = {
             listener,
             methodQueue.status,
             Ci.calIOperationListener.GET,
-            null,
+            id,
             "Objects retrieval from EEE server failed");
           return;
         }
@@ -396,11 +396,12 @@ calEeeCalendar.prototype = {
         try {
           rawItems = result.QueryInterface(Ci.nsISupportsCString);
         } catch (e) {
+            dump("calEee_getItems_onResult can't query interface\n");
           calendar.notifyOperationComplete(
             listener,
             methodQueue.status,
             Ci.calIOperationListener.GET,
-            null,
+            id,
             "Objects retrieval from EEE server failed");
           return;
         }
@@ -409,10 +410,11 @@ calEeeCalendar.prototype = {
         try {
           parser.parseString(rawItems);
         } catch (e) {
+            dump("calEee_getItems_onResult can't parse result\n");
           calendar.notifyOperationComplete(listener,
                                            e.result,
                                            Ci.calIOperationListener.GET,
-                                           null,
+                                           id,
                                            e.message);
           return;
         }
@@ -425,7 +427,6 @@ calEeeCalendar.prototype = {
           item = items[idx].clone();
           item.calendar = calendar.superCalendar;
           item.makeImmutable();
-
           listener.onGetResult(calendar.superCalendar,
                                Cr.NS_OK,
                                Ci.calIEvent,
@@ -433,11 +434,10 @@ calEeeCalendar.prototype = {
                                1,
                                [item]);
         }
-
         calendar.notifyOperationComplete(listener,
                                          Cr.NS_OK,
                                          Ci.calIOperationListener.GET,
-                                         null,
+                                         id,
                                          null);
       });
   },
@@ -452,13 +452,7 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    var clientListener = this._getQueryObjectsListener(listener);
-
-    this.notifyOperationComplete(listener,
-                                 Cr.NS_ERROR_NOT_IMPLEMENTED,
-                                 Ci.calIOperationListener.GET,
-                                 id,
-                                 "Not implemented");
+    var clientListener = this._getQueryObjectsListener(id, listener);
 
     return this._getClient().queryObjects(
       this._identity, clientListener, this,
@@ -494,7 +488,7 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    var clientListener = this._getQueryObjectsListener(listener);
+    var clientListener = this._getQueryObjectsListener(null, listener);
 
     return this._getClient().queryObjects(
       this._identity, clientListener, this,
@@ -510,14 +504,9 @@ calEeeCalendar.prototype = {
     this.mObservers.notify('onLoad', [this]);
   },
 
-  _icsParser: null,
   _getIcsParser: function calEee_getIcsParser() {
-    if (null === this._icsParser) {
-      this._icsParser = Cc["@mozilla.org/calendar/ics-parser;1"].
-        createInstance(Ci.calIIcsParser);
-    }
-
-    return this._icsParser;
+    return Cc["@mozilla.org/calendar/ics-parser;1"].
+      createInstance(Ci.calIIcsParser);
   }
 
 }
