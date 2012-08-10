@@ -242,7 +242,7 @@ function Request(name, parameters) {
     body += "</methodCall>";
   }
 
-  function body() {
+  function getBody() {
     return body;
   }
 
@@ -252,7 +252,7 @@ function Request(name, parameters) {
     appendMethodCallEndToBody();
   }
 
-  request.body = body;
+  request.body = getBody;
 
   init();
 }
@@ -313,7 +313,7 @@ function Response(xmlDocument) {
     parameter = new Value(valueElement);
   }
 
-  function parameter() {
+  function getParameter() {
     return parameter.value();
   }
 
@@ -329,7 +329,7 @@ function Response(xmlDocument) {
     parseDocument();
   }
 
-  faultResponse.parameter = value;
+  faultResponse.parameter = getParameter;
   faultResponse.isSuccess = isSuccess;
   faultResponse.isFault = isFault;
 
@@ -359,11 +359,11 @@ function FaultResponse(xmlDocument) {
     }
   }
 
-  function faultCode() {
+  function getFaultCode() {
     return fault.value()["faultCode"];
   }
 
-  function faultString() {
+  function getFaultString() {
     return fault.value()["faultString"];
   }
 
@@ -379,8 +379,8 @@ function FaultResponse(xmlDocument) {
     parseDocument();
   }
 
-  faultResponse.faultCode = value;
-  faultResponse.faultString = faultString;
+  faultResponse.faultCode = getFaultCode;
+  faultResponse.faultString = getFaultString;
   faultResponse.isSuccess = isSuccess;
   faultResponse.isFault = isFault;
 
@@ -551,11 +551,11 @@ function Value(valueElement) {
     return array;
   }
 
-  function type() {
+  function getType() {
     return type;
   }
 
-  function value() {
+  function getValue() {
     return parsedValue;
   }
 
@@ -563,6 +563,9 @@ function Value(valueElement) {
     type = normalizeType(valueElement);
     parsedValue = parseValue(valueElement);
   }
+
+  value.type = getType;
+  value.value = getValue;;
 
   init();
 }
