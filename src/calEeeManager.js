@@ -138,14 +138,13 @@ calEeeManager.prototype = {
       return;
     }
 
-    var listener = cal3eUtils.createOperationListener(
-      function calEeeManager_create_onResult(methodQueue, result) {
-        Services.prefs.setCharPref(
-          "calendar.registry." + calendar.id + ".uri",
-          calendar.uri.spec
-        );
-      }
-    );
+    var listener = function calEeeManager_create_onResult(methodQueue,
+                                                          result) {
+      Services.prefs.setCharPref(
+        "calendar.registry." + calendar.id + ".uri",
+        calendar.uri.spec
+      );
+    };
     this._generateUniqueUri(calendar);
     this._getClient().createCalendar(
       this._getIdentity(calendar),
@@ -179,12 +178,9 @@ calEeeManager.prototype = {
       return;
     }
 
-    var listener = cal3eUtils.createOperationListener(
-      function calEeeManager_delete_onResult(methodQueue, result) {}
-    );
     this._getClient().deleteCalendar(
       this._getIdentity(calendar),
-      listener,
+      function() {},
       calendar
     );
   },
@@ -217,12 +213,9 @@ calEeeManager.prototype = {
       break;
     }
 
-    var listener = cal3eUtils.createOperationListener(
-      function calEeeManager_update_onResult(methodQueue, result) {}
-    );
     this._getClient().setCalendarAttribute(
       this._getIdentity(calendar),
-      listener,
+      function() {},
       calendar,
       attrName,
       attrValue,

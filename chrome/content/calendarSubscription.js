@@ -83,24 +83,23 @@ calendarSubscription.prototype = {
        null],
       true);
     var calendarSubscription = this;
-    var listener = cal3eUtils.createOperationListener(
-      function calEee_adoptItem_onResult(methodQueue, result) {
-        if (!(result instanceof cal3eResponse.Success)) {
-          this._addItemToMenu(
-            this._providerElement,
-            [
-              this._stringBundle.getString(
-                'cal3eCalendarProperties.providers.errorLabel'
-              ),
-              null
-            ],
-            true);
-          return;
-        }
-        calendarSubscription.onProvidersLoaded(
-          calendarSubscription._buildProviders(result)
-        );
-      });
+    var listener = function calEee_adoptItem_onResult(methodQueue, result) {
+      if (!(result instanceof cal3eResponse.Success)) {
+        this._addItemToMenu(
+          this._providerElement,
+          [
+            this._stringBundle.getString(
+              'cal3eCalendarProperties.providers.errorLabel'
+            ),
+            null
+          ],
+          true);
+        return;
+      }
+      calendarSubscription.onProvidersLoaded(
+        calendarSubscription._buildProviders(result)
+      );
+    };
     this._client.getUsers(identity, listener,
                           "NOT match_username(" + identity.email + ") AND " +
                           "NOT match_user_alias(" + identity.email + ")");

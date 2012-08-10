@@ -318,7 +318,8 @@ calEeeSynchronizer.prototype = {
     var client = Components.classes[
       "@zonio.net/calendar3e/client-service;1"
     ].getService(Components.interfaces.calEeeIClient);
-    client.getCalendars(this._identity, cal3eUtils.createOperationListener(
+    client.getCalendars(
+      this._identity,
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
         if (result instanceof cal3eResponse.UserError) {
           return;
@@ -365,7 +366,7 @@ calEeeSynchronizer.prototype = {
 
           synchronizer._deleteCalendar(knownCalendars[uriSpec]);
         }
-      }), "owned()");
+      }, "owned()");
   },
 
   /**

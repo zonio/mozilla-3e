@@ -73,28 +73,28 @@ cal3eProperties._loadUsers = function loadUsers() {
     permissionsListBox.removeChild(permissionsListCols.nextSibling);
   }
 
-  var clientListener = cal3eUtils.createOperationListener(
-    function cal3eProperties_loadUsers_onResult(methodQueue, result) {
-      if (!(result instanceof cal3eResponse.Success)) {
-        //TODO can't get list of users
-        return;
-      }
+  var clientListener = function cal3eProperties_loadUsers_onResult(methodQueue,
+                                                                   result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      //TODO can't get list of users
+      return;
+    }
 
-      var users;
-      try {
-        users = result.data.QueryInterface(
-          Components.interfaces.nsISupportsArray
-        );
-      } catch (e) {
-        //TODO can't get list of users
-        return;
-      }
+    var users;
+    try {
+      users = result.data.QueryInterface(
+        Components.interfaces.nsISupportsArray
+      );
+    } catch (e) {
+      //TODO can't get list of users
+      return;
+    }
 
-      for (var idx = 0; idx < users.Count(); idx++) {
-        permissionsListBox.appendChild(
-          cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
-      }
-    });
+    for (var idx = 0; idx < users.Count(); idx++) {
+      permissionsListBox.appendChild(
+        cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
+    }
+  };
 
   var client = Cc["@zonio.net/calendar3e/client-service;1"]
     .createInstance(Components.interfaces.calEeeIClient);

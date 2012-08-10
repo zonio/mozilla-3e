@@ -93,77 +93,76 @@ calEeeFreeBusyProvider.prototype = {
   getFreeBusyIntervals: function(calId, start, end, busyTypes, listener) {
     var freeBusyProvider = this;
 
-    var clientListener = cal3eUtils.createOperationListener(
-      function calEee_getFreeBusy_onResult(methodQueue, result) {
-        if (result instanceof cal3eResponse.EeeError) {
-          throw Components.Exception();
-        } else if (result instanceof cal3eResponse.TransportError) {
-          listener.onResult(null, null);
-          return;
-        }
-
-        var rawItems;
-        try {
-          rawItems = result.data.QueryInterface(Ci.nsISupportsCString);
-          rawItems =
-            "BEGIN:VCALENDAR\nVERSION:2.0\n" +
-            "PRODID:-//Zonio//mozilla-3e//EN\n" +
-            rawItems.data +
-            "END:VCALENDAR";
-        } catch (e) {
-          listener.onResult(null, null);
-          return;
-        }
-
-        var periodsToReturn = [];
-
-        //TODO wrap try over possible exception throwers only
-        try {
-          for (let component in
-               cal.ical.calendarComponentIterator(
-                 cal.getIcsService().parseICS(rawItems, null)
-               )) {
-            let interval;
-
-            if (component.startTime &&
-                (start.compare(component.startTime) == -1)) {
-              periodsToReturn.push(new cal.FreeBusyInterval(
-                calId,
-                Ci.calIFreeBusyInterval.UNKNOWN,
-                start,
-                component.startTime
-              ));
-            }
-
-            if (component.endTime &&
-                (end.compare(component.endTime) == 1)) {
-              periodsToReturn.push(new cal.FreeBusyInterval(
-                calId,
-                Ci.calIFreeBusyInterval.UNKNOWN,
-                component.endTime,
-                end
-              ));
-            }
-
-            for (let property in
-                 cal.ical.propertyIterator(
-                   component, "FREEBUSY"
-                 )) {
-              periodsToReturn.push(
-                freeBusyProvider._buildFreeBusyIntervalFromProperty(
-                  calId,
-                  property
-                )
-              );
-            }
-          }
-        } catch (exc) {
-          cal.ERROR("3e Calendar: Error parsing free-busy info.");
-        }
-
-        listener.onResult(null, periodsToReturn);
+    var clientListener = function calEee_getFreeBusy_onResult(methodQueue,
+                                                              result) {
+      if (result instanceof cal3eResponse.EeeError) {
+        throw Components.Exception();
+      } else if (result instanceof cal3eResponse.TransportError) {
+        listener.onResult(null, null);
+        return;
       }
-    );
+
+      var rawItems;
+      try {
+        rawItems = result.data.QueryInterface(Ci.nsISupportsCString);
+        rawItems =
+          "BEGIN:VCALENDAR\nVERSION:2.0\n" +
+          "PRODID:-//Zonio//mozilla-3e//EN\n" +
+          rawItems.data +
+          "END:VCALENDAR";
+      } catch (e) {
+        listener.onResult(null, null);
+        return;
+      }
+
+      var periodsToReturn = [];
+
+      //TODO wrap try over possible exception throwers only
+      try {
+        for (let component in
+             cal.ical.calendarComponentIterator(
+               cal.getIcsService().parseICS(rawItems, null)
+             )) {
+          let interval;
+
+          if (component.startTime &&
+              (start.compare(component.startTime) == -1)) {
+            periodsToReturn.push(new cal.FreeBusyInterval(
+              calId,
+              Ci.calIFreeBusyInterval.UNKNOWN,
+              start,
+              component.startTime
+            ));
+          }
+
+          if (component.endTime &&
+              (end.compare(component.endTime) == 1)) {
+            periodsToReturn.push(new cal.FreeBusyInterval(
+              calId,
+              Ci.calIFreeBusyInterval.UNKNOWN,
+              component.endTime,
+              end
+            ));
+          }
+
+          for (let property in
+               cal.ical.propertyIterator(
+                 component, "FREEBUSY"
+               )) {
+            periodsToReturn.push(
+              freeBusyProvider._buildFreeBusyIntervalFromProperty(
+                calId,
+                property
+              )
+            );
+          }
+        }
+      } catch (exc) {
+        cal.ERROR("3e Calendar: Error parsing free-busy info.");
+      }
+
+      listener.onResult(null, periodsToReturn);
+    };
 
     var organizer = this._getEeeOrganizer();
     if (!organizer) {
