@@ -95,7 +95,7 @@ function Queue(serverUri) {
     }
   }
 
-  function onError(resultServer, status, message) {
+  function onError(resultServer, serverError) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
@@ -104,7 +104,7 @@ function Queue(serverUri) {
     lastResponse = null;
     pending = false;
     status = status;
-    error = Components.Exception(message, status);
+    error = serverError;
     listener.onResult(queue, context);
   }
 

@@ -110,7 +110,7 @@ function Client() {
 
   function passErrorToListener(result, description) {
     request = null;
-    listener.onError(client, result, description);
+    listener.onError(client, Components.Exception(description, result));
   }
 
   function setUri(newUri) {
