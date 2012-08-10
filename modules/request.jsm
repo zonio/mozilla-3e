@@ -22,66 +22,14 @@ Components.utils.import("resource://calendar3e/modules/xml-rpc.jsm");
 function Queue(serverUri) {
   var queue = this;
   var methodCalls;
-  var executing;
+  var sending;
   var pending;
   var status;
   var error;
   var timestamp;
 
-  function id() {
-    var lastMethod = methodCalls.length > 0 ?
-      methodCalls[methodCalls.length - 1][0] :
-      "-- not initialized --" ;
-
-    return serverUri.spec + ':' + lastMethod + '.' + timestamp;
-  }
-
-  function isPending() {
-    return pending;
-  }
-
-  function status() {
-    return status;
-  }
-
-  function error() {
-    return error;
-  }
-
-  function cancel() {
-    server.abort();
-    executing = false;
-    server = null;
-    lastResponse = undefined;
-  }
-
-  function setServerUri(newServerUri) {
-    if (executing) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    serverUri = newServerUri;
-    status = Components.results.NS_OK;
-  }
-
-  function serverUri() {
-    return serverUri;
-  }
-
-  function lastResponse() {
-    if ('undefined' === typeof lastResponse) {
-      throw Components.results.NS_ERROR_NOT_AVAILABLE;
-    }
-
-    return lastResponse;
-  }
-
-  function isFault() {
-    return lastResponse() && lastResponse().isFault();
-  }
-
   function push(methodName, parameters) {
-    if (executing) {
+    if (sending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
@@ -99,22 +47,22 @@ function Queue(serverUri) {
     return queue;
   }
 
-  function execute(listener, context) {
-    if (executing) {
+  function send(listener, context) {
+    if (sending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
     if ('undefined' === typeof serverUri) {
       throw Components.results.NS_ERROR_NOT_INITIALIZED;
     }
 
-    executing = true;
+    sending = true;
     listener = listener;
     context = context;
     methodIdx = 0;
-    executeNext();
+    sendNext();
   }
 
-  function executeNext() {
+  function sendNext() {
     server.send.call(server, methodCalls[methodIdx]);
   }
 
@@ -143,7 +91,7 @@ function Queue(serverUri) {
     listener.onResult(queue, context);
 
     if (pending) {
-      executeNext();
+      sendNext();
     }
   }
 
@@ -160,14 +108,99 @@ function Queue(serverUri) {
     listener.onResult(queue, context);
   }
 
+  function getId() {
+    var lastMethod = methodCalls.length > 0 ?
+      methodCalls[methodCalls.length - 1][0] :
+      "-- not initialized --" ;
+
+    return serverUri.spec + ':' + lastMethod + '.' + timestamp;
+  }
+
+  function isPending() {
+    return pending;
+  }
+
+  function getStatus() {
+    return status;
+  }
+
+  function getError() {
+    return error;
+  }
+
+  function cancel() {
+    server.abort();
+    sending = false;
+    server = null;
+    lastResponse = undefined;
+  }
+
+  function setServerUri(newServerUri) {
+    if (sending) {
+      throw Components.results.NS_ERROR_IN_PROGRESS;
+    }
+
+    serverUri = newServerUri;
+    status = Components.results.NS_OK;
+  }
+
+  function getServerUri() {
+    return serverUri;
+  }
+
+  function getLastResponse() {
+    if ('undefined' === typeof lastResponse) {
+      throw Components.results.NS_ERROR_NOT_AVAILABLE;
+    }
+
+    return lastResponse;
+  }
+
+  function isFault() {
+    return lastResponse() && lastResponse().isFault();
+  }
+
+  function getComponent() {
+    if (getComponent.component) {
+      return getComponent.component;
+    }
+
+    getComponent.component = Object.create({
+      "QueryInterface": XPCOMUtils.generateQI([
+        Components.interfaces.calIOperation
+      ]),
+      "cancel": abort();
+    }, {
+      "id": {"get": getId},
+      "isPending": {"get": isPending},
+      "status": {"get": getStatus},
+    });
+
+    return getComponent.component;
+  }
+
   function init() {
     methodCalls = [];
-    executing = false;
+    sending = false;
     pending = false;
     status = Components.results.NS_OK;
     error = null;
     timestamp = 1 * (new Date());
   }
+
+  queue.component = getComponent;
+  queue.id = getId;
+  queue.isPending = isPending;
+  queue.status = getStatus;
+  queue.setServerUri = setServerUri;
+  queue.serverUri = getServerUri;
+  queue.lastResponse = lastResponse;
+  queue.error = getError;
+  queue.push = push;
+  queue.send = send;
+  queue.onResult = onResult;
+  queue.onFault = onFault;
+  queue.onError = onError;
 
   init();
 }
