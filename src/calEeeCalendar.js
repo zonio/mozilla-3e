@@ -194,7 +194,7 @@ calEeeCalendar.prototype = {
         } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
-            methodQueue.status,
+            methodQueue.status(),
             Ci.calIOperationListener.ADD,
             item.id,
             "Object addition to EEE server failed");
@@ -209,8 +209,9 @@ calEeeCalendar.prototype = {
         calendar.mObservers.notify('onAddItem', [item]);
       });
 
-    return this._getClient().addObject(
-      this._identity, clientListener, this, item);
+    return this._getClient()
+      .addObject(this._identity, clientListener, this, item)
+      .component();
   },
 
   modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
@@ -261,7 +262,7 @@ calEeeCalendar.prototype = {
         } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
-            methodQueue.status,
+            methodQueue.status(),
             Ci.calIOperationListener.MODIFY,
             newItem.id,
             "Object addition to EEE server failed");
@@ -276,8 +277,9 @@ calEeeCalendar.prototype = {
         calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
       });
 
-    return this._getClient().updateObject(
-      this._identity, clientListener, this, newItem);
+    return this._getClient()
+      .updateObject(this._identity, clientListener, this, newItem)
+      .component();
   },
 
   deleteItem: function calEee_deleteItem(item, listener) {
@@ -326,7 +328,7 @@ calEeeCalendar.prototype = {
         } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
-            methodQueue.status,
+            methodQueue.status(),
             Ci.calIOperationListener.DELETE,
             item.id,
             "Object deletion to EEE server failed");
@@ -341,8 +343,9 @@ calEeeCalendar.prototype = {
         calendar.mObservers.notify('onDeleteItem', [item]);
       });
 
-    return this._getClient().deleteObject(
-      this._identity, clientListener, this, item);
+    return this._getClient()
+      .deleteObject(this._identity, clientListener, this, item)
+      .component();
   },
 
   getItem: function calEee_getItem(id, listener) {
@@ -388,7 +391,7 @@ calEeeCalendar.prototype = {
         } else if (result instanceof cal3eResponse.TransportError) {
           calendar.notifyOperationComplete(
             listener,
-            methodQueue.status,
+            methodQueue.status(),
             Ci.calIOperationListener.GET,
             null,
             "Objects retrieval from EEE server failed");
@@ -401,7 +404,7 @@ calEeeCalendar.prototype = {
         } catch (e) {
           calendar.notifyOperationComplete(
             listener,
-            methodQueue.status,
+            methodQueue.status(),
             Ci.calIOperationListener.GET,
             null,
             "Objects retrieval from EEE server failed");
@@ -444,10 +447,12 @@ calEeeCalendar.prototype = {
                                          null);
       });
 
-    return this._getClient().queryObjects(
-      this._identity, clientListener, this,
-      rangeStart ? rangeStart.nativeTime : null,
-      rangeStart ? rangeEnd.nativeTime : null);
+    return this._getClient()
+      .queryObjects(
+        this._identity, clientListener, this,
+        rangeStart ? rangeStart.nativeTime : null,
+        rangeStart ? rangeEnd.nativeTime : null
+      ).component();
   },
 
   /**
