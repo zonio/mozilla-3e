@@ -24,6 +24,7 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 //Cu.import("resource://calendar3e/modules/dns.jsm");
+Cu.import("resource://calendar3e/modules/request.jsm");
 Cu.import("resource://calendar3e/modules/response.jsm");
 
 /**
@@ -78,9 +79,7 @@ calEeeClient.prototype = {
    */
   _prepareMethodQueue:
   function calEeeClient_prepareMethodQueue(identity, listener) {
-    var methodQueue = Cc["@zonio.net/calendar3e/method-queue;1"]
-      .createInstance(Ci.calEeeIMethodQueue);
-    methodQueue.serverUri = this._uriFromIdentity(identity);
+    var methodQueue = cal3eRequest.Queue(this._uriFromIdentity(identity));
 
     return this._validateMethodQueue(
       methodQueue, listener, cal3eResponse.userErrors.BAD_CERT
@@ -141,7 +140,7 @@ calEeeClient.prototype = {
         return parameter;
       });
 
-    return methodQueue.enqueueMethod(
+    return methodQueue.push(
       this._interface_name + "." + methodName, parameters.length, parameters
     );
   },
@@ -183,7 +182,7 @@ calEeeClient.prototype = {
     if (null === this._activeQueue) {
       let listener;
       [this._activeQueue, listener] = this._queues.shift();
-      this._activeQueue.execute(this, listener);
+      this._activeQueue.send(this, listener);
     }
     if (0 < this._queues.length) {
       this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -201,9 +200,8 @@ calEeeClient.prototype = {
    * @todo custom listener with transformation of XML-RPC response to
    * specialized Mozilla instances
    */
-  onResult: function calEeeClient_onResult(operation, context) {
-    var methodQueue = operation.QueryInterface(Ci.calEeeIMethodQueue);
-    if (methodQueue.isPending) {
+  onResult: function calEeeClient_onResult(methodQueue, context) {
+    if (methodQueue.isPending()) {
       return;
     }
 
@@ -211,8 +209,10 @@ calEeeClient.prototype = {
 
     var listener = context.QueryInterface(Ci.calIGenericOperationListener);
     var result;
-    if ((methodQueue.status === Cr.NS_ERROR_FAILURE) &&
-        (methodQueue.errorDescription === 'Exception not added')) {
+    if (methodQueue.error() &&
+        (methodQueue.error().result === Cr.NS_ERROR_FAILURE) &&
+        (methodQueue.error().message ===
+         "Server certificate exception not added")) {
       result = this._setLastUserError(
         methodQueue, cal3eResponse.userErrors.BAD_CERT
       );
@@ -327,13 +327,15 @@ calEeeClient.prototype = {
 
   _validateMethodQueue:
   function calEeeClient_validateMethodQueue(methodQueue, listener, errorCode) {
-    var error = this._findLastUserError(methodQueue.serverUri.spec, errorCode);
+    var error = this._findLastUserError(
+      methodQueue.serverUri().spec, errorCode
+    );
     //TODO move such constants to preferences
     var threshold = new Date(Date.now() - 5 * 60 * 1000);
     if (error && error.timestamp > threshold) {
       listener.onResult(methodQueue, error);
     } else if (error) {
-      this._cleanLastUserError(methodQueue.serverUri.spec, errorCode);
+      this._cleanLastUserError(methodQueue.serverUri().spec, errorCode);
       error = null;
     }
 
@@ -342,12 +344,12 @@ calEeeClient.prototype = {
 
   _setLastUserError:
   function calEeeClient_setLastUserError(methodQueue, errorCode) {
-    this._prepareLastUserErrorMap(methodQueue.serverUri.spec, errorCode);
+    this._prepareLastUserErrorMap(methodQueue.serverUri().spec, errorCode);
 
-    this._lastUserErrors[methodQueue.serverUri.spec][errorCode] =
+    this._lastUserErrors[methodQueue.serverUri().spec][errorCode] =
       new cal3eResponse.UserError(errorCode);
 
-    return this._lastUserErrors[methodQueue.serverUri.spec][errorCode];
+    return this._lastUserErrors[methodQueue.serverUri().spec][errorCode];
   },
 
   _findLastUserError:
