@@ -385,11 +385,13 @@ calEeeClient.prototype = {
   },
 
   /**
-   * Retrieves objects from given calendar and in given date-time range.
+   * Retrieves objects from given calendar and in given date-time range
+   * or by id.
    *
    * @param {nsIMsgIdentity} identity
    * @param {calIGenericOperationListener} listener
    * @param {calICalendar} calendar queried calendar
+   * @param {String} id of event
    * @param {Number} from beggining of the range as a UNIX timestamp
    * @param {Number} from end of the range as a UNIX timestamp
    * @return {calEeeIMethodQueue} method queue with queryObjects being
@@ -397,28 +399,32 @@ calEeeClient.prototype = {
    * @see authenticate
    */
   queryObjects:
-  function calEeeClient_queryObjects(identity, listener, calendar, from, to) {
+  function calEeeClient_queryObjects(identity, listener, calendar, id, from, to) {
     var methodQueue = this._prepareMethodQueue(identity);
     this._enqueueAuthenticate(identity, methodQueue, listener);
-    this._enqueueQueryObjects(methodQueue, calendar, from, to);
+    this._enqueueQueryObjects(methodQueue, calendar, id, from, to);
     this._queueExecution(methodQueue, listener);
 
     return methodQueue;
   },
 
-  _enqueueQueryObjects: function(methodQueue, calendar, from, to) {
+  _enqueueQueryObjects: function(methodQueue, calendar, id, from, to) {
     var query = "";
-    if (null !== from) {
-      query += "date_from('" + xpcomToEeeDate(from) + "')";
-    }
-    if (null !== to) {
+    if (id === null) {
+      if (null !== from) {
+        query += "date_from('" + xpcomToEeeDate(from) + "')";
+      }
+      if (null !== to) {
+        if ('' !== query) {
+          query += ' AND ';
+        }
+        query += "date_to('" + xpcomToEeeDate(to) + "')";
+      }
       if ('' !== query) {
         query += ' AND ';
       }
-      query += "date_to('" + xpcomToEeeDate(to) + "')";
-    }
-    if ('' !== query) {
-      query += ' AND ';
+    } else {
+      query += "match_uid('" + id + "') AND ";
     }
     query += "NOT deleted()";
 

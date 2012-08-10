@@ -132,12 +132,13 @@ interface calEeeIClient: nsISupports {
         in boolean isPublic);
 
     /**
-     * Retrieves calendar objects within given date and time range and
-     * matching given query.
+     * Retrieves calendar objects within given date and time range or
+     * given id.
      *
      * @param identity executor of methods call
      * @param listener object which gets notified after methods call is
      * finished
+     * @param id of event to be retrieved
      * @param calendar calendar which gets queried for items (e.g. events)
      * @param from datetime from which objects are listed
      * @param to datatime to which objects are listed
@@ -147,6 +148,7 @@ interface calEeeIClient: nsISupports {
         in nsIMsgIdentity identity,
         in calIGenericOperationListener listener,
         in calEeeICalendar calendar,
+        in AUTF8String id,
         in PRTime from,
         in PRTime to);
 

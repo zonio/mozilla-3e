@@ -443,11 +443,28 @@ calEeeCalendar.prototype = {
   },
 
   getItem: function calEee_getItem(id, listener) {
+    if (null === this._identity) {
+      this.notifyOperationComplete(listener,
+                                   Cr.NS_ERROR_NOT_INITIALIZED,
+                                   Ci.calIOperationListener.GET,
+                                   null,
+                                   "Unknown identity");
+      return null;
+    }
+
+    var clientListener = this._getQueryObjectsListener(listener);
+
     this.notifyOperationComplete(listener,
                                  Cr.NS_ERROR_NOT_IMPLEMENTED,
                                  Ci.calIOperationListener.GET,
                                  id,
                                  "Not implemented");
+
+    return this._getClient().queryObjects(
+      this._identity, clientListener, this,
+      id,
+      null,
+      null);
   },
 
   getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
@@ -481,6 +498,7 @@ calEeeCalendar.prototype = {
 
     return this._getClient().queryObjects(
       this._identity, clientListener, this,
+      null,
       rangeStart ? rangeStart.nativeTime : null,
       rangeEnd ? rangeEnd.nativeTime : null);
   },
