@@ -54,10 +54,6 @@ function Client() {
     xhr.abort();
   }
 
-  function doXhrSend() {
-    xhr.send(request.body());
-  }
-
   function prepareXhr() {
     xhr = Components.classes[
       "@mozilla.org/xmlextras/xmlhttprequest;1"
@@ -71,6 +67,9 @@ function Client() {
       passErrorToListener,
       window
     );
+  }
+
+  function doXhrSend() {
     xhr.send(request.body());
   }
 
@@ -594,7 +593,7 @@ function BadCertListener(repeatCall, onError, window) {
   var badCertListener = this;
 
   function notifyCertProblem(socketInfo, status, targetSite) {
-    cal.getCalendarWindow().setTimeout(function() {
+    window.setTimeout(function() {
       showBadCertDialogAndRetryCall({
         "exceptionAdded" : false,
         "prefetchCert" : true,
@@ -604,10 +603,6 @@ function BadCertListener(repeatCall, onError, window) {
   }
 
   function showBadCertDialogAndRetryCall(parameters) {
-    if (!window) {
-      window = Services.wm.getMostRecentWindow(null);
-    }
-
     window.openDialog(
       "chrome://pippki/content/exceptionDialog.xul",
       "",
@@ -625,10 +620,18 @@ function BadCertListener(repeatCall, onError, window) {
     }
   }
 
+  function init() {
+    if (!window) {
+      window = Services.wm.getMostRecentWindow(null);
+    }
+  }
+
   badCertListener.QueryInterface = XPCOMUtils.generateQI([
     Components.interfaces.nsIInterfaceRequestor
   ]);
   badCertListener.notifyCertProblem = notifyCertProblem;
+
+  init();
 }
 
 var cal3eXmlRpc = {

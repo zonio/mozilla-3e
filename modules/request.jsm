@@ -46,7 +46,11 @@ function Client() {
   }
 
   function prepareMethodQueue(identity, listener) {
-    var methodQueue = Queue(uriFromIdentity(identity));
+    var methodQueue = new Queue();
+    methodQueue
+      .setServerUri(uriFromIdentity(identity))
+      .setListener(onResult)
+      .setContext(listener);
 
     return validateMethodQueue(
       methodQueue, listener, cal3eResponse.userErrors.BAD_CERT
@@ -73,8 +77,8 @@ function Client() {
     );
   }
 
-  function queueExecution(methodQueue, listener) {
-    queues.push([methodQueue, listener]);
+  function queueExecution(methodQueue) {
+    queues.push(methodQueue);
     if (null === timer) {
       timer = Components.classes['@mozilla.org/timer;1']
         .createInstance(Components.interfaces.nsITimer);
@@ -97,9 +101,8 @@ function Client() {
 
   function execute() {
     if (null === activeQueue) {
-      let listener;
-      [activeQueue, listener] = queues.shift();
-      activeQueue.send(this, listener);
+      activeQueue = queues.shift();
+      activeQueue.send();
     }
     if (0 < queues.length) {
       timer = Components.classes['@mozilla.org/timer;1']
@@ -139,7 +142,7 @@ function Client() {
     if (!methodQueue) {
       return null;
     }
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -286,7 +289,7 @@ function Client() {
       return null;
     }
     enqueueGetUsers(methodQueue, query);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -301,7 +304,7 @@ function Client() {
       return null;
     }
     enqueueGetCalendars(methodQueue, query);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -316,7 +319,7 @@ function Client() {
       return null;
     }
     enqueueCreateCalendar(methodQueue, calendar);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -343,7 +346,7 @@ function Client() {
       return null;
     }
     enqueueDeleteCalendar(methodQueue, calendar);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -359,7 +362,7 @@ function Client() {
       return null;
     }
     enqueueSetCalendarAttribute(methodQueue, calendar, name, value, isPublic);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -378,7 +381,7 @@ function Client() {
       return null;
     }
     enqueueQueryObjects(methodQueue, calendar, from, to);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -410,7 +413,7 @@ function Client() {
       return null;
     }
     enqueueAddObject(methodQueue, calendar, item);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -438,7 +441,7 @@ function Client() {
       return null;
     }
     enqueueUpdateObject(methodQueue, calendar, item);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -466,7 +469,7 @@ function Client() {
       return null;
     }
     enqueueDeleteObject(methodQueue, calendar, item);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -485,7 +488,7 @@ function Client() {
       return null;
     }
     enqueueGetFreeBusy(methodQueue, attendee, from, to, defaultTimezone);
-    queueExecution(methodQueue, listener);
+    queueExecution(methodQueue);
 
     return methodQueue;
   }
@@ -510,6 +513,18 @@ function Client() {
 
     lastUserErrors = null;
   }
+
+  client.authenticate = authenticate;
+  client.getUsers = getUsers;
+  client.getCalendars = getCalendars;
+  client.createCalendar = createCalendar;
+  client.deleteCalendar = deleteCalendar;
+  client.setCalendarAttribute = setCalendarAttribute;
+  client.queryObjects = queryObjects;
+  client.addObject = addObject;
+  client.updateObject = updateObject;
+  client.deleteObject = deleteObject;
+  client.freeBusy = freeBusy;
 
   init();
 }
@@ -544,9 +559,12 @@ function xpcomToEeeDate(xpcomDate) {
   return eeeDate;
 }
 
-function Queue(serverUri) {
+function Queue() {
   var queue = this;
+  var server;
   var methodCalls;
+  var listener;
+  var context;
   var sending;
   var pending;
   var status;
@@ -558,21 +576,13 @@ function Queue(serverUri) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
-    var server = new cal3eXmlRpc.Client();
-    server
-      .setUri(serveUri)
-      .setListener({
-        onResult: onResult,
-        onFault: onFault,
-        onError: onError
-      });
     methodCalls.push([methodName, parameters]);
     status = Components.results.NS_OK;
 
     return queue;
   }
 
-  function send(listener, context) {
+  function send() {
     if (sending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
@@ -581,8 +591,6 @@ function Queue(serverUri) {
     }
 
     sending = true;
-    listener = listener;
-    context = context;
     methodIdx = 0;
     sendNext();
   }
@@ -613,7 +621,7 @@ function Queue(serverUri) {
     methodIdx += 1;
     lastResponse = response;
     pending = methodCalls.length > methodIdx;
-    listener.onResult(queue, context);
+    listener(queue, context);
 
     if (pending) {
       sendNext();
@@ -630,7 +638,7 @@ function Queue(serverUri) {
     pending = false;
     status = status;
     error = serverError;
-    listener.onResult(queue, context);
+    listener(queue, context);
   }
 
   function getId() {
@@ -666,23 +674,42 @@ function Queue(serverUri) {
     }
 
     serverUri = newServerUri;
+    server.setUri(serverUri);
     status = Components.results.NS_OK;
+
+    return this;
   }
 
   function getServerUri() {
     return serverUri;
   }
 
-  function getLastResponse() {
-    if ('undefined' === typeof lastResponse) {
-      throw Components.results.NS_ERROR_NOT_AVAILABLE;
+  function setListener(newListener) {
+    if (sending) {
+      throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
+    listener = newListener;
+
+    return this;
+  }
+
+  function setContext(newContext) {
+    if (sending) {
+      throw Components.results.NS_ERROR_IN_PROGRESS;
+    }
+
+    context = newContext;
+
+    return this;
+  }
+
+  function getLastResponse() {
     return lastResponse;
   }
 
   function isFault() {
-    return lastResponse() && lastResponse().isFault();
+    return lastResponse && lastResponse.isFault();
   }
 
   function getComponent() {
@@ -705,7 +732,16 @@ function Queue(serverUri) {
   }
 
   function init() {
+    server = new cal3eXmlRpc.Client();
+    server.setListener({
+      onResult: onResult,
+      onFault: onFault,
+      onError: onError
+    });
+
     methodCalls = [];
+    listener = function() {};
+    context = null;
     sending = false;
     pending = false;
     status = Components.results.NS_OK;
@@ -716,16 +752,16 @@ function Queue(serverUri) {
   queue.component = getComponent;
   queue.id = getId;
   queue.isPending = isPending;
+  queue.isFault = isFault;
   queue.status = getStatus;
   queue.setServerUri = setServerUri;
   queue.serverUri = getServerUri;
-  queue.lastResponse = lastResponse;
+  queue.setListener = setListener;
+  queue.setContext = setContext;
+  queue.lastResponse = getLastResponse;
   queue.error = getError;
   queue.push = push;
   queue.send = send;
-  queue.onResult = onResult;
-  queue.onFault = onFault;
-  queue.onError = onError;
 
   init();
 }
