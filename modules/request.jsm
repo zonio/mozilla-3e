@@ -29,6 +29,7 @@ function Client() {
   var activeQueue;
   var timer;
   var dns;
+  var lastUserErrors;
 
   function prepareMethodQueueAndAuthenticate(identity, listener) {
     var methodQueue = prepareMethodQueue(identity, listener);
@@ -148,7 +149,7 @@ function Client() {
     // separate class
 
     if (!validateMethodQueue(methodQueue, listener,
-                                   cal3eResponse.userErrors.NO_PASSWORD)) {
+                             cal3eResponse.userErrors.NO_PASSWORD)) {
       return null;
     }
 
@@ -275,7 +276,7 @@ function Client() {
       lastUserErrors.length -= 1;
     }
     if (lastUserErrors.length === 0) {
-      delete lastUserErrors;
+      lastUserErrors = null;
     }
   }
 
@@ -527,6 +528,8 @@ function Client() {
     if (typeof cal3eDns !== 'undefined') {
       dns = new cal3eDns();
     }
+
+    lastUserErrors = null;
   }
 
   init();
