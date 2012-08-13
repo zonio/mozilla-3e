@@ -23,33 +23,6 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 var components = {
-  calEeeClient: {
-    getInterfaces: function calEeeClient_getInterfaces(count) {
-      var interfaces = [
-        Ci.calEeeIClient,
-        Ci.calIGenericOperationListener,
-        Ci.nsIObserver,
-        Ci.nsIClassInfo
-      ];
-      count.value = interfaces.length;
-      return interfaces;
-    },
-
-    getHelperForLanguage:
-    function calEeeClient_getHelperForLanguage(language) {
-      return null;
-    },
-
-    classDescription: "EEE client simplifying server method calls to " +
-                      "prepared operations",
-    contractID: "@zonio.net/calendar3e/client-service;1",
-    classID: Components.ID("{738411ac-e702-4e7e-86b6-be1ca113c853}"),
-    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
-    constructor: "calEeeClient",
-    flags: Ci.nsIClassInfo.SINGLETON,
-    resource: "resource://calendar3e/js/calEeeClient.js"
-  },
-
   calEeeProtocol: {
     getInterfaces: function calEeeProtocol_getInterfaces(count) {
       var interfaces = [

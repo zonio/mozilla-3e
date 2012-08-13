@@ -29,7 +29,6 @@ XPI_NAME = calendar3e-provider
 
 EXTRA_COMPONENTS = \
 	calEeeCalendar.js \
-	calEeeClient.js \
 	calEeeProtocol.js \
 	calEeeManager.js \
 	calEeeSynchronizer.js \
