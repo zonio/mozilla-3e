@@ -18,12 +18,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
+Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 function calendarSubscription() {
-  this._client = Components.classes[
-    "@zonio.net/calendar3e/client-service;1"
-  ].getService(Components.interfaces.calEeeIClient);
   this._identityObserver = cal3eIdentity.Observer();
   this._identityObserver.addObserver(this.onIdentityChange.bind(this));
   this._accountManager = Components.classes[
@@ -100,9 +98,11 @@ calendarSubscription.prototype = {
         calendarSubscription._buildProviders(result)
       );
     };
-    this._client.getUsers(identity, listener,
-                          "NOT match_username(" + identity.email + ") AND " +
-                          "NOT match_user_alias(" + identity.email + ")");
+    cal3eRequest.Client.getInstance().getUsers(
+      identity, listener,
+      "NOT match_username(" + identity.email + ") AND " +
+        "NOT match_user_alias(" + identity.email + ")"
+    );
   },
 
   loadCalendar: function calendarSubscription_loadCalendar() {
