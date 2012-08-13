@@ -513,6 +513,14 @@ function Client() {
 
   init();
 }
+var clientInstance;
+Client.getInstance = function Client_getInstance() {
+  if (!clientInstance) {
+    clientInstance = new Client();
+  }
+
+  return clientInstance;
+};
 
 function xpcomToEeeDate(xpcomDate) {
   function zeropad(number, length) {
