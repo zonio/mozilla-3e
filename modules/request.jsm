@@ -281,9 +281,7 @@ function Client() {
   }
 
   function getUsers(identity, listener, query) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -298,9 +296,7 @@ function Client() {
   }
 
   function getCalendars(identity, listener, query) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -315,9 +311,7 @@ function Client() {
   }
 
   function createCalendar(identity, listener, calendar) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -344,9 +338,7 @@ function Client() {
   }
 
   function deleteCalendar(identity, listener, calendar) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -357,21 +349,16 @@ function Client() {
   }
 
   function enqueueDeleteCalendar(methodQueue, calendar) {
-    return enqueueMethod(
-      methodQueue, 'deleteCalendar', calendar.calname
-    );
+    return enqueueMethod(methodQueue, 'deleteCalendar', calendar.calname);
   }
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
                                 isPublic) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
-    enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
-                                      isPublic);
+    enqueueSetCalendarAttribute(methodQueue, calendar, name, value, isPublic);
     queueExecution(methodQueue, listener);
 
     return methodQueue;
@@ -386,9 +373,7 @@ function Client() {
   }
 
   function queryObjects(identity, listener, calendar, from, to) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -420,9 +405,7 @@ function Client() {
   }
 
   function addObject(identity, listener, calendar, item) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -450,9 +433,7 @@ function Client() {
   }
 
   function updateObject(identity, listener, calendar, item) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
@@ -480,9 +461,7 @@ function Client() {
   }
 
   function deleteObject(identity, listener, calendar, item) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
+    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
