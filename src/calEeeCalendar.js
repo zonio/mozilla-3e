@@ -27,6 +27,7 @@ Cu.import("resource://calendar/modules/calUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
+Cu.import("resource://calendar3e/modules/request.jsm");
 Cu.import("resource://calendar3e/modules/response.jsm");
 
 /**
@@ -54,13 +55,6 @@ calEeeCalendar.prototype = {
     Ci.calICalendar,
     Ci.nsIObserver
   ]),
-
-  _getClient: function calEee_getClient() {
-    var client = Cc["@zonio.net/calendar3e/client-service;1"]
-      .getService(Ci.calEeeIClient);
-
-    return client;
-  },
 
   _findAndSetIdentity: function calEee_findAndSetIdentity() {
     var eeeUser = this._uri.spec.split('/', 4)[2];
@@ -209,7 +203,7 @@ calEeeCalendar.prototype = {
       calendar.mObservers.notify('onAddItem', [item]);
     };
 
-    return this._getClient()
+    return cal3eRequest.Client.getInstance()
       .addObject(this._identity, clientListener, this, item)
       .component();
   },
@@ -277,7 +271,7 @@ calEeeCalendar.prototype = {
       calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
     };
 
-    return this._getClient()
+    return cal3eRequest.Client.getInstance()
       .updateObject(this._identity, clientListener, this, newItem)
       .component();
   },
@@ -343,7 +337,7 @@ calEeeCalendar.prototype = {
       calendar.mObservers.notify('onDeleteItem', [item]);
     };
 
-    return this._getClient()
+    return cal3eRequest.Client.getInstance()
       .deleteObject(this._identity, clientListener, this, item)
       .component();
   },
@@ -447,7 +441,7 @@ calEeeCalendar.prototype = {
                                        null);
     };
 
-    return this._getClient()
+    return cal3eRequest.Client.getInstance()
       .queryObjects(
         this._identity, clientListener, this,
         rangeStart ? rangeStart.nativeTime : null,

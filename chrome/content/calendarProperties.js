@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 var cal3eProperties = {};
@@ -96,9 +97,6 @@ cal3eProperties._loadUsers = function loadUsers() {
     }
   };
 
-  var client = Cc["@zonio.net/calendar3e/client-service;1"]
-    .createInstance(Components.interfaces.calEeeIClient);
-
   var uriSpec = cal3eProperties._calendar.uri.spec,
       uriParts = uriSpec.split('/', 4),
       eeeUser = uriParts[2];
@@ -116,7 +114,7 @@ cal3eProperties._loadUsers = function loadUsers() {
       break;
     }
   }
-  client.getUsers(identity, clientListener, "");
+  cal3eRequest.Client.getInstance().getUsers(identity, clientListener, "");
 };
 
 cal3eProperties._listItemFromUser = function listItemFromAccount(user) {

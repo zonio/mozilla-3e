@@ -22,6 +22,7 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 
 /**
@@ -310,15 +311,11 @@ calEeeSynchronizer.prototype = {
    * Synchronizes calendars of client's identity with those on EEE
    * server.
    *
-   * @param {calEeeIClient} client
    * @returns {calEeeISynchronizer} receiver
    */
   synchronize: function calEeeSynchronizer_synchronize() {
     var synchronizer = this;
-    var client = Components.classes[
-      "@zonio.net/calendar3e/client-service;1"
-    ].getService(Components.interfaces.calEeeIClient);
-    client.getCalendars(
+    cal3eRequest.Client.getInstance().getCalendars(
       this._identity,
       function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
         if (result instanceof cal3eResponse.UserError) {

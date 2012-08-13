@@ -28,6 +28,7 @@ Cu.import("resource://calendar/modules/calIteratorUtils.jsm");
 Cu.import("resource://calendar/modules/calProviderUtils.jsm");
 Cu.import("resource://calendar3e/modules/identity.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
+Cu.import("resource://calendar3e/modules/request.jsm");
 Cu.import("resource://calendar3e/modules/response.jsm");
 
 
@@ -176,17 +177,14 @@ calEeeFreeBusyProvider.prototype = {
       return;
     }
 
-    Components.classes[
-      "@zonio.net/calendar3e/client-service;1"
-    ].getService(Components.interfaces.calEeeIClient).
-      freeBusy(
-        organizer,
-        clientListener,
-        attendee,
-        start.nativeTime,
-        end.nativeTime,
-        cal.calendarDefaultTimezone().icalComponent.serializeToICS()
-      );
+    cal3eRequest.Client.getInstance().freeBusy(
+      organizer,
+      clientListener,
+      attendee,
+      start.nativeTime,
+      end.nativeTime,
+      cal.calendarDefaultTimezone().icalComponent.serializeToICS()
+    );
   },
 
   _getEeeOrganizer: function () {

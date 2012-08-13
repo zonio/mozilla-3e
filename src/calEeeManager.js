@@ -25,6 +25,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://calendar3e/modules/identity.jsm");
+Cu.import("resource://calendar3e/modules/request.jsm");
 Cu.import("resource://calendar3e/modules/utils.jsm");
 
 /**
@@ -146,7 +147,7 @@ calEeeManager.prototype = {
       );
     };
     this._generateUniqueUri(calendar);
-    this._getClient().createCalendar(
+    cal3eRequest.Client.getInstance().createCalendar(
       this._getIdentity(calendar),
       listener,
       calendar
@@ -178,7 +179,7 @@ calEeeManager.prototype = {
       return;
     }
 
-    this._getClient().deleteCalendar(
+    cal3eRequest.Client.getInstance().deleteCalendar(
       this._getIdentity(calendar),
       function() {},
       calendar
@@ -213,7 +214,7 @@ calEeeManager.prototype = {
       break;
     }
 
-    this._getClient().setCalendarAttribute(
+    cal3eRequest.Client.getInstance().setCalendarAttribute(
       this._getIdentity(calendar),
       function() {},
       calendar,
@@ -232,11 +233,6 @@ calEeeManager.prototype = {
   onError: function calEeeManager_onError(calendar, error, message) {},
   onPropertyDeleting: function calEeeManager_onPropertyDeleting(
     calendar, name) {},
-
-  _getClient: function calEeeManager_getClient() {
-    return Cc["@zonio.net/calendar3e/client-service;1"]
-      .getService(Ci.calEeeIClient);
-  },
 
   /**
    * Creates unique (by the means of UUID uniqueness) calendar URI

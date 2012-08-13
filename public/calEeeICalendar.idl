@@ -19,7 +19,6 @@
 
 #include "calICalendar.idl"
 
-interface calEeeIClient;
 interface nsIMsgIdentity;
 
 /**
