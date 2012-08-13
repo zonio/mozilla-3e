@@ -17,250 +17,212 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
-//Components.utils.import("resource://calendar3e/modules/dns.jsm");
-Components.utils.import("resource://calendar3e/modules/response.jsm");
-Components.utils.import("resource://calendar3e/modules/xml-rpc.jsm");
+Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+//Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/response.jsm');
+Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 
-function calEeeClient() {
-  this._queues = [];
-  this._activeQueue = null;
-  this._timer = null;
-  if (typeof cal3eDns !== 'undefined') {
-    this._dns = new cal3eDns();
-  }
-}
+function Client() {
+  var client = this;
+  var queues;
+  var activeQueue;
+  var timer;
+  var dns;
 
-calEeeClient.prototype = {
-
-  _interface_name: 'ESClient',
-
-  _prepareMethodQueueAndAuthenticate:
-  function calEeeClient_prepareMethodQueueAndAuthenticate(identity, listener) {
-    var methodQueue = this._prepareMethodQueue(identity, listener);
+  function prepareMethodQueueAndAuthenticate(identity, listener) {
+    var methodQueue = prepareMethodQueue(identity, listener);
     if (!methodQueue) {
       return null;
     }
 
-    methodQueue = this._enqueueAuthenticate(identity, methodQueue, listener);
+    methodQueue = enqueueAuthenticate(identity, methodQueue, listener);
     if (!methodQueue) {
       return null;
     }
 
     return methodQueue;
-  },
+  }
 
-  _prepareMethodQueue:
-  function calEeeClient_prepareMethodQueue(identity, listener) {
-    var methodQueue = Queue(this._uriFromIdentity(identity));
+  function prepareMethodQueue(identity, listener) {
+    var methodQueue = Queue(uriFromIdentity(identity));
 
-    return this._validateMethodQueue(
+    return validateMethodQueue(
       methodQueue, listener, cal3eResponse.userErrors.BAD_CERT
     );
-  },
+  }
 
-  _uriFromIdentity: function calEeeClient_uriFromIdentity(identity) {
-    if (!this._dns) {
-      var host = identity.email.substring(identity.email.indexOf("@") + 1);
+  function uriFromIdentity(identity) {
+    if (!dns) {
+      var host = identity.email.substring(identity.email.indexOf('@') + 1);
       var port = 4444;
     } else {
-      var [host, port] = this._dns.resolveServer(
-        identity.email.substring(identity.email.indexOf("@") + 1));
+      var [host, port] = dns.resolveServer(
+        identity.email.substring(identity.email.indexOf('@') + 1)
+      );
     }
-    var url = "https://" + host + ":" + port + "/RPC2";
-    var ioService = Components.classes["@mozilla.org/network/io-service;1"].
-        getService(Components.interfaces.nsIIOService);
-    return ioService.newURI(url, null, null);
-  },
+    var url = 'https://' + host + ':' + port + '/RPC2';
 
-  _enqueueMethod: function calEeeClient_enqueueMethod(methodQueue,
-                                                      methodName) {
-    var parameters = Array.prototype.slice.call(arguments, 2).map(
-      function (parameter) {
-        var instance = null;
-        switch (typeof parameter) {
-        case 'string':
-          instance = Components.classes["@mozilla.org/supports-cstring;1"]
-            .createInstance(Components.interfaces.nsISupportsCString);
-          break;
-        case 'number':
-          instance = Components.classes["@mozilla.org/supports-double;1"]
-            .createInstance(Components.interfaces.nsISupportsDouble);
-          break;
-        case 'boolean':
-          instance = Components.classes["@mozilla.org/supports-PRBool;1"]
-            .createInstance(Components.interfaces.nsISupportsPRBool);
-          break;
-        }
-        if (null !== instance) {
-          instance.data = parameter;
-          return instance;
-        }
-        return parameter;
-      });
+    return Services.io.newURI(url, null, null);
+  }
 
+  function enqueueMethod(methodQueue, methodName) {
     return methodQueue.push(
-      this._interface_name + "." + methodName, parameters.length, parameters
+      'ESClient.' + methodName, Array.prototype.slice.call(arguments, 2)
     );
-  },
+  }
 
-  _queueExecution:
-  function calEeeClient_queueExecution(methodQueue, listener) {
-    this._queues.push([methodQueue, listener]);
-    if (null === this._timer) {
-      this._timer = Components.classes[
-        "@mozilla.org/timer;1"
-      ].createInstance(Components.interfaces.nsITimer);
-      this._timer.init(this, 1, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+  function queueExecution(methodQueue, listener) {
+    queues.push([methodQueue, listener]);
+    if (null === timer) {
+      timer = Components.classes['@mozilla.org/timer;1']
+        .createInstance(Components.interfaces.nsITimer);
+      timer.init(
+        getTimerObserver(), 1, Components.interfaces.nsITimer.TYPE_ONE_SHOT
+      );
     }
 
     return methodQueue;
-  },
+  }
 
-  observe: function calEeeSyncService_observe(subject, topic, data) {
-    switch (topic) {
-    case 'timer-callback':
-      this._execute();
-      break;
-    }
-  },
+  function getTimerObserver() {
+    return {
+      QueryInterface: XPCOMUtils.generateQI([
+        Components.interfaces.nsIObserver
+      ]),
+      observe: execute
+    };
+  }
 
-  _execute: function calEeeClient_execute() {
-    if (null === this._activeQueue) {
+  function execute() {
+    if (null === activeQueue) {
       let listener;
-      [this._activeQueue, listener] = this._queues.shift();
-      this._activeQueue.send(this, listener);
+      [activeQueue, listener] = queues.shift();
+      activeQueue.send(this, listener);
     }
-    if (0 < this._queues.length) {
-      this._timer = Components.classes[
-        "@mozilla.org/timer;1"
-      ].createInstance(Components.interfaces.nsITimer);
-      this._timer.init(this, 500, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+    if (0 < queues.length) {
+      timer = Components.classes['@mozilla.org/timer;1']
+        .createInstance(Components.interfaces.nsITimer);
+      timer.init(this, 500, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
     } else {
-      this._timer = null;
+      timer = null;
     }
-  },
+  }
 
-  onResult: function calEeeClient_onResult(methodQueue, context) {
+  function onResult(methodQueue, listener) {
     if (methodQueue.isPending()) {
       return;
     }
 
-    this._activeQueue = null;
-
-    var listener = context.QueryInterface(
-      Components.interfaces.calIGenericOperationListener
-    );
+    activeQueue = null;
     var result;
+    //XXX There's no result code for SSL error available so we must
+    // check error code and message to distinguish bad certificate
     if (methodQueue.error() &&
         (methodQueue.error().result === Components.results.NS_ERROR_FAILURE) &&
         (methodQueue.error().message ===
-         "Server certificate exception not added")) {
-      result = this._setLastUserError(
+         'Server certificate exception not added')) {
+      result = setLastUserError(
         methodQueue, cal3eResponse.userErrors.BAD_CERT
       );
     } else {
       result = cal3eResponse.fromMethodQueue(methodQueue);
     }
     listener(methodQueue, result);
-  },
+  }
 
-  authenticate: function calEeeClient_authenticate(identity, listener) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function authenticate(identity, listener) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._queueExecution(methodQueue, listener);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueAuthenticate:
-  function calEeeClient_enqueueAuthenticate(identity, methodQueue, listener) {
+  function enqueueAuthenticate(identity, methodQueue, listener) {
     //XXX move the whole password prompt/store/... functionality to
     // separate class
 
-    if (!this._validateMethodQueue(methodQueue, listener,
+    if (!validateMethodQueue(methodQueue, listener,
                                    cal3eResponse.userErrors.NO_PASSWORD)) {
       return null;
     }
 
-    var password = this._findPassword(identity)
+    var password = findPassword(identity);
     if (null === password) {
       var [password, didEnterPassword, savePassword] =
-        this._promptForPassword();
+        promptForPassword();
 
       //TODO store unsaved password temporarily
       if (didEnterPassword && savePassword) {
-        this._storePassword(identity, password);
+        storePassword(identity, password);
       } else if (!didEnterPassword) {
         listener(
           methodQueue,
-          this._setLastUserError(
+          setLastUserError(
             methodQueue, cal3eResponse.userErrors.NO_PASSWORD
           )
         );
       }
     }
 
-    return this._enqueueMethod(
+    return enqueueMethod(
       methodQueue, 'authenticate', identity.email, password
     );
-  },
+  }
 
-  _passwordUri: function calEeeClient_passwordUri(identity) {
+  function passwordUri(identity) {
     //XXX not DRY - somehow use EeeProtocol class
-    return "eee://" +
-      identity.email.substring(identity.email.indexOf("@") + 1);
-  },
+    return 'eee://' +
+      identity.email.substring(identity.email.indexOf('@') + 1);
+  }
 
-  _findPassword: function calEeeClient_findPassword(identity) {
-    var logins = Components.classes["@mozilla.org/login-manager;1"]
-      .getService(Components.interfaces.nsILoginManager)
-      .findLogins({}, this._passwordUri(identity), this._passwordUri(identity),
-                  null);
+  function findPassword(identity) {
+    var logins = Services.logins.findLogins(
+      {}, passwordUri(identity), passwordUri(identity), null
+    );
 
-    return logins.length > 0 ? logins[0].password : null ;
-  },
+    return logins.length > 0 ? logins[0].password : null;
+  }
 
-  _promptForPassword: function calEeeClient_promptForPassword() {
-    var password = { value: "" }; // default the password to empty string
+  function promptForPassword() {
+    var password = { value: '' }; // default the password to empty string
     var savePassword = { value: true }; // default the checkbox to true
 
-    var stringBundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
-      .getService(Components.interfaces.nsIStringBundleService)
-      .createBundle("chrome://calendar3e/locale/cal3eCalendar.properties");
+    var stringBundle = Services.strings.createBundle(
+      'chrome://calendar3e/locale/cal3eCalendar.properties'
+    );
 
-    var didEnterPassword = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
-      .getService(Components.interfaces.nsIPromptService)
-      .promptPassword(
-        null,
-        stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-        stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
-        password,
-        stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
-        savePassword
-      );
+    var didEnterPassword = Services.prompt.promptPassword(
+      null,
+      stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
+      stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+      password,
+      stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
+      savePassword
+    );
 
     return [password.value, didEnterPassword, savePassword.value];
-  },
+  }
 
-  _storePassword: function calEeeClient_storePassword(identity, password) {
-    var loginInfo = Components.classes["@mozilla.org/login-manager/loginInfo;1"]
+  function storePassword(identity, password) {
+    var loginInfo =
+      Components.classes['@mozilla.org/login-manager/loginInfo;1']
       .createInstance(Components.interfaces.nsILoginInfo);
-    loginInfo.init(this._passwordUri(identity), this._passwordUri(identity),
-                   null, identity.email, password, "", "")
+    loginInfo.init(
+      passwordUri(identity), passwordUri(identity), null, identity.email,
+      password, '', ''
+    );
 
-    Components.classes["@mozilla.org/login-manager;1"]
-      .getService(Components.interfaces.nsILoginManager)
-      .addLogin(loginInfo);
-  },
+    Services.logins.addLogin(loginInfo);
+  }
 
-  _validateMethodQueue:
-  function calEeeClient_validateMethodQueue(methodQueue, listener, errorCode) {
-    var error = this._findLastUserError(
+  function validateMethodQueue(methodQueue, listener, errorCode) {
+    var error = findLastUserError(
       methodQueue.serverUri().spec, errorCode
     );
     //TODO move such constants to preferences
@@ -268,188 +230,175 @@ calEeeClient.prototype = {
     if (error && error.timestamp > threshold) {
       listener(methodQueue, error);
     } else if (error) {
-      this._cleanLastUserError(methodQueue.serverUri().spec, errorCode);
+      cleanLastUserError(methodQueue.serverUri().spec, errorCode);
       error = null;
     }
 
-    return !error ? methodQueue : null ;
-  },
+    return !error ? methodQueue : null;
+  }
 
-  _setLastUserError:
-  function calEeeClient_setLastUserError(methodQueue, errorCode) {
-    this._prepareLastUserErrorMap(methodQueue.serverUri().spec, errorCode);
+  function setLastUserError(methodQueue, errorCode) {
+    prepareLastUserErrorMap(methodQueue.serverUri().spec, errorCode);
 
-    this._lastUserErrors[methodQueue.serverUri().spec][errorCode] =
+    lastUserErrors[methodQueue.serverUri().spec][errorCode] =
       new cal3eResponse.UserError(errorCode);
 
-    return this._lastUserErrors[methodQueue.serverUri().spec][errorCode];
-  },
+    return lastUserErrors[methodQueue.serverUri().spec][errorCode];
+  }
 
-  _findLastUserError:
-  function calEeeClient_findLastUserError(errorsId, errorCode) {
-    return this._lastUserErrors &&
-        this._lastUserErrors[errorsId] &&
-        this._lastUserErrors[errorsId][errorCode] ?
-      this._lastUserErrors[errorsId][errorCode] :
-      null ;
-  },
+  function findLastUserError(errorsId, errorCode) {
+    return lastUserErrors && lastUserErrors[errorsId] &&
+        lastUserErrors[errorsId][errorCode] ?
+      lastUserErrors[errorsId][errorCode] :
+      null;
+  }
 
-  _prepareLastUserErrorMap:
-  function calEeeClient_prepareLastUserErrorMap(errorsId, errorCode) {
-    if (!this._lastUserErrors) {
-      this._lastUserErrors = {};
-      this._lastUserErrors.length = 0;
+  function prepareLastUserErrorMap(errorsId, errorCode) {
+    if (!lastUserErrors) {
+      lastUserErrors = {};
+      lastUserErrors.length = 0;
     }
-    if (!this._lastUserErrors[errorsId]) {
-      this._lastUserErrors[errorsId] = {};
-      this._lastUserErrors[errorsId].length = 0;
-      this._lastUserErrors.length += 1;
+    if (!lastUserErrors[errorsId]) {
+      lastUserErrors[errorsId] = {};
+      lastUserErrors[errorsId].length = 0;
+      lastUserErrors.length += 1;
     }
 
-    this._lastUserErrors[errorsId].length += 1;
-  },
+    lastUserErrors[errorsId].length += 1;
+  }
 
-  _cleanLastUserError:
-  function calEeeClient_cleanLastUserError(errorsId, errorCode) {
-    delete this._lastUserErrors[errorsId][errorCode];
-    this._lastUserErrors[errorsId].length -= 1;
-    if (this._lastUserErrors[errorsId].length === 0) {
-      delete this._lastUserErrors[errorsId];
-      this._lastUserErrors.length -= 1;
+  function cleanLastUserError(errorsId, errorCode) {
+    delete lastUserErrors[errorsId][errorCode];
+    lastUserErrors[errorsId].length -= 1;
+    if (lastUserErrors[errorsId].length === 0) {
+      delete lastUserErrors[errorsId];
+      lastUserErrors.length -= 1;
     }
-    if (this._lastUserErrors.length === 0) {
-      delete this._lastUserErrors;
+    if (lastUserErrors.length === 0) {
+      delete lastUserErrors;
     }
-  },
+  }
 
-  getUsers: function calEeeClient_getUsers(identity, listener, query) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function getUsers(identity, listener, query) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueGetUsers(methodQueue, query);
-    this._queueExecution(methodQueue, listener);
+    enqueueGetUsers(methodQueue, query);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueGetUsers: function calEeeClient_enqueueGetUsers(methodQueue, query) {
-    return this._enqueueMethod(methodQueue, 'getUsers', query);
-  },
+  function enqueueGetUsers(methodQueue, query) {
+    return enqueueMethod(methodQueue, 'getUsers', query);
+  }
 
-  getCalendars: function calEeeClient_getCalendars(identity, listener, query) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function getCalendars(identity, listener, query) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueGetCalendars(methodQueue, query);
-    this._queueExecution(methodQueue, listener);
+    enqueueGetCalendars(methodQueue, query);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueGetCalendars:
-  function calEeeClient_enqueueGetCalendars(methodQueue, query) {
-    return this._enqueueMethod(methodQueue, 'getCalendars', query);
-  },
+  function enqueueGetCalendars(methodQueue, query) {
+    return enqueueMethod(methodQueue, 'getCalendars', query);
+  }
 
-  createCalendar:
-  function calEeeClient_createCalendar(identity, listener, calendar) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function createCalendar(identity, listener, calendar) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueCreateCalendar(methodQueue, calendar);
-    this._queueExecution(methodQueue, listener);
+    enqueueCreateCalendar(methodQueue, calendar);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueCreateCalendar:
-  function calEeeClient_enqueueCreateCalendar(methodQueue, calendar) {
-    this._enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
+  function enqueueCreateCalendar(methodQueue, calendar) {
+    enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
     if (calendar.calname != calendar.name) {
-      this._enqueueSetCalendarAttribute(
+      enqueueSetCalendarAttribute(
         methodQueue, calendar, 'title', calendar.name, true
       );
     }
     if (calendar.getProperty('color')) {
-      this._enqueueSetCalendarAttribute(
+      enqueueSetCalendarAttribute(
         methodQueue, calendar, 'color', calendar.getProperty('color'), true
       );
     }
 
     return methodQueue;
-  },
+  }
 
-  deleteCalendar:
-  function calEeeClient_deleteCalendar(identity, listener, calendar) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function deleteCalendar(identity, listener, calendar) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueDeleteCalendar(methodQueue, calendar);
-    this._queueExecution(methodQueue, listener);
+    enqueueDeleteCalendar(methodQueue, calendar);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueDeleteCalendar:
-  function calEeeClient_enqueueDeleteCalendar(methodQueue, calendar) {
-    return this._enqueueMethod(
+  function enqueueDeleteCalendar(methodQueue, calendar) {
+    return enqueueMethod(
       methodQueue, 'deleteCalendar', calendar.calname
     );
-  },
+  }
 
-  setCalendarAttribute:
-  function calEeeClient_setCalendarAttribute(
-    identity, listener, calendar, name, value, isPublic) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function setCalendarAttribute(identity, listener, calendar, name, value,
+                                isPublic) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
+    enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
                                       isPublic);
-    this._queueExecution(methodQueue, listener);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueSetCalendarAttribute:
-  function calEeeClient_enqueueSetCalendarAttribute(methodQueue, calendar,
-                                                    name, value, isPublic) {
-    return this._enqueueMethod(
+  function enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
+                                       isPublic) {
+    return enqueueMethod(
       methodQueue, 'setCalendarAttribute', calendar.calspec, name, value,
       isPublic
     );
-  },
+  }
 
-  queryObjects:
-  function calEeeClient_queryObjects(identity, listener, calendar, from, to) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function queryObjects(identity, listener, calendar, from, to) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueQueryObjects(methodQueue, calendar, from, to);
-    this._queueExecution(methodQueue, listener);
+    enqueueQueryObjects(methodQueue, calendar, from, to);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueQueryObjects: function(methodQueue, calendar, from, to) {
-    var query = "";
+  function enqueueQueryObjects(methodQueue, calendar, from, to) {
+    var query = '';
     if (null !== from) {
       query += "date_from('" + xpcomToEeeDate(from) + "')";
     }
@@ -462,125 +411,130 @@ calEeeClient.prototype = {
     if ('' !== query) {
       query += ' AND ';
     }
-    query += "NOT deleted()";
+    query += 'NOT deleted()';
 
-    return this._enqueueMethod(
+    return enqueueMethod(
       methodQueue, 'queryObjects', calendar.calspec, query
     );
-  },
+  }
 
-  addObject:
-  function calEeeClient_addObject(identity, listener, calendar, item) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function addObject(identity, listener, calendar, item) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueAddObject(methodQueue, calendar, item);
-    this._queueExecution(methodQueue, listener);
+    enqueueAddObject(methodQueue, calendar, item);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueAddObject: function(methodQueue, calendar, item) {
+  function enqueueAddObject(methodQueue, calendar, item) {
     var count = { value: 0 };
     var timezones = item.icalComponent.getReferencedTimezones(count);
     var idx = count.value;
     while (idx--) {
-      this._enqueueMethod(
+      enqueueMethod(
         methodQueue, 'addObject', calendar.calspec,
         timezones[idx].icalComponent.serializeToICS()
       );
     }
 
-    return this._enqueueMethod(
+    return enqueueMethod(
       methodQueue, 'addObject', calendar.calspec,
       item.icalComponent.serializeToICS()
     );
-  },
+  }
 
-  updateObject:
-  function calEeeClient_updateObject(identity, listener, calendar, item) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function updateObject(identity, listener, calendar, item) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueUpdateObject(methodQueue, calendar, item);
-    this._queueExecution(methodQueue, listener);
+    enqueueUpdateObject(methodQueue, calendar, item);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueUpdateObject: function(methodQueue, calendar, item) {
+  function enqueueUpdateObject(methodQueue, calendar, item) {
     var count = { value: 0 };
     var timezones = item.icalComponent.getReferencedTimezones(count);
     var idx = count.value;
     while (idx--) {
-      this._enqueueMethod(
+      enqueueMethod(
         methodQueue, 'addObject', calendar.calspec,
         timezones[idx].icalComponent.serializeToICS()
       );
     }
 
-    return this._enqueueMethod(
+    return enqueueMethod(
       methodQueue, 'updateObject', calendar.calspec,
       item.icalComponent.serializeToICS()
     );
-  },
+  }
 
-  deleteObject:
-  function calEeeClient_deleteObject(identity, listener, calendar, item) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function deleteObject(identity, listener, calendar, item) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueDeleteObject(methodQueue, calendar, item);
-    this._queueExecution(methodQueue, listener);
+    enqueueDeleteObject(methodQueue, calendar, item);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueDeleteObject: function(methodQueue, calendar, item) {
-    return this._enqueueMethod(
+  function enqueueDeleteObject(methodQueue, calendar, item) {
+    return enqueueMethod(
       methodQueue, 'deleteObject', calendar.calspec, item.id
     );
-  },
+  }
 
-  freeBusy:
-  function calEeeClient_getFreebusy(identity, listener, attendee, from, to,
-                                    defaultTimezone) {
-    var methodQueue = this._prepareMethodQueueAndAuthenticate(
+  function freeBusy(identity, listener, attendee, from, to, defaultTimezone) {
+    var methodQueue = prepareMethodQueueAndAuthenticate(
       identity, listener
     );
     if (!methodQueue) {
       return null;
     }
-    this._enqueueGetFreeBusy(methodQueue, attendee, from, to, defaultTimezone);
-    this._queueExecution(methodQueue, listener);
+    enqueueGetFreeBusy(methodQueue, attendee, from, to, defaultTimezone);
+    queueExecution(methodQueue, listener);
 
     return methodQueue;
-  },
+  }
 
-  _enqueueGetFreeBusy:
-  function(methodQueue, attendee, from, to, defaultTimezone) {
+  function enqueueGetFreeBusy(methodQueue, attendee, from, to,
+                              defaultTimezone) {
     var fromEee = xpcomToEeeDate(from);
     var toEee = xpcomToEeeDate(to);
 
-    return this._enqueueMethod(
+    return enqueueMethod(
       methodQueue, 'freeBusy', attendee, fromEee, toEee, defaultTimezone
     );
   }
 
+  function init() {
+    queues = [];
+    activeQueue = null;
+    timer = null;
+    if (typeof cal3eDns !== 'undefined') {
+      dns = new cal3eDns();
+    }
+  }
+
+  init();
 }
 
 function xpcomToEeeDate(xpcomDate) {
   function zeropad(number, length) {
-    var string = "" + number;
+    var string = '' + number;
     while (string.length < length) {
       string = '0' + string;
     }
@@ -589,7 +543,7 @@ function xpcomToEeeDate(xpcomDate) {
   }
 
   var jsDate = new Date(xpcomDate / 1000),
-      eeeDate = "";
+      eeeDate = '';
   eeeDate += zeropad(jsDate.getUTCFullYear(), 4) + '-' +
              zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
              zeropad(jsDate.getUTCDate(), 2) + ' ' +
@@ -618,9 +572,9 @@ function Queue(serverUri) {
     server
       .setUri(serveUri)
       .setListener({
-        "onResult": onResult,
-        "onFault": onFault,
-        "onError": onError
+        onResult: onResult,
+        onFault: onFault,
+        onError: onError
       });
     methodCalls.push([methodName, parameters]);
     status = Components.results.NS_OK;
@@ -692,7 +646,7 @@ function Queue(serverUri) {
   function getId() {
     var lastMethod = methodCalls.length > 0 ?
       methodCalls[methodCalls.length - 1][0] :
-      "-- not initialized --" ;
+      '-- not initialized --';
 
     return serverUri.spec + ':' + lastMethod + '.' + timestamp;
   }
@@ -747,14 +701,14 @@ function Queue(serverUri) {
     }
 
     getComponent.component = Object.create({
-      "QueryInterface": XPCOMUtils.generateQI([
+      QueryInterface: XPCOMUtils.generateQI([
         Components.interfaces.calIOperation
       ]),
-      "cancel": abort();
+      cancel: abort()
     }, {
-      "id": {"get": getId},
-      "isPending": {"get": isPending},
-      "status": {"get": getStatus},
+      id: {get: getId},
+      isPending: {get: isPending},
+      status: {get: getStatus}
     });
 
     return getComponent.component;
@@ -787,8 +741,8 @@ function Queue(serverUri) {
 }
 
 var cal3eRequest = {
-  "Client": Client
+  Client: Client
 };
 EXPORTED_SYMBOLS = [
-  "cal3eRequest"
+  'cal3eRequest'
 ];
