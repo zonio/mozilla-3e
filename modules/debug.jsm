@@ -21,55 +21,54 @@
  * Debugging object with methods heavily inspired by ddump function
  * from session roaming extension.
  */
-cal3eDebug = {};
-cal3eDebug.enable = true;
-cal3eDebug.dump = function Debug_dump(text) {
-  if (this.enable) {
-    dump(text + "\n");
-  }
-}
-cal3eDebug.dumpObject =
-function Debug_dumpObject(obj, name, maxDepth, curDepth) {
-  if (!this.enable) {
-    return;
-  }
-  if (curDepth == undefined) {
+function dumpObject(obj, name, maxDepth, curDepth) {
+  if (curDepth === undefined) {
     curDepth = 0;
   }
-  if (maxDepth != undefined && curDepth > maxDepth) {
+  if (maxDepth !== undefined && curDepth > maxDepth) {
     return;
   }
 
   var i = 0;
   for (let prop in obj) {
     i++;
-    if (typeof(obj[prop]) == "object") {
-      if (obj[prop] && obj[prop].length != undefined) {
-        this.dump(name + "." + prop + "=[probably array, length "
-                  + obj[prop].length + "]");
+    if (typeof(obj[prop]) == 'object') {
+      if (obj[prop] && obj[prop].length !== undefined) {
+        dump(
+          name + '.' + prop + '=' +
+            '[probably array, length ' + obj[prop].length + ']'
+        );
       } else {
-        this.dump(name + "." + prop + "=[" + typeof(obj[prop]) + "]");
+        dump(name + '.' + prop + '=[' + typeof(obj[prop]) + ']\n');
       }
-      this.dumpObject(obj[prop], name + "." + prop, maxDepth, curDepth+1);
-    } else if (typeof(obj[prop]) == "function") {
-      this.dump(name + "." + prop + "=[function]");
+      dumpObject(obj[prop], name + '.' + prop, maxDepth, curDepth + 1);
+    } else if (typeof(obj[prop]) == 'function') {
+      dump(name + '.' + prop + '=[function]\n');
     } else {
-      this.dump(name + "." + prop + "=" + obj[prop]);
+      dump(name + '.' + prop + '=' + obj[prop] + '\n');
     }
   }
   if (!i) {
-    this.dump(name + " is empty");
+    dump(name + ' is empty\n');
   }
 }
-cal3eDebug.dumpStack = function Debug_dumpStack() {
-  if (!this.enable) {
+
+function dumpStack(frame) {
+  if (frame === undefined) {
+    frame = Components.stack.caller;
+  }
+  if (!frame) {
     return;
   }
 
-  for (var frame = Components.stack; frame; frame = frame.caller)
-    dump(frame.filename + ":" + frame.lineNumber + "\n");
-};
+  dump(frame.filename + ':' + frame.lineNumber + ' ' + frame.name + '()\n');
+  dumpStack(frame.caller);
+}
 
+var cal3eDebug = {
+  dumpObject: dumpObject,
+  dumpStack: dumpStack
+};
 EXPORTED_SYMBOLS = [
   'cal3eDebug'
 ];
