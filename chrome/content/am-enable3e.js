@@ -33,6 +33,13 @@ function amEnable3e() {
       cal3eIdentity.EEE_ENABLED_KEY,
       document.getElementById("cal3e-enable-checkbox").checked
     );
+    //XXX dev only
+    identity.setChatAttribute(
+      'eee_host', identity.email.substring(identity.email.indexOf("@") + 1)
+    );
+    identity.setIntAttribute(
+      'eee_port', 4444
+    );
   }
 }
 

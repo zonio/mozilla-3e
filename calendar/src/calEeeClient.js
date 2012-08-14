@@ -76,12 +76,15 @@ calEeeClient.prototype = {
    * @todo create EEE URI a let EEE protocol resolve it
    */
   _uriFromIdentity: function calEeeClient_uriFromIdentity(identity) {
+    var host, port;
     if (!this._dns) {
-      var host = identity.email.substring(identity.email.indexOf("@") + 1);
-      var port = 4444;
+      //XXX dev only
+      host = identity.getChatAttribute('eee_host');
+      port = identity.getIntAttribute('eee_port');
     } else {
-      var [host, port] = this._dns.resolveServer(
-        identity.email.substring(identity.email.indexOf("@") + 1));
+      [host, port] = this._dns.resolveServer(
+        identity.email.substring(identity.email.indexOf("@") + 1)
+      );
     }
     var url = "https://" + host + ":" + port + "/RPC2";
     var ioService = Cc["@mozilla.org/network/io-service;1"].
