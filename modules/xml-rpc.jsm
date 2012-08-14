@@ -17,9 +17,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
-Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/ISO8601DateUtils.jsm");
+Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import('resource://gre/modules/ISO8601DateUtils.jsm');
 
 function Client() {
   var client = this;
@@ -33,7 +33,7 @@ function Client() {
   function send(methodName) {
     if (request) {
       throw Components.Exception(
-        "Can be called only once.",
+        'Can be called only once.',
         Components.results.NS_ERROR_ALREADY_INITIALIZED
       );
     }
@@ -56,12 +56,12 @@ function Client() {
 
   function prepareXhr() {
     xhr = Components.classes[
-      "@mozilla.org/xmlextras/xmlhttprequest;1"
+      '@mozilla.org/xmlextras/xmlhttprequest;1'
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
-    xhr.open("POST", uri.spec);
-    xhr.setRequestHeader("Content-Type", "text/xml");
-    xhr.addEventListener("load", onXhrLoad, false);
-    xhr.addEventListener("error", onXhrError, false);
+    xhr.open('POST', uri.spec);
+    xhr.setRequestHeader('Content-Type', 'text/xml');
+    xhr.addEventListener('load', onXhrLoad, false);
+    xhr.addEventListener('error', onXhrError, false);
     xhr.channel.notificationCallbacks = new ChannelCallbacks(
       doXhrSend,
       passErrorToListener,
@@ -76,7 +76,7 @@ function Client() {
   function onXhrLoad(event) {
     if ((event.target.status !== 200) || !event.target.responseXML) {
       passErrorToListener(
-        Components.results.NS_ERROR_FAILURE, "Unknown network error"
+        Components.results.NS_ERROR_FAILURE, 'Unknown network error'
       );
       return;
     }
@@ -94,7 +94,7 @@ function Client() {
 
   function onXhrError(event) {
     passErrorToListener(
-      Components.results.NS_ERROR_FAILURE, "Unknown network error"
+      Components.results.NS_ERROR_FAILURE, 'Unknown network error'
     );
   }
 
@@ -146,35 +146,35 @@ function Request(name, parameters) {
   var body = '<?xml version="1.0" encoding="UTF-8"?>';
 
   function appendMethodCallStartAndNameToBody() {
-    body += "<methodCall>";
-    body += "<methodName>" + name + "</methodName>";
+    body += '<methodCall>';
+    body += '<methodName>' + name + '</methodName>';
   }
 
   function appendParametersToBody() {
-    body += "<params>";
+    body += '<params>';
     parameters.forEach(appendParameterToBody);
-    body += "</params>";
+    body += '</params>';
   }
 
   function appendParameterToBody(parameter) {
-    body += "<param><value>" + createValue(parameter) + "</value></param>";
+    body += '<param><value>' + createValue(parameter) + '</value></param>';
   }
 
   function createValue(parameter) {
     switch (typeof parameter) {
-    case "number":
+    case 'number':
       if ((parameter % 1) === 0) {
-        parameter = "<int>" + parameter + "</int>";
+        parameter = '<int>' + parameter + '</int>';
       } else {
-        parameter = "<double>" + parameter + "</double>";
+        parameter = '<double>' + parameter + '</double>';
       }
       break;
-    case "boolean":
-      parameter = "<boolean>" + parameter + "</boolean>";
+    case 'boolean':
+      parameter = '<boolean>' + parameter + '</boolean>';
       break;
-    case "string":
+    case 'string':
       break;
-    case "object":
+    case 'object':
       if (parameter instanceof Date) {
         parameter = createDateTimeParameter(parameter);
       } else if (parameter instanceof Array) {
@@ -185,7 +185,7 @@ function Request(name, parameters) {
       break;
     default:
       throw Components.Exception(
-        "Unsupported value type.",
+        'Unsupported value type.',
         Components.results.NS_ERROR_ILLEGAL_VALUE
       );
       break;
@@ -195,50 +195,50 @@ function Request(name, parameters) {
   }
 
   function createDateTimeParameter(parameter) {
-    var dateTime = "<dateTime.iso8601>";
+    var dateTime = '<dateTime.iso8601>';
     dateTime += date.getFullYear();
     dateTime += date.getMonth();
     dateTime += date.getDate();
-    dateTime += "T";
+    dateTime += 'T';
     dateTime += date.getHours();
-    dateTime += ":";
+    dateTime += ':';
     dateTime += date.getMinutes();
-    dateTime += ":";
+    dateTime += ':';
     dateTime += date.getSeconds();
-    dateTime += "</dateTime.iso8601>";
+    dateTime += '</dateTime.iso8601>';
 
     return dateTime;
   }
 
   function createStructParameter(parameter) {
-    var struct = "<struct>";
+    var struct = '<struct>';
     for (var name in parameter) {
       if (!parameter.hasOwnProperty(name)) {
         continue;
       }
-      struct += "<member>";
-      struct += "<name>" + name + "</name>";
-      struct += "<value>" + createValue(parameter[name]) + "</value>";
-      struct += "</member>";
+      struct += '<member>';
+      struct += '<name>' + name + '</name>';
+      struct += '<value>' + createValue(parameter[name]) + '</value>';
+      struct += '</member>';
     }
-    struct += "</struct>";
+    struct += '</struct>';
 
     return struct;
   }
 
   function appendArrayToBody(parameter) {
-    var array = "<array><data>";
+    var array = '<array><data>';
     var idx;
     for (idx = 0; idx < parameter.length; idx += 1) {
-      array += "<value>" + createValue(parameter[idx]) + "</value>";
+      array += '<value>' + createValue(parameter[idx]) + '</value>';
     }
-    array += "</data></array>";
+    array += '</data></array>';
 
     return array;
   }
 
   function appendMethodCallEndToBody() {
-    body += "</methodCall>";
+    body += '</methodCall>';
   }
 
   function getBody() {
@@ -260,7 +260,7 @@ function Base64Parameter(parameter) {
   var base64Parameter = this;
 
   function toString() {
-    return "<base64>" + btoa(parameter) + "</base64>";
+    return '<base64>' + btoa(parameter) + '</base64>';
   }
 
   base64Parameter.toString = toString;
@@ -268,25 +268,25 @@ function Base64Parameter(parameter) {
 
 function createResponse(xmlDocument) {
   if (!xmlDocument.documentElement
-      (xmlDocument.documentElement.tagName !== "methodResponse")) {
+      (xmlDocument.documentElement.tagName !== 'methodResponse')) {
     throw Components.Exception(
-      "No root element in XML response",
+      'No root element in XML response',
       Components.results.NS_ERROR_UNEXPECTED
     );
   }
 
   var decisionElement = xmlDocument.documentElement.firstChild;
   if (!decisionElement || !decisionElement.tagName ||
-      (["params", "fault"].indexOf(decisionElement.tagName) >= 0)) {
+      (['params', 'fault'].indexOf(decisionElement.tagName) >= 0)) {
     throw Components.Exception(
-      "No params nor fault element found in XML response",
+      'No params nor fault element found in XML response',
       Components.results.NS_ERROR_UNEXPECTED
     );
   }
 
-  return decisionElement.tagName === "params" ?
+  return decisionElement.tagName === 'params' ?
     new Response(xmlDocument) :
-    new FaultResponse(xmlDocument) ;
+    new FaultResponse(xmlDocument);
 }
 
 function Response(xmlDocument) {
@@ -294,17 +294,17 @@ function Response(xmlDocument) {
 
   function parseDocument() {
     var paramElement = xmlDocument.documentElement.firstChild.firstChild;
-    if (!paramElement || (paramElement.tagName !== "param")) {
+    if (!paramElement || (paramElement.tagName !== 'param')) {
       throw Components.Exception(
-        "No param element found in XML response",
+        'No param element found in XML response',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
 
     var valueElement = paramElement.firstChild;
-    if (!valueElement || (valueElement.tagName !== "value")) {
+    if (!valueElement || (valueElement.tagName !== 'value')) {
       throw Components.Exception(
-        "No value element found in XML response",
+        'No value element found in XML response',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -341,29 +341,29 @@ function FaultResponse(xmlDocument) {
 
   function parseDocument() {
     var valueElement = xmlDocument.documentElement.firstChild.firstChild;
-    if (!valueElement || (valueElement.tagName !== "value")) {
+    if (!valueElement || (valueElement.tagName !== 'value')) {
       throw Components.Exception(
-        "No value element found in XML response",
+        'No value element found in XML response',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
 
     fault = new Value(valueElement);
-    if ((fault.type() !== "struct") || !("faultCode" in fault.value()) ||
-        !("faultString" in fault.value())) {
+    if ((fault.type() !== 'struct') || !('faultCode' in fault.value()) ||
+        !('faultString' in fault.value())) {
       throw Components.Exception(
-        "Unexpected fault struct in XML response",
+        'Unexpected fault struct in XML response',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
   }
 
   function getFaultCode() {
-    return fault.value()["faultCode"];
+    return fault.value()['faultCode'];
   }
 
   function getFaultString() {
-    return fault.value()["faultString"];
+    return fault.value()['faultString'];
   }
 
   function isSuccess() {
@@ -394,7 +394,7 @@ function Value(valueElement) {
   function normalizeType(valueElement) {
     if (!valueElement.firstChild) {
       throw Components.Exception(
-        "Empty value element",
+        'Empty value element',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -402,7 +402,7 @@ function Value(valueElement) {
          Components.interfaces.nsIDOMNode.ELEMENT_NODE]
         .indexOf(valueElement.firstChild.nodeType) >= 0) {
       throw Components.Exception(
-        "Unexpected type element",
+        'Unexpected type element',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -410,13 +410,13 @@ function Value(valueElement) {
     return valueElement.firstChild.nodeType ===
       Components.interfaces.nsIDOMNode.ELEMENT_NODE ?
       valueElement.firstChild.tagName :
-      "string" ;
+      'string';
   }
 
   function parseValue(valueElement) {
     if (!types[normalizeType(valueElement)]) {
       throw Components.Exception(
-        "Unexpected value type",
+        'Unexpected value type',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -428,7 +428,7 @@ function Value(valueElement) {
     var scalarValue;
     if (!valueElement.firstChild ||
         !valueElement.firstChild.firstChild) {
-      scalarValue = "";
+      scalarValue = '';
     } else if (valueElement.firstChild.nodeType ===
                Components.interfaces.nsIDOMNode.TEXT_NODE) {
       scalarValue = valueElement.firstChild.data;
@@ -438,7 +438,7 @@ function Value(valueElement) {
       scalarValue = valueElement.firstChild.firstChild.data;
     } else {
       throw Components.Exception(
-        "Not a scalar value",
+        'Not a scalar value',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -450,7 +450,7 @@ function Value(valueElement) {
     var value = parseInt(scalarValue(valueElement));
     if (isNaN(value)) {
       throw Components.Exception(
-        "Unexpected int value",
+        'Unexpected int value',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -459,25 +459,25 @@ function Value(valueElement) {
   }
 
   function booleanValue(valueElement) {
-    if (["0", "1"].indexOf(scalarValue(valueElement)) < 0) {
+    if (['0', '1'].indexOf(scalarValue(valueElement)) < 0) {
       throw Components.Exception(
-        "Unexpected boolean value",
+        'Unexpected boolean value',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
 
-    return textNode.data === "1";
+    return textNode.data === '1';
   }
 
   function stringValue(valueElement) {
-    return "" + scalarValue(valueElement);
+    return '' + scalarValue(valueElement);
   }
 
   function doubleValue(valueElement) {
     var value = parseFloat(scalarValue(valueElement));
     if (isNaN(value)) {
       throw Components.Exception(
-        "Unexpected float value",
+        'Unexpected float value',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -499,29 +499,29 @@ function Value(valueElement) {
     var idx, member;
     for (idx = 0; idx < structElement.length; idx += 1) {
       member = memberValue(structElement.item(idx));
-      struct[member["name"]] = member["value"];
+      struct[member['name']] = member['value'];
     }
 
     return struct;
   }
 
   function memberValue(memberElement) {
-    if (!memberElement.tagName || (memberElement.tagName !== "member")) {
+    if (!memberElement.tagName || (memberElement.tagName !== 'member')) {
       throw Components.Exception(
-        "Member element expected in struct",
+        'Member element expected in struct',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
     if (memberElement.childNodes.length !== 2) {
       throw Components.Exception(
-        "Only name and value elements expected in struct",
+        'Only name and value elements expected in struct',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
     if (!memberElement.firstChild || !memberElement.firstChild.tagName ||
-        (memberElement.firstChild.tagName !== "name")) {
+        (memberElement.firstChild.tagName !== 'name')) {
       throw Components.Exception(
-        "Name element expected in struct",
+        'Name element expected in struct',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -529,15 +529,15 @@ function Value(valueElement) {
     var name = scalarValue(memberElement.firstChild);
     var value = parseValue(memberElement.lastChild);
 
-    return { "name": name, "value": value };
+    return { 'name': name, 'value': value };
   }
 
   function arrayValue(valueElement) {
     var dataElement = valueElement.firstChild.firstChild;
     if (!dataElement || !dataElement.tagName ||
-        (dataElement.tagName !== "data")) {
+        (dataElement.tagName !== 'data')) {
       throw Components.Exception(
-        "Data element expected in array",
+        'Data element expected in array',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
@@ -564,7 +564,7 @@ function Value(valueElement) {
   }
 
   value.type = getType;
-  value.value = getValue;;
+  value.value = getValue;
 
   init();
 }
@@ -575,7 +575,7 @@ function ChannelCallbacks(repeatCall, onError, window) {
   function getInterface(iid, result) {
     if (!iid.equals(Components.interfaces.nsIBadCertListener2)) {
       throw Components.Exception(
-        "Given interface is not supported",
+        'Given interface is not supported',
         Components.results.NS_ERROR_NO_INTERFACE
       );
     }
@@ -595,27 +595,27 @@ function BadCertListener(repeatCall, onError, window) {
   function notifyCertProblem(socketInfo, status, targetSite) {
     window.setTimeout(function() {
       showBadCertDialogAndRetryCall({
-        "exceptionAdded" : false,
-        "prefetchCert" : true,
-        "location" : targetSite
-      })
+        'exceptionAdded': false,
+        'prefetchCert': true,
+        'location': targetSite
+      });
     }, 0);
   }
 
   function showBadCertDialogAndRetryCall(parameters) {
     window.openDialog(
-      "chrome://pippki/content/exceptionDialog.xul",
-      "",
-      "chrome,centerscreen,modal",
+      'chrome://pippki/content/exceptionDialog.xul',
+      '',
+      'chrome,centerscreen,modal',
       parameters
     );
 
-    if (parameters["exceptionAdded"]) {
+    if (parameters['exceptionAdded']) {
       repeatCall();
     } else {
       onError(
         Components.results.NS_ERROR_FAILURE,
-        "Server certificate exception not added"
+        'Server certificate exception not added'
       );
     }
   }
@@ -635,8 +635,8 @@ function BadCertListener(repeatCall, onError, window) {
 }
 
 var cal3eXmlRpc = {
-  "Client": Client,
-  "Base64Parameter": Base64Parameter
+  Client: Client,
+  Base64Parameter: Base64Parameter
 };
 EXPORTED_SYMBOLS = [
   'cal3eXmlRpc'
