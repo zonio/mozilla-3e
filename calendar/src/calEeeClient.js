@@ -79,7 +79,7 @@ calEeeClient.prototype = {
     var host, port;
     if (!this._dns) {
       //XXX dev only
-      host = identity.getChatAttribute('eee_host');
+      host = identity.getCharAttribute('eee_host');
       port = identity.getIntAttribute('eee_port');
     } else {
       [host, port] = this._dns.resolveServer(

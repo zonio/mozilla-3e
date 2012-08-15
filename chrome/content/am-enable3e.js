@@ -34,7 +34,7 @@ function amEnable3e() {
       document.getElementById("cal3e-enable-checkbox").checked
     );
     //XXX dev only
-    identity.setChatAttribute(
+    identity.setCharAttribute(
       'eee_host', identity.email.substring(identity.email.indexOf("@") + 1)
     );
     identity.setIntAttribute(
