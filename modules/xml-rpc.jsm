@@ -30,31 +30,38 @@ function Client() {
   var xhr;
   var response;
 
-  function send(methodName) {
+  function send(methodName, parameters) {
     if (request) {
       throw Components.Exception(
-        'Can be called only once.',
-        Components.results.NS_ERROR_ALREADY_INITIALIZED
+        'Only one request at the same time',
+        Components.results.NS_ERROR_IN_PROGRESS
       );
     }
 
-    request = new Request(
-      methodName,
-      Array.prototype.slice.call(arguments, 1)
-    );
-
-    prepareXhr();
+    request = new Request(methodName, parameters);
     doXhrSend();
 
     return client;
   }
 
   function abort() {
-    request = null;
-    xhr.abort();
+    if (!xhr) {
+      return;
+    }
+
+    var oldXhr = xhr;
+    reset();
+    oldXhr.abort();
   }
 
-  function prepareXhr() {
+  function doXhrSend() {
+    if (!uri) {
+      throw Components.Exception(
+        'URI must be set',
+        Components.results.NS_ERROR_NOT_INITIALIZED
+      );
+    }
+
     xhr = Components.classes[
       '@mozilla.org/xmlextras/xmlhttprequest;1'
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -67,9 +74,7 @@ function Client() {
       passErrorToListener,
       window
     );
-  }
 
-  function doXhrSend() {
     xhr.send(request.body());
   }
 
@@ -99,7 +104,7 @@ function Client() {
   }
 
   function passResultToListener() {
-    request = null;
+    reset();
     if (isSuccess()) {
       listener.onResult(client, response);
     } else {
@@ -108,8 +113,13 @@ function Client() {
   }
 
   function passErrorToListener(result, description) {
-    request = null;
+    reset();
     listener.onError(client, Components.Exception(description, result));
+  }
+
+  function reset() {
+    request = null;
+    xhr = null;
   }
 
   function setUri(newUri) {
@@ -267,7 +277,7 @@ function Base64Parameter(parameter) {
 }
 
 function createResponse(xmlDocument) {
-  if (!xmlDocument.documentElement
+  if (!xmlDocument.documentElement ||
       (xmlDocument.documentElement.tagName !== 'methodResponse')) {
     throw Components.Exception(
       'No root element in XML response',
@@ -277,7 +287,7 @@ function createResponse(xmlDocument) {
 
   var decisionElement = xmlDocument.documentElement.firstChild;
   if (!decisionElement || !decisionElement.tagName ||
-      (['params', 'fault'].indexOf(decisionElement.tagName) >= 0)) {
+      (['params', 'fault'].indexOf(decisionElement.tagName) < 0)) {
     throw Components.Exception(
       'No params nor fault element found in XML response',
       Components.results.NS_ERROR_UNEXPECTED
@@ -290,6 +300,7 @@ function createResponse(xmlDocument) {
 }
 
 function Response(xmlDocument) {
+  var response = this;
   var parameter;
 
   function parseDocument() {
@@ -328,9 +339,9 @@ function Response(xmlDocument) {
     parseDocument();
   }
 
-  faultResponse.parameter = getParameter;
-  faultResponse.isSuccess = isSuccess;
-  faultResponse.isFault = isFault;
+  response.parameter = getParameter;
+  response.isSuccess = isSuccess;
+  response.isFault = isFault;
 
   init();
 }
@@ -400,7 +411,7 @@ function Value(valueElement) {
     }
     if ([Components.interfaces.nsIDOMNode.TEXT_NODE,
          Components.interfaces.nsIDOMNode.ELEMENT_NODE]
-        .indexOf(valueElement.firstChild.nodeType) >= 0) {
+        .indexOf(valueElement.firstChild.nodeType) < 0) {
       throw Components.Exception(
         'Unexpected type element',
         Components.results.NS_ERROR_UNEXPECTED
@@ -414,6 +425,18 @@ function Value(valueElement) {
   }
 
   function parseValue(valueElement) {
+    var types = {
+      'i4': intValue,
+      'int': intValue,
+      'boolean': booleanValue,
+      'string': stringValue,
+      'double': doubleValue,
+      'dateTime.iso8601': dateTimeValue,
+      'base64': base64Value,
+      'struct': structValue,
+      'array': arrayValue
+    };
+
     if (!types[normalizeType(valueElement)]) {
       throw Components.Exception(
         'Unexpected value type',
@@ -426,7 +449,7 @@ function Value(valueElement) {
 
   function scalarValue(valueElement) {
     var scalarValue;
-    if (!valueElement.firstChild ||
+    if (!valueElement.firstChild &&
         !valueElement.firstChild.firstChild) {
       scalarValue = '';
     } else if (valueElement.firstChild.nodeType ===
@@ -466,7 +489,7 @@ function Value(valueElement) {
       );
     }
 
-    return textNode.data === '1';
+    return scalarValue(valueElement) === '1';
   }
 
   function stringValue(valueElement) {
@@ -497,8 +520,8 @@ function Value(valueElement) {
     var struct = {};
     var structElement = valueElement.firstChild;
     var idx, member;
-    for (idx = 0; idx < structElement.length; idx += 1) {
-      member = memberValue(structElement.item(idx));
+    for (idx = 0; idx < structElement.childNodes.length; idx += 1) {
+      member = memberValue(structElement.childNodes.item(idx));
       struct[member['name']] = member['value'];
     }
 
@@ -526,10 +549,10 @@ function Value(valueElement) {
       );
     }
 
-    var name = scalarValue(memberElement.firstChild);
-    var value = parseValue(memberElement.lastChild);
-
-    return { 'name': name, 'value': value };
+    return {
+      'name': scalarValue(memberElement.firstChild),
+      'value': parseValue(memberElement.lastChild)
+    };
   }
 
   function arrayValue(valueElement) {

@@ -596,7 +596,7 @@ function Queue() {
   }
 
   function sendNext() {
-    server.send.call(server, methodCalls[methodIdx]);
+    server.send.apply(server, methodCalls[methodIdx]);
   }
 
   function onResult(resultServer, result) {
@@ -665,7 +665,7 @@ function Queue() {
     server.abort();
     sending = false;
     server = null;
-    lastResponse = undefined;
+    lastResponse = null;
   }
 
   function setServerUri(newServerUri) {

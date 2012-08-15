@@ -29,7 +29,7 @@ Components.utils.import("resource://gre/modules/Services.jsm");
  */
 function Success(methodQueue) {
   Object.defineProperty(this, "data", {
-    "value": methodQueue.lastResponse().value()
+    "value": methodQueue.lastResponse().parameter()
   });
 }
 
