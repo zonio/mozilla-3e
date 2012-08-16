@@ -636,7 +636,7 @@ function Queue() {
 
     lastResponse = null;
     pending = false;
-    status = status;
+    status = serverError.result;
     error = serverError;
     listener(queue, context);
   }
