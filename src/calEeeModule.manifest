@@ -17,8 +17,11 @@ contract @zonio.net/calendar3e/synchronizer;1 {9045ff85-9e1c-47e4-9872-44c5ab424
 
 component {310e5872-2101-40cc-8315-a05578f3e5df} calEeeFreeBusyProvider.js
 contract @zonio.net/calendar3e/freebusy-provider;1 {310e5872-2101-40cc-8315-a05578f3e5df}
-category profile-after-change calendar3e-freebusy-provider @zonio.net/calendar3e/manager;1
+category profile-after-change calendar3e-freebusy-provider @zonio.net/calendar3e/freebusy-provider;1
 
 component {3892b01b-7e8f-4727-9087-ef4d814f7456} cal3eEnable.js
 contract @mozilla.org/accountmanager/extension;1?name=enable3e {3892b01b-7e8f-4727-9087-ef4d814f7456}
 category mailnews-accountmanager-extensions calendar3e-account-manager-extension @mozilla.org/accountmanager/extension;1?name=enable3e
+
+component {ee2d0640-a786-4caf-ad54-1cc51f251ba8} calEeeItip.js
+contract @zonio.net/calendar3e/itip;1 {ee2d0640-a786-4caf-ad54-1cc51f251ba8}

@@ -35,6 +35,7 @@ EXTRA_COMPONENTS = \
 	calEeeFreeBusyProvider.js \
 	cal3eEnable.js \
 	calEeeModule.manifest \
+	calEeeItip.js \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

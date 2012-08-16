@@ -59,11 +59,12 @@ function Client() {
 
   function uriFromIdentity(identity) {
     if (!dns) {
-      var host = identity.email.substring(identity.email.indexOf('@') + 1);
-      var port = 4444;
+      //XXX dev only
+      host = identity.getCharAttribute('eee_host');
+      port = identity.getIntAttribute('eee_port');
     } else {
-      var [host, port] = dns.resolveServer(
-        identity.email.substring(identity.email.indexOf('@') + 1)
+      [host, port] = this._dns.resolveServer(
+        identity.email.substring(identity.email.indexOf("@") + 1)
       );
     }
     var url = 'https://' + host + ':' + port + '/RPC2';
@@ -375,30 +376,34 @@ function Client() {
     );
   }
 
-  function queryObjects(identity, listener, calendar, from, to) {
+  function queryObjects(identity, listener, calendar, id, from, to) {
     var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
     if (!methodQueue) {
       return null;
     }
-    enqueueQueryObjects(methodQueue, calendar, from, to);
+    enqueueQueryObjects(methodQueue, calendar, id, from, to);
     queueExecution(methodQueue);
 
     return methodQueue;
   }
 
-  function enqueueQueryObjects(methodQueue, calendar, from, to) {
+  function enqueueQueryObjects(methodQueue, calendar, id, from, to) {
     var query = '';
-    if (null !== from) {
-      query += "date_from('" + xpcomToEeeDate(from) + "')";
-    }
-    if (null !== to) {
+    if (id === null) {
+      if (null !== from) {
+        query += "date_from('" + xpcomToEeeDate(from) + "')";
+      }
+      if (null !== to) {
+        if ('' !== query) {
+          query += ' AND ';
+        }
+        query += "date_to('" + xpcomToEeeDate(to) + "')";
+      }
       if ('' !== query) {
         query += ' AND ';
       }
-      query += "date_to('" + xpcomToEeeDate(to) + "')";
-    }
-    if ('' !== query) {
-      query += ' AND ';
+    } else {
+      query += "match_uid('" + id + "') AND ";
     }
     query += 'NOT deleted()';
 

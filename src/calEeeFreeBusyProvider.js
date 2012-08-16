@@ -178,12 +178,13 @@ calEeeFreeBusyProvider.prototype = {
   },
 
   _getEeeOrganizer: function () {
-    var organizerEmail = Components.classes[
-      "@mozilla.org/appshell/window-mediator;1"
-    ].getService(Components.interfaces.nsIWindowMediator).
-      getMostRecentWindow("Calendar:EventDialog:Attendees").
-      document.getElementById("attendees-list").
-      organizer.id;
+    var organizerEmail = this._parseAttendeeEmail(
+      Components.classes["@mozilla.org/appshell/window-mediator;1"]
+      .getService(Components.interfaces.nsIWindowMediator)
+      .getMostRecentWindow("Calendar:EventDialog:Attendees")
+      .document.getElementById("attendees-list")
+      .organizer.id
+    );
 
     var identities = cal3eIdentity.Collection().
       getEnabled().
@@ -197,12 +198,12 @@ calEeeFreeBusyProvider.prototype = {
   _parseAttendeeEmail: function (calId) {
     var parts = calId.split(":", 2);
 
-    return parts[0].toLowerCase() !== "mailto" ?
+    return parts[0].toLowerCase() === "mailto" ?
       parts[1] :
       null ;
   },
 
-  _buildFreeBusyIntervalFromProperty: function (property) {
+  _buildFreeBusyIntervalFromProperty: function (calId, property) {
     var parts = property.value.split("/");
     var begin = cal.createDateTime(parts[0]);
     var end = parts[1].charAt(0) == "P" ?
