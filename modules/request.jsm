@@ -20,6 +20,7 @@
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 //Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 
@@ -64,7 +65,7 @@ function Client() {
       port = identity.getIntAttribute('eee_port');
     } else {
       [host, port] = dns.resolveServer(
-        identity.email.substring(identity.email.indexOf("@") + 1)
+        identity.email.substring(identity.email.indexOf('@') + 1)
       );
     }
     var url = 'https://' + host + ':' + port + '/RPC2';
@@ -132,6 +133,11 @@ function Client() {
       result = setLastUserError(
         methodQueue, cal3eResponse.userErrors.BAD_CERT
       );
+    } else if (methodQueue.isFault() &&
+               (methodQueue.lastResponse().errorCode ===
+                cal3eResponse.eeeErrors.AUTH_FAILED)) {
+      restartQueueWithNewPassword(methodQueue, listener);
+      return;
     } else {
       result = cal3eResponse.fromMethodQueue(methodQueue);
     }
@@ -159,26 +165,11 @@ function Client() {
       return null;
     }
 
-    var password = findPassword(identity);
-    if (null === password) {
-      var [password, didEnterPassword, savePassword] =
-        promptForPassword();
-
-      //TODO store unsaved password temporarily
-      if (didEnterPassword && savePassword) {
-        storePassword(identity, password);
-      } else if (!didEnterPassword) {
-        listener(
-          methodQueue,
-          setLastUserError(
-            methodQueue, cal3eResponse.userErrors.NO_PASSWORD
-          )
-        );
-      }
-    }
+    var loginInfo = findLoginInfo(identity) ||
+      promptForPasswordAndStoreIt(identity, methodQueue, listener);
 
     return enqueueMethod(
-      methodQueue, 'authenticate', identity.email, password
+      methodQueue, 'authenticate', identity.email, loginInfo.password
     );
   }
 
@@ -188,15 +179,15 @@ function Client() {
       identity.email.substring(identity.email.indexOf('@') + 1);
   }
 
-  function findPassword(identity) {
+  function findLoginInfo(identity) {
     var logins = Services.logins.findLogins(
       {}, passwordUri(identity), passwordUri(identity), null
     );
 
-    return logins.length > 0 ? logins[0].password : null;
+    return logins.length > 0 ? logins[0] : null;
   }
 
-  function promptForPassword() {
+  function promptForPassword(identity) {
     var password = { value: '' }; // default the password to empty string
     var savePassword = { value: true }; // default the checkbox to true
 
@@ -213,19 +204,78 @@ function Client() {
       savePassword
     );
 
-    return [password.value, didEnterPassword, savePassword.value];
-  }
-
-  function storePassword(identity, password) {
     var loginInfo =
       Components.classes['@mozilla.org/login-manager/loginInfo;1']
       .createInstance(Components.interfaces.nsILoginInfo);
     loginInfo.init(
       passwordUri(identity), passwordUri(identity), null, identity.email,
-      password, '', ''
+      password.value, '', ''
     );
 
-    Services.logins.addLogin(loginInfo);
+    return [loginInfo, didEnterPassword, savePassword.value];
+  }
+
+  function storeLoginInfo(identity, loginInfo) {
+    if (findLoginInfo(identity) === null) {
+      Services.logins.addLogin(loginInfo);
+    } else {
+      Services.logins.modifyLogin(findLoginInfo(identity), loginInfo);
+    }
+  }
+
+  function promptForPasswordAndStoreIt(identity, methodQueue, listener) {
+    var [loginInfo, didEnterPassword, savePassword] =
+      promptForPassword(identity);
+
+    //TODO store unsaved password temporarily
+    if (didEnterPassword && savePassword) {
+      storeLoginInfo(identity, loginInfo);
+    } else if (!didEnterPassword) {
+      listener(
+        methodQueue,
+        setLastUserError(
+          methodQueue, cal3eResponse.userErrors.NO_PASSWORD
+        )
+      );
+    }
+
+    return loginInfo;
+  }
+
+  function restartQueueWithNewPassword(methodQueue, listener) {
+    var newMethodQueue = prepareMethodQueue(
+      findIdentityInQueue(methodQueue), listener
+    );
+    methodQueue.toArray().forEach(function(methodCall) {
+      if (methodCall[0] === 'ESClient.authenticate') {
+        methodCall[1][1] = promptForPasswordAndStoreIt(
+          findIdentityByEmail(methodCall[1][0]),
+          methodQueue,
+          listener
+        ).password;
+      }
+      newMethodQueue.push(methodCall[0], methodCall[1]);
+      queueExecution(newMethodQueue);
+    });
+  }
+
+  function findIdentityInQueue(queue) {
+    var identity = null;
+    queue.toArray().forEach(function(methodCall) {
+      if (methodCall[0] === 'ESClient.authenticate') {
+        identity = findIdentityByEmail(methodCall[1][0]);
+      }
+    });
+
+    return identity;
+  }
+
+  function findIdentityByEmail(email) {
+    var identities = cal3eIdentity.Collection()
+      .getEnabled()
+      .findByEmail(email);
+
+    return identities.length > 0 ? identities[0] : null;
   }
 
   function validateMethodQueue(methodQueue, listener, errorCode) {
@@ -513,7 +563,7 @@ function Client() {
   function getCalendarCalspec(calendar) {
     var uriParts = calendar.uri.spec.split('/', 5);
 
-    return uriParts[2] + ":" + (uriParts[4] || uriParts[3]);
+    return uriParts[2] + ':' + (uriParts[4] || uriParts[3]);
   }
 
   function init() {
@@ -593,6 +643,10 @@ function Queue() {
     status = Components.results.NS_OK;
 
     return queue;
+  }
+
+  function toArray() {
+    return methodCalls.slice();
   }
 
   function send() {
@@ -774,6 +828,7 @@ function Queue() {
   queue.lastResponse = getLastResponse;
   queue.error = getError;
   queue.push = push;
+  queue.toArray = toArray;
   queue.send = send;
 
   init();
