@@ -171,27 +171,36 @@ function Request(name, parameters) {
   }
 
   function createValue(parameter) {
+    var value;
     switch (typeof parameter) {
     case 'number':
       if ((parameter % 1) === 0) {
-        parameter = '<int>' + parameter + '</int>';
+        value = '<int>' + parameter + '</int>';
       } else {
-        parameter = '<double>' + parameter + '</double>';
+        value = '<double>' + parameter + '</double>';
       }
       break;
     case 'boolean':
-      parameter = '<boolean>' + parameter + '</boolean>';
+      value = '<boolean>' + parameter + '</boolean>';
       break;
     case 'string':
+      value = parameter;
       break;
     case 'object':
       if (parameter instanceof Date) {
-        parameter = createDateTimeParameter(parameter);
+        value = createDateTimeParameter(parameter);
       } else if (parameter instanceof Array) {
-        parameter = createArrayParameter(parameter);
-      } else if (!(parameter instanceof Base64Parameter)) {
-        parameter = createStructParameter(parameter);
+        value = createArrayParameter(parameter);
+      } else if (parameter instanceof Base64Parameter) {
+        value = parameter.toString();
+      } else if (parameter === null) {
+        value = '';
+      } else {
+        value = createStructParameter(parameter);
       }
+      break;
+    case 'undefined':
+      value = '';
       break;
     default:
       throw Components.Exception(
@@ -201,7 +210,7 @@ function Request(name, parameters) {
       break;
     }
 
-    return parameter;
+    return value;
   }
 
   function createDateTimeParameter(parameter) {
@@ -222,7 +231,8 @@ function Request(name, parameters) {
 
   function createStructParameter(parameter) {
     var struct = '<struct>';
-    for (var name in parameter) {
+    var name;
+    for (name in parameter) {
       if (!parameter.hasOwnProperty(name)) {
         continue;
       }
@@ -236,7 +246,7 @@ function Request(name, parameters) {
     return struct;
   }
 
-  function appendArrayToBody(parameter) {
+  function createArrayParameter(parameter) {
     var array = '<array><data>';
     var idx;
     for (idx = 0; idx < parameter.length; idx += 1) {
@@ -566,8 +576,9 @@ function Value(valueElement) {
     }
 
     var array = [];
-    for (idx = 0; idx < dataElement.length; idx += 1) {
-      array.push(parseValue(dataElement.item(idx)));
+    var idx;
+    for (idx = 0; idx < dataElement.childNodes.length; idx += 1) {
+      array.push(parseValue(dataElement.childNodes.item(idx)));
     }
 
     return array;
