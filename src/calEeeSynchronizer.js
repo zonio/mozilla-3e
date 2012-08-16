@@ -426,13 +426,9 @@ calEeeSynchronizer.prototype = {
   function calEeeSynchronizer_setCalendarProperties(calendar, data) {
     var attrs = {};
     if (data.hasOwnProperty('attrs')) {
-      try {
-        data['attrs'].forEach(function(attrData) {
-          attrs[attrData['name']] = '' + attrData['value'];
-        });
-      } catch (e) {
-        //TODO
-      }
+      data['attrs'].forEach(function(attrData) {
+        attrs[attrData['name']] = '' + attrData['value'];
+      });
     }
 
     if (attrs['title']) {

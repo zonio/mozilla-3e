@@ -207,12 +207,12 @@ calendarSubscription.prototype = {
     var username = rawProvider['username'];
     var realname;
     if (rawProvider.hasOwnProperty('attrs')) {
-      rawProvider['attrs'].forEach(function(rawAttr) {
-        if (rawAttr['name'] === 'realname') {
-          realname = rawAttr['value'];
-          break;
-        }
+      realname = rawProvider['attrs'].filter(function(rawAttr) {
+        return rawAttr['name'] === 'realname';
       });
+      if (realname.length > 0) {
+        realname = realname[0]['value'];
+      }
     }
     if (realname) {
       provider.push(realname + "<" + username + ">");

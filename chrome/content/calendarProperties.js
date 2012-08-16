@@ -115,15 +115,12 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   var nameListCell = document.createElement("listcell");
   var realname = null;
   if (user.hasOwnProperty('attrs')) {
-    var userAttrs = user.getValue('attrs').QueryInterface(
-      Components.interfaces.nsISupportsArray
-    );
-    user['attrs'].forEach(function(attr) {
-      if (attr['name'] === 'realname') {
-        realname = attr['value'];
-        break;
-      }
+    realname = user['attrs'].filter(function(rawAttr) {
+      return rawAttr['name'] === 'realname';
     });
+    if (realname.length > 0) {
+      realname = realname[0]['value'];
+    }
   }
   var userLabel = "";
   if (realname) {
