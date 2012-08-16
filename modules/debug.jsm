@@ -31,24 +31,26 @@ function dumpObject(obj, name, maxDepth, curDepth) {
 
   var i = 0;
   for (let prop in obj) {
-    i++;
-    if (typeof(obj[prop]) == 'object') {
-      if (obj[prop] && obj[prop].length !== undefined) {
+    i += 1;
+    if (typeof obj[prop] === 'object') {
+      if (obj[prop] && (obj[prop].length !== undefined)) {
         dump(
           name + '.' + prop + '=' +
-            '[probably array, length ' + obj[prop].length + ']'
+            '[probably array, length ' + obj[prop].length + ']\n'
         );
       } else {
-        dump(name + '.' + prop + '=[' + typeof(obj[prop]) + ']\n');
+        dump(name + '.' + prop + '=[' + typeof obj[prop] + ']\n');
       }
       dumpObject(obj[prop], name + '.' + prop, maxDepth, curDepth + 1);
-    } else if (typeof(obj[prop]) == 'function') {
+    } else if (typeof obj[prop] === 'function') {
       dump(name + '.' + prop + '=[function]\n');
     } else {
       dump(name + '.' + prop + '=' + obj[prop] + '\n');
     }
   }
-  if (!i) {
+  if ((i === 0) && (obj === undefined)) {
+    dump(name + ' is undefined\n');
+  } else if (i === 0) {
     dump(name + ' is empty\n');
   }
 }
