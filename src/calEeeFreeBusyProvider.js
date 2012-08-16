@@ -106,7 +106,7 @@ calEeeFreeBusyProvider.prototype = {
       rawItems =
         "BEGIN:VCALENDAR\nVERSION:2.0\n" +
         "PRODID:-//Zonio//mozilla-3e//EN\n" +
-        result.value +
+        result.data +
         "END:VCALENDAR";
 
       var periodsToReturn = [];

@@ -81,7 +81,7 @@ cal3eProperties._loadUsers = function loadUsers() {
       return;
     }
 
-    result.value.forEach(function(user) {
+    result.data.forEach(function(user) {
       permissionsListBox.appendChild(
         cal3eProperties._listItemFromUser(user)
       );

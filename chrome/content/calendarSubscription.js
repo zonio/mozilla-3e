@@ -197,7 +197,7 @@ calendarSubscription.prototype = {
 
   _buildProviders:
   function calendarSubscription_buildProviders(result) {
-    return result.value.map(function(rawProvider) {
+    return result.data.map(function(rawProvider) {
       return this._buildProvider(rawProvider);
     });
   },
