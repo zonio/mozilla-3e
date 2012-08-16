@@ -338,7 +338,7 @@ calEeeSynchronizer.prototype = {
         }
 
         var knownCalendars = synchronizer._loadEeeCalendarsByUri();
-        result.value().forEach(function(data, idx) {
+        result.value.forEach(function(data, idx) {
           var uri = synchronizer._buildCalendarUri(data);
           if (!knownCalendars.hasOwnProperty(uri.spec)) {
             synchronizer._addCalendar(data);

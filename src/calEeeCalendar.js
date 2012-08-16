@@ -394,7 +394,7 @@ calEeeCalendar.prototype = {
 
       var parser = calendar._getIcsParser();
       try {
-        parser.parseString(result.value());
+        parser.parseString(result.value);
       } catch (e) {
         calendar.notifyOperationComplete(listener,
                                          e.result,
