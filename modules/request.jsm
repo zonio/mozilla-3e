@@ -370,8 +370,8 @@ function Client() {
   function enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
                                        isPublic) {
     return enqueueMethod(
-      methodQueue, 'setCalendarAttribute', calendar.calspec, name, value,
-      isPublic
+      methodQueue, 'setCalendarAttribute', getCalendarCalspec(calendar), name,
+      value, isPublic
     );
   }
 
@@ -403,7 +403,7 @@ function Client() {
     query += 'NOT deleted()';
 
     return enqueueMethod(
-      methodQueue, 'queryObjects', calendar.calspec, query
+      methodQueue, 'queryObjects', getCalendarCalspec(calendar), query
     );
   }
 
@@ -424,13 +424,13 @@ function Client() {
     var idx = count.value;
     while (idx--) {
       enqueueMethod(
-        methodQueue, 'addObject', calendar.calspec,
+        methodQueue, 'addObject', getCalendarCalspec(calendar),
         timezones[idx].icalComponent.serializeToICS()
       );
     }
 
     return enqueueMethod(
-      methodQueue, 'addObject', calendar.calspec,
+      methodQueue, 'addObject', getCalendarCalspec(calendar),
       item.icalComponent.serializeToICS()
     );
   }
@@ -452,13 +452,13 @@ function Client() {
     var idx = count.value;
     while (idx--) {
       enqueueMethod(
-        methodQueue, 'addObject', calendar.calspec,
+        methodQueue, 'addObject', getCalendarCalspec(calendar),
         timezones[idx].icalComponent.serializeToICS()
       );
     }
 
     return enqueueMethod(
-      methodQueue, 'updateObject', calendar.calspec,
+      methodQueue, 'updateObject', getCalendarCalspec(calendar),
       item.icalComponent.serializeToICS()
     );
   }
@@ -476,7 +476,7 @@ function Client() {
 
   function enqueueDeleteObject(methodQueue, calendar, item) {
     return enqueueMethod(
-      methodQueue, 'deleteObject', calendar.calspec, item.id
+      methodQueue, 'deleteObject', getCalendarCalspec(calendar), item.id
     );
   }
 
@@ -501,6 +501,12 @@ function Client() {
     return enqueueMethod(
       methodQueue, 'freeBusy', attendee, fromEee, toEee, defaultTimezone
     );
+  }
+
+  function getCalendarCalspec(calendar) {
+    var uriParts = calendar.uri.spec.split('/', 5);
+
+    return uriParts[2] + ":" + (uriParts[4] || uriParts[3]);
   }
 
   function init() {
@@ -721,7 +727,7 @@ function Queue() {
       QueryInterface: XPCOMUtils.generateQI([
         Components.interfaces.calIOperation
       ]),
-      cancel: abort()
+      cancel: cancel
     }, {
       id: {get: getId},
       isPending: {get: isPending},
