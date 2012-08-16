@@ -392,22 +392,9 @@ calEeeCalendar.prototype = {
         return;
       }
 
-      var rawItems;
-      try {
-        rawItems = result.data.QueryInterface(Ci.nsISupportsCString);
-      } catch (e) {
-        calendar.notifyOperationComplete(
-          listener,
-          methodQueue.status(),
-          Ci.calIOperationListener.GET,
-          null,
-          "Objects retrieval from EEE server failed");
-        return;
-      }
-
       var parser = calendar._getIcsParser();
       try {
-        parser.parseString(rawItems);
+        parser.parseString(result.value());
       } catch (e) {
         calendar.notifyOperationComplete(listener,
                                          e.result,

@@ -103,18 +103,11 @@ calEeeFreeBusyProvider.prototype = {
         return;
       }
 
-      var rawItems;
-      try {
-        rawItems = result.data.QueryInterface(Ci.nsISupportsCString);
-        rawItems =
-          "BEGIN:VCALENDAR\nVERSION:2.0\n" +
-          "PRODID:-//Zonio//mozilla-3e//EN\n" +
-          rawItems.data +
-          "END:VCALENDAR";
-      } catch (e) {
-        listener.onResult(null, null);
-        return;
-      }
+      rawItems =
+        "BEGIN:VCALENDAR\nVERSION:2.0\n" +
+        "PRODID:-//Zonio//mozilla-3e//EN\n" +
+        result.value() +
+        "END:VCALENDAR";
 
       var periodsToReturn = [];
 
@@ -122,8 +115,7 @@ calEeeFreeBusyProvider.prototype = {
       try {
         for (let component in
              cal.ical.calendarComponentIterator(
-               cal.getIcsService().parseICS(rawItems, null)
-             )) {
+               cal.getIcsService().parseICS(rawItems, null))) {
           let interval;
 
           if (component.startTime &&
@@ -147,9 +139,7 @@ calEeeFreeBusyProvider.prototype = {
           }
 
           for (let property in
-               cal.ical.propertyIterator(
-                 component, "FREEBUSY"
-               )) {
+               cal.ical.propertyIterator(component, "FREEBUSY")) {
             periodsToReturn.push(
               freeBusyProvider._buildFreeBusyIntervalFromProperty(
                 calId,

@@ -338,22 +338,15 @@ calEeeSynchronizer.prototype = {
         }
 
         var knownCalendars = synchronizer._loadEeeCalendarsByUri();
-        var calendars = result.data.QueryInterface(
-          Components.interfaces.nsISupportsArray
-        );
-        var idx = calendars.Count(), data, uri;
-        while (idx--) {
-          data = calendars.QueryElementAt(
-            idx, Components.interfaces.nsIDictionary
-          );
-          uri = synchronizer._buildCalendarUri(data);
+        result.value().forEach(function(data, idx) {
+          var uri = synchronizer._buildCalendarUri(data);
           if (!knownCalendars.hasOwnProperty(uri.spec)) {
             synchronizer._addCalendar(data);
           } else {
             synchronizer._updateCalendar(knownCalendars[uri.spec], data);
           }
           delete knownCalendars[uri.spec];
-        }
+        });
 
         var uriSpec;
         for (uriSpec in knownCalendars) {
@@ -370,29 +363,19 @@ calEeeSynchronizer.prototype = {
    * Builds calendar URI specifiacation from data retrieved from
    * 'getCalendar' method call.
    *
-   * @param {nsIDictionary} data
+   * @param {Object} data
    * @returns {String}
    */
   _buildCalendarUri: function calEeeSynchronizer_buildCalendarUri(data) {
-    var ioService = Components.classes[
-      "@mozilla.org/network/io-service;1"
-    ].getService(Components.interfaces.nsIIOService);
-
-    return ioService.newURI(
-      'eee://' +
-        data.getValue('owner').QueryInterface(
-          Components.interfaces.nsISupportsCString
-        ) + '/' +
-        data.getValue('name').QueryInterface(
-          Components.interfaces.nsISupportsCString
-        ),
-      null, null);
+    return Services.io.newURI(
+      'eee://' + data['owner'] + '/' + data['name'], null, null
+    );
   },
 
   /**
    * Adds given calendar build from given data.
    *
-   * @param {nsIDictionary} data
+   * @param {Object} data
    */
   _addCalendar:
   function calEeeSynchronizer_synchronizeCalendar(data) {
@@ -436,27 +419,17 @@ calEeeSynchronizer.prototype = {
    * Sets properties to calendar according to given raw data from
    * XML-RPC response.
    *
-   * @param {calEeeICalendar} calendar
+   * @param {calICalendar} calendar
    * @param {nsIDictionary} data
    */
   _setCalendarProperties:
   function calEeeSynchronizer_setCalendarProperties(calendar, data) {
     var attrs = {};
-    if (data.hasKey('attrs')) {
-      let attrsData = data.getValue('attrs').
-        QueryInterface(Components.interfaces.nsISupportsArray);
-      let idx = attrsData.Count(), attrData, attrName, attrValue;
+    if (data.hasOwnProperty('attrs')) {
       try {
-        while (idx--) {
-          attrData = attrsData.QueryElementAt(
-            idx, Components.interfaces.nsIDictionary
-          );
-          attrName = "" + attrData.getValue('name').
-            QueryInterface(Components.interfaces.nsISupportsCString);
-          attrValue = "" + attrData.getValue('value').
-            QueryInterface(Components.interfaces.nsISupportsCString);
-          attrs[attrName] = attrValue;
-        }
+        data['attrs'].forEach(function(attrData) {
+          attrs[attrData['name']] = '' + attrData['value'];
+        });
       } catch (e) {
         //TODO
       }
@@ -465,10 +438,7 @@ calEeeSynchronizer.prototype = {
     if (attrs['title']) {
       calendar.name = attrs['title'];
     } else {
-      calendar.name = '' +
-        data.getValue('name').QueryInterface(
-          Components.interfaces.nsISupportsCString
-        );
+      calendar.name = '' + data['name'];
     }
 
     //TODO validation

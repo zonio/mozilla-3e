@@ -197,43 +197,24 @@ calendarSubscription.prototype = {
 
   _buildProviders:
   function calendarSubscription_buildProviders(result) {
-    var providers = [];
-    var rawProviders = result.data.QueryInterface(
-      Components.interfaces.nsISupportsArray
-    );
-    var idx = rawProviders.Count(), rawProvider, uri;
-    while (idx--) {
-      providers.push(this._buildProvider(rawProviders.GetElementAt(idx)));
-    }
-
-    return providers;
+    return result.value().map(function(rawProvider) {
+      return this._buildProvider(rawProvider);
+    });
   },
 
   _buildProvider: function calendarSubscription_buildProvider(rawProvider) {
     var provider = [];
-    rawProvider = rawProvider.QueryInterface(
-      Components.interfaces.nsIDictionary
-    );
-
-    var username = rawProvider.getValue('username').
-      QueryInterface(Components.interfaces.nsISupportsCString);
-    var realname = null;
-    if (rawProvider.hasKey('attrs')) {
-      var rawAttrs = rawProvider.getKey('attrs').
-        QueryInterface(Components.interfaces.nsISupportsArray);
-      let idx = rawAttrs.Count(), rawAttr;
-      while (idx--) {
-        rawAttr = rawAttr.QueryElementAt(
-          idx, Components.interfaces.nsIDictionary
-        );
-        if ('realname' != rawAttr.getValue('name')) {
-          continue;
+    var username = rawProvider['username'];
+    var realname;
+    if (rawProvider.hasOwnProperty('attrs')) {
+      rawProvider['attrs'].forEach(function(rawAttr) {
+        if (rawAttr['name'] === 'realname') {
+          realname = rawAttr['value'];
+          break;
         }
-        var realname = rawAttr.getValue('value').
-          QueryInterface(Components.interfaces.nsISupportsCString);
-      }
+      });
     }
-    if (null !== realname) {
+    if (realname) {
       provider.push(realname + "<" + username + ">");
     } else {
       provider.push(username);

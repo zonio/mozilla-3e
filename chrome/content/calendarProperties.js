@@ -81,20 +81,11 @@ cal3eProperties._loadUsers = function loadUsers() {
       return;
     }
 
-    var users;
-    try {
-      users = result.data.QueryInterface(
-        Components.interfaces.nsISupportsArray
-      );
-    } catch (e) {
-      //TODO can't get list of users
-      return;
-    }
-
-    for (var idx = 0; idx < users.Count(); idx++) {
+    result.value().forEach(function(user) {
       permissionsListBox.appendChild(
-        cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
-    }
+        cal3eProperties._listItemFromUser(user)
+      );
+    });
   };
 
   var uriSpec = cal3eProperties._calendar.uri.spec,
@@ -118,38 +109,27 @@ cal3eProperties._loadUsers = function loadUsers() {
 };
 
 cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
-  user = user.QueryInterface(Components.interfaces.nsIDictionary);
-
   var listItem = document.createElement("listitem");
   listItem.allowevents = 'true';
 
   var nameListCell = document.createElement("listcell");
   var realname = null;
-  if (user.hasKey('attrs')) {
+  if (user.hasOwnProperty('attrs')) {
     var userAttrs = user.getValue('attrs').QueryInterface(
       Components.interfaces.nsISupportsArray
     );
-    for (var idx = 0, attr; idx < userAttrs.Count(); idx++) {
-      attr = userAttrs.QueryElementAt(
-        idx, Components.interfaces.nsIDictionary
-      );
-      if ('realname' == attr.getValue('name').QueryInterface(
-        Components.interfaces.nsISupportsCString
-      )) {
-        realname = attr.getValue('value').QueryInterface(
-          Components.interfaces.nsISupportsCString
-        );
+    user['attrs'].forEach(function(attr) {
+      if (attr['name'] === 'realname') {
+        realname = attr['value'];
         break;
       }
-    }
+    });
   }
   var userLabel = "";
   if (realname) {
     userLabel += realname + " <";
   }
-  userLabel += user.getValue('username').QueryInterface(
-    Components.interfaces.nsISupportsCString
-  );
+  userLabel += user['username'];
   if (realname) {
     userLabel += ">";
   }
