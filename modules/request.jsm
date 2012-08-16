@@ -63,7 +63,7 @@ function Client() {
       host = identity.getCharAttribute('eee_host');
       port = identity.getIntAttribute('eee_port');
     } else {
-      [host, port] = this._dns.resolveServer(
+      [host, port] = dns.resolveServer(
         identity.email.substring(identity.email.indexOf("@") + 1)
       );
     }
@@ -108,7 +108,9 @@ function Client() {
     if (0 < queues.length) {
       timer = Components.classes['@mozilla.org/timer;1']
         .createInstance(Components.interfaces.nsITimer);
-      timer.init(this, 500, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+      timer.init(
+        getTimerObserver(), 500, Components.interfaces.nsITimer.TYPE_ONE_SHOT
+      );
     } else {
       timer = null;
     }
@@ -688,7 +690,7 @@ function Queue() {
     server.setUri(serverUri);
     status = Components.results.NS_OK;
 
-    return this;
+    return queue;
   }
 
   function getServerUri() {
@@ -702,7 +704,7 @@ function Queue() {
 
     listener = newListener;
 
-    return this;
+    return queue;
   }
 
   function setContext(newContext) {
@@ -712,7 +714,7 @@ function Queue() {
 
     context = newContext;
 
-    return this;
+    return queue;
   }
 
   function getLastResponse() {
