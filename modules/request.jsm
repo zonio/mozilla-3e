@@ -102,7 +102,7 @@ function Client() {
   }
 
   function execute() {
-    if (null === activeQueue) {
+    if ((activeQueue === null) || !activeQueue.isPending) {
       activeQueue = queues.shift();
       activeQueue.send();
     }
@@ -118,11 +118,6 @@ function Client() {
   }
 
   function onResult(methodQueue, listener) {
-    if (methodQueue.isPending()) {
-      return;
-    }
-
-    activeQueue = null;
     var result;
     //XXX There's no result code for SSL error available so we must
     // check error code and message to distinguish bad certificate
@@ -137,10 +132,13 @@ function Client() {
                (methodQueue.lastResponse().errorCode ===
                 cal3eResponse.eeeErrors.AUTH_FAILED)) {
       restartQueueWithNewPassword(methodQueue, listener);
-      return;
-    } else {
+      throw new StopQueueExecution();
+    } else if (!methodQueue.isPending()) {
       result = cal3eResponse.fromMethodQueue(methodQueue);
+    } else if (methodQueue.isPending()) {
+      return;
     }
+
     listener(methodQueue, result);
   }
 
@@ -255,8 +253,13 @@ function Client() {
         ).password;
       }
       newMethodQueue.push(methodCall[0], methodCall[1]);
-      queueExecution(newMethodQueue);
     });
+
+    //XXX somehow this is required, but should not. Active queue
+    // should have no pending method calls at this moment and nulling
+    // activeQueue shouldn't be necessary.
+    activeQueue = null;
+    queueExecution(newMethodQueue);
   }
 
   function findIdentityInQueue(queue) {
@@ -688,7 +691,16 @@ function Queue() {
     methodIdx += 1;
     lastResponse = response;
     pending = methodCalls.length > methodIdx;
-    listener(queue, context);
+
+    try {
+      listener(queue, context);
+    } catch (e) {
+      if (e instanceof StopQueueExecution) {
+        pending = false;
+      } else {
+        throw e;
+      }
+    }
 
     if (pending) {
       sendNext();
@@ -833,6 +845,8 @@ function Queue() {
 
   init();
 }
+
+function StopQueueExecution() {}
 
 var cal3eRequest = {
   Client: Client
