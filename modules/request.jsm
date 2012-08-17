@@ -111,7 +111,9 @@ function Client() {
       timer = Components.classes['@mozilla.org/timer;1']
         .createInstance(Components.interfaces.nsITimer);
       timer.init(
-        getTimerObserver(), 500, Components.interfaces.nsITimer.TYPE_ONE_SHOT
+        getTimerObserver(),
+        Services.prefs.getIntPref('calendar.eee.queue_execution_interval'),
+        Components.interfaces.nsITimer.TYPE_ONE_SHOT
       );
     } else {
       timer = null;
@@ -303,8 +305,9 @@ function Client() {
     var error = findLastUserError(
       methodQueue.serverUri().spec, errorCode
     );
-    //TODO move such constants to preferences
-    var threshold = new Date(Date.now() - 5 * 60 * 1000);
+    var threshold = new Date(
+      Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
+    );
     if (error && error.timestamp > threshold) {
       listener(methodQueue, error);
     } else if (error) {

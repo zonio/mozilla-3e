@@ -195,7 +195,10 @@ calEeeSynchronizationService.prototype = {
       "@mozilla.org/timer;1"
     ].createInstance(Components.interfaces.nsITimer);
     this._timersByIdentity[identity.key].init(
-      this, 15000, Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
+      this,
+      Services.prefs.getIntPref('calendar.eee.calendar_sync_interval'),
+      Components.interfaces.nsITimer.TYPE_REPEATING_SLACK
+    );
 
     return this;
   },

@@ -79,6 +79,7 @@ endif
 # include config.mk here so myconfig or app-config can set DISABLE_LIGHTNING_INSTALL
 include $(topsrcdir)/config/config.mk
 
+PREF_JS_EXPORTS = $(srcdir)/defaults/preferences.js
 DIRS = public modules src data chrome
 
 ifdef ENABLE_TESTS
