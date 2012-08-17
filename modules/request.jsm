@@ -167,9 +167,10 @@ function Client() {
     var loginInfo = findLoginInfo(identity) ||
       promptForPasswordAndStoreIt(identity, methodQueue, listener);
 
-    return enqueueMethod(
-      methodQueue, 'authenticate', identity.email, loginInfo.password
-    );
+    return loginInfo ?
+      enqueueMethod(methodQueue, 'authenticate', identity.email,
+                    loginInfo.password) :
+      null ;
   }
 
   function passwordUri(identity) {
@@ -243,19 +244,18 @@ function Client() {
     var [loginInfo, didEnterPassword, savePassword] =
       promptForPassword(identity);
 
-    //TODO store unsaved password temporarily
     if (didEnterPassword && savePassword) {
       storePermLoginInfo(identity, loginInfo);
     } else if (didEnterPassword) {
       storeTmpLoginInfo(identity, loginInfo);
     } else if (!didEnterPassword) {
+      loginInfo = null;
       listener(
         methodQueue,
         setLastUserError(
           methodQueue, cal3eResponse.userErrors.NO_PASSWORD
         )
       );
-      //TODO premature end
     }
 
     return loginInfo;
