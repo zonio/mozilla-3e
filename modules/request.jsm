@@ -191,11 +191,9 @@ function Client() {
   }
 
   function findTmpLoginInfo(identity) {
-    if (!tmpLoginInfos || !tmpLoginInfos[identity.key]) {
-      return null;
-    }
-
-    return tmpLoginInfos[identity.key];
+    return tmpLoginInfos && tmpLoginInfos[identity.key] ?
+      tmpLoginInfos[identity.key] :
+      null;
   }
 
   function promptForPassword(identity) {
@@ -257,6 +255,7 @@ function Client() {
           methodQueue, cal3eResponse.userErrors.NO_PASSWORD
         )
       );
+      //TODO premature end
     }
 
     return loginInfo;
