@@ -29,6 +29,7 @@ function Client() {
   var request;
   var xhr;
   var response;
+  var channelCallbacks;
 
   function send(methodName, parameters) {
     if (request) {
@@ -62,6 +63,12 @@ function Client() {
       );
     }
 
+    channelCallbacks = new ChannelCallbacks(
+      doXhrSend,
+      passErrorToListener,
+      window
+    );
+
     xhr = Components.classes[
       '@mozilla.org/xmlextras/xmlhttprequest;1'
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -69,11 +76,7 @@ function Client() {
     xhr.setRequestHeader('Content-Type', 'text/xml');
     xhr.addEventListener('load', onXhrLoad, false);
     xhr.addEventListener('error', onXhrError, false);
-    xhr.channel.notificationCallbacks = new ChannelCallbacks(
-      doXhrSend,
-      passErrorToListener,
-      window
-    );
+    xhr.channel.notificationCallbacks = channelCallbacks;
 
     xhr.send(request.body());
   }
@@ -98,6 +101,10 @@ function Client() {
   }
 
   function onXhrError(event) {
+    if (channelCallbacks.isBadCertListenerActive()) {
+      return;
+    }
+
     passErrorToListener(
       Components.results.NS_ERROR_FAILURE, 'Unknown network error'
     );
@@ -605,6 +612,7 @@ function Value(valueElement) {
 
 function ChannelCallbacks(repeatCall, onError, window) {
   var channelCallbacks = this;
+  var badCertListener;
 
   function getInterface(iid, result) {
     if (!iid.equals(Components.interfaces.nsIBadCertListener2)) {
@@ -614,19 +622,30 @@ function ChannelCallbacks(repeatCall, onError, window) {
       );
     }
 
-    return new BadCertListener(repeatCall, onError, window);
+    if (!badCertListener) {
+      badCertListener = new BadCertListener(repeatCall, onError, window);
+    }
+
+    return badCertListener;
+  }
+
+  function isBadCertListenerActive() {
+    return badCertListener && badCertListener.isActive();
   }
 
   channelCallbacks.QueryInterface = XPCOMUtils.generateQI([
     Components.interfaces.nsIInterfaceRequestor
   ]);
   channelCallbacks.getInterface = getInterface;
+  channelCallbacks.isBadCertListenerActive = isBadCertListenerActive;
 }
 
 function BadCertListener(repeatCall, onError, window) {
   var badCertListener = this;
+  var active;
 
   function notifyCertProblem(socketInfo, status, targetSite) {
+    active = true;
     window.setTimeout(function() {
       showBadCertDialogAndRetryCall({
         'exceptionAdded': false,
@@ -644,6 +663,7 @@ function BadCertListener(repeatCall, onError, window) {
       parameters
     );
 
+    active = false;
     if (parameters['exceptionAdded']) {
       repeatCall();
     } else {
@@ -654,16 +674,22 @@ function BadCertListener(repeatCall, onError, window) {
     }
   }
 
+  function isActive() {
+    return active;
+  }
+
   function init() {
     if (!window) {
       window = Services.wm.getMostRecentWindow(null);
     }
+    active = false;
   }
 
   badCertListener.QueryInterface = XPCOMUtils.generateQI([
     Components.interfaces.nsIInterfaceRequestor
   ]);
   badCertListener.notifyCertProblem = notifyCertProblem;
+  badCertListener.isActive = isActive;
 
   init();
 }
