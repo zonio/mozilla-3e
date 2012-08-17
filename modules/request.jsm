@@ -31,6 +31,7 @@ function Client() {
   var timer;
   var dns;
   var lastUserErrors;
+  var tmpLoginInfos;
 
   function prepareMethodQueueAndAuthenticate(identity, listener) {
     var methodQueue = prepareMethodQueue(identity, listener);
@@ -178,11 +179,23 @@ function Client() {
   }
 
   function findLoginInfo(identity) {
+    return findTmpLoginInfo(identity) || findPermLoginInfo(identity);
+  }
+
+  function findPermLoginInfo(identity) {
     var logins = Services.logins.findLogins(
       {}, passwordUri(identity), passwordUri(identity), null
     );
 
     return logins.length > 0 ? logins[0] : null;
+  }
+
+  function findTmpLoginInfo(identity) {
+    if (!tmpLoginInfos || !tmpLoginInfos[identity.key]) {
+      return null;
+    }
+
+    return tmpLoginInfos[identity.key];
   }
 
   function promptForPassword(identity) {
@@ -213,12 +226,19 @@ function Client() {
     return [loginInfo, didEnterPassword, savePassword.value];
   }
 
-  function storeLoginInfo(identity, loginInfo) {
-    if (findLoginInfo(identity) === null) {
+  function storePermLoginInfo(identity, loginInfo) {
+    if (findPermLoginInfo(identity) === null) {
       Services.logins.addLogin(loginInfo);
     } else {
-      Services.logins.modifyLogin(findLoginInfo(identity), loginInfo);
+      Services.logins.modifyLogin(findPermLoginInfo(identity), loginInfo);
     }
+  }
+
+  function storeTmpLoginInfo(identity, loginInfo) {
+    if (!tmpLoginInfos) {
+      tmpLoginInfos = {};
+    }
+    tmpLoginInfos[identity.key] = loginInfo;
   }
 
   function promptForPasswordAndStoreIt(identity, methodQueue, listener) {
@@ -227,7 +247,9 @@ function Client() {
 
     //TODO store unsaved password temporarily
     if (didEnterPassword && savePassword) {
-      storeLoginInfo(identity, loginInfo);
+      storePermLoginInfo(identity, loginInfo);
+    } else if (didEnterPassword) {
+      storeTmpLoginInfo(identity, loginInfo);
     } else if (!didEnterPassword) {
       listener(
         methodQueue,
