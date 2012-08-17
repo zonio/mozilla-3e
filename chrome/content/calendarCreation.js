@@ -210,7 +210,9 @@ function cal3eCreation() {
 
     var identities = cal3eIdentity.Collection().
       getEnabled().
-      findByEmail(document.getElementById('calendar3e-account').value);
+      filter(function(identity) {
+        return identity.key === document.getElementById('calendar3e-account').value
+      });
 
     uri = "eee://";
     if (identities.length > 0) {
