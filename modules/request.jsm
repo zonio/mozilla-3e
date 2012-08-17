@@ -102,7 +102,7 @@ function Client() {
   }
 
   function execute() {
-    if ((activeQueue === null) || !activeQueue.isPending) {
+    if ((activeQueue === null) || !activeQueue.isPending()) {
       activeQueue = queues.shift();
       activeQueue.send();
     }
@@ -132,7 +132,7 @@ function Client() {
                (methodQueue.lastResponse().errorCode ===
                 cal3eResponse.eeeErrors.AUTH_FAILED)) {
       restartQueueWithNewPassword(methodQueue, listener);
-      throw new StopQueueExecution();
+      return;
     } else if (!methodQueue.isPending()) {
       result = cal3eResponse.fromMethodQueue(methodQueue);
     } else if (methodQueue.isPending()) {
@@ -241,6 +241,7 @@ function Client() {
   }
 
   function restartQueueWithNewPassword(methodQueue, listener) {
+    methodQueue.cancel();
     var newMethodQueue = prepareMethodQueue(
       findIdentityInQueue(methodQueue), listener
     );
@@ -255,10 +256,6 @@ function Client() {
       newMethodQueue.push(methodCall[0], methodCall[1]);
     });
 
-    //XXX somehow this is required, but should not. Active queue
-    // should have no pending method calls at this moment and nulling
-    // activeQueue shouldn't be necessary.
-    activeQueue = null;
     queueExecution(newMethodQueue);
   }
 
@@ -631,14 +628,13 @@ function Queue() {
   var methodCalls;
   var listener;
   var context;
-  var sending;
   var pending;
   var status;
   var error;
   var timestamp;
 
   function push(methodName, parameters) {
-    if (sending) {
+    if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
@@ -653,19 +649,23 @@ function Queue() {
   }
 
   function send() {
-    if (sending) {
+    if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
-    if ('undefined' === typeof serverUri) {
+    if (serverUri === undefined) {
       throw Components.results.NS_ERROR_NOT_INITIALIZED;
     }
 
-    sending = true;
     methodIdx = 0;
+    pending = methodCalls.length > methodIdx;
     sendNext();
   }
 
   function sendNext() {
+    if (!pending) {
+      return;
+    }
+
     server.send.apply(server, methodCalls[methodIdx]);
   }
 
@@ -691,20 +691,8 @@ function Queue() {
     methodIdx += 1;
     lastResponse = response;
     pending = methodCalls.length > methodIdx;
-
-    try {
-      listener(queue, context);
-    } catch (e) {
-      if (e instanceof StopQueueExecution) {
-        pending = false;
-      } else {
-        throw e;
-      }
-    }
-
-    if (pending) {
-      sendNext();
-    }
+    listener(queue, context);
+    sendNext();
   }
 
   function onError(resultServer, serverError) {
@@ -742,13 +730,11 @@ function Queue() {
 
   function cancel() {
     server.abort();
-    sending = false;
-    server = null;
-    lastResponse = null;
+    pending = false;
   }
 
   function setServerUri(newServerUri) {
-    if (sending) {
+    if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
@@ -764,7 +750,7 @@ function Queue() {
   }
 
   function setListener(newListener) {
-    if (sending) {
+    if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
@@ -774,7 +760,7 @@ function Queue() {
   }
 
   function setContext(newContext) {
-    if (sending) {
+    if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
@@ -821,7 +807,6 @@ function Queue() {
     methodCalls = [];
     listener = function() {};
     context = null;
-    sending = false;
     pending = false;
     status = Components.results.NS_OK;
     error = null;
@@ -839,14 +824,13 @@ function Queue() {
   queue.setContext = setContext;
   queue.lastResponse = getLastResponse;
   queue.error = getError;
+  queue.cancel = cancel;
   queue.push = push;
   queue.toArray = toArray;
   queue.send = send;
 
   init();
 }
-
-function StopQueueExecution() {}
 
 var cal3eRequest = {
   Client: Client
