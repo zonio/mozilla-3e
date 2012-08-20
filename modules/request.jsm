@@ -105,7 +105,7 @@ function Client() {
   function execute() {
     if ((activeQueue === null) || !activeQueue.isPending()) {
       activeQueue = queues.shift();
-      activeQueue.send();
+      activeQueue.call();
     }
     if (0 < queues.length) {
       timer = Components.classes['@mozilla.org/timer;1']
@@ -672,7 +672,7 @@ function Queue() {
     return methodCalls.slice();
   }
 
-  function send() {
+  function call() {
     if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
@@ -682,15 +682,15 @@ function Queue() {
 
     methodIdx = 0;
     pending = methodCalls.length > methodIdx;
-    sendNext();
+    callNext();
   }
 
-  function sendNext() {
+  function callNext() {
     if (!pending) {
       return;
     }
 
-    server.send.apply(server, methodCalls[methodIdx]);
+    server.call.apply(server, methodCalls[methodIdx]);
   }
 
   function onResult(resultServer, result) {
@@ -712,11 +712,11 @@ function Queue() {
   }
 
   function passToListenerGoNext(response) {
-    methodIdx += 1;
     lastResponse = response;
+    methodIdx += 1;
     pending = methodCalls.length > methodIdx;
     listener(queue, context);
-    sendNext();
+    callNext();
   }
 
   function onError(resultServer, serverError) {
@@ -851,7 +851,7 @@ function Queue() {
   queue.cancel = cancel;
   queue.push = push;
   queue.toArray = toArray;
-  queue.send = send;
+  queue.call = call;
 
   init();
 }

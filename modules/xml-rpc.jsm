@@ -31,7 +31,7 @@ function Client() {
   var response;
   var channelCallbacks;
 
-  function send(methodName, parameters) {
+  function call(methodName, parameters) {
     if (request) {
       throw Components.Exception(
         'Only one request at the same time',
@@ -153,7 +153,7 @@ function Client() {
     );
   }
 
-  client.send = send;
+  client.call = call;
   client.abort = abort;
   client.setUri = setUri;
   client.setListener = setListener;
