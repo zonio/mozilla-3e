@@ -222,5 +222,3 @@ cal3eSubscription.open = function cal3eSubscription_open() {
 cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
   new cal3eSubscription();
 };
-
-window.addEventListener('load', cal3eSubscription.onLoad, false);

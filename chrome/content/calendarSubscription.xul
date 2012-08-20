@@ -28,8 +28,12 @@
     id="calendar3e-subscription-dialog"
     title="&cal3eCalendarSubscribe.title;"
     buttons="accept,cancel"
+    onload="cal3eSubscription.onLoad()"
     windowtype="Calendar3e:SubscriptionDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/javascript"
+          src="chrome://calendar3e/content/calendarSubscription.js"/>
 
   <grid id="calendar3e-subscription-grid">
     <columns>
@@ -41,12 +45,7 @@
         <label control="subscriber-menulist"
                value="&cal3eCalendarSubscribe.subscriber.label;"/>
         <menulist id="subscriber-menulist">
-          <menupopup id="subscriber-menupopup">
-            <menuitem value="bob.davis@mycompany.com"
-                      label="Bob Davis &lt;bob.davis@mycompany.com>"/>
-            <menuitem value="jane.doe@domain.net"
-                      label="Jane Doe &lt;jane.doe@domain.net>"/>
-          </menupopup>
+          <menupopup id="subscriber-menupopup"/>
         </menulist>
       </row>
       <row id="calendar3e-search-row" align="center">
