@@ -63,12 +63,6 @@ function Client() {
       );
     }
 
-    channelCallbacks = new ChannelCallbacks(
-      doXhrSend,
-      passErrorToListener,
-      window
-    );
-
     xhr = Components.classes[
       '@mozilla.org/xmlextras/xmlhttprequest;1'
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -151,11 +145,21 @@ function Client() {
     return response && (response instanceof Response);
   }
 
+  function init() {
+    channelCallbacks = new ChannelCallbacks(
+      doXhrSend,
+      passErrorToListener,
+      window
+    );
+  }
+
   client.send = send;
   client.abort = abort;
   client.setUri = setUri;
   client.setListener = setListener;
   client.setWindow = setWindow;
+
+  init();
 }
 
 function Request(name, parameters) {
