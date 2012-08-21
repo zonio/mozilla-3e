@@ -19,15 +19,13 @@
 
  
 function cal3eSelectAttach() {
-  var calendar;
-  var ltn_updateCapabilites;
+  var ltn_updateCapabilities;
   var bundleString;
+  var lastCalendarType;
 
   function activate3e() {
     var attachButton = document.getElementById('button-url');
-      attachButton.command = 'cal3e_cmd_attach_file';
-      attachButton.label = bundleString
-        .getString('cal3eCalendarAttachements.attach.label');
+    attachButton.command = 'cal3e_cmd_attach_file';
 
     var menuItemIndex = document.getElementById('options-menu')
       .getIndexOfItem(document.getElementById('options-attachments-menuitem'));
@@ -40,6 +38,7 @@ function cal3eSelectAttach() {
     // XXX This doesn't work: "menuItem.command = 'cal3e_cmd_attach_file';"
     // that's why setAttribute is used.
     menuItem.setAttribute('command', 'cal3e_cmd_attach_file');
+    menuItem.setAttribute('id', 'cal3e-options-attachments-menuitem');
 
     menuItem = document.createElementNS(
       'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
@@ -47,6 +46,7 @@ function cal3eSelectAttach() {
     );
     menuItem.setAttribute('label', bundleString.getString('cal3eCalendarAttachements.attach.label'));
     menuItem.setAttribute('command', 'cal3e_cmd_attach_file');
+    menuItem.setAttribute('id', 'cal3e-attachment-popup-attachFile');
     menuItem.setAttribute(
       'accesskey',
       bundleString.getString('cal3eCalendarAttachements.attach.accesskey')
@@ -60,6 +60,7 @@ function cal3eSelectAttach() {
     );
     menuItem.setAttribute('label', bundleString.getString('cal3eCalendarAttachements.saveas.label'));
     menuItem.setAttribute('command', 'cal3e_cmd_save_as');
+    menuItem.setAttribute('id', 'cal3e-attachment-popup-saveas');
     menuItem.setAttribute(
       'accesskey',
       bundleString.getString('cal3eCalendarAttachements.saveas.accesskey')
@@ -69,10 +70,26 @@ function cal3eSelectAttach() {
 
     var attachListBox = document.getElementById('attachment-link');
     attachListBox.addEventListener('select', onAttachSelect, false);
+    attachListBox.removeAttribute('onclick');
+    attachListBox.removeEventListener('click', attachmentLinkClicked, false);
+    attachListBox.addEventListener('click', cal3e_attachmentLinkClicked, false);
   }
 
   function deactivate3e() {
-    
+    var attachButton = document.getElementById('button-url');
+    attachButton.command = 'cmd_attach_url';
+
+    var elem = document.getElementById('cal3e-options-attachments-menuitem');
+    elem.parentNode.removeChild(elem);
+    elem = document.getElementById('cal3e-attachment-popup-attachFile');
+    elem.parentNode.removeChild(elem);
+    elem = document.getElementById('cal3e-attachment-popup-saveas');
+    elem.parentNode.removeChild(elem);
+
+    var attachListBox = document.getElementById('attachment-link');
+    attachListBox.removeEventListener('select', onAttachSelect, false);
+    attachListBox.removeEventListener('click', cal3e_attachmentLinkClicked, false);
+    attachListBox.addEventListener('click', attachmentLinkClicked, false);
   }
 
   function onAttachSelect(event) {
@@ -87,17 +104,37 @@ function cal3eSelectAttach() {
   }
 
   function cal3e_updateCapabilities() {
-    calendar = getCurrentCalendar();
+    ltn_updateCapabilities();
+    var calendar = getCurrentCalendar();
+    if (calendar.type === lastCalendarType) {
+      return;
+    }
+    
     if (calendar.type == 'eee') {
       activate3e();
     } else {
       deactivate3e();
     }
+    lastCalendarType = calendar.type;
+  }
+
+  function cal3e_attachmentLinkClicked(event) {
+    event.currentTarget.focus();
+  
+    if (event.button != 0) {
+      return;
+    }
+  
+    if (event.originalTarget.localName == "listboxbody") {
+      attachFile();
+    } else if (event.originalTarget.localName == "listitem" && event.detail == 2) {
+      openAttachment();
+    }
   }
 
   function init() {
     bundleString = document.getElementById('calendar3e-strings');
-    ltn_updateCapabilites = updateCapabilities;
+    ltn_updateCapabilities = updateCapabilities;
     updateCapabilities = cal3e_updateCapabilities;
     updateCapabilities();
   }
