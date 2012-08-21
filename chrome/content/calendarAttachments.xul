@@ -30,8 +30,10 @@
           src="chrome://calendar3e/content/calendarAttachments.js"/>
 
   <commandset id="itemCommands">
-    <command id="cmd_attach_file" disable-on-read-only="true"
+    <command id="cal3e_cmd_attach_file" disable-on-read-only="true"
              oncommand="attachFile()" />
+    <command id="cal3e_cmd_save_as" disable-on-read-only="true"
+             oncommand="alert('cal3e_cmd_save_as')" />
   </commandset>
 
 </overlay> 

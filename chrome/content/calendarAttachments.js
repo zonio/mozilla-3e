@@ -19,17 +19,87 @@
 
  
 function cal3eSelectAttach() {
-  dump('function cal3eSelectAttach\n');
   var calendar;
+  var ltn_updateCapabilites;
+  var bundleString;
 
-  function init() {
+  function activate3e() {
+    var attachButton = document.getElementById('button-url');
+      attachButton.command = 'cal3e_cmd_attach_file';
+      attachButton.label = bundleString
+        .getString('cal3eCalendarAttachements.attach.label');
+
+    var menuItemIndex = document.getElementById('options-menu')
+      .getIndexOfItem(document.getElementById('options-attachments-menuitem'));
+    var menuItem = document.getElementById('options-menu')
+      .insertItemAt(
+        menuItemIndex + 1,
+        bundleString.getString('cal3eCalendarAttachements.attach.label'),
+        null
+      );
+    // XXX This doesn't work: "menuItem.command = 'cal3e_cmd_attach_file';"
+    // that's why setAttribute is used.
+    menuItem.setAttribute('command', 'cal3e_cmd_attach_file');
+
+    menuItem = document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'menuitem'
+    );
+    menuItem.setAttribute('label', bundleString.getString('cal3eCalendarAttachements.attach.label'));
+    menuItem.setAttribute('command', 'cal3e_cmd_attach_file');
+    menuItem.setAttribute(
+      'accesskey',
+      bundleString.getString('cal3eCalendarAttachements.attach.accesskey')
+    );
+    var attachPage = document.getElementById('attachment-popup-attachPage');
+    attachPage.parentNode.insertBefore(menuItem, attachPage.nextSibling);
+
+    menuItem = document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'menuitem'
+    );
+    menuItem.setAttribute('label', bundleString.getString('cal3eCalendarAttachements.saveas.label'));
+    menuItem.setAttribute('command', 'cal3e_cmd_save_as');
+    menuItem.setAttribute(
+      'accesskey',
+      bundleString.getString('cal3eCalendarAttachements.saveas.accesskey')
+    );
+    var attachPage = document.getElementById('attachment-popup-open');
+    attachPage.parentNode.insertBefore(menuItem, attachPage.nextSibling);
+
+    var attachListBox = document.getElementById('attachment-link');
+    attachListBox.addEventListener('select', onAttachSelect, false);
+  }
+
+  function deactivate3e() {
+    
+  }
+
+  function onAttachSelect(event) {
+    if (event.currentTarget.selectedItems.length !== 0 &&
+        event.currentTarget.getSelectedItem(0).attachment.uri.schemeIs('eee')) {
+      document.getElementById('cal3e-attachments-save-as')
+        .setAttribute('disabled', 'false');
+    } else {
+      document.getElementById('cal3e-attachments-save-as')
+        .setAttribute('disabled', 'true');
+    }
+  }
+
+  function cal3e_updateCapabilities() {
     calendar = getCurrentCalendar();
     if (calendar.type == 'eee') {
-      var attachButton = document.getElementById('button-url');
-      attachButton.command = 'cmd_attach_file';
-      attachButton.label = document.getElementById('calendar3e-strings')
-        .getString('cal3eCalendarAttachements.attach');
+      activate3e();
+    } else {
+      deactivate3e();
     }
+  }
+
+  function init() {
+    bundleString = document.getElementById('calendar3e-strings');
+    ltn_updateCapabilites = updateCapabilities;
+    updateCapabilities = cal3e_updateCapabilities;
+    updateCapabilities();
   }
 
   init();
