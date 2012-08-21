@@ -21,6 +21,11 @@
 <overlay id="calendar-new-event-attach"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+  <stringbundleset id="stringbundleset">
+    <stringbundle id="calendar3e-strings"
+                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+  </stringbundleset>
+
   <script type="application/x-javascript"
           src="chrome://calendar3e/content/calendarAttachments.js"/>
 

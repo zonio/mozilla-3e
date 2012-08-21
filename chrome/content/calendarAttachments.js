@@ -27,7 +27,8 @@ function cal3eSelectAttach() {
     if (calendar.type == 'eee') {
       var attachButton = document.getElementById('button-url');
       attachButton.command = 'cmd_attach_file';
-      attachButton.label = "Attach File";
+      attachButton.label = document.getElementById('calendar3e-strings')
+        .getString('cal3eCalendarAttachements.attach');
     }
   }
 
