@@ -21,7 +21,7 @@ Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 function cal3eSelectAttach() {
   var ltn_updateCapabilities;
-  var ltn_openAttachment
+  var ltn_openAttachment;
   var bundleString;
   var lastCalendarType;
 
@@ -80,7 +80,7 @@ function cal3eSelectAttach() {
     attachListBox.removeEventListener('click', cal3e_attachmentLinkClicked, false);
     attachListBox.addEventListener('click', attachmentLinkClicked, false);
 
-    openAttachement = ltn_openAttachement;
+    openAttachment = ltn_openAttachment;
   }
 
   function onAttachSelect(event) {
