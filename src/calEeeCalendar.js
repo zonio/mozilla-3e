@@ -426,8 +426,8 @@ calEeeCalendar.prototype = {
       .queryObjects(
         this._identity, clientListener, this,
         id,
-        rangeStart ? rangeStart.nativeTime : null,
-        rangeStart ? rangeEnd.nativeTime : null
+        null,
+        null
       ).component();
   },
 
