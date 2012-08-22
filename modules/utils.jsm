@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 /**
  * Wraps given function to object acting as calIGenericOperationListener
@@ -34,8 +35,27 @@ function createOperationListener(onResult) {
   };
 }
 
+/**
+ * Translates eee attachment uri to http uri so attachment can be
+ * downloaded by web  browser.
+ * @param {nsIURI} eeeUri Uri to be translated
+ * @return {nsIURI} translated Uri
+ */
+function eeeAttachmentToHttpUri(eeeUri) {
+  // XXX: We should ask DNS for hostname and port number.
+  var uriString = eeeUri.spec;
+  var port = 4444;
+  var server = uriString.split('/')[2].split('@')[1];
+  var sha1 = uriString.split('/')[4];
+  var file = uriString.split('/')[5];
+  var httpUri = 'https://' + server + ':' + port + '/' + 'attach' + '/'
+                + sha1 + '/' + file;
+  return Services.io.newURI(httpUri, null, null);
+}
+
 var cal3eUtils = {
-  "createOperationListener": createOperationListener
+  createOperationListener: createOperationListener,
+  eeeAttachmentToHttpUri: eeeAttachmentToHttpUri
 };
 EXPORTED_SYMBOLS = [
   'cal3eUtils'

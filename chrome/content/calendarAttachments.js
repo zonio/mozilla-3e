@@ -17,9 +17,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
- 
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
+
 function cal3eSelectAttach() {
   var ltn_updateCapabilities;
+  var ltn_openAttachment
   var bundleString;
   var lastCalendarType;
 
@@ -73,6 +75,10 @@ function cal3eSelectAttach() {
     attachListBox.removeAttribute('onclick');
     attachListBox.removeEventListener('click', attachmentLinkClicked, false);
     attachListBox.addEventListener('click', cal3e_attachmentLinkClicked, false);
+
+
+    ltn_openAttachment = openAttachment;
+    openAttachment = cal3e_openAttachment;
   }
 
   function deactivate3e() {
@@ -90,6 +96,8 @@ function cal3eSelectAttach() {
     attachListBox.removeEventListener('select', onAttachSelect, false);
     attachListBox.removeEventListener('click', cal3e_attachmentLinkClicked, false);
     attachListBox.addEventListener('click', attachmentLinkClicked, false);
+
+    openAttachement = ltn_openAttachement;
   }
 
   function onAttachSelect(event) {
@@ -129,6 +137,21 @@ function cal3eSelectAttach() {
       attachFile();
     } else if (event.originalTarget.localName == "listitem" && event.detail == 2) {
       openAttachment();
+    }
+  }
+
+  function cal3e_openAttachment() {
+    var documentLink = document.getElementById("attachment-link");
+    if (documentLink.selectedItems.length == 1) {
+      var attURI = documentLink.getSelectedItem(0).attachment.uri;
+      var externalLoader = Components.classes["@mozilla.org/uriloader/external-protocol-service;1"]
+                                     .getService(Components.interfaces.nsIExternalProtocolService);
+
+      if (attURI.schemeIs('eee')) {
+        attURI = cal3eUtils.eeeAttachmentToHttpUri(attURI);
+      }
+      // TODO There should be a nicer dialog
+      externalLoader.loadUrl(attURI);
     }
   }
 
