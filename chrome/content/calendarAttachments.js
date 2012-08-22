@@ -56,26 +56,11 @@ function cal3eSelectAttach() {
     var attachPage = document.getElementById('attachment-popup-attachPage');
     attachPage.parentNode.insertBefore(menuItem, attachPage.nextSibling);
 
-    menuItem = document.createElementNS(
-      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
-      'menuitem'
-    );
-    menuItem.setAttribute('label', bundleString.getString('cal3eCalendarAttachements.saveas.label'));
-    menuItem.setAttribute('command', 'cal3e_cmd_save_as');
-    menuItem.setAttribute('id', 'cal3e-attachment-popup-saveas');
-    menuItem.setAttribute(
-      'accesskey',
-      bundleString.getString('cal3eCalendarAttachements.saveas.accesskey')
-    );
-    var attachPage = document.getElementById('attachment-popup-open');
-    attachPage.parentNode.insertBefore(menuItem, attachPage.nextSibling);
-
     var attachListBox = document.getElementById('attachment-link');
     attachListBox.addEventListener('select', onAttachSelect, false);
     attachListBox.removeAttribute('onclick');
     attachListBox.removeEventListener('click', attachmentLinkClicked, false);
     attachListBox.addEventListener('click', cal3e_attachmentLinkClicked, false);
-
 
     ltn_openAttachment = openAttachment;
     openAttachment = cal3e_openAttachment;
@@ -88,8 +73,6 @@ function cal3eSelectAttach() {
     var elem = document.getElementById('cal3e-options-attachments-menuitem');
     elem.parentNode.removeChild(elem);
     elem = document.getElementById('cal3e-attachment-popup-attachFile');
-    elem.parentNode.removeChild(elem);
-    elem = document.getElementById('cal3e-attachment-popup-saveas');
     elem.parentNode.removeChild(elem);
 
     var attachListBox = document.getElementById('attachment-link');
