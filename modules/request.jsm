@@ -60,6 +60,7 @@ function Client() {
   }
 
   function uriFromIdentity(identity) {
+    var host, port;
     if (!dns) {
       //XXX dev only
       host = identity.getCharAttribute('eee_host');
