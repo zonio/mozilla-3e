@@ -19,6 +19,7 @@
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
+//Components.utils.import("resource://calendar3e/modules/dns.jsm");
 
 /**
  * Wraps given function to object acting as calIGenericOperationListener
@@ -43,9 +44,18 @@ function createOperationListener(onResult) {
  */
 function eeeAttachmentToHttpUri(eeeUri) {
   // XXX: We should ask DNS for hostname and port number.
+  var dns;
+  if (typeof cal3eDns !== 'undefined') {
+    dns = new cal3eDns();
+  }
+  var host = uriString.split('/')[2].split('@')[1];
+  var port;
+  if (!dns) {
+    port = 4444;
+  } else {
+    [host, port] = dns.resolverServer(host);
+  }
   var uriString = eeeUri.spec;
-  var port = 4444;
-  var server = uriString.split('/')[2].split('@')[1];
   var sha1 = uriString.split('/')[4];
   var file = uriString.split('/')[5];
   var httpUri = 'https://' + server + ':' + port + '/' + 'attach' + '/'
