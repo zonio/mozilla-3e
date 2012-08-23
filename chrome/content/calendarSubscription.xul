@@ -29,6 +29,7 @@
     title="&cal3eCalendarSubscribe.title;"
     buttons="accept,cancel"
     onload="cal3eSubscription.onLoad()"
+    ondialogaccept="return cal3eSubscription.onDialogAccept();"
     windowtype="Calendar3e:SubscriptionDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -61,38 +62,7 @@
             <treecol id="calendar-tree-calendar-col" hideheader="true"
                      primary="true" flex="1" persist="width"/>
           </treecols>
-          <treechildren id="calendars-tree-children">
-            <treeitem container="true" open="true">
-              <treerow>
-                <treecell label="Alice White &lt;alice@domain.com>"/>
-              </treerow>
-              <treechildren>
-                <treeitem>
-                  <treerow>
-                    <treecell value="eee://alice@domain.com/personal"
-                              label="Personal"/>
-                  </treerow>
-                  <treerow>
-                    <treecell value="eee://alice@domain.com/work"
-                              label="Work"/>
-                  </treerow>
-                </treeitem>
-              </treechildren>
-            </treeitem>
-            <treeitem container="true" open="true">
-              <treerow>
-                <treecell label="Carl Bernstein &lt;carl@domain.com>"/>
-              </treerow>
-              <treechildren>
-                <treeitem>
-                  <treerow>
-                    <treecell value="eee://carl@domain.com/tech-wg"
-                              label="Tech working group"/>
-                  </treerow>
-                </treeitem>
-              </treechildren>
-            </treeitem>
-          </treechildren>
+          <treechildren id="calendars-tree-children"/>
         </tree>
       </row>
     </rows>

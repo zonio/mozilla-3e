@@ -20,194 +20,330 @@
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
+Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
-function cal3eSubscription() {
-  var cal3eSubscription = this;
-  var identityObserver;
-  var accountManager;
+function cal3eSubscription(subscriberController, filterController,
+                           calendarsController) {
+  var controller = this;
   var stringBundle;
-  var subscriberElement;
 
-  function subscribe() {
+  function filterDidChange() {
+    calendarsController.applyFilter(filterController.filter());
   }
 
-  function onIdentityChange() {
-    clearMenu(subscriberElement);
+  function subscribe() {
+    dump('[3e] Calendars: ');
+    calendarsController.selection().forEach(function selectionDump(calendar) {
+      if (selectionDump.notFirst) {
+        dump(', ');
+      } else {
+        selectionDump.notFirst = true;
+      }
+      dump(calendar);
+    });
+    dump('\n');
 
+    return true;
+  }
+
+  function init() {
+    stringBundle = document.getElementById('calendar3e-strings');
+
+    window.addEventListener('unload', finalize, false);
+
+    filterController.addObserver(filterDidChange);
+  }
+
+  function finalize() {
+    filterController.removeObserver(filterDidChange);
+
+    window.removeEventListener('unload', finalize, false);
+
+    stringBundle = null;
+  }
+
+  controller.subscribe = subscribe;
+
+  init();
+}
+
+function cal3eSubscriberController() {
+  var controller = this;
+  var identity;
+  var element;
+  var identityObserver;
+
+  function fillElement() {
+    cal3eXul.clearMenu(element);
+
+    var identityChanged = false;
     cal3eIdentity.Collection()
       .getEnabled()
       .forEach(function(identity) {
-        var item = subscriberElement.appendItem(
+        var item = element.appendItem(
           identity.fullName + ' <' + identity.email + '>',
           identity.key
         );
 
-        if (identity.key == subscriberElement.value) {
-          subscriberElement.selectedItem = item;
+        if ((identity.key === element.value) || (!element.value)) {
+          element.selectedItem = item;
+          identityChanged = true;
         }
       });
-  }
 
-  function loadProviders() {
-    var identity = getIdentity();
-    if (null === identity) {
-      addItemToMenu(
-        providerElement,
-        [stringBundle.getString(
-           'cal3eCalendarProperties.providers.selectContextLabel'
-         ), null],
-        true
-      );
-      return;
+    if (identityChanged) {
+      identityDidChange();
     }
-
-    addItemToMenu(
-      providerElement,
-      [stringBundle.getString(
-         'cal3eCalendarProperties.providers.loadingLabel'
-       ), null],
-      true
-    );
-    var listener = function calEee_adoptItem_onResult(methodQueue, result) {
-      if (!(result instanceof cal3eResponse.Success)) {
-        addItemToMenu(
-          providerElement,
-          [stringBundle.getString(
-             'cal3eCalendarProperties.providers.errorLabel'
-           ), null],
-          true
-        );
-        return;
-      }
-      onProvidersLoaded(buildProviders(result));
-    };
-    cal3eRequest.Client.getInstance().getUsers(
-      identity, listener,
-      "NOT match_username('" + identity.email + "') AND " +
-        "NOT match_user_alias('" + identity.email + "')"
-    );
   }
 
-  function onProvidersLoaded(providers) {
-    clearMenu(providerElement);
-    providers.forEach(function(provider) {
-      addItemToTree(providerElement, provider, false);
-    });
-  }
-
-  function buildProviders(result) {
-    return result.data.map(function(rawProvider) {
-      return buildProvider(rawProvider);
-    });
-  }
-
-  function buildProvider(rawProvider) {
-    var provider = [];
-    var username = rawProvider['username'];
-    var realname;
-    if (rawProvider.hasOwnProperty('attrs')) {
-      realname = rawProvider['attrs'].filter(function(rawAttr) {
-        return rawAttr['name'] === 'realname';
+  function identityDidChange() {
+    var identities = cal3eIdentity.Collection().
+      getEnabled().
+      filter(function(identity) {
+        return identity.key === element.value;
       });
-      if (realname.length > 0) {
-        realname = realname[0]['value'];
-      }
-    }
-    if (realname) {
-      provider.push(realname + ' <' + username + '>');
-    } else {
-      provider.push(username);
-    }
-    provider.push(username);
 
-    return provider;
-  }
-
-  function addItemToMenu(menu, item, clear) {
-    if ('menupopup' != menu.tagName) {
-      menu = menu.firstChild;
-      while (menu && ('menupopup' !== menu.tagName)) {
-        menu = menu.nextSibling;
-      }
-    }
-    if (!menu || ('menupopup' != menu.tagName)) {
-      throw Components.Exception('Cannot find menupopup.');
-    }
-    if (clear) {
-      clearMenu(menu);
-    }
-    menu = menu.parentNode.appendItem.apply(menu.parentNode, item);
-  }
-
-  function clearMenu(menu) {
-    if ('menupopup' != menu.tagName) {
-      menu = menu.firstChild;
-      while (menu && ('menupopup' !== menu.tagName)) {
-        menu = menu.nextSibling;
-      }
-    }
-    if (!menu || ('menupopup' != menu.tagName)) {
-      throw Components.Exception('Cannot find menupopup.');
-    }
-    while (menu.lastChild) {
-      menu.removeChild(menu.lastChild);
-    }
-  }
-
-  function addItemToTree(tree, item, parent) {
-    if ('treechildren' != tree.tagName) {
-      tree = tree.firstChild;
-      while (tree && ('treechildren' !== tree.tagName)) {
-        tree = tree.nextSibling;
-      }
-    }
-    if (!tree || ('treechildren' != tree.tagName)) {
-      throw Components.Exception('Cannot find treechildren.');
-    }
-    //TODO append under parent
-  }
-
-  function clearTree(tree) {
-    if ('treechildren' != tree.tagName) {
-      tree = tree.firstChild;
-      while (tree && ('treechildren' !== tree.tagName)) {
-        tree = tree.nextSibling;
-      }
-    }
-    if (!tree || ('treechildren' != tree.tagName)) {
-      throw Components.Exception('Cannot find treechildren.');
-    }
-    while (tree.lastChild) {
-      tree.removeChild(tree.lastChild);
-    }
+    identity = identities.length > 0 ? identities[0] : null;
+    dump('[3e] Identity changed: ' + identity.email + '\n');
   }
 
   function getIdentity() {
-    return subscriberElement.value ?
-      accountManager.getIdentity(subscriberElement.value) :
-      null;
+    return identity;
   }
 
   function init() {
+    identity = null;
+
+    element = document.getElementById('subscriber-menulist');
+    element.addEventListener('change', identityDidChange, false);
+
     identityObserver = cal3eIdentity.Observer();
-    identityObserver.addObserver(onIdentityChange);
-    accountManager = Components.classes[
-      '@mozilla.org/messenger/account-manager;1'
-    ].getService(Components.interfaces.nsIMsgAccountManager);
-    stringBundle = document.getElementById('calendar3e-strings');
-    subscriberElement = document.getElementById('subscriber-menulist');
-
+    identityObserver.addObserver(fillElement);
+    fillElement();
     window.addEventListener('unload', finalize, false);
-    window.addEventListener('dialogaccept', subscribe, false);
-
-    onIdentityChange();
-    loadProviders();
   }
 
   function finalize() {
     identityObserver.destroy();
     identityObserver = null;
+    window.removeEventListener('unload', finalize, false);
+
+    element.removeEventListener('change', identityDidChange, false);
+    element = null;
+
+    identity = null;
   }
+
+  controller.identity = getIdentity;
+
+  init();
+}
+
+function cal3eCalendarsFilterController() {
+  var controller = this;
+  var filter;
+  var element;
+  var observers;
+
+  function filterDidChange() {
+    filter = element.value || '';
+    notify();
+  }
+
+  function addObserver(observer) {
+    observers.push(observer);
+
+    return controller;
+  }
+
+  function removeObserver(observer) {
+    if (observers.indexOf(observer) < 0) {
+      return controller;
+    }
+
+    observers.splice(observers.indexOf(observer), 1);
+
+    return controller;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      try {
+        observer(controller);
+      } catch (e) {
+        //TODO log
+      }
+    });
+  }
+
+  function getFilter() {
+    return filter;
+  }
+
+  function init() {
+    filter = '';
+
+    element = document.getElementById('search-pattern');
+    element.addEventListener('change', filterDidChange, false);
+
+    observers = [];
+
+    window.removeEventListener('unload', finalize, false);
+  }
+
+  function finalize() {
+    window.removeEventListener('unload', finalize, false);
+
+    observers = null;
+
+    element.removeEventListener('change', filterDidChange, false);
+    element = null;
+  }
+
+  controller.filter = getFilter;
+  controller.addObserver = addObserver;
+  controller.removeObserver = removeObserver;
+
+  init();
+}
+
+function cal3eSharedCalendarsController() {
+  var controller = this;
+  var element;
+  var calendars;
+  var owners;
+  var fixingSelection;
+  var selection;
+
+  function fillElement() {
+    cal3eXul.clearTree(element);
+
+    var parentElement;
+    owners.forEach(function(owner) {
+      parentElement = cal3eXul.addItemToTree(
+        element,
+        owner['realname'] + ' <' + owner['username'] + '>',
+        null
+      );
+      calendars[owner['username']].forEach(function(calendar) {
+        cal3eXul.addItemToTree(
+          parentElement,
+          calendar['title'],
+          'eee://' + owner['username'] + '/' + calendar['name']
+        );
+      });
+    });
+  }
+
+  function applyFilter(filter) {
+    dump('[3e] Filter changed: ' + filter + '\n');
+  }
+
+  function selectionDidChange() {
+    if (fixingSelection) {
+      return;
+    }
+
+    fixingSelection = true;
+    fixSelection();
+    fixingSelection = false;
+
+    selection.splice(0, selection.length);
+    selectionForEach(function(idx) {
+      selection.push(
+        element.view.getCellValue(idx, element.columns.getPrimaryColumn())
+      );
+    });
+  }
+
+  function fixSelection() {
+    var invalid = [];
+    selectionForEach(function(idx) {
+      if (element.view.isContainer(idx)) {
+        invalid.push(idx);
+      }
+    });
+    invalid.forEach(function(idx) {
+      element.view.selection.toggleSelect(idx);
+    });
+  }
+
+  function selectionForEach(callback) {
+    var i;
+    var j;
+    var start = { value: 0 };
+    var end = { value: 0 };
+    for (i = 0; i < element.view.selection.getRangeCount(); i += 1) {
+      element.view.selection.getRangeAt(i, start, end);
+      for (j = start.value; j <= end.value; j += 1) {
+        callback(j);
+      }
+    }
+  }
+
+  function getSelection() {
+    return selection;
+  }
+
+  function init() {
+    calendars = {
+      'alice@3e-dev': [
+        {
+          'name': 'room1',
+          'title': 'Room #1',
+          'perm': 'read'
+        },
+        {
+          'name': 'room2',
+          'title': 'Room #2',
+          'perm': 'read'
+        },
+        {
+          'name': 'vacations',
+          'title': 'Vacations',
+          'perm': 'write'
+        }
+      ],
+      'carl@3e-dev': [
+        {
+          'name': 'travels',
+          'title': 'Travels',
+          'perm': 'read'
+        }
+      ]
+    };
+    owners = [
+      {
+        'username': 'alice@3e-dev',
+        'realname': 'Alice Local'
+      },
+      {
+        'username': 'carl@3e-dev',
+        'realname': 'Carl Local'
+      }
+    ];
+
+    element = document.getElementById('calendars-tree');
+    fillElement();
+    element.addEventListener('select', selectionDidChange, false);
+
+    fixingSelection = false;
+    selection = [];
+
+    window.addEventListener('unload', finalize, false);
+   }
+
+  function finalize() {
+    window.removeEventListener('unload', finalize, false);
+
+    selection = null;
+
+    element.addEventListener('select', selectionDidChange, false);
+    element = null;
+  }
+
+  controller.selection = getSelection;
+  controller.applyFilter = applyFilter;
 
   init();
 }
@@ -219,6 +355,20 @@ cal3eSubscription.open = function cal3eSubscription_open() {
     'chrome,titlebar,modal,resizable'
   );
 };
+
 cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
-  new cal3eSubscription();
+  cal3eSubscription.controller = new cal3eSubscription(
+    new cal3eSubscriberController(),
+    new cal3eCalendarsFilterController(),
+    new cal3eSharedCalendarsController()
+  );
+  window.addEventListener('unload', cal3eSubscription.onUnload, false);
+};
+cal3eSubscription.onDialogAccept =
+function cal3eSubscription_onDialogAccept() {
+  return cal3eSubscription.controller.subscribe();
+};
+cal3eSubscription.onUnload = function cal3eSubscription_onUnload() {
+  window.removeEventListener('unload', cal3eSubscription.onUnload, false);
+  delete cal3eSubscription.controller;
 };
