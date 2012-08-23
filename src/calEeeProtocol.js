@@ -76,7 +76,16 @@ calEeeProtocol.prototype = {
    * @returns {nsIHttpProtocolHandler}
    */
   newChannel: function(uri) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    if (!this.checkAttachUri(uri)) {
+      throw Cr.NS_ERROR_FAILURE;
+    }
+    var httpUri = cal3eUtils.eeeAttachmentToHttpUri(uri);
+    return Services.io.newChannel(httpUri.spec, null, null);
+  },
+
+  checkAttachUri: function(uri) {
+    var splitted = uri.spec.split('/');
+    return (splitted.length === 6 && splitted[3] === 'attach');
   },
 
   /**
