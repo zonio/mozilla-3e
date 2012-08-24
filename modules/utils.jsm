@@ -63,9 +63,43 @@ function eeeAttachmentToHttpUri(eeeUri) {
   return Services.io.newURI(httpUri, null, null);
 }
 
+/**
+ * Computes SHA1 of content of local file specified by given uri.
+ * @param {nsIURI} uri specifying file.
+ * @return {String} sha1 hash.
+ */
+function computeSha1(uri) {
+  var inputStream = Services.io.newChanel(uri.spec, null, null).open();
+
+  var ch = Components.classes["@mozilla.org/security/hash;1"]
+    .createInstance(Components.interfaces.nsICryptoHash);
+  ch.init(ch.SHA1);
+  ch.updateFromStream(inputStream, 0xffffffff);
+  var hash = ch.finish(false);
+
+  function toHexString(charCode) {
+    return ("0" + charCode.toString(16)).slice(-2);
+  }
+  return [toHexString(hash.charCodeAt(i)) for (i in hash)].join("");
+}
+
+/**
+ * Converts iCalendar local file attachment uri to eee attachment uri.
+ * @param {nsIURI} fileUri local file uri
+ * @param {String} email of user creating an event with attachments.
+ * @return {String} eee attachment uri.
+ */
+function fileAttachmentToEeeUri(fileUri, email) {
+  var sha1 = computeSha1(fileUri);
+  var splittedUri = fileUri.spec.split('/');
+  var fileName = splittedUri[splittedUri.length - 1];
+  return 'eee://' + email + '/attach/' + sha1 + '/' + fileName;
+}
+
 var cal3eUtils = {
   createOperationListener: createOperationListener,
-  eeeAttachmentToHttpUri: eeeAttachmentToHttpUri
+  eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
+  fileAttachmentToEeeUri: fileAttachmentToEeeUri
 };
 EXPORTED_SYMBOLS = [
   'cal3eUtils'
