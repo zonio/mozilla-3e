@@ -144,10 +144,6 @@ calEeeSynchronizationService.prototype = {
 
   registerAfterMainWindowOpen:
   function calEeeSyncService_registerAfterMainWindowOpen() {
-    if (this._registered) {
-      return this;
-    }
-
     //XXX WindowMediator nor WindowWatcher don't work and
     // final-ui-startup startup category isn't what we want
     var timer = Components.classes['@mozilla.org/timer;1']
