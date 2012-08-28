@@ -134,12 +134,45 @@ calEeeSynchronizationService.prototype = {
   observe: function calEeeSyncService_observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
-      this.register();
+      this.registerAfterMainWindowOpen();
       break;
     case 'timer-callback':
       this.runSynchronizer(this._findIdentityOfTimer(subject));
       break;
     }
+  },
+
+  registerAfterMainWindowOpen:
+  function calEeeSyncService_registerAfterMainWindowOpen() {
+    if (this._registered) {
+      return this;
+    }
+
+    //XXX WindowMediator nor WindowWatcher don't work and
+    // final-ui-startup startup category isn't what we want
+    var timer = Components.classes['@mozilla.org/timer;1']
+      .createInstance(Components.interfaces.nsITimer);
+    var mainWindowObserver = this._mainWindowObserver.bind(this);
+    if (!mainWindowObserver(timer)) {
+      timer.init({
+        QueryInterface: XPCOMUtils.generateQI([
+          Components.interfaces.nsIObserver
+        ]),
+        observe: mainWindowObserver
+      }, 100, Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
+    }
+  },
+
+  _mainWindowObserver: function calEeeSyncService_windowObserver(timer) {
+    var mailWindow = Services.wm.getMostRecentWindow("mail:3pane");
+    if (!mailWindow) {
+      return false;
+    }
+
+    timer.cancel();
+    this.register();
+
+    return true;
   },
 
   /**
