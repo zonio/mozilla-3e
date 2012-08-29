@@ -19,7 +19,7 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-//Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import("resource://calendar3e/modules/feature.jsm");
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
@@ -61,18 +61,18 @@ function Client() {
 
   function uriFromIdentity(identity) {
     var host, port;
-    if (!dns) {
-      //XXX dev only
-      host = identity.getCharAttribute('eee_host');
-      port = identity.getIntAttribute('eee_port');
-    } else {
+    if (cal3eFeature.isSupported('dns')) {
       [host, port] = dns.resolveServer(
         identity.email.substring(identity.email.indexOf('@') + 1)
       );
+    } else {
+      host = identity.getCharAttribute('eee_host');
+      port = identity.getIntAttribute('eee_port');
     }
-    var url = 'https://' + host + ':' + port + '/RPC2';
 
-    return Services.io.newURI(url, null, null);
+    return Services.io.newURI(
+      'https://' + host + ':' + port + '/RPC2', null, null
+    );
   }
 
   function enqueueMethod(methodQueue, methodName) {
@@ -595,7 +595,7 @@ function Client() {
     queues = [];
     activeQueue = null;
     timer = null;
-    if (typeof cal3eDns !== 'undefined') {
+    if (cal3eFeature.isSupported('dns')) {
       dns = new cal3eDns();
     }
 
