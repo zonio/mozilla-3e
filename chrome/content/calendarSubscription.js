@@ -76,7 +76,7 @@ function cal3eSubscriberController() {
   var identityObserver;
   var observers;
 
-  function addObserver() {
+  function addObserver(observer) {
     observers.push(observer);
 
     return controller;
@@ -171,6 +171,8 @@ function cal3eSubscriberController() {
   }
 
   controller.identity = getIdentity;
+  controller.addObserver = addObserver;
+  controller.removeObserver = removeObserver;
 
   init();
 }
@@ -413,16 +415,22 @@ function cal3eSharedCalendarsController(subscriberController) {
     fixingSelection = false;
     selection = [];
 
+    calendars = {};
+    owners = [];
+
     identity = null;
     subscriberController.addObserver(identityDidChange);
     identityDidChange();
-   }
+  }
 
   function finalize() {
     window.removeEventListener('unload', finalize, false);
 
     subscriberController.removeObserver(identityDidChange);
     identity = null;
+
+    calendars = null;
+    owners = null;
 
     selection = null;
 
