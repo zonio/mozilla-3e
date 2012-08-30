@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
@@ -113,24 +114,9 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   listItem.allowevents = 'true';
 
   var nameListCell = document.createElement("listcell");
-  var realname = null;
-  if (user.hasOwnProperty('attrs')) {
-    realname = user['attrs'].filter(function(rawAttr) {
-      return rawAttr['name'] === 'realname';
-    });
-    if (realname.length > 0) {
-      realname = realname[0]['value'];
-    }
-  }
-  var userLabel = "";
-  if (realname) {
-    userLabel += realname + " <";
-  }
-  userLabel += user['username'];
-  if (realname) {
-    userLabel += ">";
-  }
-  nameListCell.appendChild(document.createTextNode(userLabel));
+  nameListCell.appendChild(document.createTextNode(
+    cal3eModel.userLabel(user))
+  );
   listItem.appendChild(nameListCell);
 
   var stringBundle = document.getElementById('calendar3e-strings');

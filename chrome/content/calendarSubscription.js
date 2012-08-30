@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/xul.jsm');
@@ -291,7 +292,7 @@ function cal3eSharedCalendarsController(subscriberController) {
       calendars[owner['username']].forEach(function(calendar) {
         cal3eXul.addItemToTree(
           parentElement,
-          cal3eModel.calendarTitle(calendar),
+          cal3eModel.calendarLabel(calendar),
           'eee://' + calendar['owner'] + '/' + calendar['name']
         );
       });

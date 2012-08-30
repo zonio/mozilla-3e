@@ -21,9 +21,10 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
-Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/response.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 /**
  * Synchronizer of calendars present in Mozilla client application
@@ -457,22 +458,11 @@ calEeeSynchronizer.prototype = {
    */
   _setCalendarProperties:
   function calEeeSynchronizer_setCalendarProperties(calendar, data) {
-    var attrs = {};
-    if (data.hasOwnProperty('attrs')) {
-      data['attrs'].forEach(function(attrData) {
-        attrs[attrData['name']] = '' + attrData['value'];
-      });
-    }
-
-    if (attrs['title']) {
-      calendar.name = attrs['title'];
-    } else {
-      calendar.name = '' + data['name'];
-    }
+    calendar.name = cal3eModel.calendarLabel(data);
 
     //TODO validation
-    if (attrs['color']) {
-      calendar.setProperty('color', attrs['color']);
+    if (cal3eModel.attribute(data, 'color')) {
+      calendar.setProperty('color', cal3eModel.attribute(data, 'color'));
     }
   },
 
