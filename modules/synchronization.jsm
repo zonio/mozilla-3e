@@ -22,6 +22,7 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 function Queue() {
   var queue = this;
   var calls;
+  var callScheduled;
 
   function extend(callable, future) {
     return function() {
@@ -47,6 +48,10 @@ function Queue() {
     }
   }
 
+  function getFuture(functionArguments) {
+    return Array.prototype.slice.apply(functionArguments).pop();
+  }
+
   function call() {
     if (calls.length === 0) {
       return;
@@ -59,21 +64,31 @@ function Queue() {
   }
 
   function scheduleCall() {
-    var timer = Components.classes['@mozilla.org/timer;1']
-      .createInstance(Components.interfaces.nsITimer);
-    timer.init({
-      QueryInterface: XPCOMUtils.generateQI([
-        Components.interfaces.nsIObserver
-      ]),
-      observe: call
-    }, 1, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+    if (callScheduled) {
+      return;
+    }
+    callScheduled = true;
+
+    Components.classes['@mozilla.org/timer;1']
+      .createInstance(Components.interfaces.nsITimer)
+      .init({
+        QueryInterface: XPCOMUtils.generateQI([
+          Components.interfaces.nsIObserver
+        ]),
+        observe: function() {
+          callScheduled = false;
+          call();
+        }
+      }, 1, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
   }
 
   function init() {
     calls = [];
+    callScheduled = false;
   }
 
   queue.extend = extend;
+  queue.future = getFuture;
 
   init();
 }
