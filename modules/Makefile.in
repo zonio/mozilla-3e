@@ -35,6 +35,7 @@ EXTRA_JS_MODULES = \
 	resolv.jsm \
 	request.jsm \
 	response.jsm \
+	synchronization.jsm \
 	utils.jsm \
 	xml-rpc.jsm \
 	xul.jsm \
