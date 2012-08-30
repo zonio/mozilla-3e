@@ -29,6 +29,7 @@ function cal3eSubscription(subscriberController, filterController,
 
   function filterDidChange() {
     calendarsController.applyFilter(filterController.filter());
+    loadSharedCalendars();
   }
 
   function subscribe() {
@@ -72,6 +73,33 @@ function cal3eSubscriberController() {
   var identity;
   var element;
   var identityObserver;
+  var observers;
+
+  function addObserver() {
+    observers.push(observer);
+
+    return controller;
+  }
+
+  function removeObserver() {
+    if (observers.indexOf(observer) < 0) {
+      return controller;
+    }
+
+    observers.splice(observers.indexOf(observer), 1);
+
+    return controller;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      try {
+        observer(controller);
+      } catch (e) {
+        //TODO log
+      }
+    });
+  }
 
   function fillElement() {
     cal3eXul.clearMenu(element);
@@ -104,6 +132,9 @@ function cal3eSubscriberController() {
       });
 
     identity = identities.length > 0 ? identities[0] : null;
+    if (identity) {
+      notify();
+    }
     dump('[3e] Identity changed: ' + identity.email + '\n');
   }
 
@@ -117,6 +148,8 @@ function cal3eSubscriberController() {
     element = document.getElementById('subscriber-menulist');
     element.addEventListener('change', identityDidChange, false);
 
+    observers = [];
+
     identityObserver = cal3eIdentity.Observer();
     identityObserver.addObserver(fillElement);
     fillElement();
@@ -127,6 +160,8 @@ function cal3eSubscriberController() {
     identityObserver.destroy();
     identityObserver = null;
     window.removeEventListener('unload', finalize, false);
+
+    observers = null;
 
     element.removeEventListener('change', identityDidChange, false);
     element = null;
@@ -207,29 +242,57 @@ function cal3eCalendarsFilterController() {
   init();
 }
 
-function cal3eSharedCalendarsController() {
+function cal3eSharedCalendarsController(subscriberController) {
   var controller = this;
   var element;
+  var identity;
   var calendars;
   var owners;
   var fixingSelection;
   var selection;
 
+  function identityDidChange() {
+    identity = subscriberController.identity();
+    loadSharedCalendars();
+  }
+
   function fillElement() {
+    if (!identity) {
+      fillElementNoIdentity();
+    } else if (calendars.length === 0) {
+      fillElementLoading();
+    } else {
+      fillElementLoaded();
+    }
+  }
+
+  function fillElementNoIdentity() {
+    cal3eXul.clearTree(element);
+
+    //TODO select identity message
+  }
+
+  function fillElementLoading() {
+    cal3eXul.clearTree(element);
+
+    //TODO loading calendars message
+  }
+
+  function fillElementLoaded() {
     cal3eXul.clearTree(element);
 
     var parentElement;
     owners.forEach(function(owner) {
       parentElement = cal3eXul.addItemToTree(
         element,
-        owner['realname'] + ' <' + owner['username'] + '>',
+        cal3eModel.userLabel(owner),
         null
       );
       calendars[owner['username']].forEach(function(calendar) {
         cal3eXul.addItemToTree(
           parentElement,
-          calendar['title'],
-          'eee://' + owner['username'] + '/' + calendar['name']
+          cal3eModel.calendarTitle(calendar),
+          'eee://' + calendar['owner'] + '/' + calendar['name']
         );
       });
     });
@@ -281,60 +344,84 @@ function cal3eSharedCalendarsController() {
     }
   }
 
+  function loadSharedCalendars() {
+    fillElement();
+
+    cal3eRequest.Client.getInstance()
+      .getSharedCalendars(identity, sharedCalendarsDidLoad);
+  }
+
+  function sharedCalendarsDidLoad(queue, result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      //TODO display error
+      return;
+    }
+
+    calendars = {};
+    owners = [];
+    result.forEach(function(calendar) {
+      if (!calendars[calendar['owner']]) {
+        calendars[calendar['owner']] = [];
+      }
+    });
+
+    loadCalendarOwners();
+  }
+
+  function loadCalendarOwners() {
+    var query = '';
+    var owner;
+    for (owner in calendars) {
+      if (!calendars.hasOwnProperty(owner)) {
+        continue;
+      }
+
+      if (query !== '') {
+        query += ' OR ';
+      }
+      query += "match_username('" + owner + "')";
+    }
+
+    cal3eRequest.Client.getInstance()
+      .getSharedCalendars(identity, calendarsOwnersDidLoad, query);
+  }
+
+  function calendarsOwnersDidLoad(queue, result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      //TODO display error
+      return;
+    }
+
+    results.forEach(function(owner) {
+      owners.push(owner);
+    });
+
+    fillElement();
+  }
+
   function getSelection() {
     return selection;
   }
 
   function init() {
-    calendars = {
-      'alice@3e-dev': [
-        {
-          'name': 'room1',
-          'title': 'Room #1',
-          'perm': 'read'
-        },
-        {
-          'name': 'room2',
-          'title': 'Room #2',
-          'perm': 'read'
-        },
-        {
-          'name': 'vacations',
-          'title': 'Vacations',
-          'perm': 'write'
-        }
-      ],
-      'carl@3e-dev': [
-        {
-          'name': 'travels',
-          'title': 'Travels',
-          'perm': 'read'
-        }
-      ]
-    };
-    owners = [
-      {
-        'username': 'alice@3e-dev',
-        'realname': 'Alice Local'
-      },
-      {
-        'username': 'carl@3e-dev',
-        'realname': 'Carl Local'
-      }
-    ];
+    window.addEventListener('unload', finalize, false);
 
     element = document.getElementById('calendars-tree');
-    fillElement();
     element.addEventListener('select', selectionDidChange, false);
 
     fixingSelection = false;
     selection = [];
 
-    window.addEventListener('unload', finalize, false);
+    identity = null;
+    subscriberController.addObserver(identityDidChange);
+    identityDidChange();
    }
 
   function finalize() {
     window.removeEventListener('unload', finalize, false);
+
+    subscriberController.removeObserver(identityDidChange);
+    identity = null;
 
     selection = null;
 
@@ -357,10 +444,12 @@ cal3eSubscription.open = function cal3eSubscription_open() {
 };
 
 cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
+  var subscriberController = new cal3eSubscriberController();
+
   cal3eSubscription.controller = new cal3eSubscription(
-    new cal3eSubscriberController(),
+    subscriberController,
     new cal3eCalendarsFilterController(),
-    new cal3eSharedCalendarsController()
+    new cal3eSharedCalendarsController(subscriberController)
   );
   window.addEventListener('unload', cal3eSubscription.onUnload, false);
 };
