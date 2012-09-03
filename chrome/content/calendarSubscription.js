@@ -20,6 +20,7 @@
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
+Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
@@ -351,7 +352,7 @@ function cal3eSharedCalendarsController(subscriberController) {
     fillElement();
 
     cal3eRequest.Client.getInstance()
-      .getSharedCalendars(identity, sharedCalendarsDidLoad);
+      .getSharedCalendars(identity, sharedCalendarsDidLoad, '');
   }
 
   function sharedCalendarsDidLoad(queue, result) {
@@ -362,10 +363,11 @@ function cal3eSharedCalendarsController(subscriberController) {
 
     calendars = {};
     owners = [];
-    result.forEach(function(calendar) {
+    result.data.forEach(function(calendar) {
       if (!calendars[calendar['owner']]) {
         calendars[calendar['owner']] = [];
       }
+      calendars[calendar['owner']].push(calendar);
     });
 
     loadCalendarOwners();
@@ -386,7 +388,7 @@ function cal3eSharedCalendarsController(subscriberController) {
     }
 
     cal3eRequest.Client.getInstance()
-      .getSharedCalendars(identity, calendarsOwnersDidLoad, query);
+      .getUsers(identity, calendarsOwnersDidLoad, query);
   }
 
   function calendarsOwnersDidLoad(queue, result) {
@@ -395,7 +397,7 @@ function cal3eSharedCalendarsController(subscriberController) {
       return;
     }
 
-    results.forEach(function(owner) {
+    result.data.forEach(function(owner) {
       owners.push(owner);
     });
 

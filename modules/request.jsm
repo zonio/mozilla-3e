@@ -554,6 +554,7 @@ function Client() {
 
   client.getUsers = getUsers;
   client.getCalendars = getCalendars;
+  client.getSharedCalendars = getSharedCalendars;
   client.createCalendar = createCalendar;
   client.deleteCalendar = deleteCalendar;
   client.setCalendarAttribute = setCalendarAttribute;
