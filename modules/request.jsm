@@ -241,23 +241,30 @@ function Client() {
   }
 
   function getUsers(identity, listener, query) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    var allArguments = Array.prototype.slice.apply(arguments);
+    allArguments.unshift('getUsers');
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    return future
-      .push('ESClient.getUsers', [query])
-      .call();
+    return queryNonCalendarObjects.apply(null, allArguments);
   }
   getUsers = queue.extend(getUsers, prepareQueue);
 
   function getCalendars(identity, listener, query) {
+    var allArguments = Array.prototype.slice.apply(arguments);
+    allArguments.unshift('getCalendars');
+
+    return queryNonCalendarObjects.apply(null, allArguments);
+  }
+  getCalendars = queue.extend(getCalendars, prepareQueue);
+
+  function getSharedCalendars(identity, listener, query) {
+    var allArguments = Array.prototype.slice.apply(arguments);
+    allArguments.unshift('getSharedCalendars');
+
+    return queryNonCalendarObjects.apply(null, allArguments);
+  }
+  getSharedCalendars = queue.extend(getSharedCalendars, prepareQueue);
+
+  function queryNonCalendarObjects(procedure, identity, listener, query) {
     var future = queue.future(arguments);
     if (!Components.isSuccessCode(future.status())) {
       return future;
@@ -269,10 +276,9 @@ function Client() {
     }
 
     return future
-      .push('ESClient.getCalendars', [query])
+      .push('ESClient.' + procedure, [query])
       .call();
   }
-  getCalendars = queue.extend(getCalendars, prepareQueue);
 
   function createCalendar(identity, listener, calendar) {
     var future = queue.future(arguments);
