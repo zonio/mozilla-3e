@@ -184,8 +184,8 @@ function cal3eCalendarsFilterController() {
   var element;
   var observers;
 
-  function filterDidChange() {
-    filter = element.value || '';
+  function filterDidChange(event) {
+    filter = '' + element.value;
     notify();
   }
 
@@ -223,7 +223,7 @@ function cal3eCalendarsFilterController() {
     filter = '';
 
     element = document.getElementById('search-pattern');
-    element.addEventListener('change', filterDidChange, false);
+    element.addEventListener('input', filterDidChange, false);
 
     observers = [];
 
@@ -235,7 +235,7 @@ function cal3eCalendarsFilterController() {
 
     observers = null;
 
-    element.removeEventListener('change', filterDidChange, false);
+    element.removeEventListener('input', filterDidChange, false);
     element = null;
   }
 
