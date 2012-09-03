@@ -29,9 +29,14 @@ function cal3eSubscription(subscriberController, filterController,
   var controller = this;
   var stringBundle;
 
+  function identityDidChange() {
+    dump('[3e] New identity: ' + subscriberController.identity().email + '\n');
+    calendarsController.setIdentity(subscriberController.identity());
+  }
+
   function filterDidChange() {
+    dump('[3e] New filter: ' + filterController.filter() + '\n');
     calendarsController.setFilter(filterController.filter());
-    loadSharedCalendars();
   }
 
   function subscribe() {
@@ -54,10 +59,14 @@ function cal3eSubscription(subscriberController, filterController,
 
     window.addEventListener('unload', finalize, false);
 
+    subscriberController.addObserver(identityDidChange);
+    identityDidChange();
     filterController.addObserver(filterDidChange);
+    filterDidChange();
   }
 
   function finalize() {
+    subscriberController.removeObserver(identityDidChange);
     filterController.removeObserver(filterDidChange);
 
     window.removeEventListener('unload', finalize, false);
@@ -137,7 +146,6 @@ function cal3eSubscriberController() {
     if (identity) {
       notify();
     }
-    dump('[3e] Identity changed: ' + identity.email + '\n');
   }
 
   function getIdentity() {
@@ -246,7 +254,7 @@ function cal3eCalendarsFilterController() {
   init();
 }
 
-function cal3eSharedCalendarsController(subscriberController) {
+function cal3eSharedCalendarsController() {
   var controller = this;
   var element;
   var identity;
@@ -255,11 +263,6 @@ function cal3eSharedCalendarsController(subscriberController) {
   var owners;
   var fixingSelection;
   var selection;
-
-  function identityDidChange() {
-    identity = subscriberController.identity();
-    loadSharedCalendars();
-  }
 
   function fillElement() {
     if (!identity) {
@@ -309,13 +312,6 @@ function cal3eSharedCalendarsController(subscriberController) {
         );
       });
     });
-  }
-
-  function setFilter(newFilter) {
-    filter = newFilter;
-    fillElement();
-
-    return controller;
   }
 
   function matchesFilter(string) {
@@ -455,6 +451,20 @@ function cal3eSharedCalendarsController(subscriberController) {
     fillElement();
   }
 
+  function setFilter(newFilter) {
+    filter = newFilter;
+    fillElement();
+
+    return controller;
+  }
+
+  function setIdentity(newIdentity) {
+    identity = newIdentity;
+    loadSharedCalendars();
+
+    return controller;
+  }
+
   function getSelection() {
     return selection;
   }
@@ -473,14 +483,11 @@ function cal3eSharedCalendarsController(subscriberController) {
     owners = [];
 
     identity = null;
-    subscriberController.addObserver(identityDidChange);
-    identityDidChange();
   }
 
   function finalize() {
     window.removeEventListener('unload', finalize, false);
 
-    subscriberController.removeObserver(identityDidChange);
     identity = null;
 
     filter = null;
@@ -494,6 +501,7 @@ function cal3eSharedCalendarsController(subscriberController) {
   }
 
   controller.selection = getSelection;
+  controller.setIdentity = setIdentity;
   controller.setFilter = setFilter;
 
   init();
@@ -508,12 +516,10 @@ cal3eSubscription.open = function cal3eSubscription_open() {
 };
 
 cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
-  var subscriberController = new cal3eSubscriberController();
-
   cal3eSubscription.controller = new cal3eSubscription(
-    subscriberController,
+    new cal3eSubscriberController(),
     new cal3eCalendarsFilterController(),
-    new cal3eSharedCalendarsController(subscriberController)
+    new cal3eSharedCalendarsController()
   );
   window.addEventListener('unload', cal3eSubscription.onUnload, false);
 };
