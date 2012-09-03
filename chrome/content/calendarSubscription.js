@@ -30,7 +30,7 @@ function cal3eSubscription(subscriberController, filterController,
   var stringBundle;
 
   function filterDidChange() {
-    calendarsController.applyFilter(filterController.filter());
+    calendarsController.setFilter(filterController.filter());
     loadSharedCalendars();
   }
 
@@ -250,6 +250,7 @@ function cal3eSharedCalendarsController(subscriberController) {
   var controller = this;
   var element;
   var identity;
+  var filter;
   var calendars;
   var owners;
   var fixingSelection;
@@ -265,6 +266,8 @@ function cal3eSharedCalendarsController(subscriberController) {
       fillElementNoIdentity();
     } else if (calendars.length === 0) {
       fillElementLoading();
+    } else if (getFilteredUsers().length === 0) {
+      fillElementNoMatch();
     } else {
       fillElementLoaded();
     }
@@ -282,17 +285,23 @@ function cal3eSharedCalendarsController(subscriberController) {
     //TODO loading calendars message
   }
 
+  function fillElementNoMatch() {
+    cal3eXul.clearTree(element);
+
+    //TODO no calendars match message
+  }
+
   function fillElementLoaded() {
     cal3eXul.clearTree(element);
 
     var parentElement;
-    owners.forEach(function(owner) {
+    getFilteredUsers().forEach(function(owner) {
       parentElement = cal3eXul.addItemToTree(
         element,
         cal3eModel.userLabel(owner),
         null
       );
-      calendars[owner['username']].forEach(function(calendar) {
+      getFilteredCalendars(owner).forEach(function(calendar) {
         cal3eXul.addItemToTree(
           parentElement,
           cal3eModel.calendarLabel(calendar),
@@ -302,8 +311,50 @@ function cal3eSharedCalendarsController(subscriberController) {
     });
   }
 
-  function applyFilter(filter) {
-    dump('[3e] Filter changed: ' + filter + '\n');
+  function setFilter(newFilter) {
+    filter = newFilter;
+    fillElement();
+
+    return controller;
+  }
+
+  function matchesFilter(string) {
+    return normalizeString(string).indexOf(normalizeString(filter)) >= 0;
+  }
+
+  function normalizeString(string) {
+    return ('' + string).toLowerCase().replace(/s+/, ' ');
+  }
+
+  function getFilteredUsers() {
+    return owners.filter(function(user) {
+        return matchUser(user) || matchUserCalendars(user);
+      });
+  }
+
+  function getFilteredCalendars(user) {
+    return matchAllCalendarsByUser(user) ?
+      calendars[user['username']] :
+      calendars[user['username']].filter(matchCalendar);
+  }
+
+  function matchAllCalendarsByUser(user) {
+    return !calendars[user['username']].some(matchCalendar) &&
+      matchUser(user);
+  }
+
+  function matchUser(user) {
+    return matchesFilter(user['username']) ||
+      matchesFilter(cal3eModel.attribute(user, 'realname'));
+  }
+
+  function matchUserCalendars(user) {
+    return calendars[user['username']].some(matchCalendar);
+  }
+
+  function matchCalendar(calendar) {
+    return matchesFilter(calendar['name']) ||
+      matchesFilter(cal3eModel.attribute(calendar, 'title'));
   }
 
   function selectionDidChange() {
@@ -417,6 +468,7 @@ function cal3eSharedCalendarsController(subscriberController) {
     fixingSelection = false;
     selection = [];
 
+    filter = '';
     calendars = {};
     owners = [];
 
@@ -431,6 +483,7 @@ function cal3eSharedCalendarsController(subscriberController) {
     subscriberController.removeObserver(identityDidChange);
     identity = null;
 
+    filter = null;
     calendars = null;
     owners = null;
 
@@ -441,7 +494,7 @@ function cal3eSharedCalendarsController(subscriberController) {
   }
 
   controller.selection = getSelection;
-  controller.applyFilter = applyFilter;
+  controller.setFilter = setFilter;
 
   init();
 }
