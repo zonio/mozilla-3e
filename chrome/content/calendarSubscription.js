@@ -267,7 +267,7 @@ function cal3eSharedCalendarsController() {
   function fillElement() {
     if (!identity) {
       fillElementNoIdentity();
-    } else if (calendars.length === 0) {
+    } else if (owners.length === 0) {
       fillElementLoading();
     } else if (getFilteredUsers().length === 0) {
       fillElementNoMatch();
@@ -278,20 +278,46 @@ function cal3eSharedCalendarsController() {
 
   function fillElementNoIdentity() {
     cal3eXul.clearTree(element);
-
-    //TODO select identity message
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.noIdentity'
+      ),
+      null
+    );
   }
 
   function fillElementLoading() {
     cal3eXul.clearTree(element);
-
-    //TODO loading calendars message
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.loading'
+      ),
+      null
+    );
   }
 
   function fillElementNoMatch() {
     cal3eXul.clearTree(element);
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.noMatch'
+      ),
+      null
+    );
+  }
 
-    //TODO no calendars match message
+  function fillElementError() {
+    cal3eXul.clearTree(element);
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.error'
+      ),
+      null
+    );
   }
 
   function fillElementLoaded() {
@@ -395,6 +421,12 @@ function cal3eSharedCalendarsController() {
     }
   }
 
+  function didError(error) {
+    calendars = {};
+    owners = [];
+    fillElementError();
+  }
+
   function loadSharedCalendars() {
     fillElement();
 
@@ -404,7 +436,7 @@ function cal3eSharedCalendarsController() {
 
   function sharedCalendarsDidLoad(queue, result) {
     if (!(result instanceof cal3eResponse.Success)) {
-      //TODO display error
+      didError(result);
       return;
     }
 
@@ -440,7 +472,7 @@ function cal3eSharedCalendarsController() {
 
   function calendarsOwnersDidLoad(queue, result) {
     if (!(result instanceof cal3eResponse.Success)) {
-      //TODO display error
+      didError(result);
       return;
     }
 
