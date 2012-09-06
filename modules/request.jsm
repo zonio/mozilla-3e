@@ -99,7 +99,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -120,7 +123,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -141,7 +147,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -178,7 +187,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -200,7 +212,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -225,7 +240,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -271,7 +289,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -296,7 +317,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -330,7 +354,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -351,7 +378,10 @@ function Client(authenticationDelegate) {
       return future;
     }
 
+    queue.waitUntilFinished();
     authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
+
       if (!Components.isSuccessCode(future.status())) {
         onResult(future, listener);
         return;
@@ -406,11 +436,6 @@ function Client(authenticationDelegate) {
       result = setLastUserError(
         methodQueue, cal3eResponse.userErrors.BAD_CERT
       );
-    } else if (methodQueue.isFault() &&
-               (methodQueue.lastResponse().errorCode ===
-                cal3eResponse.eeeErrors.AUTH_FAILED)) {
-      restartQueueWithNewPassword(methodQueue, listener);
-      return;
     } else if (!methodQueue.isPending()) {
       result = cal3eResponse.fromMethodQueue(methodQueue);
     } else if (methodQueue.isPending()) {
@@ -468,9 +493,7 @@ function AuthenticationDelegate() {
     var login = null;
     while (!login && (tries < promptLimit)) {
       login = findInStorages(identity) || findByPrompt(identity);
-      validate(login, queue, function(queue) {
-        callback(queue);
-      });
+      validate(login, queue, callback);
     }
   }
 
@@ -535,6 +558,7 @@ function AuthenticationDelegate() {
       queue.setError(Components.Exception(
         "User error '" + cal3eResponse.userErrors.NO_PASSWORD + "'"
       ));
+      callback(queue);
       return;
     }
 
@@ -544,7 +568,7 @@ function AuthenticationDelegate() {
   }
 
   function didValidate(queue, callback) {
-    if (!queue.isPending()) {
+    if (queue.isPending()) {
       return;
     }
 
@@ -679,11 +703,12 @@ function xpcomToEeeDate(xpcomDate) {
 function Queue() {
   var queue = this;
   var server;
+  var methodIdx;
   var methodCalls;
   var pending;
   var status;
   var error;
-  var timestamp;
+  var id;
 
   function push(methodName, parameters) {
     if (pending) {
@@ -704,7 +729,6 @@ function Queue() {
       throw Components.results.NS_ERROR_NOT_INITIALIZED;
     }
 
-    methodIdx = 0;
     pending = methodCalls.length > methodIdx;
     callNext({
       'listener': listener,
@@ -716,7 +740,6 @@ function Queue() {
 
   function callNext(context) {
     if (!pending) {
-      methodCalls.splice();
       return;
     }
 
@@ -747,8 +770,8 @@ function Queue() {
     lastResponse = response;
     methodIdx += 1;
     pending = methodCalls.length > methodIdx;
-    context['listener'](queue, context['context']);
     callNext(context);
+    context['listener'](queue, context['context']);
   }
 
   function onError(resultServer, serverError, context) {
@@ -762,11 +785,7 @@ function Queue() {
   }
 
   function getId() {
-    var lastMethod = methodCalls.length > 0 ?
-      methodCalls[methodCalls.length - 1][0] :
-      '-- not initialized --';
-
-    return serverUri.spec + ':' + lastMethod + '.' + timestamp;
+    return id;
   }
 
   function isPending() {
@@ -839,6 +858,9 @@ function Queue() {
   }
 
   function init() {
+    queueSequence += 1;
+    id = 'cal3eRequest.Queue.' + queueSequence;
+
     server = new cal3eXmlRpc.Client();
     server.setListener({
       onResult: onResult,
@@ -846,13 +868,11 @@ function Queue() {
       onError: onError
     });
 
+    methodIdx = 0;
     methodCalls = [];
-    listener = function() {};
-    context = null;
     pending = false;
     status = Components.results.NS_OK;
     error = null;
-    timestamp = 1 * (new Date());
   }
 
   queue.component = getComponent;
@@ -871,6 +891,7 @@ function Queue() {
 
   init();
 }
+var queueSequence = 0;
 
 var cal3eRequest = {
   Client: Client
