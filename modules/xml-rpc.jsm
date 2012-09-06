@@ -31,7 +31,7 @@ function Client() {
   var response;
   var channelCallbacks;
 
-  function call(methodName, parameters) {
+  function call(methodName, parameters, context) {
     if (request) {
       throw Components.Exception(
         'Only one request at the same time',
@@ -40,7 +40,7 @@ function Client() {
     }
 
     request = new Request(methodName, parameters);
-    doXhrSend();
+    doXhrSend(context);
 
     return client;
   }
@@ -55,7 +55,7 @@ function Client() {
     oldXhr.abort();
   }
 
-  function doXhrSend() {
+  function doXhrSend(context) {
     if (!uri) {
       throw Components.Exception(
         'URI must be set',
@@ -68,17 +68,21 @@ function Client() {
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
     xhr.open('POST', uri.spec);
     xhr.setRequestHeader('Content-Type', 'text/xml');
-    xhr.addEventListener('load', onXhrLoad, false);
-    xhr.addEventListener('error', onXhrError, false);
+    xhr.addEventListener('load', function(event) {
+      onXhrLoad(event, context);
+    }, false);
+    xhr.addEventListener('error', function(event) {
+      onXhrError(event, context);
+    }, false);
     xhr.channel.notificationCallbacks = channelCallbacks;
 
     xhr.send(request.body());
   }
 
-  function onXhrLoad(event) {
+  function onXhrLoad(event, context) {
     if ((event.target.status !== 200) || !event.target.responseXML) {
       passErrorToListener(
-        Components.results.NS_ERROR_FAILURE, 'Unknown network error'
+        Components.Exception('Unknown network error'), context
       );
       return;
     }
@@ -87,35 +91,37 @@ function Client() {
     try {
       response = createResponse(event.target.responseXML);
     } catch (e) {
-      passErrorToListener(e.result, e.message);
+      passErrorToListener(
+        Components.Exception(e.message, e.result), context
+      );
       return;
     }
 
-    passResultToListener();
+    passResultToListener(context);
   }
 
-  function onXhrError(event) {
+  function onXhrError(event, context) {
     if (channelCallbacks.isBadCertListenerActive()) {
       return;
     }
 
     passErrorToListener(
-      Components.results.NS_ERROR_FAILURE, 'Unknown network error'
+      Components.Exception('Unknown network error'), context
     );
   }
 
-  function passResultToListener() {
+  function passResultToListener(context) {
     reset();
     if (isSuccess()) {
-      listener.onResult(client, response);
+      listener.onResult(client, response, context);
     } else {
-      listener.onFault(client, response);
+      listener.onFault(client, response, context);
     }
   }
 
-  function passErrorToListener(result, description) {
+  function passErrorToListener(error, context) {
     reset();
-    listener.onError(client, Components.Exception(description, result));
+    listener.onError(client, error, context);
   }
 
   function reset() {
