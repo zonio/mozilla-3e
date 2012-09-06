@@ -99,14 +99,18 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future
-      .push('ESClient.getUsers', [query])
-      .call();
+      future
+        .push('ESClient.getUsers', [query])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   getUsers = queue.extend(getUsers, prepareQueue);
 
@@ -116,14 +120,18 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future
-      .push('ESClient.getCalendars', [query])
-      .call();
+      future
+        .push('ESClient.getCalendars', [query])
+        .call(onResult, listener)
+    });
+
+    return future;
   }
   getCalendars = queue.extend(getCalendars, prepareQueue);
 
@@ -133,30 +141,34 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    future.push('ESClient.createCalendar', [calendar.calname]);
-    if (calendar.calname != calendar.name) {
-      future.push('ESClient.setCalendarAttribute', [
-        getCalendarCalspec(calendar),
-        'title',
-        calendar.name,
-        true
-      ]);
-    }
-    if (calendar.getProperty('color')) {
-      future.push('ESClient.setCalendarAttribute', [
-        getCalendarCalspec(calendar),
-        'color',
-        calendar.getProperty('color'),
-        true
-      ]);
-    }
+      future.push('ESClient.createCalendar', [calendar.calname]);
+      if (calendar.calname != calendar.name) {
+        future.push('ESClient.setCalendarAttribute', [
+          getCalendarCalspec(calendar),
+          'title',
+          calendar.name,
+          true
+        ]);
+      }
+      if (calendar.getProperty('color')) {
+        future.push('ESClient.setCalendarAttribute', [
+          getCalendarCalspec(calendar),
+          'color',
+          calendar.getProperty('color'),
+          true
+        ]);
+      }
 
-    return future.call();
+      future.call(onResult, listener);
+    });
+
+    return future;
   }
   createCalendar = queue.extend(createCalendar, prepareQueue);
 
@@ -166,14 +178,18 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future
-      .push('ESClient.deleteCalendar', [calendar.calname])
-      .call();
+      future
+        .push('ESClient.deleteCalendar', [calendar.calname])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   deleteCalendar = queue.extend(deleteCalendar, prepareQueue);
 
@@ -184,18 +200,22 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future
-      .push('ESClient.setCalendarAttribute', [
-        getCalendarCalspec(calendar),
-        name,
-        value,
-        isPublic])
-      .call();
+      future
+        .push('ESClient.setCalendarAttribute', [
+          getCalendarCalspec(calendar),
+          name,
+          value,
+          isPublic])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   setCalendarAttribute = queue.extend(setCalendarAttribute, prepareQueue);
 
@@ -205,16 +225,20 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future.push(
-      'ESClient.queryObjects', [
-        getCalendarCalspec(calendar),
-        getQueryFromQueryObjectsArguments(id, from, to)])
-      .call();
+      future.push(
+        'ESClient.queryObjects', [
+          getCalendarCalspec(calendar),
+          getQueryFromQueryObjectsArguments(id, from, to)])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   queryObjects = queue.extend(queryObjects, prepareQueue);
 
@@ -247,18 +271,22 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    enqueueItemTimezones(future, item);
+      enqueueItemTimezones(future, item);
 
-    return future
-      .push('ESClient.addObject', [
-        getCalendarCalspec(calendar),
-        item.icalComponent.serializeToICS()])
-      .call();
+      future
+        .push('ESClient.addObject', [
+          getCalendarCalspec(calendar),
+          item.icalComponent.serializeToICS()])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   addObject = queue.extend(addObject, prepareQueue);
 
@@ -268,18 +296,20 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    enqueueItemTimezones(future, item);
+      enqueueItemTimezones(future, item);
 
-    return future
-      .push('ESClient.updateObject', [
-        getCalendarCalspec(calendar),
-        item.icalComponent.serializeToICS()])
-      .call();
+      future
+        .push('ESClient.updateObject', [
+          getCalendarCalspec(calendar),
+          item.icalComponent.serializeToICS()])
+        .call(onResult, listener);
+    });
   }
   updateObject = queue.extend(updateObject, prepareQueue);
 
@@ -300,14 +330,18 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future
-      .push('ESClient.deleteObject', [getCalendarCalspec(calendar), item.id])
-      .call();
+      future
+        .push('ESClient.deleteObject', [getCalendarCalspec(calendar), item.id])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   deleteObject = queue.extend(deleteObject, prepareQueue);
 
@@ -317,18 +351,22 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
 
-    return future
-      .push('ESClient.deleteObject', [
-        attendee,
-        xpcomToEeeDate(from),
-        xpcomToEeeDate(to),
-        defaultTimezone])
-      .call();
+      future
+        .push('ESClient.deleteObject', [
+          attendee,
+          xpcomToEeeDate(from),
+          xpcomToEeeDate(to),
+          defaultTimezone])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
   freeBusy = queue.extend(freeBusy, prepareQueue);
 
