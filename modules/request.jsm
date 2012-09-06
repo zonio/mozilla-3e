@@ -330,6 +330,25 @@ function Client() {
   }
   deleteCalendar = queue.extend(deleteCalendar, prepareQueue);
 
+  function subscribeCalendar(identity, listener, calspec) {
+    dump('[3e] Mark#1.1.1\n');
+    var future = queue.future(arguments);
+    if (!Components.isSuccessCode(future.status())) {
+      return future;
+    }
+
+    dump('[3e] Mark#1.1.2\n');
+    var future = enqueueAuthenticate(identity, future, listener);
+    if (!Components.isSuccessCode(future.status())) {
+      return future;
+    }
+
+    dump('[3e] Mark#1.1.3\n');
+    return future
+      .push('ESClient.subscribeCalendar', [calspec])
+      .call();
+  }
+
   function setCalendarAttribute(identity, listener, calendar, name, value,
                                 isPublic) {
     var future = queue.future(arguments);
@@ -557,6 +576,7 @@ function Client() {
   client.getSharedCalendars = getSharedCalendars;
   client.createCalendar = createCalendar;
   client.deleteCalendar = deleteCalendar;
+  client.subscribeCalendar = subscribeCalendar;
   client.setCalendarAttribute = setCalendarAttribute;
   client.queryObjects = queryObjects;
   client.addObject = addObject;

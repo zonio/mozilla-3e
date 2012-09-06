@@ -116,13 +116,17 @@ function cal3eSubscriptionDelegate() {
       }
     }
 
+    dump('[3e] Mark#1\n');
     calendars.forEach(function(calendar) {
+      dump('[3e] Mark#1.1\n');
       cal3eRequest.Client.getInstance().subscribeCalendar(
         identity,
         didSubscribeCalendar,
         calendar
       );
+      dump('[3e] Mark#1.2\n');
     });
+    dump('[3e] Mark#2\n');
   }
 
   subscriptionDelegate.subscribe = subscribe;
