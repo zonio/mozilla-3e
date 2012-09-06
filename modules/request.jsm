@@ -600,7 +600,7 @@ function LoginInfoSessionStorage() {
   function addLogin(login) {
     prepareStorageForHostname(login.hostname)
 
-    storage[hostname][login.username] = login;
+    storage[login.hostname][login.username] = login;
   }
 
   function modifyLogin(oldLogin, newLogin) {
