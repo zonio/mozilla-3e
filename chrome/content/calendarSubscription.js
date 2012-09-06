@@ -25,7 +25,7 @@ Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
 function cal3eSubscription(subscriberController, filterController,
-                           calendarsController) {
+                           calendarsController, subscriptionDelegate) {
   var controller = this;
   var stringBundle;
 
@@ -51,7 +51,24 @@ function cal3eSubscription(subscriberController, filterController,
     });
     dump('\n');
 
-    return true;
+    calendarsController.freezSelection();
+    subscriptionDelegate.subscribe(
+      subscriberController.identity(),
+      calendarsController.selection(),
+      didSubscribe
+    );
+
+    return false;
+  }
+
+  function didSubscribe(errors) {
+    if (errors.length > 0) {
+      //TODO warn
+      calendarsController.unfreezSelection();
+      return;
+    }
+
+    window.close();
   }
 
   function init() {
@@ -77,6 +94,38 @@ function cal3eSubscription(subscriberController, filterController,
   controller.subscribe = subscribe;
 
   init();
+}
+
+function cal3eSubscriptionDelegate() {
+  var subscriptionDelegate = this;
+
+  function subscribe(identity, calendars, callback) {
+    var errors = [];
+    var subscribed = 0;
+
+    function didSubscribeCalendar(queue, result) {
+      subscribed += 1;
+
+      if (!(result instanceof cal3eResponse.Success)) {
+        errors.push(result);
+        return;
+      }
+
+      if (calendars.length === subscribed) {
+        callback(errors);
+      }
+    }
+
+    calendars.forEach(function(calendar) {
+      cal3eRequest.Client.getInstance().subscribeCalendar(
+        identity,
+        didSubscribeCalendar,
+        calendar
+      );
+    });
+  }
+
+  subscriptionDelegate.subscribe = subscribe;
 }
 
 function cal3eSubscriberController() {
@@ -322,6 +371,14 @@ function cal3eSharedCalendarsController() {
   var fixingSelection;
   var selection;
 
+  function freezSelection() {
+    element.disabled = true;
+  }
+
+  function unfreezSelection() {
+    element.disabled = false;
+  }
+
   function fillElement() {
     if (!identity) {
       fillElementNoIdentity();
@@ -392,7 +449,7 @@ function cal3eSharedCalendarsController() {
         cal3eXul.addItemToTree(
           parentElement,
           cal3eModel.calendarLabel(calendar),
-          'eee://' + calendar['owner'] + '/' + calendar['name']
+          calendar['owner'] + ':' + calendar['name']
         );
       });
     });
@@ -593,6 +650,8 @@ function cal3eSharedCalendarsController() {
     element = null;
   }
 
+  controller.freezSelection = freezSelection;
+  controller.unfreezSelection = unfreezSelection;
   controller.selection = getSelection;
   controller.setIdentity = setIdentity;
   controller.setFilter = setFilter;
@@ -612,7 +671,8 @@ cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
   cal3eSubscription.controller = new cal3eSubscription(
     new cal3eSubscriberController(),
     new cal3eCalendarsFilterController(),
-    new cal3eSharedCalendarsController()
+    new cal3eSharedCalendarsController(),
+    new cal3eSubscriptionDelegate()
   );
   window.addEventListener('unload', cal3eSubscription.onUnload, false);
 };
