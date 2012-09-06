@@ -139,6 +139,21 @@ function Collection() {
     });
   }
 
+  function hasOnlyOne() {
+    var found = false;
+    var onlyOne = false;
+    filter.call(this, function(identity) {
+      if (!found) {
+        found = true;
+        onlyOne = true;
+      } else {
+        onlyOne = false;
+      }
+    });
+
+    return onlyOne;
+  }
+
   /**
    * Extends array which is result of forEach and filter calls with
    * our custom filters.
@@ -149,6 +164,7 @@ function Collection() {
   function extendArray(array) {
     array.getEnabled = getEnabled;
     array.findByEmail = findByEmail;
+    array.hasOnlyOne = hasOnlyOne;
 
     return array;
   }
@@ -176,7 +192,8 @@ function Collection() {
       forEach: forEach,
       filter: filter,
       getEnabled: getEnabled,
-      findByEmail: findByEmail
+      findByEmail: findByEmail,
+      hasOnlyOne: hasOnlyOne
     };
   }
 

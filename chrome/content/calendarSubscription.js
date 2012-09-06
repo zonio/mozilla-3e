@@ -30,7 +30,7 @@ function cal3eSubscription(subscriberController, filterController,
   var stringBundle;
 
   function identityDidChange() {
-    dump('[3e] New identity: ' + subscriberController.identity().email + '\n');
+    dump('[3e] New identity: ' + subscriberController.identity() + '\n');
     calendarsController.setIdentity(subscriberController.identity());
   }
 
@@ -113,34 +113,93 @@ function cal3eSubscriberController() {
   }
 
   function fillElement() {
-    cal3eXul.clearMenu(element);
+    clearElement();
+    if (cal3eIdentity.Collection().getEnabled().hasOnlyOne()) {
+      fillElementWithOne();
+    } else {
+      fillElementWithMany();
+    }
+    identityDidChange();
+  }
 
-    var identityChanged = false;
+  function fillElementWithOne() {
+    var labelElement = document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'label'
+    );
+
     cal3eIdentity.Collection()
       .getEnabled()
       .forEach(function(identity) {
-        var item = element.appendItem(
+        labelElement.setAttribute(
+          'value', identity.fullName + ' <' + identity.email + '>'
+        );
+      });
+
+    element.appendChild(labelElement);
+    elementDidLoad();
+  }
+
+  function fillElementWithMany() {
+    element.appendChild(document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'menulist'
+    ));
+    element.lastChild.id = 'subscriber-menulist';
+    var firstItem;
+
+    cal3eIdentity.Collection()
+      .getEnabled()
+      .forEach(function(identity) {
+        var item = element.lastChild.appendItem(
           identity.fullName + ' <' + identity.email + '>',
           identity.key
         );
 
-        if ((identity.key === element.value) || (!element.value)) {
-          element.selectedItem = item;
-          identityChanged = true;
+        if (!firstItem) {
+          firstItem = item;
         }
       });
 
-    if (identityChanged) {
-      identityDidChange();
+    element.lastChild.selectedItem = firstItem;
+    element.lastChild.addEventListener('command', identityDidChange, false);
+  }
+
+  function clearElement() {
+    if (hasManyIdentities()) {
+      element.lastElementChild.removeEventListener(
+        'command', identityDidChange, false
+      );
+    }
+    if (hasOneIdentity() || hasManyIdentities()) {
+      element.lastElementChild.parentNode.removeChild(
+        element.lastElementChild
+      );
     }
   }
 
+  function hasOneIdentity() {
+    return element.lastChild &&
+      (element.lastChild.nodeType ===
+       Components.interfaces.nsIDOMNode.ELEMENT_NODE) &&
+      (element.lastChild !== element.firstElementChild) &&
+      (element.lastChild.tagName === 'label');
+  }
+
+  function hasManyIdentities() {
+    return element.lastChild &&
+      (element.lastChild.nodeType ===
+       Components.interfaces.nsIDOMNode.ELEMENT_NODE) &&
+      (element.lastChild.tagName === 'menulist');
+  }
+
   function identityDidChange() {
-    var identities = cal3eIdentity.Collection().
-      getEnabled().
-      filter(function(identity) {
-        return identity.key === element.value;
+    var identities = cal3eIdentity.Collection().getEnabled();
+    if (hasManyIdentities()) {
+      identities = identities.filter(function(identity) {
+        return identity.key === element.lastChild.value;
       });
+    }
 
     identity = identities.length > 0 ? identities[0] : null;
     if (identity) {
@@ -155,8 +214,7 @@ function cal3eSubscriberController() {
   function init() {
     identity = null;
 
-    element = document.getElementById('subscriber-menulist');
-    element.addEventListener('change', identityDidChange, false);
+    element = document.getElementById('calendar3e-subscriber-row');
 
     observers = [];
 
@@ -173,7 +231,7 @@ function cal3eSubscriberController() {
 
     observers = null;
 
-    element.removeEventListener('change', identityDidChange, false);
+    clearElement();
     element = null;
 
     identity = null;
@@ -492,7 +550,10 @@ function cal3eSharedCalendarsController() {
 
   function setIdentity(newIdentity) {
     identity = newIdentity;
-    loadSharedCalendars();
+
+    if (identity) {
+      loadSharedCalendars();
+    }
 
     return controller;
   }
