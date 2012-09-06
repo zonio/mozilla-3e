@@ -25,158 +25,11 @@ Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 
-function Client() {
+function Client(authenticationDelegate) {
   var client = this;
   var queue = new cal3eSynchronization.Queue();
   var dns;
   var lastUserErrors;
-  var tmpLoginInfos;
-
-  function enqueueAuthenticate(identity, methodQueue, listener) {
-    //XXX move the whole password prompt/store/... functionality to
-    // separate class
-
-    if (!validateQueue(methodQueue, listener,
-                       cal3eResponse.userErrors.NO_PASSWORD)) {
-      return methodQueue;
-    }
-
-    var loginInfo = findLoginInfo(identity) ||
-      promptForPasswordAndStoreIt(identity, methodQueue, listener);
-    if (loginInfo) {
-      methodQueue.push(
-        'ESClient.authenticate', [identity.email, loginInfo.password]
-      );
-    }
-
-    return methodQueue;
-  }
-
-  function passwordUri(identity) {
-    //XXX not DRY - somehow use EeeProtocol class
-    return 'eee://' +
-      identity.email.substring(identity.email.indexOf('@') + 1);
-  }
-
-  function findLoginInfo(identity) {
-    return findTmpLoginInfo(identity) || findPermLoginInfo(identity);
-  }
-
-  function findPermLoginInfo(identity) {
-    var logins = Services.logins.findLogins(
-      {}, passwordUri(identity), passwordUri(identity), null
-    );
-
-    return logins.length > 0 ? logins[0] : null;
-  }
-
-  function findTmpLoginInfo(identity) {
-    return tmpLoginInfos && tmpLoginInfos[identity.key] ?
-      tmpLoginInfos[identity.key] :
-      null;
-  }
-
-  function promptForPassword(identity) {
-    var password = { value: '' }; // default the password to empty string
-    var savePassword = { value: true }; // default the checkbox to true
-
-    var stringBundle = Services.strings.createBundle(
-      'chrome://calendar3e/locale/cal3eCalendar.properties'
-    );
-
-    var didEnterPassword = Services.prompt.promptPassword(
-      null,
-      stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-      stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
-      password,
-      stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
-      savePassword
-    );
-
-    var loginInfo =
-      Components.classes['@mozilla.org/login-manager/loginInfo;1']
-      .createInstance(Components.interfaces.nsILoginInfo);
-    loginInfo.init(
-      passwordUri(identity), passwordUri(identity), null, identity.email,
-      password.value, '', ''
-    );
-
-    return [loginInfo, didEnterPassword, savePassword.value];
-  }
-
-  function storePermLoginInfo(identity, loginInfo) {
-    if (findPermLoginInfo(identity) === null) {
-      Services.logins.addLogin(loginInfo);
-    } else {
-      Services.logins.modifyLogin(findPermLoginInfo(identity), loginInfo);
-    }
-  }
-
-  function storeTmpLoginInfo(identity, loginInfo) {
-    if (!tmpLoginInfos) {
-      tmpLoginInfos = {};
-    }
-    tmpLoginInfos[identity.key] = loginInfo;
-  }
-
-  function promptForPasswordAndStoreIt(identity, methodQueue, listener) {
-    var [loginInfo, didEnterPassword, savePassword] =
-      promptForPassword(identity);
-
-    if (didEnterPassword && savePassword) {
-      storePermLoginInfo(identity, loginInfo);
-    } else if (didEnterPassword) {
-      storeTmpLoginInfo(identity, loginInfo);
-    } else if (!didEnterPassword) {
-      loginInfo = null;
-      listener(
-        methodQueue,
-        setLastUserError(
-          methodQueue, cal3eResponse.userErrors.NO_PASSWORD
-        )
-      );
-    }
-
-    return loginInfo;
-  }
-
-  function restartQueueWithNewPassword(methodQueue, listener) {
-    methodQueue.cancel();
-    var newMethodQueue = prepareQueue(
-      findIdentityInQueue(methodQueue), listener
-    );
-    methodQueue.toArray().forEach(function(methodCall) {
-      if (methodCall[0] === 'ESClient.authenticate') {
-        methodCall[1][1] = promptForPasswordAndStoreIt(
-          findIdentityByEmail(methodCall[1][0]),
-          methodQueue,
-          listener
-        ).password;
-      }
-      newMethodQueue.push(methodCall[0], methodCall[1]);
-    });
-
-    newMethodQueue.call();
-  }
-
-  function findIdentityInQueue(queue) {
-    var identity = null;
-    queue.toArray().forEach(function(methodCall) {
-      if (methodCall[0] === 'ESClient.authenticate') {
-        identity = findIdentityByEmail(methodCall[1][0]);
-      }
-    });
-
-    return identity;
-  }
-
-  function findIdentityByEmail(email) {
-    var identities = cal3eIdentity.Collection()
-      .getEnabled()
-      .findByEmail(email);
-
-    return identities.length > 0 ? identities[0] : null;
-  }
 
   function validateQueue(queue, listener, errorCode) {
     var error = findLastUserError(
@@ -481,10 +334,7 @@ function Client() {
 
   function prepareQueue(identity, listener) {
     var queue = new Queue();
-    queue
-      .setServerUri(uriFromIdentity(identity))
-      .setListener(onResult)
-      .setContext(listener);
+    queue.setServerUri(uriFromIdentity(identity));
 
     return validateQueue(
       queue, listener, cal3eResponse.userErrors.BAD_CERT
@@ -562,11 +412,209 @@ function Client() {
 var clientInstance;
 Client.getInstance = function Client_getInstance() {
   if (!clientInstance) {
-    clientInstance = new Client();
+    clientInstance = new Client(
+      new AuthenticationDelegate()
+    );
   }
 
   return clientInstance;
 };
+
+function AuthenticationDelegate() {
+  var authenticationDelegate = this;
+  var promptLimit;
+  var sessionStorage;
+
+  function authenticate(identity, queue, callback) {
+    var tries = 0;
+    var login = null;
+    while (!login && (tries < promptLimit)) {
+      login = findInStorages(identity) || findByPrompt(identity);
+      validate(login, queue, function(queue) {
+        callback(queue);
+      });
+    }
+  }
+
+  function findInStorages(identity) {
+    var logins = [];
+    [sessionStorage, Services.logins].forEach(function(storage) {
+      if (logins.length > 0) {
+        return;
+      }
+
+      logins = storage.findLogins(
+        {}, loginUri(identity), loginUri(identity), null
+      );
+    });
+
+    return logins.length > 0 ? logins[0] : null;
+  }
+
+  function findByPrompt(identity) {
+    var [login, didEnterPassword, savePassword] = prompt(identity);
+
+    var storage = savePassword ? Services.logins : sessionStorage;
+    if (didEnterPassword && !findInStorages(identity)) {
+      storage.addLogin(login);
+    } else if (didEnterPassword) {
+      storage.modifyLogin(findInStorages(identity), login);
+    }
+
+    return login;
+  }
+
+  function prompt(identity) {
+    var stringBundle = Services.strings.createBundle(
+      'chrome://calendar3e/locale/cal3eCalendar.properties'
+    );
+
+    var password = { value: '' };
+    var savePassword = { value: true };
+    var didEnterPassword = Services.prompt.promptPassword(
+      null,
+      stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
+      stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+      password,
+      stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
+      savePassword
+    );
+
+    var login =
+      Components.classes['@mozilla.org/login-manager/loginInfo;1']
+      .createInstance(Components.interfaces.nsILoginInfo);
+    login.init(
+      loginUri(identity), loginUri(identity), null,
+      identity.email, password.value,
+      '', ''
+    );
+
+    return [login, didEnterPassword, savePassword.value];
+  }
+
+  function validate(login, queue, callback) {
+    if (!login) {
+      queue.setError(Components.Exception(
+        "User error '" + cal3eResponse.userErrors.NO_PASSWORD + "'"
+      ));
+      return;
+    }
+
+    queue
+      .push('ESClient.authenticate', [login.username, login.password])
+      .call(didValidate, callback);
+  }
+
+  function didValidate(queue, callback) {
+    if (!queue.isPending()) {
+      return;
+    }
+
+    callback(queue);
+  }
+
+  function loginUri(identity) {
+    //XXX not DRY - somehow use EeeProtocol class
+    return 'eee://' +
+      identity.email.substring(identity.email.indexOf('@') + 1);
+  }
+
+  function init() {
+    sessionStorage = new LoginInfoSessionStorage();
+    promptLimit = Services.prefs.getIntPref(
+      'calendar.eee.password_prompt_limit'
+    );
+  }
+
+  authenticationDelegate.authenticate = authenticate;
+
+  init();
+}
+
+function LoginInfoSessionStorage() {
+  var loginInfoSessionStorage = this;
+  var storage;
+
+  function addLogin(login) {
+    prepareStorageForHostname(login.hostname)
+
+    storage[hostname][login.username] = login;
+  }
+
+  function modifyLogin(oldLogin, newLogin) {
+    removeLogin(oldLogin);
+    addLogin(newLogin);
+  }
+
+  function removeLogin(login) {
+    if (!storage[login.hostname]) {
+      return;
+    }
+
+    if (storage[login.hostname][login.username]) {
+      delete storage[login.hostname][login.username];
+    }
+
+    cleanupStorageForHostname(login.hostname);
+  }
+
+  function findLogins(count, hostname, url, realm) {
+    var logins = [];
+
+    if (!storage[hostname]) {
+      count['value'] = logins.length;
+      return logins;
+    }
+
+    prepareStorageForHostname(hostname);
+
+    var username;
+    for (username in storage[hostname]) {
+      if (!storage[hostname].hasOwnProperty(username)) {
+        continue;
+      }
+
+      logins.push(storage[hostname][username]);
+    }
+
+    count['value'] = logins.length;
+    return logins;
+  }
+
+  function prepareStorageForHostname(hostname) {
+    if (!storage[hostname]) {
+      storage[hostname] = {};
+    }
+  }
+
+  function cleanupStorageForHostname(hostname) {
+    if (!storage[hostname]) {
+      return
+    }
+
+    var empty = true;
+    var username;
+    for (username in storage[hostname]) {
+      empty = !storage[hostname].hasOwnProperty(username);
+      if (!empty) break;
+    }
+
+    if (empty) {
+      delete storage[hostname][username];
+    }
+  }
+
+  function init() {
+    storage = {};
+  }
+
+  loginInfoSessionStorage.addLogin = addLogin;
+  loginInfoSessionStorage.modifyLogin = modifyLogin;
+  loginInfoSessionStorage.removeLogin = removeLogin;
+  loginInfoSessionStorage.findLogins = findLogins;
+
+  init();
+}
 
 function xpcomToEeeDate(xpcomDate) {
   function zeropad(number, length) {
@@ -594,8 +642,6 @@ function Queue() {
   var queue = this;
   var server;
   var methodCalls;
-  var listener;
-  var context;
   var pending;
   var status;
   var error;
@@ -612,11 +658,7 @@ function Queue() {
     return queue;
   }
 
-  function toArray() {
-    return methodCalls.slice();
-  }
-
-  function call() {
+  function call(listener, context) {
     if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
@@ -626,53 +668,59 @@ function Queue() {
 
     methodIdx = 0;
     pending = methodCalls.length > methodIdx;
-    callNext();
+    callNext({
+      'listener': listener,
+      'context': context
+    });
 
     return queue;
   }
 
-  function callNext() {
+  function callNext(context) {
     if (!pending) {
+      methodCalls.splice();
       return;
     }
 
-    server.call.apply(server, methodCalls[methodIdx]);
+    var callArguments = methodCalls[methodIdx].slice();
+    callArguments.push(context);
+    server.call.apply(server, callArguments);
   }
 
-  function onResult(resultServer, result) {
+  function onResult(resultServer, result, context) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
     }
 
-    passToListenerGoNext(result);
+    passToListenerGoNext(result, context);
   }
 
-  function onFault(resultServer, fault) {
+  function onFault(resultServer, fault, context) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
     }
 
-    passToListenerGoNext(fault);
+    passToListenerGoNext(fault, context);
   }
 
-  function passToListenerGoNext(response) {
+  function passToListenerGoNext(response, context) {
     lastResponse = response;
     methodIdx += 1;
     pending = methodCalls.length > methodIdx;
-    listener(queue, context);
-    callNext();
+    context['listener'](queue, context['context']);
+    callNext(context);
   }
 
-  function onError(resultServer, serverError) {
+  function onError(resultServer, serverError, context) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
     }
 
     setError(serverError);
-    listener(queue, context);
+    context['listener'](queue, context['context']);
   }
 
   function getId() {
@@ -723,26 +771,6 @@ function Queue() {
 
   function getServerUri() {
     return serverUri;
-  }
-
-  function setListener(newListener) {
-    if (pending) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    listener = newListener;
-
-    return queue;
-  }
-
-  function setContext(newContext) {
-    if (pending) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    context = newContext;
-
-    return queue;
   }
 
   function getLastResponse() {
@@ -796,14 +824,11 @@ function Queue() {
   queue.status = getStatus;
   queue.setServerUri = setServerUri;
   queue.serverUri = getServerUri;
-  queue.setListener = setListener;
-  queue.setContext = setContext;
   queue.lastResponse = getLastResponse;
   queue.error = getError;
   queue.setError = setError;
   queue.cancel = cancel;
   queue.push = push;
-  queue.toArray = toArray;
   queue.call = call;
 
   init();
