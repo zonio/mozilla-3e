@@ -43,12 +43,13 @@ function createOperationListener(onResult) {
  * @return {nsIURI} translated Uri
  */
 function eeeAttachmentToHttpUri(eeeUri) {
+  
   // XXX: We should ask DNS for hostname and port number.
   var dns;
   if (typeof cal3eDns !== 'undefined') {
     dns = new cal3eDns();
   }
-  var host = uriString.split('/')[2].split('@')[1];
+  var host = eeeUri.spec.split('/')[2].split('@')[1];
   var port;
   if (!dns) {
     port = 4444;
@@ -58,7 +59,7 @@ function eeeAttachmentToHttpUri(eeeUri) {
   var uriString = eeeUri.spec;
   var sha1 = uriString.split('/')[4];
   var file = uriString.split('/')[5];
-  var httpUri = 'https://' + server + ':' + port + '/' + 'attach' + '/'
+  var httpUri = 'https://' + host + ':' + port + '/' + 'attach' + '/'
                 + sha1 + '/' + file;
   return Services.io.newURI(httpUri, null, null);
 }
@@ -69,7 +70,7 @@ function eeeAttachmentToHttpUri(eeeUri) {
  * @return {String} sha1 hash.
  */
 function computeSha1(uri) {
-  var inputStream = Services.io.newChanel(uri.spec, null, null).open();
+  var inputStream = Services.io.newChannel(uri.spec, null, null).open();
 
   var ch = Components.classes["@mozilla.org/security/hash;1"]
     .createInstance(Components.interfaces.nsICryptoHash);
@@ -93,7 +94,8 @@ function fileAttachmentToEeeUri(fileUri, email) {
   var sha1 = computeSha1(fileUri);
   var splittedUri = fileUri.spec.split('/');
   var fileName = splittedUri[splittedUri.length - 1];
-  return 'eee://' + email + '/attach/' + sha1 + '/' + fileName;
+  var eeeUri = 'eee://' + email + '/attach/' + sha1 + '/' + fileName;
+  return Services.io.newURI(eeeUri, null, null);
 }
 
 var cal3eUtils = {
