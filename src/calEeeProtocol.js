@@ -23,6 +23,8 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://calendar3e/modules/utils.jsm");
 
 /**
  * Simple definition of EEE URIs just enough to enable eee URI scheme.
