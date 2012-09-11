@@ -627,17 +627,17 @@ function ChannelCallbacks(repeatCall, onError, context, window) {
       );
     }
 
-    if (!badCertListener) {
-      badCertListener = new BadCertListener(
-        repeatCall, onError, context, window
-      );
-    }
-
     return badCertListener;
   }
 
   function isActive() {
-    return badCertListener && badCertListener.isActive();
+    return badCertListener.isActive();
+  }
+
+  function init() {
+    badCertListener = new BadCertListener(
+      repeatCall, onError, context, window
+    );
   }
 
   channelCallbacks.QueryInterface = XPCOMUtils.generateQI([
@@ -645,6 +645,8 @@ function ChannelCallbacks(repeatCall, onError, context, window) {
   ]);
   channelCallbacks.getInterface = getInterface;
   channelCallbacks.isActive = isActive;
+
+  init();
 }
 
 function BadCertListener(repeatCall, onError, context, window) {
