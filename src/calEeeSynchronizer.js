@@ -166,9 +166,31 @@ calEeeSynchronizationService.prototype = {
     }
 
     timer.cancel();
-    this.register();
+    this.registerOnReady(mailWindow.document);
 
     return true;
+  },
+
+  registerOnReady: function calEeeSyncService_registerOnReady(document) {
+    var synchronizationService = this;
+    if (document.readyState !== 'complete') {
+      document.addEventListener(
+        'readystatechange',
+        function onStateChange() {
+          if (document.readyState !== 'complete') {
+            return;
+          }
+
+          document.removeEventListener(
+            'readystatechange', onStateChange, false
+          );
+          synchronizationService.register();
+        },
+        false
+      );
+    } else {
+      this.register();
+    }
   },
 
   /**
