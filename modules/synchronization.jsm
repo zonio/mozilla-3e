@@ -23,6 +23,8 @@ function Queue() {
   var queue = this;
   var calls;
   var callScheduled;
+  var running;
+  var wait;
 
   function extend(callable, future) {
     return function() {
@@ -48,6 +50,24 @@ function Queue() {
     }
   }
 
+  function waitUntilFinished() {
+    if (!running) {
+      return;
+    }
+
+    wait = true;
+
+    return queue;
+  }
+
+  function finished() {
+    wait = false;
+    running = false;
+    scheduleCall();
+
+    return queue;
+  }
+
   function getFuture(functionArguments) {
     return Array.prototype.slice.apply(functionArguments).pop();
   }
@@ -57,10 +77,15 @@ function Queue() {
       return;
     }
 
+    running = true;
+
     var callObject = calls.shift();
     callObject['function'].apply(null, callObject['arguments']);
 
-    scheduleCall();
+    if (!wait) {
+      running = false;
+      scheduleCall();
+    }
   }
 
   function scheduleCall() {
@@ -85,9 +110,13 @@ function Queue() {
   function init() {
     calls = [];
     callScheduled = false;
+    running = false;
+    wait = false;
   }
 
   queue.extend = extend;
+  queue.waitUntilFinished = waitUntilFinished;
+  queue.finished = finished;
   queue.future = getFuture;
 
   init();
