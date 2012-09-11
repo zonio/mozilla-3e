@@ -29,7 +29,6 @@ function Client() {
   var request;
   var xhr;
   var response;
-  var channelCallbacks;
 
   function call(methodName, parameters, context) {
     if (request) {
@@ -63,6 +62,12 @@ function Client() {
       );
     }
 
+    var channelCallbacks = new ChannelCallbacks(
+      doXhrSend,
+      passErrorToListener,
+      context,
+      window
+    );
     xhr = Components.classes[
       '@mozilla.org/xmlextras/xmlhttprequest;1'
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -72,6 +77,10 @@ function Client() {
       onXhrLoad(event, context);
     }, false);
     xhr.addEventListener('error', function(event) {
+      if (channelCallbacks.isActive()) {
+        return;
+      }
+
       onXhrError(event, context);
     }, false);
     xhr.channel.notificationCallbacks = channelCallbacks;
@@ -101,10 +110,6 @@ function Client() {
   }
 
   function onXhrError(event, context) {
-    if (channelCallbacks.isBadCertListenerActive()) {
-      return;
-    }
-
     passErrorToListener(
       Components.Exception('Unknown network error'), context
     );
@@ -151,21 +156,11 @@ function Client() {
     return response && (response instanceof Response);
   }
 
-  function init() {
-    channelCallbacks = new ChannelCallbacks(
-      doXhrSend,
-      passErrorToListener,
-      window
-    );
-  }
-
   client.call = call;
   client.abort = abort;
   client.setUri = setUri;
   client.setListener = setListener;
   client.setWindow = setWindow;
-
-  init();
 }
 
 function Request(name, parameters) {
@@ -620,7 +615,7 @@ function Value(valueElement) {
   init();
 }
 
-function ChannelCallbacks(repeatCall, onError, window) {
+function ChannelCallbacks(repeatCall, onError, context, window) {
   var channelCallbacks = this;
   var badCertListener;
 
@@ -633,13 +628,15 @@ function ChannelCallbacks(repeatCall, onError, window) {
     }
 
     if (!badCertListener) {
-      badCertListener = new BadCertListener(repeatCall, onError, window);
+      badCertListener = new BadCertListener(
+        repeatCall, onError, context, window
+      );
     }
 
     return badCertListener;
   }
 
-  function isBadCertListenerActive() {
+  function isActive() {
     return badCertListener && badCertListener.isActive();
   }
 
@@ -647,10 +644,10 @@ function ChannelCallbacks(repeatCall, onError, window) {
     Components.interfaces.nsIInterfaceRequestor
   ]);
   channelCallbacks.getInterface = getInterface;
-  channelCallbacks.isBadCertListenerActive = isBadCertListenerActive;
+  channelCallbacks.isActive = isActive;
 }
 
-function BadCertListener(repeatCall, onError, window) {
+function BadCertListener(repeatCall, onError, context, window) {
   var badCertListener = this;
   var active;
 
@@ -675,12 +672,12 @@ function BadCertListener(repeatCall, onError, window) {
 
     active = false;
     if (parameters['exceptionAdded']) {
-      repeatCall();
+      repeatCall(context);
     } else {
-      onError(
-        Components.results.NS_ERROR_FAILURE,
-        'Server certificate exception not added'
-      );
+      onError(Components.Exception(
+        'Server certificate exception not added',
+        Components.results.NS_ERROR_FAILURE
+      ), context);
     }
   }
 
