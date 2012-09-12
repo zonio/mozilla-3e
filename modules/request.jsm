@@ -133,13 +133,11 @@ function Client(authenticationDelegate) {
       }
 
       future
-        .push('ESClient.getCalendars', [query])
+        .push('ESClient.' + procedure, [query])
         .call(onResult, listener)
     });
 
-    return future
-      .push('ESClient.' + procedure, [query])
-      .call();
+    return future;
   }
 
   function createCalendar(identity, listener, calendar) {

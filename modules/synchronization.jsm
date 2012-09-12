@@ -52,7 +52,7 @@ function Queue() {
 
   function waitUntilFinished() {
     if (!running) {
-      return;
+      return queue;
     }
 
     wait = true;
