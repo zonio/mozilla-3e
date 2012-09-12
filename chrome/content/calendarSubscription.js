@@ -566,6 +566,33 @@ function cal3eSharedCalendarsController() {
       calendars[calendar['owner']].push(calendar);
     });
 
+    loadSubscribedCalendars();
+  }
+
+  function loadSubscribedCalendars() {
+    cal3eRequest.Client.getInstance()
+      .getCalendars(identity, subscribedCalendarsDidLoad, 'subscribed()');
+  }
+
+  function subscribedCalendarsDidLoad(queue, result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError(result);
+      return;
+    }
+
+    result.data.forEach(function(subscriberCalendar) {
+      if (!calendars[subscriberCalendar['owner']]) {
+        return;
+      }
+      calendars[subscriberCalendar['owner']] =
+        calendars[subscriberCalendar['owner']].filter(function(calendar) {
+          return calendar['name'] !== subscriberCalendar['name'];
+        });
+      if (calendars[subscriberCalendar['owner']].length === 0) {
+        delete calendars[subscriberCalendar['owner']];
+      }
+    });
+
     loadCalendarOwners();
   }
 
