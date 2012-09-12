@@ -205,7 +205,6 @@ function Client(authenticationDelegate) {
   deleteCalendar = queue.extend(deleteCalendar, prepareQueue);
 
   function subscribeCalendar(identity, listener, calspec) {
-    dump('[3e] Mark#1.1.1\n');
     var future = queue.future(arguments);
     if (!Components.isSuccessCode(future.status())) {
       return future;
@@ -219,7 +218,6 @@ function Client(authenticationDelegate) {
         onResult(future, listener);
         return;
       }
-      dump('[3e] Mark#1.1.3\n');
       future
         .push('ESClient.subscribeCalendar', [calspec])
         .call(onResult, listener);

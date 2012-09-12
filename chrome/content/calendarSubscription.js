@@ -30,27 +30,14 @@ function cal3eSubscription(subscriberController, filterController,
   var stringBundle;
 
   function identityDidChange() {
-    dump('[3e] New identity: ' + subscriberController.identity() + '\n');
     calendarsController.setIdentity(subscriberController.identity());
   }
 
   function filterDidChange() {
-    dump('[3e] New filter: ' + filterController.filter() + '\n');
     calendarsController.setFilter(filterController.filter());
   }
 
   function subscribe() {
-    dump('[3e] Calendars: ');
-    calendarsController.selection().forEach(function selectionDump(calendar) {
-      if (selectionDump.notFirst) {
-        dump(', ');
-      } else {
-        selectionDump.notFirst = true;
-      }
-      dump(calendar);
-    });
-    dump('\n');
-
     calendarsController.freezSelection();
     subscriptionDelegate.subscribe(
       subscriberController.identity(),
@@ -116,17 +103,13 @@ function cal3eSubscriptionDelegate() {
       }
     }
 
-    dump('[3e] Mark#1\n');
     calendars.forEach(function(calendar) {
-      dump('[3e] Mark#1.1\n');
       cal3eRequest.Client.getInstance().subscribeCalendar(
         identity,
         didSubscribeCalendar,
         calendar
       );
-      dump('[3e] Mark#1.2\n');
     });
-    dump('[3e] Mark#2\n');
   }
 
   subscriptionDelegate.subscribe = subscribe;
