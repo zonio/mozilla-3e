@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
@@ -38,6 +39,7 @@ function cal3eSubscription(subscriberController, filterController,
   }
 
   function subscribe() {
+    document.getElementById('notifications').removeAllNotifications();
     calendarsController.freezSelection();
     subscriptionDelegate.subscribe(
       subscriberController.identity(),
@@ -50,12 +52,25 @@ function cal3eSubscription(subscriberController, filterController,
 
   function didSubscribe(errors) {
     if (errors.length > 0) {
-      //TODO warn
-      calendarsController.unfreezSelection();
+      didError();
       return;
     }
 
     window.close();
+  }
+
+  function didError() {
+    calendarsController.unfreezSelection();
+
+    document.getElementById('notifications').appendNotification(
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.errors.subscribe'
+      ),
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
+    );
   }
 
   function init() {
@@ -88,17 +103,15 @@ function cal3eSubscriptionDelegate() {
 
   function subscribe(identity, calendars, callback) {
     var errors = [];
-    var subscribed = 0;
+    var processed = 0;
 
     function didSubscribeCalendar(queue, result) {
-      subscribed += 1;
-
       if (!(result instanceof cal3eResponse.Success)) {
         errors.push(result);
-        return;
       }
 
-      if (calendars.length === subscribed) {
+      processed += 1;
+      if (calendars.length === processed) {
         callback(errors);
       }
     }
@@ -412,13 +425,15 @@ function cal3eSharedCalendarsController() {
   }
 
   function fillElementError() {
-    cal3eXul.clearTree(element);
-    cal3eXul.addItemToTree(
-      element,
+    document.getElementById('notifications').appendNotification(
       document.getElementById('calendar3e-strings').getString(
-        'cal3eCalendarSubscribe.calendars.error'
+        'cal3eCalendarSubscribe.errors.data'
       ),
-      null
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null,
+      function() { window.close() }
     );
   }
 

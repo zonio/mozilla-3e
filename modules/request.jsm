@@ -218,6 +218,7 @@ function Client(authenticationDelegate) {
         onResult(future, listener);
         return;
       }
+
       future
         .push('ESClient.subscribeCalendar', [calspec])
         .call(onResult, listener);

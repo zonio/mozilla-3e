@@ -36,6 +36,7 @@
   <script type="application/javascript"
           src="chrome://calendar3e/content/calendarSubscription.js"/>
 
+  <notificationbox id="notifications" flex="1"/>
   <grid id="calendar3e-subscription-grid">
     <columns>
       <column/>
