@@ -19,6 +19,7 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import("resource://calendar3e/modules/dns.jsm");
 Components.utils.import("resource://calendar3e/modules/feature.jsm");
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');

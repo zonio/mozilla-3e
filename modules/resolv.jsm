@@ -17,47 +17,56 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/ctypes.jsm");
+Components.utils.import('resource://gre/modules/ctypes.jsm');
 
 Resolv = {};
 
 Resolv.DNS = function DNS(resolver) {
-  if (!resolver) {
+  var dns = this;
+  var resolver;
+
+  function getResources(name, typeclass) {
+    return resolver.extract(name, typeclass);
+  }
+
+  function init() {
     resolver = Resolv.DNS.Resolver.find();
   }
 
-  this.each_resource = function DNS_each_resource(name, typeclass, callback) {
-    resolver.extract(name, typeclass, callback);
-  }
+  dns.resources = getResources;
 
+  init();
 }
 
 Resolv.DNS.Resource = {}
 
 Resolv.DNS.Resource.TXT =
 function DNS_Resource_TXT(ttl) {
-  var instance_ttl = ttl;
-  var instance_strings = Array.prototype.slice.call(arguments, 1);
+  var resource = this;
+  var constructorArguments = Array.prototype.slice.apply(arguments);
 
-  this.__defineGetter__('ttl', function DNS_Resource_TXT_getTtl() {
-    return instance_ttl;
-  });
-
-  this.__defineGetter__('strings', function DNS_Resource_TXT_getStrings() {
-    return instance_strings;
-  });
-
-  this.data = function DNS_Resource_TXT_data() {
-    return instance_strings[0];
+  function getTtl() {
+    return ttl;
   }
 
+  function getStrings() {
+    return constructorArguments.slice(1);
+  }
+
+  function data() {
+    return strings[0];
+  }
+
+  resource.ttl = getTtl;
+  resource.strings = getStrings;
+  resource.data = data;
 }
 
 Resolv.DNS.Resolver = {}
 
 Resolv.DNS.Resolver.find = function Resolver_find() {
-  var os = Components.classes["@mozilla.org/xre/app-info;1"].
-    getService(Components.interfaces.nsIXULRuntime).OS;
+  var os = Components.classes['@mozilla.org/xre/app-info;1']
+    .getService(Components.interfaces.nsIXULRuntime).OS;
 
   if (!Resolv.DNS.Resolver[os]) {
     throw new Error("Unsupported operating system '" + os + "'.");
@@ -67,10 +76,7 @@ Resolv.DNS.Resolver.find = function Resolver_find() {
 }
 
 Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
-  var suffix = "Darwin" == Components.classes["@mozilla.org/xre/app-info;1"].
-    getService(Components.interfaces.nsIXULRuntime).OS ?
-    ".dylib" :
-    ".so" ;
+  var resolver = this;
 
   var ns_c_in = 1;
   var ns_t_txt = 16;
@@ -83,15 +89,15 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   var NS_QFIXEDSZ = 4;
   var NS_RRFIXEDSZ = 10;
 
-  var libresolv = null;
-  var res_query = null;
-  var dn_expand = null;
-  var dn_skipname = null;
-  var ns_get16 = null;
-  var ns_get32 = null;
+  var libresolv;
+  var res_query;
+  var dn_expand;
+  var dn_skipname;
+  var ns_get16;
+  var ns_get32;
 
   function loadLibrary() {
-    libresolv = ctypes.open("libresolv" + suffix);
+    libresolv = ctypes.open(ctypes.libraryName('resolv'));
     res_query = libresolv.declare(
       'res_query',
       ctypes.default_abi,
@@ -157,9 +163,9 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   function readString(src, length) {
   }
 
-  this.extract = function Resolver_libresolv_extract(name, typeclass,
-                                                     callback) {
+  function extract(name, typeclass, callback) {
     loadLibrary();
+
     var dname = ctypes.char.array(name.length)(name);
     var answer = ctypes.unsigned_char.array(anslen)();
     var questionType = typeclassToConstant(typeclass);
@@ -176,15 +182,13 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
     src += NS_HFIXEDSZ;
 
     while (qdcount-- && (src < eom)) {
-      len = dn_skipname(src, eom);
-      src += len + QFIXEDSZ;
+      src += dn_skipname(src, eom) + QFIXEDSZ;
     }
 
+    var resources = [];
     var answerType, answerClass, answerTtl, rdataLength;
-    var resource, returnValue;
     while (ancount-- && (src < eom)) {
-      len = dn_skipname(src, eom);
-      src += len;
+      src += dn_skipname(src, eom);
       answerType = ns_get16(src + 0);
       answerClass = ns_get16(src + 1);
       answerTtl = ns_get32(src + 2);
@@ -196,14 +200,13 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
         continue;
       }
 
-      resource = new typeclass(answerTtl, readString(src, rdataLength));
-      returnValue = callback.call(this, resource);
-      if (false === returnValue) break;
+      resources.push(new typeclass(answerTtl, readString(src, rdataLength)));
     }
 
     closeLibrary();
   }
 
+  resolver.extract = extract;
 }
 
 Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;

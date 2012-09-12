@@ -17,34 +17,38 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/resolv.jsm");
+Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
 function cal3eDns() {
-}
+  var dns = this;
+  var EEE_SERVER_RESOURCE_RE = / server=([^:]+)(?::(\d{1,5}))?\b/;
+  var resolv;
 
-cal3eDns.DEFAULT_PORT = 4444;
+  function resolveServer(domainName) {
+    var records = resolv
+      .resources(domainName, Resolv.DNS.Resource.TXT)
+      .filter(function(resource) {
+        return resource.data().match(/^eee /) &&
+          resource.data().match(EEE_SERVER_RESOURCE_RE);
+      })
+      .map(function(resource) {
+        var match = EEE_SERVER_RESOURCE_RE.exec(resource.data());
+        return [
+          match[1] || domainName,
+          match[2] || cal3eDns.DEFAULT_PORT
+        ];
+      });
 
-cal3eDns.prototype = {
-
-  resolveServer: function cal3eDns_resolveServer(domainName) {
-    var foundEeeRecord = [null, null];
-    var dns = new Resolv.DNS();
-    var eeeServerRe = /\beee server=([^:]+)(?::(\d{1,5}))?/, match;
-    dns.getresource(
-      domainName, Resolv.DNS.Resource.TXT, function (resource) {
-        match = eeeServerRe.exec(resource.data());
-        if (!match) return;
-        foundEeeRecord[0] = match[1];
-        foundEeeRecord[1] = match[2];
-        return false;
-      }
-    );
-    if (!foundEeeRecord[0]) foundEeeRecord[0] = domainName;
-    if (!foundEeeRecord[1]) foundEeeRecord[1] = cal3eDns.DEFAULT_PORT;
-
-    return foundEeeRecord;d
+    return records.length > 0 ? records[0] : [null, null];
   }
 
+  function init() {
+    resolv = new Resolv.DNS()
+  }
+
+  dns.resolveServer = resolveServer;
+
+  init();
 }
 
 EXPORTED_SYMBOLS = [
