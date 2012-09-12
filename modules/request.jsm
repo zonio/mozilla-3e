@@ -211,17 +211,23 @@ function Client(authenticationDelegate) {
       return future;
     }
 
-    dump('[3e] Mark#1.1.2\n');
-    var future = enqueueAuthenticate(identity, future, listener);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    queue.waitUntilFinished();
+    authenticationDelegate.authenticate(identity, future, function(future) {
+      queue.finished();
 
-    dump('[3e] Mark#1.1.3\n');
-    return future
-      .push('ESClient.subscribeCalendar', [calspec])
-      .call();
+      if (!Components.isSuccessCode(future.status())) {
+        onResult(future, listener);
+        return;
+      }
+      dump('[3e] Mark#1.1.3\n');
+      future
+        .push('ESClient.subscribeCalendar', [calspec])
+        .call(onResult, listener);
+    });
+
+    return future;
   }
+  subscribeCalendar = queue.extend(subscribeCalendar, prepareQueue);
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
                                 isPublic) {
