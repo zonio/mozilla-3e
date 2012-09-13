@@ -91,6 +91,82 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   var ns_get16;
   var ns_get32;
 
+  function extract(name, typeClass) {
+    loadLibrary();
+
+    var resources = [];
+    var answer = ctypes.unsigned_char.array(anslen)();
+    var length = res_query(
+      getCString(name), ns_c_in, typeClassToConstant(typeClass), answer, anslen
+    );
+    if (length < 0) {
+      return resources;
+    }
+
+    var idx = NS_HFIXEDSZ;
+
+    var questionCount = ns_get16(answer.addressOfElement(4));
+    var questionIdx;
+    for (questionIdx = 0;
+         (questionIdx < questionCount) && (idx < length);
+         questionIdx += 1) {
+      idx += dn_skipname(answer.addressOfElement(idx),
+                         answer.addressOfElement(length)) + NS_QFIXEDSZ;
+    }
+
+    var answerCount = ns_get16(answer.addressOfElement(6));
+    var answerIdx, answerType, answerClass, answerTtl, rdataLength;
+    for (answerIdx = 0;
+         (answerIdx < answerCount) && (idx < length);
+         answerIdx += 1) {
+      idx += dn_skipname(answer.addressOfElement(idx),
+                         answer.addressOfElement(length));
+      answerType = ns_get16(answer.addressOfElement(idx));
+      answerClass = ns_get16(answer.addressOfElement(idx + 1));
+      answerTtl = ns_get32(answer.addressOfElement(idx + 2));
+      rdataLength = ns_get16(answer.addressOfElement(idx + 8));
+      idx += NS_RRFIXEDSZ;
+
+      if (answerType !== typeClassToConstant(typeClass)) {
+        idx += rdataLength;
+        continue;
+      }
+
+      resources.push(new typeClass(
+        answerTtl, readRdata(answer, idx, rdataLength)
+      ));
+    }
+
+    closeLibrary();
+
+    return resources;
+  }
+
+  function typeClassToConstant(typeClass) {
+    var constants;
+    if (typeClass === Resolv.DNS.Resource.TXT) {
+      constant = ns_t_txt;
+    } else {
+      constant = null;
+    }
+
+    return constant;
+  }
+
+  function getCString(string) {
+    return string + String.fromCharCode(0);
+  }
+
+  function readRdata(buffer, start, length) {
+    var string = '';
+    var idx;
+    for (idx = start + 1; idx < (start + length); idx += 1) {
+      string += String.fromCharCode(buffer.addressOfElement(idx).contents);
+    }
+
+    return string;
+  }
+
   function loadLibrary() {
     libresolv = ctypes.open(ctypes.libraryName('resolv'));
     res_query = libresolv.declare(
@@ -151,82 +227,6 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
     ns_get16 = null;
     ns_get32 = null;
     libresolv = null;
-  }
-
-  function typeClassToConstant(typeClass) {
-    var constants;
-    if (typeClass === Resolv.DNS.Resource.TXT) {
-      constant = ns_t_txt;
-    } else {
-      constant = null;
-    }
-
-    return constant;
-  }
-
-  function getCString(string) {
-    return string + String.fromCharCode(0);
-  }
-
-  function readRdata(buffer, start, length) {
-    var string = '';
-    var idx;
-    for (idx = start + 1; idx < (start + length); idx += 1) {
-      string += String.fromCharCode(buffer.addressOfElement(idx).contents);
-    }
-
-    return string;
-  }
-
-  function extract(name, typeClass) {
-    loadLibrary();
-
-    var resources = [];
-    var answer = ctypes.unsigned_char.array(anslen)();
-    var length = res_query(
-      getCString(name), ns_c_in, typeClassToConstant(typeClass), answer, anslen
-    );
-    if (length < 0) {
-      return resources;
-    }
-
-    var idx = NS_HFIXEDSZ;
-
-    var questionCount = ns_get16(answer.addressOfElement(4));
-    var questionIdx;
-    for (questionIdx = 0;
-         (questionIdx < questionCount) && (idx < length);
-         questionIdx += 1) {
-      idx += dn_skipname(answer.addressOfElement(idx),
-                         answer.addressOfElement(length)) + NS_QFIXEDSZ;
-    }
-
-    var answerCount = ns_get16(answer.addressOfElement(6));
-    var answerIdx, answerType, answerClass, answerTtl, rdataLength;
-    for (answerIdx = 0;
-         (answerIdx < answerCount) && (idx < length);
-         answerIdx += 1) {
-      idx += dn_skipname(answer.addressOfElement(idx),
-                         answer.addressOfElement(length));
-      answerType = ns_get16(answer.addressOfElement(idx));
-      answerClass = ns_get16(answer.addressOfElement(idx + 1));
-      answerTtl = ns_get32(answer.addressOfElement(idx + 2));
-      rdataLength = ns_get16(answer.addressOfElement(idx + 8));
-      idx += NS_RRFIXEDSZ;
-
-      if (answerType !== typeClassToConstant(typeClass)) {
-        idx += rdataLength;
-        continue;
-      }
-
-      resources.push(new typeClass(
-        answerTtl, readRdata(answer, idx, rdataLength)
-      ));
-    }
-
-    closeLibrary();
-
-    return resources;
   }
 
   resolver.extract = extract;

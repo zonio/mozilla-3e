@@ -21,7 +21,6 @@ Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
 function cal3eDns() {
   var dns = this;
-  var EEE_SERVER_RESOURCE_RE = / server=([^:]+)(?::(\d{1,5}))?\b/;
   var resolv;
 
   function resolveServer(domainName) {
@@ -29,17 +28,21 @@ function cal3eDns() {
       .resources(domainName, Resolv.DNS.Resource.TXT)
       .filter(function(resource) {
         return resource.data().match(/^eee /) &&
-          resource.data().match(EEE_SERVER_RESOURCE_RE);
+          resource.data().match(cal3eDns.EEE_SERVER_RESOURCE_RE);
       })
       .map(function(resource) {
-        var match = EEE_SERVER_RESOURCE_RE.exec(resource.data());
+        var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
         return [
           match[1] || domainName,
           match[2] || cal3eDns.DEFAULT_PORT
         ];
       });
 
-    return records.length > 0 ? records[0] : [null, null];
+    if (records.length === 0) {
+      records.push([domainName, cal3eDns.DEFAULT_PORT]);
+    }
+
+    return records[0];
   }
 
   function init() {
@@ -50,6 +53,8 @@ function cal3eDns() {
 
   init();
 }
+cal3eDns.DEFAULT_PORT = 4444;
+cal3eDns.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
 
 EXPORTED_SYMBOLS = [
   'cal3eDns'
