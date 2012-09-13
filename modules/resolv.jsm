@@ -23,14 +23,15 @@ Resolv = {};
 
 Resolv.DNS = function DNS(resolver) {
   var dns = this;
-  var resolver;
 
-  function getResources(name, typeclass) {
-    return resolver.extract(name, typeclass);
+  function getResources(name, typeClass) {
+    return resolver.extract(name, typeClass);
   }
 
   function init() {
-    resolver = Resolv.DNS.Resolver.find();
+    if (!resolver) {
+      resolver = Resolv.DNS.Resolver.find();
+    }
   }
 
   dns.resources = getResources;
@@ -41,25 +42,19 @@ Resolv.DNS = function DNS(resolver) {
 Resolv.DNS.Resource = {}
 
 Resolv.DNS.Resource.TXT =
-function DNS_Resource_TXT(ttl) {
+function DNS_Resource_TXT(ttl, rdata) {
   var resource = this;
-  var constructorArguments = Array.prototype.slice.apply(arguments);
 
   function getTtl() {
     return ttl;
   }
 
-  function getStrings() {
-    return constructorArguments.slice(1);
-  }
-
-  function data() {
-    return strings[0];
+  function getData() {
+    return rdata;
   }
 
   resource.ttl = getTtl;
-  resource.strings = getStrings;
-  resource.data = data;
+  resource.data = getData;
 }
 
 Resolv.DNS.Resolver = {}
@@ -119,24 +114,33 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
       ctypes.int
     );
     dn_skipname = libresolv.declare(
-      'dn_skipname',
+      symbolName('dn_skipname'),
       ctypes.default_abi,
       ctypes.int,
       ctypes.unsigned_char.ptr,
       ctypes.unsigned_char.ptr
     );
     ns_get16 = libresolv.declare(
-      'ns_get16',
+      symbolName('ns_get16'),
       ctypes.default_abi,
       ctypes.unsigned_int,
       ctypes.unsigned_char.ptr
     );
     ns_get32 = libresolv.declare(
-      'ns_get32',
+      symbolName('ns_get32'),
       ctypes.default_abi,
       ctypes.unsigned_long,
       ctypes.unsigned_char.ptr
     );
+  }
+
+  function symbolName(name) {
+    var prefix = 'Darwin' === Components.classes['@mozilla.org/xre/app-info;1']
+      .getService(Components.interfaces.nsIXULRuntime).OS ?
+      'res_9_' :
+      '';
+
+    return prefix + name;
   }
 
   function closeLibrary() {
@@ -149,9 +153,9 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
     libresolv = null;
   }
 
-  function typeclassToConstant(typeclass) {
+  function typeClassToConstant(typeClass) {
     var constants;
-    if (typeclass === Resolv.DNS.Resource.TXT) {
+    if (typeClass === Resolv.DNS.Resource.TXT) {
       constant = ns_t_txt;
     } else {
       constant = null;
@@ -160,50 +164,69 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
     return constant;
   }
 
-  function readString(src, length) {
+  function getCString(string) {
+    return string + String.fromCharCode(0);
   }
 
-  function extract(name, typeclass, callback) {
-    loadLibrary();
-
-    var dname = ctypes.char.array(name.length)(name);
-    var answer = ctypes.unsigned_char.array(anslen)();
-    var questionType = typeclassToConstant(typeclass);
-    var len = res_query(
-      dname, ns_c_in, questionType, answer.addressOfElement(0), anslen
-    );
-
-    var qdcount = ns_get16(answer.addressOfElement(0) + 4);
-    var ancount = ns_get16(answer.addressOfElement(0) + 6);
-
-    var eom = answer.addressOfElement(0);
-    eom += len;
-    var src = answer.addressOfElement(0);
-    src += NS_HFIXEDSZ;
-
-    while (qdcount-- && (src < eom)) {
-      src += dn_skipname(src, eom) + QFIXEDSZ;
+  function readRdata(buffer, start, length) {
+    var string = '';
+    var idx;
+    for (idx = start + 1; idx < (start + length); idx += 1) {
+      string += String.fromCharCode(buffer.addressOfElement(idx).contents);
     }
 
-    var resources = [];
-    var answerType, answerClass, answerTtl, rdataLength;
-    while (ancount-- && (src < eom)) {
-      src += dn_skipname(src, eom);
-      answerType = ns_get16(src + 0);
-      answerClass = ns_get16(src + 1);
-      answerTtl = ns_get32(src + 2);
-      rdataLength = ns_get16(src + 8);
-      src += NS_RRFIXEDSZ;
+    return string;
+  }
 
-      if (answerType.value != questionType) {
-        src += rdataLength;
+  function extract(name, typeClass) {
+    loadLibrary();
+
+    var resources = [];
+    var answer = ctypes.unsigned_char.array(anslen)();
+    var length = res_query(
+      getCString(name), ns_c_in, typeClassToConstant(typeClass), answer, anslen
+    );
+    if (length < 0) {
+      return resources;
+    }
+
+    var idx = NS_HFIXEDSZ;
+
+    var questionCount = ns_get16(answer.addressOfElement(4));
+    var questionIdx;
+    for (questionIdx = 0;
+         (questionIdx < questionCount) && (idx < length);
+         questionIdx += 1) {
+      idx += dn_skipname(answer.addressOfElement(idx),
+                         answer.addressOfElement(length)) + NS_QFIXEDSZ;
+    }
+
+    var answerCount = ns_get16(answer.addressOfElement(6));
+    var answerIdx, answerType, answerClass, answerTtl, rdataLength;
+    for (answerIdx = 0;
+         (answerIdx < answerCount) && (idx < length);
+         answerIdx += 1) {
+      idx += dn_skipname(answer.addressOfElement(idx),
+                         answer.addressOfElement(length));
+      answerType = ns_get16(answer.addressOfElement(idx));
+      answerClass = ns_get16(answer.addressOfElement(idx + 1));
+      answerTtl = ns_get32(answer.addressOfElement(idx + 2));
+      rdataLength = ns_get16(answer.addressOfElement(idx + 8));
+      idx += NS_RRFIXEDSZ;
+
+      if (answerType !== typeClassToConstant(typeClass)) {
+        idx += rdataLength;
         continue;
       }
 
-      resources.push(new typeclass(answerTtl, readString(src, rdataLength)));
+      resources.push(new typeClass(
+        answerTtl, readRdata(answer, idx, rdataLength)
+      ));
     }
 
     closeLibrary();
+
+    return resources;
   }
 
   resolver.extract = extract;
