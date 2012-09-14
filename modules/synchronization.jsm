@@ -19,14 +19,14 @@
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 
-function Queue() {
-  var queue = this;
+function Method() {
+  var method = this;
   var calls;
   var callScheduled;
   var running;
   var wait;
 
-  function extend(callable, future) {
+  function create(callable, future) {
     return function() {
       var callObject = {};
 
@@ -52,12 +52,12 @@ function Queue() {
 
   function waitUntilFinished() {
     if (!running) {
-      return queue;
+      return method;
     }
 
     wait = true;
 
-    return queue;
+    return method;
   }
 
   function finished() {
@@ -65,7 +65,7 @@ function Queue() {
     running = false;
     scheduleCall();
 
-    return queue;
+    return method;
   }
 
   function getFuture(functionArguments) {
@@ -114,15 +114,51 @@ function Queue() {
     wait = false;
   }
 
-  queue.extend = extend;
-  queue.waitUntilFinished = waitUntilFinished;
-  queue.finished = finished;
-  queue.future = getFuture;
+  method.create = create;
+  method.waitUntilFinished = waitUntilFinished;
+  method.finished = finished;
+  method.future = getFuture;
+
+  init();
+}
+
+function Queue() {
+  var queue = this;
+  var callables;
+  var idx;
+
+  function push(callable) {
+    var newIdx = callables.length;
+    callables.push(function() {
+      idx = newIdx + 1;
+      return callable.apply(null, arguments);
+    });
+
+    return queue;
+  }
+
+  function call() {
+    return callables[idx].apply(null, arguments);
+  }
+
+  function getNext() {
+    return callables[idx];
+  }
+
+  function init() {
+    callables = [];
+    idx = 0;
+  }
+
+  queue.push = push;
+  queue.call = call;
+  queue.next = getNext;
 
   init();
 }
 
 var cal3eSynchronization = {
+  Method: Method,
   Queue: Queue
 };
 EXPORTED_SYMBOLS = [
