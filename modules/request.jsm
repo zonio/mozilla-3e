@@ -19,8 +19,8 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-Components.utils.import("resource://calendar3e/modules/dns.jsm");
-Components.utils.import("resource://calendar3e/modules/feature.jsm");
+Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
@@ -170,37 +170,14 @@ function Client(serverBuilder, authenticationDelegate) {
     createScenario(setCalendarAttribute)
   );
 
-  function queryObjects(identity, listener, calendar, id, from, to) {
+  function queryObjects(identity, listener, calendar, query) {
     return synchronizedMethod.future(arguments)
       .push('ESClient.queryObjects', [
         getCalendarCalspec(calendar),
-        getQueryFromQueryObjectsArguments(id, from, to)])
+        query])
       .call(onResult, listener);
   }
   queryObjects = synchronizedMethod.create(createScenario(queryObjects));
-
-  function getQueryFromQueryObjectsArguments(id, from, to) {
-    var query = '';
-    if (id === null) {
-      if (null !== from) {
-        query += "date_from('" + xpcomToEeeDate(from) + "')";
-      }
-      if (null !== to) {
-        if ('' !== query) {
-          query += ' AND ';
-        }
-        query += "date_to('" + xpcomToEeeDate(to) + "')";
-      }
-      if ('' !== query) {
-        query += ' AND ';
-      }
-    } else {
-      query += "match_uid('" + id + "') AND ";
-    }
-    query += 'NOT deleted()';
-
-    return query;
-  }
 
   function addObject(identity, listener, calendar, item) {
     enqueueItemTimezones(synchronizedMethod.future(arguments), item);
@@ -292,11 +269,14 @@ function Client(serverBuilder, authenticationDelegate) {
     }
 
     return function() {
-      return synchronizedQueue
+      var future = synchronizedQueue
         .push(prepareQueue)
         .push(authenticate)
         .push(main)
         .call.apply(synchronizedQueue, arguments);
+      dump('[3e] future = ' + future + '\n');
+
+      return future;
     };
   }
 
@@ -588,28 +568,6 @@ function LoginInfoSessionStorage() {
   loginInfoSessionStorage.findLogins = findLogins;
 
   init();
-}
-
-function xpcomToEeeDate(xpcomDate) {
-  function zeropad(number, length) {
-    var string = '' + number;
-    while (string.length < length) {
-      string = '0' + string;
-    }
-
-    return string;
-  }
-
-  var jsDate = new Date(xpcomDate / 1000),
-      eeeDate = '';
-  eeeDate += zeropad(jsDate.getUTCFullYear(), 4) + '-' +
-             zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
-             zeropad(jsDate.getUTCDate(), 2) + ' ' +
-             zeropad(jsDate.getUTCHours(), 2) + ':' +
-             zeropad(jsDate.getUTCMinutes(), 2) + ':' +
-             zeropad(jsDate.getUTCSeconds(), 2);
-
-  return eeeDate;
 }
 
 function Queue() {

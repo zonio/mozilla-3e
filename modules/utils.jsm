@@ -34,8 +34,36 @@ function createOperationListener(onResult) {
   };
 }
 
+/**
+ * Takes NSPR time and returns EEE date as used in queries.
+ *
+ * @param {PRTime} nsprTime
+ * @returns {String}
+ */
+function nsprTimeToEeeDate(nsprTime) {
+  function zeropad(number, length) {
+    var string = '' + number;
+    while (string.length < length) {
+      string = '0' + string;
+    }
+
+    return string;
+  }
+
+  var jsDate = new Date(nsprTime / 1000);
+
+  return '' +
+    zeropad(jsDate.getUTCFullYear(), 4) + '-' +
+    zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
+    zeropad(jsDate.getUTCDate(), 2) + ' ' +
+    zeropad(jsDate.getUTCHours(), 2) + ':' +
+    zeropad(jsDate.getUTCMinutes(), 2) + ':' +
+    zeropad(jsDate.getUTCSeconds(), 2);
+}
+
 var cal3eUtils = {
-  "createOperationListener": createOperationListener
+  createOperationListener: createOperationListener,
+  nsprTimeToEeeDate: nsprTimeToEeeDate
 };
 EXPORTED_SYMBOLS = [
   'cal3eUtils'

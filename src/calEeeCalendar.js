@@ -307,7 +307,7 @@ calEeeCalendar.prototype = {
   },
 
   _getQueryObjectsListener:
-  function calEeeCalendar_getQueryObjectsListener(id, listener) {
+  function calEeeCalendar_getQueryObjectsListener(listener) {
     var calendar = this;
     return function calEee_getItems_onResult(methodQueue, result) {
       if (result instanceof cal3eResponse.EeeError) {
@@ -382,12 +382,10 @@ calEeeCalendar.prototype = {
     return cal3eRequest.Client.getInstance()
       .queryObjects(
         this._identity,
-        this._getQueryObjectsListener(id, listener),
+        this._getQueryObjectsListener(listener),
         this,
-        id,
-        null,
-        null
-      ).component();
+        'match_uid(' + id + ')')
+      .component();
   },
 
   getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
@@ -423,15 +421,29 @@ calEeeCalendar.prototype = {
       return null;
     }
 
+    var query = [];
+    if (rangeStart) {
+      query.push(
+        'date_from(' +
+          cal3eUtils.nsprTimeToEeeDate(rangeStart.nativeTime) +
+          ')'
+      );
+    }
+    if (rangeEnd) {
+      query.push(
+        'date_to(' +
+          cal3eUtils.nsprTimeToEeeDate(rangeEnd.nativeTime) +
+          ')'
+      );
+    }
+
     return cal3eRequest.Client.getInstance()
       .queryObjects(
         this._identity,
-        this._getQueryObjectsListener(null, listener),
+        this._getQueryObjectsListener(listener),
         this,
-        null,
-        rangeStart ? rangeStart.nativeTime : null,
-        rangeEnd ? rangeEnd.nativeTime : null
-      ).component();
+        query.join(' AND '))
+      .component();
   },
 
   refresh: function calEee_refresh() {
