@@ -17,7 +17,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/ctypes.jsm');
+if (typeof Components !== 'undefined') {
+  Components.utils.import('resource://gre/modules/ctypes.jsm');
+}
 
 Resolv = {};
 
@@ -30,7 +32,7 @@ Resolv.DNS = function DNS(resolver) {
 
   function init() {
     if (!resolver) {
-      resolver = Resolv.DNS.Resolver.find();
+      resolver = Resolv.DNS.Resolver.factory();
     }
   }
 
@@ -41,8 +43,15 @@ Resolv.DNS = function DNS(resolver) {
 
 Resolv.DNS.Resource = {}
 
-Resolv.DNS.Resource.TXT =
-function DNS_Resource_TXT(ttl, rdata) {
+Resolv.DNS.Resource.fromJson = function DNS_Resource_fromJson(json) {
+  var data = JSON.parse(json);
+  var resource = new Resolv.DNS.Resource[data['type']]();
+  resource.apply.apply(resource, data['args']);
+
+  return resource;
+}
+
+Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
   var resource = this;
 
   function getTtl() {
@@ -53,24 +62,37 @@ function DNS_Resource_TXT(ttl, rdata) {
     return rdata;
   }
 
+  function toJson() {
+    return JSON.stringify({
+      'type': 'TXT',
+      'args': [ttl, rdata]
+    });
+  }
+
+  function apply() {
+    ttl = arguments[0];
+    rdata = arguments[1];
+
+    return resource;
+  }
+
   resource.ttl = getTtl;
   resource.data = getData;
+  resource.toJson = toJson;
+  resource.apply = apply;
 }
 
 Resolv.DNS.Resolver = {}
 
-Resolv.DNS.Resolver.find = function Resolver_find() {
-  var os = Components.classes['@mozilla.org/xre/app-info;1']
-    .getService(Components.interfaces.nsIXULRuntime).OS;
-
-  if (!Resolv.DNS.Resolver[os]) {
-    throw new Error("Unsupported operating system '" + os + "'.");
+Resolv.DNS.Resolver.factory = function Resolver_factory(worker) {
+  if (!Resolv.DNS.Resolver[OS]) {
+    throw new Error("Unsupported operating system '" + OS + "'.");
   }
 
-  return new Resolv.DNS.Resolver[os]();
+  return new Resolv.DNS.Resolver[OS](worker);
 }
 
-Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
+Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
   var resolver = this;
 
   var ns_c_in = 1;
@@ -91,13 +113,19 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   var ns_get16;
   var ns_get32;
 
-  function extract(name, typeClass) {
+  function extract(name, typeConstructor) {
+    typeConstructor = typeSymbolToConstructor(typeConstructor);
+
     loadLibrary();
 
     var resources = [];
     var answer = ctypes.unsigned_char.array(anslen)();
     var length = res_query(
-      getCString(name), ns_c_in, typeClassToConstant(typeClass), answer, anslen
+      ctypes.char.array()(name),
+      ns_c_in,
+      typeConstructorToConstant(typeConstructor),
+      answer,
+      anslen
     );
     if (length < 0) {
       return resources;
@@ -121,40 +149,49 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
          answerIdx += 1) {
       idx += dn_skipname(answer.addressOfElement(idx),
                          answer.addressOfElement(length));
+
       answerType = ns_get16(answer.addressOfElement(idx));
-      answerClass = ns_get16(answer.addressOfElement(idx + 1));
-      answerTtl = ns_get32(answer.addressOfElement(idx + 2));
+      answerClass = ns_get16(answer.addressOfElement(idx + 2));
+      answerTtl = 1 * ns_get32(answer.addressOfElement(idx + 4));
       rdataLength = ns_get16(answer.addressOfElement(idx + 8));
+
       idx += NS_RRFIXEDSZ;
 
-      if (answerType !== typeClassToConstant(typeClass)) {
+      if (answerType !== typeConstructorToConstant(typeConstructor)) {
         idx += rdataLength;
         continue;
       }
 
-      resources.push(new typeClass(
+      resources.push(new typeConstructor(
         answerTtl, readRdata(answer, idx, rdataLength)
       ));
     }
 
-    closeLibrary();
-
-    return resources;
+    if (worker) {
+      worker.postMessage({
+        result: resources.map(function(resource) { return resource.toJson() })
+      });
+    } else {
+      return resources;
+    }
   }
 
-  function typeClassToConstant(typeClass) {
-    var constants;
-    if (typeClass === Resolv.DNS.Resource.TXT) {
+  function typeSymbolToConstructor(typeSymbol) {
+    return typeof typeSymbol === 'string' ?
+      Resolv.DNS.Resource[typeSymbol] :
+      typeSymbol;
+  }
+
+  function typeConstructorToConstant(typeConstructor) {
+    var constant;
+
+    if (typeConstructor === Resolv.DNS.Resource['TXT']) {
       constant = ns_t_txt;
     } else {
       constant = null;
     }
 
     return constant;
-  }
-
-  function getCString(string) {
-    return string + String.fromCharCode(0);
   }
 
   function readRdata(buffer, start, length) {
@@ -211,10 +248,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   }
 
   function symbolName(name) {
-    var prefix = 'Darwin' === Components.classes['@mozilla.org/xre/app-info;1']
-      .getService(Components.interfaces.nsIXULRuntime).OS ?
-      'res_9_' :
-      '';
+    var prefix = 'Darwin' === OS ? 'res_9_' : '';
 
     return prefix + name;
   }
@@ -240,6 +274,24 @@ Resolv.DNS.Resolver.WinDns = function Resolver_WinDns() {
 
 Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
 
-EXPORTED_SYMBOLS = [
-  'Resolv'
-];
+var OS, EXPORTED_SYMBOLS, resolv;
+if (typeof Components !== 'undefined') {
+  OS = Components.classes['@mozilla.org/xre/app-info;1']
+    .getService(Components.interfaces.nsIXULRuntime).OS;
+  EXPORTED_SYMBOLS = [
+    'Resolv'
+  ];
+}
+if (typeof self !== 'undefined') {
+  self.addEventListener('message', function(event) {
+    switch (event.data.name) {
+    case 'init':
+      OS = event.data.args[0];
+      resolv = new Resolv.DNS(Resolv.DNS.Resolver.factory(self));
+      break;
+    default:
+      resolv[event.data.name].apply(resolv, event.data.args);
+      break;
+    }
+  }, false);
+}

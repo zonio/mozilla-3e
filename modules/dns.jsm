@@ -19,34 +19,59 @@
 
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
-function cal3eDns() {
+function cal3eDns(resolv) {
   var dns = this;
-  var resolv;
 
-  function resolveServer(domainName) {
-    var records = resolv
-      .resources(domainName, Resolv.DNS.Resource.TXT)
+  function resolveServer(domainName, callback) {
+    resolv.addEventListener('message', function onResult(event) {
+      resolv.removeEventListener('message', onResult, false);
+      didGetResources(domainName, event.data.result, callback);
+    }, false);
+    resolv.postMessage({
+      name: 'resources',
+      args: [domainName, 'TXT']
+    });
+  }
+
+  function didGetResources(domainName, resources, callback) {
+    var records = resources
+      .map(function(data) {
+        return Resolv.DNS.Resource.fromJson(data);
+      })
       .filter(function(resource) {
         return resource.data().match(/^eee /) &&
           resource.data().match(cal3eDns.EEE_SERVER_RESOURCE_RE);
       })
       .map(function(resource) {
         var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
-        return [
-          match[1] || domainName,
-          match[2] || cal3eDns.DEFAULT_PORT
-        ];
+        return {
+          'host': match[1] || domainName,
+          'port': match[2] || cal3eDns.DEFAULT_PORT
+        };
       });
 
     if (records.length === 0) {
-      records.push([domainName, cal3eDns.DEFAULT_PORT]);
+      records.push({
+        'host': domainName,
+        'port': cal3eDns.DEFAULT_PORT
+      });
     }
 
-    return records[0];
+    callback(records[0]);
   }
 
   function init() {
-    resolv = new Resolv.DNS()
+    if (!resolv) {
+      resolv = new ChromeWorker(
+        'resource://calendar3e/modules/resolv.jsm'
+      );
+      resolv.postMessage({
+        name: 'init',
+        args: [
+          Components.classes['@mozilla.org/xre/app-info;1']
+            .getService(Components.interfaces.nsIXULRuntime).OS]
+      });
+    }
   }
 
   dns.resolveServer = resolveServer;
