@@ -26,15 +26,14 @@ Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 
-function Client(authenticationDelegate) {
+function Client(serverBuilder, authenticationDelegate) {
   var client = this;
-  var queue = new cal3eSynchronization.Queue();
-  var dns;
+  var synchronizedMethod = new cal3eSynchronization.Method();
   var lastUserErrors;
 
   function validateQueue(queue, listener, errorCode) {
     var error = findLastUserError(
-      queue.serverUri().spec, errorCode
+      queue.server().uri().spec, errorCode
     );
     var threshold = new Date(
       Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
@@ -43,7 +42,7 @@ function Client(authenticationDelegate) {
       queue.setError(Components.Exception("User error '" + errorCode + "'"));
       listener(queue, error);
     } else if (error) {
-      cleanLastUserError(queue.serverUri().spec, errorCode);
+      cleanLastUserError(queue.server().uri().spec, errorCode);
       error = null;
     }
 
@@ -51,14 +50,14 @@ function Client(authenticationDelegate) {
   }
 
   function setLastUserError(queue, errorCode) {
-    prepareLastUserErrorMap(queue.serverUri().spec, errorCode);
+    prepareLastUserErrorMap(queue.server().uri().spec, errorCode);
 
-    lastUserErrors[queue.serverUri().spec][errorCode] =
+    lastUserErrors[queue.server().uri().spec][errorCode] =
       new cal3eResponse.UserError(errorCode);
 
     queue.setError(Components.Exception("User error '" + errorCode + "'"));
 
-    return lastUserErrors[queue.serverUri().spec][errorCode];
+    return lastUserErrors[queue.server().uri().spec][errorCode];
   }
 
   function findLastUserError(errorsId, errorCode) {
@@ -95,194 +94,90 @@ function Client(authenticationDelegate) {
   }
 
   function getUsers(identity, listener, query) {
-    var allArguments = Array.prototype.slice.apply(arguments);
-    allArguments.unshift('getUsers');
-
-    return queryNonCalendarObjects.apply(null, allArguments);
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.getUsers', [query])
+      .call(onResult, listener);
   }
-  getUsers = queue.extend(getUsers, prepareQueue);
+  getUsers = synchronizedMethod.create(createScenario(getUsers));
 
   function getCalendars(identity, listener, query) {
-    var allArguments = Array.prototype.slice.apply(arguments);
-    allArguments.unshift('getCalendars');
-
-    return queryNonCalendarObjects.apply(null, allArguments);
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.getCalendars', [query])
+      .call(onResult, listener);
   }
-  getCalendars = queue.extend(getCalendars, prepareQueue);
+  getCalendars = synchronizedMethod.create(createScenario(getCalendars));
 
   function getSharedCalendars(identity, listener, query) {
-    var allArguments = Array.prototype.slice.apply(arguments);
-    allArguments.unshift('getSharedCalendars');
-
-    return queryNonCalendarObjects.apply(null, allArguments);
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.getSharedCalendars', [query])
+      .call(onResult, listener);
   }
-  getSharedCalendars = queue.extend(getSharedCalendars, prepareQueue);
-
-  function queryNonCalendarObjects(procedure, identity, listener, query) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future
-        .push('ESClient.' + procedure, [query])
-        .call(onResult, listener)
-    });
-
-    return future;
-  }
+  getSharedCalendars = synchronizedMethod.create(
+    createScenario(getSharedCalendars)
+  );
 
   function createCalendar(identity, listener, calendar) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
+    var queue = synchronizedMethod.future(arguments);
+    queue.push('ESClient.createCalendar', [calendar.calname]);
+    if (calendar.calname != calendar.name) {
+      queue.push('ESClient.setCalendarAttribute', [
+        getCalendarCalspec(calendar),
+        'title',
+        calendar.name,
+      true
+      ]);
+    }
+    if (calendar.getProperty('color')) {
+      queue.push('ESClient.setCalendarAttribute', [
+        getCalendarCalspec(calendar),
+        'color',
+        calendar.getProperty('color'),
+        true
+      ]);
     }
 
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future.push('ESClient.createCalendar', [calendar.calname]);
-      if (calendar.calname != calendar.name) {
-        future.push('ESClient.setCalendarAttribute', [
-          getCalendarCalspec(calendar),
-          'title',
-          calendar.name,
-          true
-        ]);
-      }
-      if (calendar.getProperty('color')) {
-        future.push('ESClient.setCalendarAttribute', [
-          getCalendarCalspec(calendar),
-          'color',
-          calendar.getProperty('color'),
-          true
-        ]);
-      }
-
-      future.call(onResult, listener);
-    });
-
-    return future;
+    return queue.call(onResult, listener);
   }
-  createCalendar = queue.extend(createCalendar, prepareQueue);
+  createCalendar = synchronizedMethod.create(createScenario(createCalendar));
 
   function deleteCalendar(identity, listener, calendar) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future
-        .push('ESClient.deleteCalendar', [calendar.calname])
-        .call(onResult, listener);
-    });
-
-    return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.deleteCalendar', [calendar.calname])
+      .call(onResult, listener);
   }
-  deleteCalendar = queue.extend(deleteCalendar, prepareQueue);
+  deleteCalendar = synchronizedMethod.create(createScenario(deleteCalendar));
 
   function subscribeCalendar(identity, listener, calspec) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future
-        .push('ESClient.subscribeCalendar', [calspec])
-        .call(onResult, listener);
-    });
-
-    return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.subscribeCalendar', [calspec])
+      .call(onResult, listener);
   }
-  subscribeCalendar = queue.extend(subscribeCalendar, prepareQueue);
+  subscribeCalendar = synchronizedMethod.create(
+    createScenario(subscribeCalendar)
+  );
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
                                 isPublic) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future
-        .push('ESClient.setCalendarAttribute', [
-          getCalendarCalspec(calendar),
-          name,
-          value,
-          isPublic])
-        .call(onResult, listener);
-    });
-
-    return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.setCalendarAttribute', [
+        getCalendarCalspec(calendar),
+        name,
+        value,
+        isPublic])
+      .call(onResult, listener);
   }
-  setCalendarAttribute = queue.extend(setCalendarAttribute, prepareQueue);
+  setCalendarAttribute = synchronizedMethod.create(
+    createScenario(setCalendarAttribute)
+  );
 
   function queryObjects(identity, listener, calendar, id, from, to) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future.push(
-        'ESClient.queryObjects', [
-          getCalendarCalspec(calendar),
-          getQueryFromQueryObjectsArguments(id, from, to)])
-        .call(onResult, listener);
-    });
-
-    return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.queryObjects', [
+        getCalendarCalspec(calendar),
+        getQueryFromQueryObjectsArguments(id, from, to)])
+      .call(onResult, listener);
   }
-  queryObjects = queue.extend(queryObjects, prepareQueue);
+  queryObjects = synchronizedMethod.create(createScenario(queryObjects));
 
   function getQueryFromQueryObjectsArguments(id, from, to) {
     var query = '';
@@ -308,145 +203,101 @@ function Client(authenticationDelegate) {
   }
 
   function addObject(identity, listener, calendar, item) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
 
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      enqueueItemTimezones(future, item);
-
-      future
-        .push('ESClient.addObject', [
-          getCalendarCalspec(calendar),
-          item.icalComponent.serializeToICS()])
-        .call(onResult, listener);
-    });
-
-    return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.addObject', [
+        getCalendarCalspec(calendar),
+        item.icalComponent.serializeToICS()])
+      .call(onResult, listener);
   }
-  addObject = queue.extend(addObject, prepareQueue);
+  addObject = synchronizedMethod.create(createScenario(addObject));
 
   function updateObject(identity, listener, calendar, item) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
+    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
 
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      enqueueItemTimezones(future, item);
-
-      future
-        .push('ESClient.updateObject', [
-          getCalendarCalspec(calendar),
-          item.icalComponent.serializeToICS()])
-        .call(onResult, listener);
-    });
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.updateObject', [
+        getCalendarCalspec(calendar),
+        item.icalComponent.serializeToICS()])
+      .call(onResult, listener);
   }
-  updateObject = queue.extend(updateObject, prepareQueue);
+  updateObject = synchronizedMethod.create(createScenario(updateObject));
 
-  function enqueueItemTimezones(future, item) {
+  function enqueueItemTimezones(queue, item) {
     item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
-      future.push('ESClient.addObject', [
+      queue.push('ESClient.addObject', [
         getCalendarCalspec(calendar),
         timezone.icalComponent.serializeToICS()
       ]);
     });
-
-    return future;
   }
 
   function deleteObject(identity, listener, calendar, item) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
-    }
-
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
-      }
-
-      future
-        .push('ESClient.deleteObject', [getCalendarCalspec(calendar), item.id])
-        .call(onResult, listener);
-    });
-
-    return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.deleteObject', [getCalendarCalspec(calendar), item.id])
+      .call(onResult, listener);
   }
-  deleteObject = queue.extend(deleteObject, prepareQueue);
+  deleteObject = synchronizedMethod.create(createScenario(deleteObject));
 
   function freeBusy(identity, listener, attendee, from, to, defaultTimezone) {
-    var future = queue.future(arguments);
-    if (!Components.isSuccessCode(future.status())) {
-      return future;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.deleteObject', [
+        attendee,
+        xpcomToEeeDate(from),
+        xpcomToEeeDate(to),
+        defaultTimezone])
+      .call(onResult, listener);
+  }
+  freeBusy = synchronizedMethod.create(createScenario(freeBusy));
+
+  function createScenario(main) {
+    var synchronizedQueue = new cal3eSynchronization.Queue();
+
+    function prepareQueue(identity, listener) {
+      synchronizedMethod.waitUntilFinished();
+
+      var args = Array.prototype.slice.apply(arguments);
+      var queue = new Queue();
+      serverBuilder.fromIdentity(identity, function(server) {
+        queue.setServer(server);
+        args.push(validateQueue(
+          queue, listener, cal3eResponse.userErrors.BAD_CERT
+        ));
+        synchronizedQueue.next().apply(null, args);
+      });
+
+      return queue;
     }
 
-    queue.waitUntilFinished();
-    authenticationDelegate.authenticate(identity, future, function(future) {
-      queue.finished();
-
-      if (!Components.isSuccessCode(future.status())) {
-        onResult(future, listener);
-        return;
+    function authenticate(identity, listener) {
+      var args = Array.prototype.slice.apply(arguments);
+      var queue = synchronizedMethod.future(arguments);
+      if (!Components.isSuccessCode(queue.status())) {
+        synchronizedMethod.finished();
+        return queue;
       }
 
-      future
-        .push('ESClient.deleteObject', [
-          attendee,
-          xpcomToEeeDate(from),
-          xpcomToEeeDate(to),
-          defaultTimezone])
-        .call(onResult, listener);
-    });
+      authenticationDelegate.authenticate(identity, queue, function(queue) {
+        if (!Components.isSuccessCode(queue.status())) {
+          synchronizedMethod.finished();
+          return queue;
+        }
 
-    return future;
-  }
-  freeBusy = queue.extend(freeBusy, prepareQueue);
+        synchronizedMethod.finished();
+        synchronizedQueue.next().apply(null, args);
+      });
 
-  function prepareQueue(identity, listener) {
-    var queue = new Queue();
-    queue.setServerUri(uriFromIdentity(identity));
-
-    return validateQueue(
-      queue, listener, cal3eResponse.userErrors.BAD_CERT
-    );
-  }
-
-  function uriFromIdentity(identity) {
-    var host, port;
-    if (cal3eFeature.isSupported('dns')) {
-      [host, port] = dns.resolveServer(
-        identity.email.substring(identity.email.indexOf('@') + 1)
-      );
-    } else {
-      host = identity.getCharAttribute('eee_host');
-      port = identity.getIntAttribute('eee_port');
+      return queue;
     }
 
-    return Services.io.newURI(
-      'https://' + host + ':' + port + '/RPC2', null, null
-    );
+    return function() {
+      return synchronizedQueue
+        .push(prepareQueue)
+        .push(authenticate)
+        .push(main)
+        .call.apply(synchronizedQueue, arguments);
+    };
   }
 
   function onResult(methodQueue, listener) {
@@ -476,10 +327,6 @@ function Client(authenticationDelegate) {
   }
 
   function init() {
-    if (cal3eFeature.isSupported('dns')) {
-      dns = new cal3eDns();
-    }
-
     lastUserErrors = null;
   }
 
@@ -502,12 +349,40 @@ var clientInstance;
 Client.getInstance = function Client_getInstance() {
   if (!clientInstance) {
     clientInstance = new Client(
+      new ServerBuilder(),
       new AuthenticationDelegate()
     );
   }
 
   return clientInstance;
 };
+
+function ServerBuilder() {
+  var serverBuilder = this;
+  var dns;
+
+  function fromIdentity(identity, callback) {
+    dns.resolveServer(getHostname(identity), function(record) {
+      callback(new cal3eXmlRpc.Client(Services.io.newURI(
+        'https://' + record['host'] + ':' + record['port'] + '/RPC2',
+        null,
+        null
+      )));
+    });
+  }
+
+  function getHostname(identity) {
+    return identity.email.substring(identity.email.indexOf('@') + 1);
+  }
+
+  function init() {
+    dns = new cal3eDns();
+  }
+
+  serverBuilder.fromIdentity = fromIdentity;
+
+  init();
+}
 
 function AuthenticationDelegate() {
   var authenticationDelegate = this;
@@ -751,7 +626,7 @@ function Queue() {
     if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
-    if (serverUri === undefined) {
+    if (server === undefined) {
       throw Components.results.NS_ERROR_NOT_INITIALIZED;
     }
 
@@ -840,20 +715,19 @@ function Queue() {
     pending = false;
   }
 
-  function setServerUri(newServerUri) {
-    if (pending) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    serverUri = newServerUri;
-    server.setUri(serverUri);
-    status = Components.results.NS_OK;
+  function setServer(newServer) {
+    server = newServer;
+    server.setListener({
+      onResult: onResult,
+      onFault: onFault,
+      onError: onError
+    });
 
     return queue;
   }
 
-  function getServerUri() {
-    return serverUri;
+  function getServer() {
+    return server;
   }
 
   function getLastResponse() {
@@ -887,13 +761,6 @@ function Queue() {
     queueSequence += 1;
     id = 'cal3eRequest.Queue.' + queueSequence;
 
-    server = new cal3eXmlRpc.Client();
-    server.setListener({
-      onResult: onResult,
-      onFault: onFault,
-      onError: onError
-    });
-
     methodIdx = 0;
     methodCalls = [];
     pending = false;
@@ -906,8 +773,8 @@ function Queue() {
   queue.isPending = isPending;
   queue.isFault = isFault;
   queue.status = getStatus;
-  queue.setServerUri = setServerUri;
-  queue.serverUri = getServerUri;
+  queue.setServer = setServer;
+  queue.server = getServer;
   queue.lastResponse = getLastResponse;
   queue.error = getError;
   queue.setError = setError;

@@ -21,9 +21,8 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/ISO8601DateUtils.jsm');
 
-function Client() {
+function Client(uri) {
   var client = this;
-  var uri;
   var listener;
   var window;
   var request;
@@ -134,10 +133,8 @@ function Client() {
     xhr = null;
   }
 
-  function setUri(newUri) {
-    uri = newUri;
-
-    return client;
+  function getUri() {
+    return uri;
   }
 
   function setListener(newListener) {
@@ -158,7 +155,7 @@ function Client() {
 
   client.call = call;
   client.abort = abort;
-  client.setUri = setUri;
+  client.uri = getUri;
   client.setListener = setListener;
   client.setWindow = setWindow;
 }
