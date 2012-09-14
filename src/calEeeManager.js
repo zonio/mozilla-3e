@@ -186,8 +186,8 @@ calEeeManager.prototype = {
     );
   },
 
-  onPropertyChanged: function calEeeManager_onPropertyChanged(
-    calendar, name, value, oldValue) {
+  onPropertyChanged:
+  function calEeeManager_onPropertyChanged(calendar, name, value, oldValue) {
     if ('eee' != calendar.type) {
       return;
     }

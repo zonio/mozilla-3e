@@ -269,14 +269,11 @@ function Client(serverBuilder, authenticationDelegate) {
     }
 
     return function() {
-      var future = synchronizedQueue
+      return synchronizedQueue
         .push(prepareQueue)
         .push(authenticate)
         .push(main)
         .call.apply(synchronizedQueue, arguments);
-      dump('[3e] future = ' + future + '\n');
-
-      return future;
     };
   }
 
@@ -342,11 +339,11 @@ function ServerBuilder() {
   var dns;
 
   function fromIdentity(identity, callback) {
-    if (cal3eFeature.isSupported('dns')) {
+    if (!cal3eFeature.isSupported('dns')) {
       callback(new cal3eXmlRpc.Client(Services.io.newURI(
         'https://' +
           identity.getCharAttribute('eee_host') + ':' +
-          identity.getCharAttribute('eee_port') + '/RPC2',
+          identity.getIntAttribute('eee_port') + '/RPC2',
         null,
         null
       )));
@@ -490,7 +487,7 @@ function LoginInfoSessionStorage() {
   var storage;
 
   function addLogin(login) {
-    prepareStorageForHostname(login.hostname)
+    prepareStorageForHostname(login.hostname);
 
     storage[login.hostname][login.username] = login;
   }
@@ -543,7 +540,7 @@ function LoginInfoSessionStorage() {
 
   function cleanupStorageForHostname(hostname) {
     if (!storage[hostname]) {
-      return
+      return;
     }
 
     var empty = true;

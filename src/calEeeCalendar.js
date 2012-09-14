@@ -18,16 +18,15 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
+Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
-Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
+Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 function calEeeCalendar() {
   this.initProviderBase();
-  this._identity = null;
 }
 
 calEeeCalendar.prototype = {
@@ -63,7 +62,7 @@ calEeeCalendar.prototype = {
   },
 
   adoptItem: function calEee_adoptItem(item, listener) {
-    if (null === this._identity) {
+    if (!this._identity) {
       this.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -151,7 +150,7 @@ calEeeCalendar.prototype = {
   },
 
   modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
-    if (null === this._identity) {
+    if (!this._identity) {
       this.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -230,7 +229,7 @@ calEeeCalendar.prototype = {
   },
 
   deleteItem: function calEee_deleteItem(item, listener) {
-    if (null === this._identity) {
+    if (!this._identity) {
       this.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -307,7 +306,7 @@ calEeeCalendar.prototype = {
   },
 
   _getQueryObjectsListener:
-  function calEeeCalendar_getQueryObjectsListener(listener) {
+  function calEee_getQueryObjectsListener(listener) {
     var calendar = this;
     return function calEee_getItems_onResult(methodQueue, result) {
       if (result instanceof cal3eResponse.EeeError) {
@@ -368,7 +367,7 @@ calEeeCalendar.prototype = {
   },
 
   getItem: function calEee_getItem(id, listener) {
-    if (null === this._identity) {
+    if (!this._identity) {
       this.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -390,7 +389,7 @@ calEeeCalendar.prototype = {
 
   getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
                                      listener) {
-    if (null === this._identity) {
+    if (!this._identity) {
       this.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -415,7 +414,8 @@ calEeeCalendar.prototype = {
       this.notifyOperationComplete(
         listener,
         Components.results.NS_OK,
-        Components.interfaces.calIOperationListener.GET, null,
+        Components.interfaces.calIOperationListener.GET,
+        null,
         'Bad item filter passed to getItems'
       );
       return null;
@@ -457,7 +457,7 @@ calEeeCalendar.prototype = {
       .findByEmail(eeeUser);
 
     this._identity = identities.length > 0 ? identities[0] : null;
-  }
+  },
 
   set uri(uri) {
     this._uri = uri;
