@@ -362,6 +362,17 @@ function ServerBuilder() {
   var dns;
 
   function fromIdentity(identity, callback) {
+    if (cal3eFeature.isSupported('dns')) {
+      callback(new cal3eXmlRpc.Client(Services.io.newURI(
+        'https://' +
+          identity.getCharAttribute('eee_host') + ':' +
+          identity.getCharAttribute('eee_port') + '/RPC2',
+        null,
+        null
+      )));
+      return;
+    }
+
     dns.resolveServer(getHostname(identity), function(record) {
       callback(new cal3eXmlRpc.Client(Services.io.newURI(
         'https://' + record['host'] + ':' + record['port'] + '/RPC2',
