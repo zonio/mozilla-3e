@@ -393,44 +393,14 @@ function ServerBuilder() {
 
 function AuthenticationDelegate() {
   var authenticationDelegate = this;
-  var promptLimit;
   var sessionStorage;
 
   function authenticate(identity, queue, callback) {
-    var tries = 0;
-    var login = null;
-    while (!login && (tries < promptLimit)) {
-      login = findInStorages(identity) || findByPrompt(identity);
-      validate(login, queue, callback);
-    }
-  }
-
-  function findInStorages(identity) {
-    var logins = [];
-    [sessionStorage, Services.logins].forEach(function(storage) {
-      if (logins.length > 0) {
-        return;
-      }
-
-      logins = storage.findLogins(
-        {}, loginUri(identity), loginUri(identity), null
-      );
+    login = prompt(identity);
+    validate(login, queue, {
+      callback: callback,
+      identity: identity
     });
-
-    return logins.length > 0 ? logins[0] : null;
-  }
-
-  function findByPrompt(identity) {
-    var [login, didEnterPassword, savePassword] = prompt(identity);
-
-    var storage = savePassword ? Services.logins : sessionStorage;
-    if (didEnterPassword && !findInStorages(identity)) {
-      storage.addLogin(login);
-    } else if (didEnterPassword) {
-      storage.modifyLogin(findInStorages(identity), login);
-    }
-
-    return login;
   }
 
   function prompt(identity) {
@@ -439,48 +409,52 @@ function AuthenticationDelegate() {
     );
 
     var password = { value: '' };
-    var savePassword = { value: true };
-    var didEnterPassword = Services.prompt.promptPassword(
-      null,
+    var authPrompt =
+      Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+      .getService(Components.interfaces.nsIPromptFactory)
+      .getPrompt(null, Components.interfaces.nsIAuthPrompt);
+    var didEnterPassword = authPrompt.promptPassword(
       stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
       stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
-      password,
-      stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
-      savePassword
+      loginUri(identity),
+      Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
+      password
     );
 
-    var login =
-      Components.classes['@mozilla.org/login-manager/loginInfo;1']
-      .createInstance(Components.interfaces.nsILoginInfo);
-    login.init(
-      loginUri(identity), loginUri(identity), null,
-      identity.email, password.value,
-      '', ''
-    );
+    var login = {
+      username: identity.email,
+      password: password.value
+    };
 
-    return [login, didEnterPassword, savePassword.value];
+    return didEnterPassword ? login : null;
   }
 
-  function validate(login, queue, callback) {
+  function validate(login, queue, context) {
     if (!login) {
       queue.setError(Components.Exception(
         "User error '" + cal3eResponse.userErrors.NO_PASSWORD + "'"
       ));
-      callback(queue);
+      context.callback(queue);
       return;
     }
 
     queue
       .push('ESClient.authenticate', [login.username, login.password])
-      .call(didValidate, callback);
+      .call(didValidate, context);
   }
 
-  function didValidate(queue, callback) {
+  function didValidate(queue, context) {
     if (queue.isPending()) {
       return;
     }
 
-    callback(queue);
+    var result = cal3eResponse.fromMethodQueue(queue);
+    if (queue.isFault() &&
+      result.errorCode === cal3eResponse.eeeErrors.AUTH_FAILED) {
+      context.callback(queue);
+    } else {
+      authenticate(context.identity, queue, context.callback);
+    }
   }
 
   function loginUri(identity) {
@@ -491,9 +465,6 @@ function AuthenticationDelegate() {
 
   function init() {
     sessionStorage = new LoginInfoSessionStorage();
-    promptLimit = Services.prefs.getIntPref(
-      'calendar.eee.password_prompt_limit'
-    );
   }
 
   authenticationDelegate.authenticate = authenticate;
