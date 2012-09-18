@@ -247,53 +247,54 @@ function Client(serverBuilder, authenticationDelegate) {
   );
 
   function createScenario(main) {
-    var synchronizedQueue = new cal3eSynchronization.Queue();
-
-    function initQueue(identity, listener) {
-      synchronizedMethod.waitUntilFinished();
-
-      var args = Array.prototype.slice.apply(arguments);
-      var queue = synchronizedMethod.future(arguments);
-      serverBuilder.fromIdentity(identity, function(server) {
-        queue.setServer(server);
-        synchronizedQueue.next().apply(null, args);
-      });
-
-      return queue;
-    }
-
-    function authenticate(identity, listener) {
-      var args = Array.prototype.slice.apply(arguments);
-      var queue = synchronizedMethod.future(arguments);
-      if (!Components.isSuccessCode(queue.status())) {
-        synchronizedMethod.finished();
-        return queue;
-      }
-
-      authenticationDelegate.authenticate(identity, queue, function(queue) {
-        if (!Components.isSuccessCode(queue.status())) {
-          synchronizedMethod.finished();
-          return queue;
-        }
-
-        synchronizedMethod.finished();
-        synchronizedQueue.next().apply(null, args);
-      });
-
-      return queue;
-    }
-
     return function() {
-      return synchronizedQueue
+      return new cal3eSynchronization.Queue()
         .push(initQueue)
-        .push(authenticate)
+        .push(authenticateQueue)
         .push(main)
-        .call.apply(synchronizedQueue, arguments);
+        .call.apply(null, arguments);
     };
   }
 
   function createQueue() {
     return new Queue();
+  }
+
+  function initQueue(identity, listener) {
+    synchronizedMethod.waitUntilFinished();
+
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var synchronizationQueue = this;
+    serverBuilder.fromIdentity(identity, function(server) {
+      queue.setServer(server);
+      validateQueue(queue, listener, cal3eResponse.userErrors.BAD_CERT);
+      if (!Components.isSuccessCode(queue.status())) {
+        synchronizedMethod.finished();
+        return queue;
+      }
+
+      synchronizationQueue.next().apply(synchronizationQueue, args);
+    });
+
+    return queue;
+  }
+
+  function authenticateQueue(identity, listener) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var synchronizationQueue = this;
+    authenticationDelegate.authenticate(identity, queue, function(queue) {
+      if (!Components.isSuccessCode(queue.status())) {
+        synchronizedMethod.finished();
+        return queue;
+      }
+
+      synchronizedMethod.finished();
+      synchronizationQueue.next().apply(synchronizationQueue, args);
+    });
+
+    return queue;
   }
 
   function onResult(methodQueue, listener) {
