@@ -98,14 +98,18 @@ function Client(serverBuilder, authenticationDelegate) {
       .push('ESClient.getUsers', [query])
       .call(onResult, listener);
   }
-  getUsers = synchronizedMethod.create(createScenario(getUsers));
+  getUsers = synchronizedMethod.create(
+    createScenario(getUsers), createQueue
+  );
 
   function getCalendars(identity, listener, query) {
     return synchronizedMethod.future(arguments)
       .push('ESClient.getCalendars', [query])
       .call(onResult, listener);
   }
-  getCalendars = synchronizedMethod.create(createScenario(getCalendars));
+  getCalendars = synchronizedMethod.create(
+    createScenario(getCalendars), createQueue
+  );
 
   function getSharedCalendars(identity, listener, query) {
     return synchronizedMethod.future(arguments)
@@ -113,7 +117,7 @@ function Client(serverBuilder, authenticationDelegate) {
       .call(onResult, listener);
   }
   getSharedCalendars = synchronizedMethod.create(
-    createScenario(getSharedCalendars)
+    createScenario(getSharedCalendars), createQueue
   );
 
   function createCalendar(identity, listener, calendar) {
@@ -138,14 +142,18 @@ function Client(serverBuilder, authenticationDelegate) {
 
     return queue.call(onResult, listener);
   }
-  createCalendar = synchronizedMethod.create(createScenario(createCalendar));
+  createCalendar = synchronizedMethod.create(
+    createScenario(createCalendar), createQueue
+  );
 
   function deleteCalendar(identity, listener, calendar) {
     return synchronizedMethod.future(arguments)
       .push('ESClient.deleteCalendar', [calendar.calname])
       .call(onResult, listener);
   }
-  deleteCalendar = synchronizedMethod.create(createScenario(deleteCalendar));
+  deleteCalendar = synchronizedMethod.create(
+    createScenario(deleteCalendar), createQueue
+  );
 
   function subscribeCalendar(identity, listener, calspec) {
     return synchronizedMethod.future(arguments)
@@ -153,7 +161,7 @@ function Client(serverBuilder, authenticationDelegate) {
       .call(onResult, listener);
   }
   subscribeCalendar = synchronizedMethod.create(
-    createScenario(subscribeCalendar)
+    createScenario(subscribeCalendar), createQueue
   );
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
@@ -167,7 +175,7 @@ function Client(serverBuilder, authenticationDelegate) {
       .call(onResult, listener);
   }
   setCalendarAttribute = synchronizedMethod.create(
-    createScenario(setCalendarAttribute)
+    createScenario(setCalendarAttribute), createQueue
   );
 
   function queryObjects(identity, listener, calendar, query) {
@@ -177,7 +185,9 @@ function Client(serverBuilder, authenticationDelegate) {
         query])
       .call(onResult, listener);
   }
-  queryObjects = synchronizedMethod.create(createScenario(queryObjects));
+  queryObjects = synchronizedMethod.create(
+    createScenario(queryObjects), createQueue
+  );
 
   function addObject(identity, listener, calendar, item) {
     enqueueItemTimezones(synchronizedMethod.future(arguments), item);
@@ -188,7 +198,9 @@ function Client(serverBuilder, authenticationDelegate) {
         item.icalComponent.serializeToICS()])
       .call(onResult, listener);
   }
-  addObject = synchronizedMethod.create(createScenario(addObject));
+  addObject = synchronizedMethod.create(
+    createScenario(addObject), createQueue
+  );
 
   function updateObject(identity, listener, calendar, item) {
     enqueueItemTimezones(synchronizedMethod.future(arguments), item);
@@ -199,7 +211,9 @@ function Client(serverBuilder, authenticationDelegate) {
         item.icalComponent.serializeToICS()])
       .call(onResult, listener);
   }
-  updateObject = synchronizedMethod.create(createScenario(updateObject));
+  updateObject = synchronizedMethod.create(
+    createScenario(updateObject), createQueue
+  );
 
   function enqueueItemTimezones(queue, item) {
     item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
@@ -215,7 +229,9 @@ function Client(serverBuilder, authenticationDelegate) {
       .push('ESClient.deleteObject', [getCalendarCalspec(calendar), item.id])
       .call(onResult, listener);
   }
-  deleteObject = synchronizedMethod.create(createScenario(deleteObject));
+  deleteObject = synchronizedMethod.create(
+    createScenario(deleteObject), createQueue
+  );
 
   function freeBusy(identity, listener, attendee, from, to, defaultTimezone) {
     return synchronizedMethod.future(arguments)
@@ -226,21 +242,20 @@ function Client(serverBuilder, authenticationDelegate) {
         defaultTimezone])
       .call(onResult, listener);
   }
-  freeBusy = synchronizedMethod.create(createScenario(freeBusy));
+  freeBusy = synchronizedMethod.create(
+    createScenario(freeBusy), createQueue
+  );
 
   function createScenario(main) {
     var synchronizedQueue = new cal3eSynchronization.Queue();
 
-    function prepareQueue(identity, listener) {
+    function initQueue(identity, listener) {
       synchronizedMethod.waitUntilFinished();
 
       var args = Array.prototype.slice.apply(arguments);
-      var queue = new Queue();
+      var queue = synchronizedMethod.future(arguments);
       serverBuilder.fromIdentity(identity, function(server) {
         queue.setServer(server);
-        args.push(validateQueue(
-          queue, listener, cal3eResponse.userErrors.BAD_CERT
-        ));
         synchronizedQueue.next().apply(null, args);
       });
 
@@ -270,11 +285,15 @@ function Client(serverBuilder, authenticationDelegate) {
 
     return function() {
       return synchronizedQueue
-        .push(prepareQueue)
+        .push(initQueue)
         .push(authenticate)
         .push(main)
         .call.apply(synchronizedQueue, arguments);
     };
+  }
+
+  function createQueue() {
+    return new Queue();
   }
 
   function onResult(methodQueue, listener) {
