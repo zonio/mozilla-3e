@@ -392,16 +392,36 @@ function ServerBuilder() {
   init();
 }
 
+/**
+ * @todo needs queue validator
+ */
 function AuthenticationDelegate() {
   var authenticationDelegate = this;
   var sessionStorage;
 
   function authenticate(identity, queue, callback) {
-    login = prompt(identity);
-    validate(login, queue, {
+    if (didQueueAuthFailed(queue)) {
+      invalidate(identity);
+    }
+
+    validate(findInStorages(identity) || prompt(identity), queue, {
       callback: callback,
       identity: identity
     });
+  }
+
+  function findInStorages(identity) {
+    var login = null;
+
+    [sessionStorage, Services.logins].forEach(function(storage) {
+      if (login) {
+        return;
+      }
+
+      login = findInStorage(storage, identity);
+    });
+
+    return login;
   }
 
   function prompt(identity) {
@@ -409,25 +429,39 @@ function AuthenticationDelegate() {
       'chrome://calendar3e/locale/cal3eCalendar.properties'
     );
 
-    var password = { value: '' };
-    var authPrompt =
+    var password = {
+      value: findInStorages(identity) ?
+        findInStorages(identity).password :
+        ''
+    };
+    var didEnterPassword =
       Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
       .getService(Components.interfaces.nsIPromptFactory)
-      .getPrompt(null, Components.interfaces.nsIAuthPrompt);
-    var didEnterPassword = authPrompt.promptPassword(
-      stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-      stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
-      loginUri(identity),
-      Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
-      password
-    );
+      .getPrompt(null, Components.interfaces.nsIAuthPrompt)
+      .promptPassword(
+        stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
+        stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+        loginUri(identity).spec,
+        Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
+        password
+      );
 
-    var login = {
-      username: identity.email,
-      password: password.value
-    };
+    // LoginManagerPrompter doesn't support session storage
+    if (didEnterPassword && !findInStorages(identity)) {
+      addToStorage(sessionStorage, identity, password.value);
+    }
 
-    return didEnterPassword ? login : null;
+    return didEnterPassword ? findInStorages(identity) : null;
+  }
+
+  function invalidate(identity) {
+    [sessionStorage, Services.logins].forEach(function(storage) {
+      if (!findInStorage(storage, identity)) {
+        return;
+      }
+
+      storage.removeLogin(findInStorage(storage, identity));
+    });
   }
 
   function validate(login, queue, context) {
@@ -440,7 +474,7 @@ function AuthenticationDelegate() {
     }
 
     queue
-      .push('ESClient.authenticate', [login.username, login.password])
+      .push('ESClient.authenticate', [eeeUsername(login), login.password])
       .call(didValidate, context);
   }
 
@@ -449,19 +483,53 @@ function AuthenticationDelegate() {
       return;
     }
 
-    var result = cal3eResponse.fromMethodQueue(queue);
-    if (queue.isFault() &&
-      result.errorCode === cal3eResponse.eeeErrors.AUTH_FAILED) {
-      context.callback(queue);
-    } else {
+    if (didQueueAuthFailed(queue)) {
       authenticate(context.identity, queue, context.callback);
+    } else {
+      context.callback(queue);
     }
   }
 
+  function findInStorage(storage, identity) {
+    var logins = storage.findLogins(
+      {}, loginInfoHostname(identity), null, loginInfoHostname(identity)
+    );
+
+    return logins.length > 0 ? logins[0] : null;
+  }
+
+  function addToStorage(storage, identity, password) {
+    var login = Components.classes['@mozilla.org/login-manager/loginInfo;1']
+      .createInstance(Components.interfaces.nsILoginInfo);
+    login.init(
+      loginInfoHostname(identity), null, loginInfoHostname(identity),
+      loginInfoUsername(identity), password,
+      '', ''
+    );
+    storage.addLogin(login);
+  }
+
+  function didQueueAuthFailed(queue) {
+    return queue.isFault() &&
+      (cal3eResponse.fromMethodQueue(queue).errorCode ===
+       cal3eResponse.eeeErrors.AUTH_FAILED);
+  }
+
   function loginUri(identity) {
-    //XXX not DRY - somehow use EeeProtocol class
-    return 'eee://' +
-      identity.email.substring(identity.email.indexOf('@') + 1);
+    return Services.io.newURI('eee://' + identity.email + '/', null, null);
+  }
+
+  function loginInfoHostname(identity) {
+    return loginUri(identity).scheme + '://' + loginUri(identity).host;
+  }
+
+  function loginInfoUsername(identity) {
+    return loginUri(identity).username;
+  }
+
+  function eeeUsername(login) {
+    return login.username + '@' +
+      Services.io.newURI(login.hostname, null, null).host;
   }
 
   function init() {
