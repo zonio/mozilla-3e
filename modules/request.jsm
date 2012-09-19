@@ -560,6 +560,7 @@ function LoginInfoSessionStorage() {
 
 function Queue() {
   var queue = this;
+  var lastResponse;
   var server;
   var methodIdx;
   var methodCalls;
@@ -583,7 +584,7 @@ function Queue() {
     if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
-    if (server === undefined) {
+    if (!server) {
       throw Components.results.NS_ERROR_NOT_INITIALIZED;
     }
 
