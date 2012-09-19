@@ -247,7 +247,7 @@ function Client(serverBuilder, authenticationDelegate) {
   );
 
   function createScenario(main) {
-    return function() {
+    return function runScenario() {
       return new cal3eSynchronization.Queue()
         .push(initQueue)
         .push(authenticateQueue)
