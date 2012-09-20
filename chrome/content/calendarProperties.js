@@ -75,7 +75,7 @@ cal3eProperties._loadUsers = function loadUsers() {
     permissionsListBox.removeChild(permissionsListCols.nextSibling);
   }
 
-  var clientListener = function cal3eProperties_loadUsers_onResult(methodQueue,
+  var clientListener = function cal3eProperties_loadUsers_onResult(queue,
                                                                    result) {
     if (!(result instanceof cal3eResponse.Success)) {
       //TODO can't get list of users

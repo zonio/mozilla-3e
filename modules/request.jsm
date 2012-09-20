@@ -258,7 +258,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     synchronizedMethod.finished();
-    listener(queue, error || cal3eResponse.fromMethodQueue(queue));
+    listener(queue, error || cal3eResponse.fromRequestQueue(queue));
 
     return true;
   }
@@ -269,7 +269,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     var error = queueValidationDelegate.apply(queue);
-    listener(queue, error || cal3eResponse.fromMethodQueue(queue));
+    listener(queue, error || cal3eResponse.fromRequestQueue(queue));
   }
 
   function getCalendarCalspec(calendar) {
@@ -461,7 +461,7 @@ function AuthenticationDelegate() {
 
   function didQueueAuthFailed(queue) {
     return queue.isFault() &&
-      (cal3eResponse.fromMethodQueue(queue).errorCode ===
+      (cal3eResponse.fromRequestQueue(queue).errorCode ===
        cal3eResponse.eeeErrors.AUTH_FAILED);
   }
 

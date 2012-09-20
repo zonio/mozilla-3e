@@ -117,8 +117,7 @@ calEeeCalendar.prototype = {
     });
 
     var calendar = this;
-    var clientListener = function calEee_adoptItem_onResult(methodQueue,
-                                                            result) {
+    var clientListener = function calEee_adoptItem_onResult(queue, result) {
       if (result instanceof cal3eResponse.EeeError) {
         if (cal3eResponse.eeeErrors.COMPONENT_EXISTS !== result.errorCode) {
           throw Components.Exception();
@@ -126,7 +125,7 @@ calEeeCalendar.prototype = {
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
-          methodQueue.status(),
+          queue.status(),
           Components.interfaces.calIOperationListener.ADD,
           item.id,
           'Object addition to EEE server failed'
@@ -196,8 +195,7 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this;
-    var clientListener = function calEee_modifyItem_onResult(methodQueue,
-                                                             result) {
+    var clientListener = function calEee_modifyItem_onResult(queue, result) {
       if (result instanceof cal3eResponse.EeeError) {
         if (cal3eResponse.eeeErrors.COMPONENT_EXISTS !== result.errorCode) {
           throw Components.Exception();
@@ -205,7 +203,7 @@ calEeeCalendar.prototype = {
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
-          methodQueue.status(),
+          queue.status(),
           Components.interfaces.calIOperationListener.MODIFY,
           newItem.id,
           'Object addition to EEE server failed'
@@ -275,14 +273,13 @@ calEeeCalendar.prototype = {
     }
 
     var calendar = this;
-    var clientListener = function calEee_deleteItem_onResult(methodQueue,
-                                                             result) {
+    var clientListener = function calEee_deleteItem_onResult(queue, result) {
       if (result instanceof cal3eResponse.EeeError) {
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
-          methodQueue.status(),
+          queue.status(),
           Components.interfaces.calIOperationListener.DELETE,
           item.id,
           'Object deletion to EEE server failed'
@@ -308,13 +305,13 @@ calEeeCalendar.prototype = {
   _getQueryObjectsListener:
   function calEee_getQueryObjectsListener(listener) {
     var calendar = this;
-    return function calEee_getItems_onResult(methodQueue, result) {
+    return function calEee_getItems_onResult(queue, result) {
       if (result instanceof cal3eResponse.EeeError) {
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
-          methodQueue.status(),
+          queue.status(),
           Components.interfaces.calIOperationListener.GET,
           null,
           'Objects retrieval from EEE server failed'
