@@ -26,72 +26,13 @@ Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 
-function Client(serverBuilder, authenticationDelegate) {
+/**
+ * @todo create a request constructor instead of this scenario nonsense
+ */
+function Client(serverBuilder, authenticationDelegate,
+                queueValidationDelegate) {
   var client = this;
   var synchronizedMethod = new cal3eSynchronization.Method();
-  var lastUserErrors;
-
-  function validateQueue(queue, listener, errorCode) {
-    var error = findLastUserError(
-      queue.server().uri().spec, errorCode
-    );
-    var threshold = new Date(
-      Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
-    );
-    if (error && error.timestamp > threshold) {
-      queue.setError(Components.Exception("User error '" + errorCode + "'"));
-      listener(queue, error);
-    } else if (error) {
-      cleanLastUserError(queue.server().uri().spec, errorCode);
-      error = null;
-    }
-
-    return queue;
-  }
-
-  function setLastUserError(queue, errorCode) {
-    prepareLastUserErrorMap(queue.server().uri().spec, errorCode);
-
-    lastUserErrors[queue.server().uri().spec][errorCode] =
-      new cal3eResponse.UserError(errorCode);
-
-    queue.setError(Components.Exception("User error '" + errorCode + "'"));
-
-    return lastUserErrors[queue.server().uri().spec][errorCode];
-  }
-
-  function findLastUserError(errorsId, errorCode) {
-    return lastUserErrors && lastUserErrors[errorsId] &&
-        lastUserErrors[errorsId][errorCode] ?
-      lastUserErrors[errorsId][errorCode] :
-      null;
-  }
-
-  function prepareLastUserErrorMap(errorsId, errorCode) {
-    if (!lastUserErrors) {
-      lastUserErrors = {};
-      lastUserErrors.length = 0;
-    }
-    if (!lastUserErrors[errorsId]) {
-      lastUserErrors[errorsId] = {};
-      lastUserErrors[errorsId].length = 0;
-      lastUserErrors.length += 1;
-    }
-
-    lastUserErrors[errorsId].length += 1;
-  }
-
-  function cleanLastUserError(errorsId, errorCode) {
-    delete lastUserErrors[errorsId][errorCode];
-    lastUserErrors[errorsId].length -= 1;
-    if (lastUserErrors[errorsId].length === 0) {
-      delete lastUserErrors[errorsId];
-      lastUserErrors.length -= 1;
-    }
-    if (lastUserErrors.length === 0) {
-      lastUserErrors = null;
-    }
-  }
 
   function getUsers(identity, listener, query) {
     return synchronizedMethod.future(arguments)
@@ -266,11 +207,11 @@ function Client(serverBuilder, authenticationDelegate) {
     var args = Array.prototype.slice.apply(arguments);
     var queue = synchronizedMethod.future(arguments);
     var synchronizationQueue = this;
+
     serverBuilder.fromIdentity(identity, function(server) {
       queue.setServer(server);
-      validateQueue(queue, listener, cal3eResponse.userErrors.BAD_CERT);
-      if (!Components.isSuccessCode(queue.status())) {
-        synchronizedMethod.finished();
+
+      if (stopScenarioIfUserError(queue, listener)) {
         return queue;
       }
 
@@ -284,9 +225,13 @@ function Client(serverBuilder, authenticationDelegate) {
     var args = Array.prototype.slice.apply(arguments);
     var queue = synchronizedMethod.future(arguments);
     var synchronizationQueue = this;
+
+    if (stopScenarioIfUserError(queue, listener)) {
+      return queue;
+    }
+
     authenticationDelegate.authenticate(identity, queue, function(queue) {
-      if (!Components.isSuccessCode(queue.status())) {
-        synchronizedMethod.finished();
+      if (stopScenarioIfUserError(queue, listener)) {
         return queue;
       }
 
@@ -297,34 +242,40 @@ function Client(serverBuilder, authenticationDelegate) {
     return queue;
   }
 
-  function onResult(methodQueue, listener) {
-    var result;
-    //XXX There's no result code for SSL error available so we must
-    // check error code and message to distinguish bad certificate
-    if (methodQueue.error() &&
-        (methodQueue.error().result === Components.results.NS_ERROR_FAILURE) &&
-        (methodQueue.error().message ===
-         'Server certificate exception not added')) {
-      result = setLastUserError(
-        methodQueue, cal3eResponse.userErrors.BAD_CERT
-      );
-    } else if (!methodQueue.isPending()) {
-      result = cal3eResponse.fromMethodQueue(methodQueue);
-    } else if (methodQueue.isPending()) {
+  function stopScenarioIfUserError(queue, listener) {
+    queueValidationDelegate.apply(queue);
+
+    return stopScenario(
+      queue,
+      listener,
+      queueValidationDelegate.validate(queue)
+    );
+  }
+
+  function stopScenario(queue, listener, error) {
+    if (Components.isSuccessCode(queue.status())) {
+      return false;
+    }
+
+    synchronizedMethod.finished();
+    listener(queue, error || cal3eResponse.fromMethodQueue(queue));
+
+    return true;
+  }
+
+  function onResult(queue, listener) {
+    if (methodQueue.isPending()) {
       return;
     }
 
-    listener(methodQueue, result);
+    var error = queueValidationDelegate.apply(queue);
+    listener(queue, error || cal3eResponse.fromMethodQueue(queue));
   }
 
   function getCalendarCalspec(calendar) {
     var uriParts = calendar.uri.spec.split('/', 5);
 
     return uriParts[2] + ':' + (uriParts[4] || uriParts[3]);
-  }
-
-  function init() {
-    lastUserErrors = null;
   }
 
   client.getUsers = getUsers;
@@ -339,15 +290,14 @@ function Client(serverBuilder, authenticationDelegate) {
   client.updateObject = updateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
-
-  init();
 }
 var clientInstance;
 Client.getInstance = function Client_getInstance() {
   if (!clientInstance) {
     clientInstance = new Client(
       new ServerBuilder(),
-      new AuthenticationDelegate()
+      new AuthenticationDelegate(),
+      new QueueValidationDelegate()
     );
   }
 
@@ -392,14 +342,16 @@ function ServerBuilder() {
   init();
 }
 
-/**
- * @todo needs queue validator
- */
 function AuthenticationDelegate() {
   var authenticationDelegate = this;
   var sessionStorage;
 
   function authenticate(identity, queue, callback) {
+    if (!Components.isSuccessCode(queue.status())) {
+      callback(queue);
+      return;
+    }
+
     if (didQueueAuthFailed(queue)) {
       invalidate(identity);
     }
@@ -435,7 +387,7 @@ function AuthenticationDelegate() {
         ''
     };
     var didEnterPassword =
-      Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+      Components.classes['@mozilla.org/embedcomp/window-watcher;1']
       .getService(Components.interfaces.nsIPromptFactory)
       .getPrompt(null, Components.interfaces.nsIAuthPrompt)
       .promptPassword(
@@ -466,9 +418,7 @@ function AuthenticationDelegate() {
 
   function validate(login, queue, context) {
     if (!login) {
-      queue.setError(Components.Exception(
-        "User error '" + cal3eResponse.userErrors.NO_PASSWORD + "'"
-      ));
+      queue.setError(Components.Exception('No password given'));
       context.callback(queue);
       return;
     }
@@ -624,6 +574,110 @@ function LoginInfoSessionStorage() {
   loginInfoSessionStorage.findLogins = findLogins;
 
   init();
+}
+
+function QueueValidationDelegate() {
+  var queueValidationDelegate = this;
+  var userErrors;
+
+  function validate(queue) {
+    if (getValidUserErrors(queue).length > 0) {
+      setUserError(queue, getValidUserErrors(queue)[0]);
+    } else if (getUserErrors(queue).length > 0) {
+      cleanupUserErrors(queue);
+    }
+
+    return getValidUserErrors(queue)[0];
+  }
+
+  function apply(queue) {
+    if (!findQueueErrorCode(queue)) {
+      return null;
+    }
+
+    var error = new cal3eResponse.UserError(findQueueErrorCode(queue));
+    storeUserError(queue, error);
+    setUserError(queue, error);
+
+    return error;
+  }
+
+  function getUserErrors(queue) {
+    return userErrors && userErrors[queue.server().uri().spec] ?
+      userErrors[queue.server().uri().spec] :
+      [];
+  }
+
+  function getValidUserErrors(queue) {
+    return getUserErrors(queue).filter(isValid);
+  }
+
+  function isValid(error) {
+    var threshold = new Date(
+      Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
+    );
+
+    return error.timestamp > threshold;
+  }
+
+  function setUserError(queue, error) {
+    return queue.setError(
+      Components.Exception("User error '" + error.errorCode + "'")
+    );
+  }
+
+  function findQueueErrorCode(queue) {
+    var errorCode;
+    if (isBadCert(queue)) {
+      errorCode = cal3eResponse.userErrors.BAD_CERT;
+    } else if (isNoPassword(queue)) {
+      errorCode = cal3eResponse.userErrors.NO_PASSWORD;
+    } else {
+      errorCode = null;
+    }
+
+    return errorCode;
+  }
+
+  function isBadCert(queue) {
+    return queue.error() &&
+        (queue.error().result === Components.results.NS_ERROR_FAILURE) &&
+        (queue.error().message === 'Server certificate exception not added');
+  }
+
+  function isNoPassword(queue) {
+    return queue.error() &&
+        (queue.error().result === Components.results.NS_ERROR_FAILURE) &&
+        (queue.error().message === 'No password given');
+  }
+
+  function storeUserError(queue, error) {
+    if (!userErrors) {
+      userErrors = {};
+      userErrors.length = 0;
+    }
+    if (!userErrors[queue.server().uri().spec]) {
+      userErrors[queue.server().uri().spec] = [];
+      userErrors.length += 1;
+    }
+
+    userErrors[queue.server().uri().spec].push(error);
+  }
+
+  function cleanupUserErrors(queue) {
+    userErrors[queue.server().uri().spec] =
+      userErrors[queue.server().uri().spec].filter(isValid);
+    if (userErrors[queue.server().uri().spec].length === 0) {
+      delete userErrors[queue.server().uri().spec];
+      userErrors.length -= 1;
+    }
+    if (userErrors.length === 0) {
+      userErrors = null;
+    }
+  }
+
+  queueValidationDelegate.validate = validate;
+  queueValidationDelegate.apply = apply;
 }
 
 function Queue() {
