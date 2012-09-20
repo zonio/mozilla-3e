@@ -264,7 +264,7 @@ function Client(serverBuilder, authenticationDelegate,
   }
 
   function onResult(queue, listener) {
-    if (methodQueue.isPending()) {
+    if (queue.isPending()) {
       return;
     }
 
