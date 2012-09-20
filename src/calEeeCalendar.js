@@ -150,6 +150,11 @@ calEeeCalendar.prototype = {
   },
 
   modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
+    dump('modifyItem:\n');
+    dump('\told:\n')
+    dump(oldItem);
+    dump('\tnew:\n')
+    dump(newItem);
     if (!this._identity) {
       this.notifyOperationComplete(
         listener,
@@ -448,19 +453,28 @@ calEeeCalendar.prototype = {
     var items = parser.getItems(itemsCount);
     var idx = itemsCount.value;
     var item;
+    var recurrenceItems;
     while (idx--) {
       item = items[idx].clone();
-      item.calendar = calendar.superCalendar;
-      item.makeImmutable();
 
-      listener.onGetResult(
-        calendar.superCalendar,
-        Components.results.NS_OK,
-        Components.interfaces.calIEvent,
-        null,
-        1,
-        [item]
-      );
+      if (item.recurrenceInfo) {
+        recurrenceItems = item.recurrenceInfo.getOccurrences(rangeStart, rangeEnd, 0, {});
+      } else {
+        recurrenceItems = [item];
+      }
+      for each (ritem in recurrenceItems) {
+        ritem.calendar = calendar.superCalendar;
+        ritem.makeImmutable();
+        dump('ritem: ' + ritem.toString() + '\n');
+        listener.onGetResult(
+          calendar.superCalendar,
+          Components.results.NS_OK,
+          Components.interfaces.calIEvent,
+          null,
+          1,
+          [ritem]
+        );
+      }
     }
 
     calendar.notifyOperationComplete(
@@ -472,13 +486,25 @@ calEeeCalendar.prototype = {
     );
     /* -- */
 
-    return cal3eRequest.Client.getInstance()
-      .queryObjects(
-        this._identity,
-        this._getQueryObjectsListener(listener),
-        this,
-        query.join(' AND '))
-      .component();
+    var a = cal3eRequest.Client.getInstance();
+    dump('qo 1: ' + a + '\n');
+    a = a.queryObjects(
+      this._identity,
+      this._getQueryObjectsListener(listener),
+      this,
+      query.join(' AND '));
+    dump('qo 2: ' + a + '\n');
+    a = a.component();
+    dump('qo 3: ' + a + '\n');
+    return a;
+
+    //return cal3eRequest.Client.getInstance()
+    //  .queryObjects(
+    //    this._identity,
+    //    this._getQueryObjectsListener(listener),
+    //    this,
+    //    query.join(' AND '))
+    //  .component();
   },
 
   refresh: function calEee_refresh() {
