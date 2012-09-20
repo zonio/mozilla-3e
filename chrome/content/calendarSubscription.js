@@ -105,7 +105,7 @@ function cal3eSubscriptionDelegate() {
     var errors = [];
     var processed = 0;
 
-    function didSubscribeCalendar(queue, result) {
+    function didSubscribeCalendar(result) {
       if (!(result instanceof cal3eResponse.Success)) {
         errors.push(result);
       }
@@ -551,7 +551,7 @@ function cal3eSharedCalendarsController() {
       .getSharedCalendars(identity, sharedCalendarsDidLoad, '');
   }
 
-  function sharedCalendarsDidLoad(queue, result) {
+  function sharedCalendarsDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
       didError(result);
       return;
@@ -574,7 +574,7 @@ function cal3eSharedCalendarsController() {
       .getCalendars(identity, subscribedCalendarsDidLoad, 'subscribed()');
   }
 
-  function subscribedCalendarsDidLoad(queue, result) {
+  function subscribedCalendarsDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
       didError(result);
       return;
@@ -614,7 +614,7 @@ function cal3eSharedCalendarsController() {
       .getUsers(identity, calendarsOwnersDidLoad, query);
   }
 
-  function calendarsOwnersDidLoad(queue, result) {
+  function calendarsOwnersDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
       didError(result);
       return;

@@ -372,7 +372,7 @@ calEeeSynchronizer.prototype = {
     var synchronizer = this;
     cal3eRequest.Client.getInstance().getCalendars(
       this._identity,
-      function calEeeSynchronizer_onGetCalendars(queue, result) {
+      function calEeeSynchronizer_onGetCalendars(result) {
         if (result instanceof cal3eResponse.UserError) {
           return;
         } else if (!(result instanceof cal3eResponse.Success)) {

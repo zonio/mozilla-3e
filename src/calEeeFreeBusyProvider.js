@@ -94,7 +94,7 @@ calEeeFreeBusyProvider.prototype = {
   getFreeBusyIntervals: function(calId, start, end, busyTypes, listener) {
     var freeBusyProvider = this;
 
-    var clientListener = function calEee_getFreeBusy_onResult(queue, result) {
+    var clientListener = function calEee_getFreeBusy_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {

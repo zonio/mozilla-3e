@@ -139,7 +139,7 @@ calEeeManager.prototype = {
       return;
     }
 
-    var listener = function calEeeManager_create_onResult(queue, result) {
+    var listener = function calEeeManager_create_onResult(result) {
       Services.prefs.setCharPref(
         "calendar.registry." + calendar.id + ".uri",
         calendar.uri.spec

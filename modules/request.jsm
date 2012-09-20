@@ -258,7 +258,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     synchronizedMethod.finished();
-    listener(queue, error || cal3eResponse.fromRequestQueue(queue));
+    listener(error || cal3eResponse.fromRequestQueue(queue));
 
     return true;
   }
@@ -269,7 +269,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     var error = queueValidationDelegate.apply(queue);
-    listener(queue, error || cal3eResponse.fromRequestQueue(queue));
+    listener(error || cal3eResponse.fromRequestQueue(queue));
   }
 
   function getCalendarCalspec(calendar) {
