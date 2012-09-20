@@ -140,7 +140,7 @@ function loadErrors(errorListName) {
       1 * codeElement.textContent;
   }
 
-  delete errors["eeeErrors"]["notLoaded"];
+  delete errors[errorListName]["notLoaded"];
 }
 
 function getErrorsXml(errorListName) {

@@ -128,7 +128,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
       anslen
     );
     if (length < 0) {
-      return resources;
+      return returnResources(resources);
     }
 
     var idx = NS_HFIXEDSZ;
@@ -167,13 +167,17 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
       ));
     }
 
+    return returnResources(resources);
+  }
+
+  function returnResources(resources) {
     if (worker) {
       worker.postMessage({
         result: resources.map(function(resource) { return resource.toJson() })
       });
-    } else {
-      return resources;
     }
+
+    return resources;
   }
 
   function typeSymbolToConstructor(typeSymbol) {
@@ -248,7 +252,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
   }
 
   function symbolName(name) {
-    var prefix = 'Darwin' === OS ? 'res_9_' : '';
+    var prefix = 'Darwin' === OS ? 'res_9_' : '__';
 
     return prefix + name;
   }

@@ -131,7 +131,7 @@ function Queue() {
     var newIdx = callables.length;
     callables.push(function() {
       idx = newIdx + 1;
-      return callable.apply(null, arguments);
+      return callable.apply({ next: getNext }, arguments);
     });
 
     return queue;

@@ -61,10 +61,16 @@ calEeeProtocol.prototype = {
    * @returns {nsIURI}
    */
   newURI: function(spec, charset, baseUri) {
-    var uri = Cc['@mozilla.org/network/simple-uri;1']
-      .createInstance(Ci.nsIURI);
+    var uri = Cc['@mozilla.org/network/standard-url;1']
+      .createInstance(Ci.nsIStandardURL);
     //TODO some checks?
-    uri.spec = spec;
+    uri.init(
+      Ci.nsIStandardURL.URLTYPE_STANDARD,
+      this.defaultPort,
+      spec,
+      charset,
+      baseUri
+    );
 
     return uri;
   },

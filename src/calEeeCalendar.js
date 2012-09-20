@@ -388,7 +388,7 @@ calEeeCalendar.prototype = {
         this._identity,
         this._getQueryObjectsListener(listener),
         this,
-        'match_uid(' + id + ')')
+        "match_uid('" + id + "')")
       .component();
   },
 
@@ -429,16 +429,16 @@ calEeeCalendar.prototype = {
     var query = [];
     if (rangeStart) {
       query.push(
-        'date_from(' +
+        "date_from('" +
           cal3eUtils.nsprTimeToEeeDate(rangeStart.nativeTime) +
-          ')'
+          "')"
       );
     }
     if (rangeEnd) {
       query.push(
-        'date_to(' +
+        "date_to('" +
           cal3eUtils.nsprTimeToEeeDate(rangeEnd.nativeTime) +
-          ')'
+          "')"
       );
     }
 
