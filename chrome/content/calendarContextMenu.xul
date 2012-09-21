@@ -28,7 +28,7 @@
       <menuitem id="list-calendars-context-subscribe"
                 label="&cal3eCalendarContext.subscribe.label;"
                 insertafter="list-calendars-context-delete"
-                oncommand="calendarSubscription.open();"/>
+                oncommand="cal3eSubscription.open();"/>
     </popup>
   </popupset>
 

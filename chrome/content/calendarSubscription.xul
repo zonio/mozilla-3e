@@ -18,19 +18,25 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<?xml-stylesheet type="text/css" href="chrome://global/skin/"?>
-<!DOCTYPE dialog SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+<!DOCTYPE dialog [
+  <!ENTITY % cal3eCalendar
+    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+  %cal3eCalendar;
+]>
 
 <dialog
     id="calendar3e-subscription-dialog"
-    title="&calendarSubscription.title;"
+    title="&cal3eCalendarSubscribe.title;"
     buttons="accept,cancel"
-    onload="cal3ePreferences.onLoad()"
-    onunload="cal3ePreferences.onUnload()"
-    ondialogaccept="return cal3ePreferences.onAccept()"
+    onload="cal3eSubscription.onLoad()"
+    ondialogaccept="return cal3eSubscription.onDialogAccept();"
     windowtype="Calendar3e:SubscriptionDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+  <script type="application/javascript"
+          src="chrome://calendar3e/content/calendarSubscription.js"/>
+
+  <notificationbox id="notifications" flex="1"/>
   <grid id="calendar3e-subscription-grid">
     <columns>
       <column/>
@@ -39,19 +45,11 @@
     <rows id="calendar3e-subscription-rows">
       <row id="calendar3e-subscriber-row" align="center">
         <label control="subscriber-menulist"
-               value="&calendarSubscription.subscriber.label;"/>
-        <menulist id="subscriber-menulist">
-          <menupopup id="subscriber-menupopup">
-            <menuitem value="bob.davis@mycompany.com"
-                      label="Bob Davis &lt;bob.davis@mycompany.com>"/>
-            <menuitem value="jane.doe@domain.net"
-                      label="Jane Doe &lt;jane.doe@domain.net>"/>
-          </menupopup>
-        </menulist>
+               value="&cal3eCalendarSubscribe.subscriber.label;"/>
       </row>
       <row id="calendar3e-search-row" align="center">
         <label control="search-pattern"
-               value="&calendarSubscription.search.label;"/>
+               value="&cal3eCalendarSubscribe.search.label;"/>
         <textbox id="search-pattern"/>
       </row>
       <row>
@@ -62,38 +60,7 @@
             <treecol id="calendar-tree-calendar-col" hideheader="true"
                      primary="true" flex="1" persist="width"/>
           </treecols>
-          <treechildren id="calendars-tree-children">
-            <treeitem container="true" open="true">
-              <treerow>
-                <treecell label="Alice White &lt;alice@domain.com>"/>
-              </treerow>
-              <treechildren>
-                <treeitem>
-                  <treerow>
-                    <treecell value="eee://alice@domain.com/personal"
-                              label="Personal"/>
-                  </treerow>
-                  <treerow>
-                    <treecell value="eee://alice@domain.com/work"
-                              label="Work"/>
-                  </treerow>
-                </treeitem>
-              </treechildren>
-            </treeitem>
-            <treeitem container="true" open="true">
-              <treerow>
-                <treecell label="Carl Bernstein &lt;carl@domain.com>"/>
-              </treerow>
-              <treechildren>
-                <treeitem>
-                  <treerow>
-                    <treecell value="eee://carl@domain.com/tech-wg"
-                              label="Tech working group"/>
-                  </treerow>
-                </treeitem>
-              </treechildren>
-            </treeitem>
-          </treechildren>
+          <treechildren id="calendars-tree-children"/>
         </tree>
       </row>
     </rows>

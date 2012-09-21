@@ -30,12 +30,16 @@ XPI_NAME = calendar3e-provider
 EXTRA_JS_MODULES = \
 	debug.jsm \
 	dns.jsm \
+	feature.jsm \
 	identity.jsm \
+	model.jsm \
 	resolv.jsm \
 	request.jsm \
 	response.jsm \
+	synchronization.jsm \
 	utils.jsm \
 	xml-rpc.jsm \
+	xul.jsm \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

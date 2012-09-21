@@ -17,235 +17,699 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/identity.jsm");
-Components.utils.import("resource://calendar3e/modules/request.jsm");
-Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import('resource://calendar/modules/calUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/model.jsm');
+Components.utils.import('resource://calendar3e/modules/request.jsm');
+Components.utils.import('resource://calendar3e/modules/response.jsm');
+Components.utils.import('resource://calendar3e/modules/utils.jsm');
+Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
-function calendarSubscription() {
-  this._identityObserver = cal3eIdentity.Observer();
-  this._identityObserver.addObserver(this.onIdentityChange.bind(this));
-  this._accountManager = Components.classes[
-    "@mozilla.org/messenger/account-manager;1"
-  ].getService(Components.interfaces.nsIMsgAccountManager);
-  this._stringBundle = document.getElementById('calendar3e-strings');
-  this._subscriberElement = document.getElementById('subscriber-menulist');
-  this._providerMap = {};
-  this._providerToTreeItemMap = {};
+function cal3eSubscription(subscriberController, filterController,
+                           calendarsController, subscriptionDelegate) {
+  var controller = this;
+  var stringBundle;
 
-  this.onIdentityChange();
-  this.load();
-}
+  function identityDidChange() {
+    calendarsController.setIdentity(subscriberController.identity());
+  }
 
-calendarSubscription.LOADING = 0x0100;
-calendarSubscription.BROWSING = 0x0200;
-calendarSubscription.ERROR = 0xfe00;
+  function filterDidChange() {
+    calendarsController.setFilter(filterController.filter());
+  }
 
-calendarSubscription.prototype = {
+  function subscribe() {
+    document.getElementById('notifications').removeAllNotifications();
+    calendarsController.freezSelection();
+    subscriptionDelegate.subscribe(
+      subscriberController.identity(),
+      calendarsController.selection(),
+      didSubscribe
+    );
 
-  getIdentity: function calendarSubscription_getIdentity() {
-    return this._subscriberElement.value ?
-      this._accountManager.getIdentity(this._subscriberElement.value) :
-      null ;
-  },
+    return false;
+  }
 
-  load: function calendarSubscription_load() {
-    this._state = calendarSubscription.LOADING;
-    this.loadProviders();
-    this.loadCalendars();
-  },
-
-  browse: function calendarSubscription_browse() {
-    this._state = calendarSubscription.BROWSING;
-  },
-
-  error: function calendarSubscription_error() {
-    this._state = calendarSubscription.ERROR;
-  },
-
-  loadProviders: function calendarSubscription_loadProviders() {
-    var identity = this.getIdentity();
-    if (null === identity) {
-      this._addItemToMenu(
-        this._providerElement,
-        [this._stringBundle.getString(
-          'cal3eCalendarProperties.providers.selectContextLabel'),
-         null],
-        true);
+  function didSubscribe(errors) {
+    if (errors.length > 0) {
+      didError();
       return;
     }
 
-    this._addItemToMenu(
-      this._providerElement,
-      [this._stringBundle.getString(
-        'cal3eCalendarProperties.providers.loadingLabel'),
-       null],
-      true);
-    var calendarSubscription = this;
-    var listener = function calEee_adoptItem_onResult(methodQueue, result) {
-      if (!(result instanceof cal3eResponse.Success)) {
-        this._addItemToMenu(
-          this._providerElement,
-          [
-            this._stringBundle.getString(
-              'cal3eCalendarProperties.providers.errorLabel'
-            ),
-            null
-          ],
-          true);
-        return;
-      }
-      calendarSubscription.onProvidersLoaded(
-        calendarSubscription._buildProviders(result)
-      );
-    };
-    cal3eRequest.Client.getInstance().getUsers(
-      identity, listener,
-      "NOT match_username(" + identity.email + ") AND " +
-        "NOT match_user_alias(" + identity.email + ")"
+    window.close();
+  }
+
+  function didError() {
+    calendarsController.unfreezSelection();
+
+    document.getElementById('notifications').appendNotification(
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.errors.subscribe'
+      ),
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
     );
-  },
+  }
 
-  loadCalendar: function calendarSubscription_loadCalendar() {
-  },
+  function init() {
+    stringBundle = document.getElementById('calendar3e-strings');
 
-  onIdentityChange: function calendarSubscription_onIdentityChange() {
-    this._clearMenu(this._subscriberElement);
+    window.addEventListener('unload', finalize, false);
 
-    cal3eIdentity.Collection().
-      getEnabled().
-      forEach(function(identity) {
-        var item = this._subscriberElement.appendItem(
-          identity.fullName + " <" + identity.email + ">",
+    subscriberController.addObserver(identityDidChange);
+    identityDidChange();
+    filterController.addObserver(filterDidChange);
+    filterDidChange();
+  }
+
+  function finalize() {
+    subscriberController.removeObserver(identityDidChange);
+    filterController.removeObserver(filterDidChange);
+
+    window.removeEventListener('unload', finalize, false);
+
+    stringBundle = null;
+  }
+
+  controller.subscribe = subscribe;
+
+  init();
+}
+
+function cal3eSubscriptionDelegate() {
+  var subscriptionDelegate = this;
+
+  function subscribe(identity, calendars, callback) {
+    var errors = [];
+    var processed = 0;
+
+    function didSubscribeCalendar(result) {
+      if (!(result instanceof cal3eResponse.Success)) {
+        errors.push(result);
+      }
+
+      processed += 1;
+      if (calendars.length === processed) {
+        callback(errors);
+      }
+    }
+
+    calendars.forEach(function(calendar) {
+      cal3eRequest.Client.getInstance().subscribeCalendar(
+        identity,
+        didSubscribeCalendar,
+        calendar
+      );
+    });
+  }
+
+  subscriptionDelegate.subscribe = subscribe;
+}
+
+function cal3eSubscriberController() {
+  var controller = this;
+  var identity;
+  var element;
+  var identityObserver;
+  var observers;
+
+  function addObserver(observer) {
+    observers.push(observer);
+
+    return controller;
+  }
+
+  function removeObserver() {
+    if (observers.indexOf(observer) < 0) {
+      return controller;
+    }
+
+    observers.splice(observers.indexOf(observer), 1);
+
+    return controller;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      try {
+        observer(controller);
+      } catch (e) {
+        //TODO log
+      }
+    });
+  }
+
+  function fillElement() {
+    clearElement();
+    if (cal3eIdentity.Collection().getEnabled().hasOnlyOne()) {
+      fillElementWithOne();
+    } else {
+      fillElementWithMany();
+    }
+    identityDidChange();
+  }
+
+  function fillElementWithOne() {
+    var labelElement = document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'label'
+    );
+
+    cal3eIdentity.Collection()
+      .getEnabled()
+      .forEach(function(identity) {
+        labelElement.setAttribute(
+          'value', identity.fullName + ' <' + identity.email + '>'
+        );
+      });
+
+    element.appendChild(labelElement);
+    elementDidLoad();
+  }
+
+  function fillElementWithMany() {
+    element.appendChild(document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'menulist'
+    ));
+    element.lastChild.id = 'subscriber-menulist';
+    var firstItem;
+
+    cal3eIdentity.Collection()
+      .getEnabled()
+      .forEach(function(identity) {
+        var item = element.lastChild.appendItem(
+          identity.fullName + ' <' + identity.email + '>',
           identity.key
         );
 
-        if (identity.key == this._subscriberElement.value) {
-          this._subscriberElement.selectedItem = item;
+        if (!firstItem) {
+          firstItem = item;
         }
       });
-  },
 
-  onProvidersLoaded:
-  function calendarSubscription_onProvidersLoaded(providers) {
-    this._clearMenu(this._providerElement);
-    providers.forEach(function (provider) {
-      this._addItemToTree(this._providerElement, provider, false);
-    }, this);
-  },
-
-  _addItemToMenu:
-  function calendarSubscription_addItemToMenu(menu, item, clear) {
-    if ('menupopup' != menu.tagName) {
-      menu = menu.firstChild;
-      while (menu && ('menupopup' !== menu.tagName)) {
-        menu = menu.nextSibling;
-      }
-    }
-    if (!menu || ('menupopup' != menu.tagName)) {
-      throw Components.Exception("Cannot find menupopup.");
-    }
-    if (clear) {
-      this._clearMenu(menu);
-    }
-    menu = menu.parentNode.appendItem.apply(menu.parentNode, item);
-  },
-
-  _clearMenu:
-  function calendarSubscription_clearMenu(menu) {
-    if ('menupopup' != menu.tagName) {
-      menu = menu.firstChild;
-      while (menu && ('menupopup' !== menu.tagName)) {
-        menu = menu.nextSibling;
-      }
-    }
-    if (!menu || ('menupopup' != menu.tagName)) {
-      throw Components.Exception("Cannot find menupopup.");
-    }
-    while (menu.lastChild) {
-      menu.removeChild(menu.lastChild);
-    }
-  },
-
-  _addItemToTree:
-  function calendarSubscription_addItemToTree(tree, item, parent) {
-    if ('treechildren' != tree.tagName) {
-      tree = tree.firstChild;
-      while (tree && ('treechildren' !== tree.tagName)) {
-        tree = tree.nextSibling;
-      }
-    }
-    if (!tree || ('treechildren' != tree.tagName)) {
-      throw Components.Exception("Cannot find treechildren.");
-    }
-  },
-
-  _clearTree:
-  function calendarSubscription_clearTree(tree) {
-    if ('treechildren' != tree.tagName) {
-      tree = tree.firstChild;
-      while (tree && ('treechildren' !== tree.tagName)) {
-        tree = tree.nextSibling;
-      }
-    }
-    if (!tree || ('treechildren' != tree.tagName)) {
-      throw Components.Exception("Cannot find treechildren.");
-    }
-    while (tree.lastChild) {
-      tree.removeChild(tree.lastChild);
-    }
-  },
-
-  _buildProviders:
-  function calendarSubscription_buildProviders(result) {
-    return result.data.map(function(rawProvider) {
-      return this._buildProvider(rawProvider);
-    });
-  },
-
-  _buildProvider: function calendarSubscription_buildProvider(rawProvider) {
-    var provider = [];
-    var username = rawProvider['username'];
-    var realname;
-    if (rawProvider.hasOwnProperty('attrs')) {
-      realname = rawProvider['attrs'].filter(function(rawAttr) {
-        return rawAttr['name'] === 'realname';
-      });
-      if (realname.length > 0) {
-        realname = realname[0]['value'];
-      }
-    }
-    if (realname) {
-      provider.push(realname + "<" + username + ">");
-    } else {
-      provider.push(username);
-    }
-    provider.push(username);
-
-    return provider;
-  },
-
-  finalize: function calendarSubscription_finalize() {
-    this._identityObserver.destroy();
-    this._identityObserver = null;
+    element.lastChild.selectedItem = firstItem;
+    element.lastChild.addEventListener('command', identityDidChange, false);
   }
 
+  function clearElement() {
+    if (hasManyIdentities()) {
+      element.lastElementChild.removeEventListener(
+        'command', identityDidChange, false
+      );
+    }
+    if (hasOneIdentity() || hasManyIdentities()) {
+      element.lastElementChild.parentNode.removeChild(
+        element.lastElementChild
+      );
+    }
+  }
+
+  function hasOneIdentity() {
+    return element.lastChild &&
+      (element.lastChild.nodeType ===
+       Components.interfaces.nsIDOMNode.ELEMENT_NODE) &&
+      (element.lastChild !== element.firstElementChild) &&
+      (element.lastChild.tagName === 'label');
+  }
+
+  function hasManyIdentities() {
+    return element.lastChild &&
+      (element.lastChild.nodeType ===
+       Components.interfaces.nsIDOMNode.ELEMENT_NODE) &&
+      (element.lastChild.tagName === 'menulist');
+  }
+
+  function identityDidChange() {
+    var identities = cal3eIdentity.Collection().getEnabled();
+    if (hasManyIdentities()) {
+      identities = identities.filter(function(identity) {
+        return identity.key === element.lastChild.value;
+      });
+    }
+
+    identity = identities.length > 0 ? identities[0] : null;
+    if (identity) {
+      notify();
+    }
+  }
+
+  function getIdentity() {
+    return identity;
+  }
+
+  function init() {
+    identity = null;
+
+    element = document.getElementById('calendar3e-subscriber-row');
+
+    observers = [];
+
+    identityObserver = cal3eIdentity.Observer();
+    identityObserver.addObserver(fillElement);
+    fillElement();
+    window.addEventListener('unload', finalize, false);
+  }
+
+  function finalize() {
+    identityObserver.destroy();
+    identityObserver = null;
+    window.removeEventListener('unload', finalize, false);
+
+    observers = null;
+
+    clearElement();
+    element = null;
+
+    identity = null;
+  }
+
+  controller.identity = getIdentity;
+  controller.addObserver = addObserver;
+  controller.removeObserver = removeObserver;
+
+  init();
 }
 
+function cal3eCalendarsFilterController() {
+  var controller = this;
+  var filter;
+  var element;
+  var observers;
 
-var subscribeDialog;
-calendarSubscription.open = function () {
-  openDialog("chrome://calendar3e/content/calendarSubscription.xul",
-             "cal3eSubscription", "chrome,titlebar,modal,resizable");
-}
-calendarSubscription.onLoad = function () {
-  subscribeDialog = new calendarSubscription();
-}
-calendarSubscription.onAccept = function () {
-  subscribeDialog.store();
+  function filterDidChange(event) {
+    filter = '' + element.value;
+    notify();
+  }
 
-  return true;
+  function addObserver(observer) {
+    observers.push(observer);
+
+    return controller;
+  }
+
+  function removeObserver(observer) {
+    if (observers.indexOf(observer) < 0) {
+      return controller;
+    }
+
+    observers.splice(observers.indexOf(observer), 1);
+
+    return controller;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      try {
+        observer(controller);
+      } catch (e) {
+        //TODO log
+      }
+    });
+  }
+
+  function getFilter() {
+    return filter;
+  }
+
+  function init() {
+    filter = '';
+
+    element = document.getElementById('search-pattern');
+    element.addEventListener('input', filterDidChange, false);
+
+    observers = [];
+
+    window.removeEventListener('unload', finalize, false);
+  }
+
+  function finalize() {
+    window.removeEventListener('unload', finalize, false);
+
+    observers = null;
+
+    element.removeEventListener('input', filterDidChange, false);
+    element = null;
+  }
+
+  controller.filter = getFilter;
+  controller.addObserver = addObserver;
+  controller.removeObserver = removeObserver;
+
+  init();
 }
-calendarSubscription.onUnload = function () {
-  subscribeDialog.finalize();
-  subscribeDialog = null;
+
+function cal3eSharedCalendarsController() {
+  var controller = this;
+  var element;
+  var identity;
+  var filter;
+  var calendars;
+  var owners;
+  var fixingSelection;
+  var selection;
+
+  function freezSelection() {
+    element.disabled = true;
+  }
+
+  function unfreezSelection() {
+    element.disabled = false;
+  }
+
+  function fillElement() {
+    if (!identity) {
+      fillElementNoIdentity();
+    } else if (owners.length === 0) {
+      fillElementLoading();
+    } else if (getFilteredUsers().length === 0) {
+      fillElementNoMatch();
+    } else {
+      fillElementLoaded();
+    }
+  }
+
+  function fillElementNoIdentity() {
+    cal3eXul.clearTree(element);
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.noIdentity'
+      ),
+      null
+    );
+  }
+
+  function fillElementLoading() {
+    cal3eXul.clearTree(element);
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.loading'
+      ),
+      null
+    );
+  }
+
+  function fillElementNoMatch() {
+    cal3eXul.clearTree(element);
+    cal3eXul.addItemToTree(
+      element,
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.calendars.noMatch'
+      ),
+      null
+    );
+  }
+
+  function fillElementError() {
+    document.getElementById('notifications').appendNotification(
+      document.getElementById('calendar3e-strings').getString(
+        'cal3eCalendarSubscribe.errors.data'
+      ),
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null,
+      function() { window.close() }
+    );
+  }
+
+  function fillElementLoaded() {
+    cal3eXul.clearTree(element);
+
+    var parentElement;
+    getFilteredUsers().forEach(function(owner) {
+      parentElement = cal3eXul.addItemToTree(
+        element,
+        cal3eModel.userLabel(owner),
+        null
+      );
+      getFilteredCalendars(owner).forEach(function(calendar) {
+        cal3eXul.addItemToTree(
+          parentElement,
+          cal3eModel.calendarLabel(calendar),
+          calendar['owner'] + ':' + calendar['name']
+        );
+      });
+    });
+  }
+
+  function matchesFilter(string) {
+    return normalizeString(string).indexOf(normalizeString(filter)) >= 0;
+  }
+
+  function normalizeString(string) {
+    return ('' + string).toLowerCase().replace(/s+/, ' ');
+  }
+
+  function getFilteredUsers() {
+    return owners.filter(function(user) {
+        return matchUser(user) || matchUserCalendars(user);
+      });
+  }
+
+  function getFilteredCalendars(user) {
+    return matchAllCalendarsByUser(user) ?
+      calendars[user['username']] :
+      calendars[user['username']].filter(matchCalendar);
+  }
+
+  function matchAllCalendarsByUser(user) {
+    return !calendars[user['username']].some(matchCalendar) &&
+      matchUser(user);
+  }
+
+  function matchUser(user) {
+    return matchesFilter(user['username']) ||
+      matchesFilter(cal3eModel.attribute(user, 'realname'));
+  }
+
+  function matchUserCalendars(user) {
+    return calendars[user['username']].some(matchCalendar);
+  }
+
+  function matchCalendar(calendar) {
+    return matchesFilter(calendar['name']) ||
+      matchesFilter(cal3eModel.attribute(calendar, 'title'));
+  }
+
+  function selectionDidChange() {
+    if (fixingSelection) {
+      return;
+    }
+
+    fixingSelection = true;
+    fixSelection();
+    fixingSelection = false;
+
+    selection.splice(0, selection.length);
+    selectionForEach(function(idx) {
+      selection.push(
+        element.view.getCellValue(idx, element.columns.getPrimaryColumn())
+      );
+    });
+  }
+
+  function fixSelection() {
+    var invalid = [];
+    selectionForEach(function(idx) {
+      if (element.view.isContainer(idx)) {
+        invalid.push(idx);
+      }
+    });
+    invalid.forEach(function(idx) {
+      element.view.selection.toggleSelect(idx);
+    });
+  }
+
+  function selectionForEach(callback) {
+    var i;
+    var j;
+    var start = { value: 0 };
+    var end = { value: 0 };
+    for (i = 0; i < element.view.selection.getRangeCount(); i += 1) {
+      element.view.selection.getRangeAt(i, start, end);
+      for (j = start.value; j <= end.value; j += 1) {
+        callback(j);
+      }
+    }
+  }
+
+  function didError(error) {
+    calendars = {};
+    owners = [];
+    fillElementError();
+  }
+
+  function loadSharedCalendars() {
+    fillElement();
+
+    cal3eRequest.Client.getInstance()
+      .getSharedCalendars(identity, sharedCalendarsDidLoad, '');
+  }
+
+  function sharedCalendarsDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError(result);
+      return;
+    }
+
+    calendars = {};
+    owners = [];
+    result.data.forEach(function(calendar) {
+      if (!calendars[calendar['owner']]) {
+        calendars[calendar['owner']] = [];
+      }
+      calendars[calendar['owner']].push(calendar);
+    });
+
+    loadSubscribedCalendars();
+  }
+
+  function loadSubscribedCalendars() {
+    cal3eRequest.Client.getInstance()
+      .getCalendars(identity, subscribedCalendarsDidLoad, 'subscribed()');
+  }
+
+  function subscribedCalendarsDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError(result);
+      return;
+    }
+
+    result.data.forEach(function(subscriberCalendar) {
+      if (!calendars[subscriberCalendar['owner']]) {
+        return;
+      }
+      calendars[subscriberCalendar['owner']] =
+        calendars[subscriberCalendar['owner']].filter(function(calendar) {
+          return calendar['name'] !== subscriberCalendar['name'];
+        });
+      if (calendars[subscriberCalendar['owner']].length === 0) {
+        delete calendars[subscriberCalendar['owner']];
+      }
+    });
+
+    loadCalendarOwners();
+  }
+
+  function loadCalendarOwners() {
+    var query = '';
+    var owner;
+    for (owner in calendars) {
+      if (!calendars.hasOwnProperty(owner)) {
+        continue;
+      }
+
+      if (query !== '') {
+        query += ' OR ';
+      }
+      query += "match_username('" + owner + "')";
+    }
+
+    cal3eRequest.Client.getInstance()
+      .getUsers(identity, calendarsOwnersDidLoad, query);
+  }
+
+  function calendarsOwnersDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError(result);
+      return;
+    }
+
+    result.data.forEach(function(owner) {
+      owners.push(owner);
+    });
+
+    fillElement();
+  }
+
+  function setFilter(newFilter) {
+    filter = newFilter;
+    fillElement();
+
+    return controller;
+  }
+
+  function setIdentity(newIdentity) {
+    identity = newIdentity;
+
+    if (identity) {
+      loadSharedCalendars();
+    }
+
+    return controller;
+  }
+
+  function getSelection() {
+    return selection;
+  }
+
+  function init() {
+    window.addEventListener('unload', finalize, false);
+
+    element = document.getElementById('calendars-tree');
+    element.addEventListener('select', selectionDidChange, false);
+
+    fixingSelection = false;
+    selection = [];
+
+    filter = '';
+    calendars = {};
+    owners = [];
+
+    identity = null;
+  }
+
+  function finalize() {
+    window.removeEventListener('unload', finalize, false);
+
+    identity = null;
+
+    filter = null;
+    calendars = null;
+    owners = null;
+
+    selection = null;
+
+    element.addEventListener('select', selectionDidChange, false);
+    element = null;
+  }
+
+  controller.freezSelection = freezSelection;
+  controller.unfreezSelection = unfreezSelection;
+  controller.selection = getSelection;
+  controller.setIdentity = setIdentity;
+  controller.setFilter = setFilter;
+
+  init();
 }
+
+cal3eSubscription.open = function cal3eSubscription_open() {
+  openDialog(
+    'chrome://calendar3e/content/calendarSubscription.xul',
+    'cal3eSubscription',
+    'chrome,titlebar,modal,resizable'
+  );
+};
+
+cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
+  cal3eSubscription.controller = new cal3eSubscription(
+    new cal3eSubscriberController(),
+    new cal3eCalendarsFilterController(),
+    new cal3eSharedCalendarsController(),
+    new cal3eSubscriptionDelegate()
+  );
+  window.addEventListener('unload', cal3eSubscription.onUnload, false);
+};
+cal3eSubscription.onDialogAccept =
+function cal3eSubscription_onDialogAccept() {
+  return cal3eSubscription.controller.subscribe();
+};
+cal3eSubscription.onUnload = function cal3eSubscription_onUnload() {
+  window.removeEventListener('unload', cal3eSubscription.onUnload, false);
+  delete cal3eSubscription.controller;
+};

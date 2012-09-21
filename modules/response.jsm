@@ -22,51 +22,51 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 /**
  * Representation of successful response from EEE server.
  *
- * @param {cal3eRequest.Queue} methodQueue
+ * @param {cal3eRequest.Queue} queue
  *
  * @property {nsISupports} data
  * @class
  */
-function Success(methodQueue) {
+function Success(queue) {
   Object.defineProperty(this, "data", {
-    "value": methodQueue.lastResponse().parameter()
+    "value": queue.lastResponse().parameter()
   });
 }
 
 /**
  * Representation of error response on level of EEE protocol.
  *
- * @param {cal3eRequest.Queue} methodQueue
+ * @param {cal3eRequest.Queue} queue
  *
  * @property {nsISupports} data always null
  * @property {Number} errorCode should be one of {@see eeeErrors}
  * @class
  */
-function EeeError(methodQueue) {
+function EeeError(queue) {
   Object.defineProperty(this, "data", {
     "value": null
   });
   Object.defineProperty(this, "errorCode", {
-    "value": methodQueue.lastResponse().faultCode()
+    "value": queue.lastResponse().faultCode()
   });
 }
 
 /**
  * Representation of transport response on level below EEE protocol.
  *
- * @param {cal3eRequest.Queue} methodQueue method queue which executed
+ * @param {cal3eRequest.Queue} queue method queue which executed
  * errorneous request
  *
  * @property {nsISupports} data always null
  * @property {Number} errorCode should be one of {@see eeeErrors}
  * @class
  */
-function TransportError(methodQueue) {
+function TransportError(queue) {
   Object.defineProperty(this, "data", {
     "value": null
   });
   Object.defineProperty(this, "errorCode", {
-    "value": methodQueue.status()
+    "value": queue.status()
   });
 }
 
@@ -140,7 +140,7 @@ function loadErrors(errorListName) {
       1 * codeElement.textContent;
   }
 
-  delete errors["eeeErrors"]["notLoaded"];
+  delete errors[errorListName]["notLoaded"];
 }
 
 function getErrorsXml(errorListName) {
@@ -160,19 +160,19 @@ function getErrorsXml(errorListName) {
   return str;
 }
 
-function fromMethodQueue(methodQueue) {
+function fromRequestQueue(queue) {
 
   function getEeeResponseType() {
-    if (methodQueue.isFault()) {
+    if (queue.isFault()) {
       return EeeError;
-    } else if (!Components.isSuccessCode(methodQueue.status())) {
+    } else if (!Components.isSuccessCode(queue.status())) {
       return TransportError;
     }
 
     return Success;
   }
 
-  return new (getEeeResponseType())(methodQueue);
+  return new (getEeeResponseType())(queue);
 }
 
 function createErrorsGetter(errorListName) {
@@ -198,7 +198,7 @@ properties["TransportError"] = { "value": TransportError };
 properties["UserError"] = { "value": UserError };
 
 var cal3eResponse = Object.create({
-  "fromMethodQueue": fromMethodQueue
+  "fromRequestQueue": fromRequestQueue
 }, properties);
 EXPORTED_SYMBOLS = [
   'cal3eResponse'

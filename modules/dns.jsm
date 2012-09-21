@@ -17,35 +17,69 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/resolv.jsm");
+Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
-function cal3eDns() {
-}
+function cal3eDns(resolv) {
+  var dns = this;
 
-cal3eDns.DEFAULT_PORT = 4444;
-
-cal3eDns.prototype = {
-
-  resolveServer: function cal3eDns_resolveServer(domainName) {
-    var foundEeeRecord = [null, null];
-    var dns = new Resolv.DNS();
-    var eeeServerRe = /\beee server=([^:]+)(?::(\d{1,5}))?/, match;
-    dns.getresource(
-      domainName, Resolv.DNS.Resource.TXT, function (resource) {
-        match = eeeServerRe.exec(resource.data());
-        if (!match) return;
-        foundEeeRecord[0] = match[1];
-        foundEeeRecord[1] = match[2];
-        return false;
-      }
-    );
-    if (!foundEeeRecord[0]) foundEeeRecord[0] = domainName;
-    if (!foundEeeRecord[1]) foundEeeRecord[1] = cal3eDns.DEFAULT_PORT;
-
-    return foundEeeRecord;d
+  function resolveServer(domainName, callback) {
+    resolv.addEventListener('message', function onResult(event) {
+      resolv.removeEventListener('message', onResult, false);
+      didGetResources(domainName, event.data.result, callback);
+    }, false);
+    resolv.postMessage({
+      name: 'resources',
+      args: [domainName, 'TXT']
+    });
   }
 
+  function didGetResources(domainName, resources, callback) {
+    var records = resources
+      .map(function(data) {
+        return Resolv.DNS.Resource.fromJson(data);
+      })
+      .filter(function(resource) {
+        return resource.data().match(/^eee /) &&
+          resource.data().match(cal3eDns.EEE_SERVER_RESOURCE_RE);
+      })
+      .map(function(resource) {
+        var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
+        return {
+          'host': match[1] || domainName,
+          'port': match[2] || cal3eDns.DEFAULT_PORT
+        };
+      });
+
+    if (records.length === 0) {
+      records.push({
+        'host': domainName,
+        'port': cal3eDns.DEFAULT_PORT
+      });
+    }
+
+    callback(records[0]);
+  }
+
+  function init() {
+    if (!resolv) {
+      resolv = new ChromeWorker(
+        'resource://calendar3e/modules/resolv.jsm'
+      );
+      resolv.postMessage({
+        name: 'init',
+        args: [
+          Components.classes['@mozilla.org/xre/app-info;1']
+            .getService(Components.interfaces.nsIXULRuntime).OS]
+      });
+    }
+  }
+
+  dns.resolveServer = resolveServer;
+
+  init();
 }
+cal3eDns.DEFAULT_PORT = 4444;
+cal3eDns.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
 
 EXPORTED_SYMBOLS = [
   'cal3eDns'

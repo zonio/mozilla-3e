@@ -37,6 +37,33 @@ function createOperationListener(onResult) {
 }
 
 /**
+ * Takes NSPR time and returns EEE date as used in queries.
+ *
+ * @param {PRTime} nsprTime
+ * @returns {String}
+ */
+function nsprTimeToEeeDate(nsprTime) {
+  function zeropad(number, length) {
+    var string = '' + number;
+    while (string.length < length) {
+      string = '0' + string;
+    }
+
+    return string;
+  }
+
+  var jsDate = new Date(nsprTime / 1000);
+
+  return '' +
+    zeropad(jsDate.getUTCFullYear(), 4) + '-' +
+    zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
+    zeropad(jsDate.getUTCDate(), 2) + ' ' +
+    zeropad(jsDate.getUTCHours(), 2) + ':' +
+    zeropad(jsDate.getUTCMinutes(), 2) + ':' +
+    zeropad(jsDate.getUTCSeconds(), 2);
+}
+
+/**
  * Translates eee attachment uri to http uri so attachment can be
  * downloaded by web  browser.
  * @param {nsIURI} eeeUri Uri to be translated
@@ -100,6 +127,7 @@ function fileAttachmentToEeeUri(fileUri, email) {
 
 var cal3eUtils = {
   createOperationListener: createOperationListener,
+  nsprTimeToEeeDate: nsprTimeToEeeDate,
   eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
   fileAttachmentToEeeUri: fileAttachmentToEeeUri
 };

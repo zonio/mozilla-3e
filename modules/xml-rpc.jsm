@@ -21,17 +21,15 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/ISO8601DateUtils.jsm');
 
-function Client() {
+function Client(uri) {
   var client = this;
-  var uri;
   var listener;
   var window;
   var request;
   var xhr;
   var response;
-  var channelCallbacks;
 
-  function call(methodName, parameters) {
+  function call(methodName, parameters, context) {
     if (request) {
       throw Components.Exception(
         'Only one request at the same time',
@@ -40,7 +38,7 @@ function Client() {
     }
 
     request = new Request(methodName, parameters);
-    doXhrSend();
+    doXhrSend(context);
 
     return client;
   }
@@ -55,7 +53,7 @@ function Client() {
     oldXhr.abort();
   }
 
-  function doXhrSend() {
+  function doXhrSend(context) {
     if (!uri) {
       throw Components.Exception(
         'URI must be set',
@@ -63,22 +61,36 @@ function Client() {
       );
     }
 
+    var channelCallbacks = new ChannelCallbacks(
+      doXhrSend,
+      passErrorToListener,
+      context,
+      window
+    );
     xhr = Components.classes[
       '@mozilla.org/xmlextras/xmlhttprequest;1'
     ].createInstance(Components.interfaces.nsIXMLHttpRequest);
     xhr.open('POST', uri.spec);
     xhr.setRequestHeader('Content-Type', 'text/xml');
-    xhr.addEventListener('load', onXhrLoad, false);
-    xhr.addEventListener('error', onXhrError, false);
+    xhr.addEventListener('load', function(event) {
+      onXhrLoad(event, context);
+    }, false);
+    xhr.addEventListener('error', function(event) {
+      if (channelCallbacks.isActive()) {
+        return;
+      }
+
+      onXhrError(event, context);
+    }, false);
     xhr.channel.notificationCallbacks = channelCallbacks;
 
     xhr.send(request.body());
   }
 
-  function onXhrLoad(event) {
+  function onXhrLoad(event, context) {
     if ((event.target.status !== 200) || !event.target.responseXML) {
       passErrorToListener(
-        Components.results.NS_ERROR_FAILURE, 'Unknown network error'
+        Components.Exception('Unknown network error'), context
       );
       return;
     }
@@ -87,35 +99,33 @@ function Client() {
     try {
       response = createResponse(event.target.responseXML);
     } catch (e) {
-      passErrorToListener(e.result, e.message);
+      passErrorToListener(
+        Components.Exception(e.message, e.result), context
+      );
       return;
     }
 
-    passResultToListener();
+    passResultToListener(context);
   }
 
-  function onXhrError(event) {
-    if (channelCallbacks.isBadCertListenerActive()) {
-      return;
-    }
-
+  function onXhrError(event, context) {
     passErrorToListener(
-      Components.results.NS_ERROR_FAILURE, 'Unknown network error'
+      Components.Exception('Unknown network error'), context
     );
   }
 
-  function passResultToListener() {
+  function passResultToListener(context) {
     reset();
     if (isSuccess()) {
-      listener.onResult(client, response);
+      listener.onResult(client, response, context);
     } else {
-      listener.onFault(client, response);
+      listener.onFault(client, response, context);
     }
   }
 
-  function passErrorToListener(result, description) {
+  function passErrorToListener(error, context) {
     reset();
-    listener.onError(client, Components.Exception(description, result));
+    listener.onError(client, error, context);
   }
 
   function reset() {
@@ -123,10 +133,8 @@ function Client() {
     xhr = null;
   }
 
-  function setUri(newUri) {
-    uri = newUri;
-
-    return client;
+  function getUri() {
+    return uri;
   }
 
   function setListener(newListener) {
@@ -145,21 +153,11 @@ function Client() {
     return response && (response instanceof Response);
   }
 
-  function init() {
-    channelCallbacks = new ChannelCallbacks(
-      doXhrSend,
-      passErrorToListener,
-      window
-    );
-  }
-
   client.call = call;
   client.abort = abort;
-  client.setUri = setUri;
+  client.uri = getUri;
   client.setListener = setListener;
   client.setWindow = setWindow;
-
-  init();
 }
 
 function Request(name, parameters) {
@@ -614,7 +612,7 @@ function Value(valueElement) {
   init();
 }
 
-function ChannelCallbacks(repeatCall, onError, window) {
+function ChannelCallbacks(repeatCall, onError, context, window) {
   var channelCallbacks = this;
   var badCertListener;
 
@@ -626,25 +624,29 @@ function ChannelCallbacks(repeatCall, onError, window) {
       );
     }
 
-    if (!badCertListener) {
-      badCertListener = new BadCertListener(repeatCall, onError, window);
-    }
-
     return badCertListener;
   }
 
-  function isBadCertListenerActive() {
-    return badCertListener && badCertListener.isActive();
+  function isActive() {
+    return badCertListener.isActive();
+  }
+
+  function init() {
+    badCertListener = new BadCertListener(
+      repeatCall, onError, context, window
+    );
   }
 
   channelCallbacks.QueryInterface = XPCOMUtils.generateQI([
     Components.interfaces.nsIInterfaceRequestor
   ]);
   channelCallbacks.getInterface = getInterface;
-  channelCallbacks.isBadCertListenerActive = isBadCertListenerActive;
+  channelCallbacks.isActive = isActive;
+
+  init();
 }
 
-function BadCertListener(repeatCall, onError, window) {
+function BadCertListener(repeatCall, onError, context, window) {
   var badCertListener = this;
   var active;
 
@@ -669,12 +671,12 @@ function BadCertListener(repeatCall, onError, window) {
 
     active = false;
     if (parameters['exceptionAdded']) {
-      repeatCall();
+      repeatCall(context);
     } else {
-      onError(
-        Components.results.NS_ERROR_FAILURE,
-        'Server certificate exception not added'
-      );
+      onError(Components.Exception(
+        'Server certificate exception not added',
+        Components.results.NS_ERROR_FAILURE
+      ), context);
     }
   }
 

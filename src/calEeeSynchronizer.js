@@ -21,9 +21,10 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://calendar/modules/calUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
-Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/response.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 /**
  * Synchronizer of calendars present in Mozilla client application
@@ -134,11 +135,62 @@ calEeeSynchronizationService.prototype = {
   observe: function calEeeSyncService_observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
-      this.register();
+      this.registerAfterMainWindowOpen();
       break;
     case 'timer-callback':
       this.runSynchronizer(this._findIdentityOfTimer(subject));
       break;
+    }
+  },
+
+  registerAfterMainWindowOpen:
+  function calEeeSyncService_registerAfterMainWindowOpen() {
+    //XXX WindowMediator nor WindowWatcher don't work and
+    // final-ui-startup startup category isn't what we want
+    var timer = Components.classes['@mozilla.org/timer;1']
+      .createInstance(Components.interfaces.nsITimer);
+    var mainWindowObserver = this._mainWindowObserver.bind(this);
+    if (!mainWindowObserver(timer)) {
+      timer.init({
+        QueryInterface: XPCOMUtils.generateQI([
+          Components.interfaces.nsIObserver
+        ]),
+        observe: mainWindowObserver
+      }, 100, Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
+    }
+  },
+
+  _mainWindowObserver: function calEeeSyncService_windowObserver(timer) {
+    var mailWindow = Services.wm.getMostRecentWindow("mail:3pane");
+    if (!mailWindow) {
+      return false;
+    }
+
+    timer.cancel();
+    this.registerOnReady(mailWindow.document);
+
+    return true;
+  },
+
+  registerOnReady: function calEeeSyncService_registerOnReady(document) {
+    var synchronizationService = this;
+    if (document.readyState !== 'complete') {
+      document.addEventListener(
+        'readystatechange',
+        function onStateChange() {
+          if (document.readyState !== 'complete') {
+            return;
+          }
+
+          document.removeEventListener(
+            'readystatechange', onStateChange, false
+          );
+          synchronizationService.register();
+        },
+        false
+      );
+    } else {
+      this.register();
     }
   },
 
@@ -320,7 +372,7 @@ calEeeSynchronizer.prototype = {
     var synchronizer = this;
     cal3eRequest.Client.getInstance().getCalendars(
       this._identity,
-      function calEeeSynchronizer_onGetCalendars(methodQueue, result) {
+      function calEeeSynchronizer_onGetCalendars(result) {
         if (result instanceof cal3eResponse.UserError) {
           return;
         } else if (!(result instanceof cal3eResponse.Success)) {
@@ -428,22 +480,11 @@ calEeeSynchronizer.prototype = {
    */
   _setCalendarProperties:
   function calEeeSynchronizer_setCalendarProperties(calendar, data) {
-    var attrs = {};
-    if (data.hasOwnProperty('attrs')) {
-      data['attrs'].forEach(function(attrData) {
-        attrs[attrData['name']] = '' + attrData['value'];
-      });
-    }
-
-    if (attrs['title']) {
-      calendar.name = attrs['title'];
-    } else {
-      calendar.name = '' + data['name'];
-    }
+    calendar.name = cal3eModel.calendarLabel(data);
 
     //TODO validation
-    if (attrs['color']) {
-      calendar.setProperty('color', attrs['color']);
+    if (cal3eModel.attribute(data, 'color')) {
+      calendar.setProperty('color', cal3eModel.attribute(data, 'color'));
     }
   },
 

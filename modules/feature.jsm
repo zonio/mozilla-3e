@@ -17,8 +17,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-pref('calendar.eee.calendar_sync_interval', 15000);
-pref('calendar.eee.queue_execution_interval', 500);
-pref('calendar.eee.user_error_timeout', 300000);
+Components.utils.import('resource://gre/modules/Services.jsm');
 
-pref('calendar.eee.features.dns', false);
+function isSupported(feature) {
+  return !!Services.prefs.getBoolPref('calendar.eee.features.' + feature);
+}
+
+var cal3eFeature = {
+  isSupported: isSupported
+};
+EXPORTED_SYMBOLS = [
+  'cal3eFeature'
+];

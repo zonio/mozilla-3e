@@ -19,489 +19,154 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-//Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
+Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
-function Client() {
+/**
+ * @todo create a request constructor instead of this scenario nonsense
+ */
+function Client(serverBuilder, authenticationDelegate,
+                queueValidationDelegate) {
   var client = this;
-  var queues;
-  var activeQueue;
-  var timer;
-  var dns;
-  var lastUserErrors;
-  var tmpLoginInfos;
-
-  function prepareMethodQueueAndAuthenticate(identity, listener) {
-    var methodQueue = prepareMethodQueue(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-
-    methodQueue = enqueueAuthenticate(identity, methodQueue, listener);
-    if (!methodQueue) {
-      return null;
-    }
-
-    return methodQueue;
-  }
-
-  function prepareMethodQueue(identity, listener) {
-    var methodQueue = new Queue();
-    methodQueue
-      .setServerUri(uriFromIdentity(identity))
-      .setListener(onResult)
-      .setContext(listener);
-
-    return validateMethodQueue(
-      methodQueue, listener, cal3eResponse.userErrors.BAD_CERT
-    );
-  }
-
-  function uriFromIdentity(identity) {
-    if (!dns) {
-      //XXX dev only
-      host = identity.getCharAttribute('eee_host');
-      port = identity.getIntAttribute('eee_port');
-    } else {
-      [host, port] = dns.resolveServer(
-        identity.email.substring(identity.email.indexOf('@') + 1)
-      );
-    }
-    var url = 'https://' + host + ':' + port + '/RPC2';
-
-    return Services.io.newURI(url, null, null);
-  }
-
-  function enqueueMethod(methodQueue, methodName) {
-    return methodQueue.push(
-      'ESClient.' + methodName, Array.prototype.slice.call(arguments, 2)
-    );
-  }
-
-  function queueExecution(methodQueue) {
-    queues.push(methodQueue);
-    if (null === timer) {
-      timer = Components.classes['@mozilla.org/timer;1']
-        .createInstance(Components.interfaces.nsITimer);
-      timer.init(
-        getTimerObserver(), 1, Components.interfaces.nsITimer.TYPE_ONE_SHOT
-      );
-    }
-
-    return methodQueue;
-  }
-
-  function getTimerObserver() {
-    return {
-      QueryInterface: XPCOMUtils.generateQI([
-        Components.interfaces.nsIObserver
-      ]),
-      observe: execute
-    };
-  }
-
-  function execute() {
-    if ((activeQueue === null) || !activeQueue.isPending()) {
-      activeQueue = queues.shift();
-      activeQueue.call();
-    }
-    if (0 < queues.length) {
-      timer = Components.classes['@mozilla.org/timer;1']
-        .createInstance(Components.interfaces.nsITimer);
-      timer.init(
-        getTimerObserver(),
-        Services.prefs.getIntPref('calendar.eee.queue_execution_interval'),
-        Components.interfaces.nsITimer.TYPE_ONE_SHOT
-      );
-    } else {
-      timer = null;
-    }
-  }
-
-  function onResult(methodQueue, listener) {
-    var result;
-    //XXX There's no result code for SSL error available so we must
-    // check error code and message to distinguish bad certificate
-    if (methodQueue.error() &&
-        (methodQueue.error().result === Components.results.NS_ERROR_FAILURE) &&
-        (methodQueue.error().message ===
-         'Server certificate exception not added')) {
-      result = setLastUserError(
-        methodQueue, cal3eResponse.userErrors.BAD_CERT
-      );
-    } else if (methodQueue.isFault() &&
-               (methodQueue.lastResponse().errorCode ===
-                cal3eResponse.eeeErrors.AUTH_FAILED)) {
-      restartQueueWithNewPassword(methodQueue, listener);
-      return;
-    } else if (!methodQueue.isPending()) {
-      result = cal3eResponse.fromMethodQueue(methodQueue);
-    } else if (methodQueue.isPending()) {
-      return;
-    }
-
-    listener(methodQueue, result);
-  }
-
-  function authenticate(identity, listener) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
-    if (!methodQueue) {
-      return null;
-    }
-    queueExecution(methodQueue);
-
-    return methodQueue;
-  }
-
-  function enqueueAuthenticate(identity, methodQueue, listener) {
-    //XXX move the whole password prompt/store/... functionality to
-    // separate class
-
-    if (!validateMethodQueue(methodQueue, listener,
-                             cal3eResponse.userErrors.NO_PASSWORD)) {
-      return null;
-    }
-
-    var loginInfo = findLoginInfo(identity) ||
-      promptForPasswordAndStoreIt(identity, methodQueue, listener);
-
-    return loginInfo ?
-      enqueueMethod(methodQueue, 'authenticate', identity.email,
-                    loginInfo.password) :
-      null ;
-  }
-
-  function passwordUri(identity) {
-    //XXX not DRY - somehow use EeeProtocol class
-    return 'eee://' +
-      identity.email.substring(identity.email.indexOf('@') + 1);
-  }
-
-  function findLoginInfo(identity) {
-    return findTmpLoginInfo(identity) || findPermLoginInfo(identity);
-  }
-
-  function findPermLoginInfo(identity) {
-    var logins = Services.logins.findLogins(
-      {}, passwordUri(identity), passwordUri(identity), null
-    );
-
-    return logins.length > 0 ? logins[0] : null;
-  }
-
-  function findTmpLoginInfo(identity) {
-    return tmpLoginInfos && tmpLoginInfos[identity.key] ?
-      tmpLoginInfos[identity.key] :
-      null;
-  }
-
-  function promptForPassword(identity) {
-    var password = { value: '' }; // default the password to empty string
-    var savePassword = { value: true }; // default the checkbox to true
-
-    var stringBundle = Services.strings.createBundle(
-      'chrome://calendar3e/locale/cal3eCalendar.properties'
-    );
-
-    var didEnterPassword = Services.prompt.promptPassword(
-      null,
-      stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-      stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
-      password,
-      stringBundle.GetStringFromName('cal3ePasswordDialog.save'),
-      savePassword
-    );
-
-    var loginInfo =
-      Components.classes['@mozilla.org/login-manager/loginInfo;1']
-      .createInstance(Components.interfaces.nsILoginInfo);
-    loginInfo.init(
-      passwordUri(identity), passwordUri(identity), null, identity.email,
-      password.value, '', ''
-    );
-
-    return [loginInfo, didEnterPassword, savePassword.value];
-  }
-
-  function storePermLoginInfo(identity, loginInfo) {
-    if (findPermLoginInfo(identity) === null) {
-      Services.logins.addLogin(loginInfo);
-    } else {
-      Services.logins.modifyLogin(findPermLoginInfo(identity), loginInfo);
-    }
-  }
-
-  function storeTmpLoginInfo(identity, loginInfo) {
-    if (!tmpLoginInfos) {
-      tmpLoginInfos = {};
-    }
-    tmpLoginInfos[identity.key] = loginInfo;
-  }
-
-  function promptForPasswordAndStoreIt(identity, methodQueue, listener) {
-    var [loginInfo, didEnterPassword, savePassword] =
-      promptForPassword(identity);
-
-    if (didEnterPassword && savePassword) {
-      storePermLoginInfo(identity, loginInfo);
-    } else if (didEnterPassword) {
-      storeTmpLoginInfo(identity, loginInfo);
-    } else if (!didEnterPassword) {
-      loginInfo = null;
-      listener(
-        methodQueue,
-        setLastUserError(
-          methodQueue, cal3eResponse.userErrors.NO_PASSWORD
-        )
-      );
-    }
-
-    return loginInfo;
-  }
-
-  function restartQueueWithNewPassword(methodQueue, listener) {
-    methodQueue.cancel();
-    var newMethodQueue = prepareMethodQueue(
-      findIdentityInQueue(methodQueue), listener
-    );
-    methodQueue.toArray().forEach(function(methodCall) {
-      if (methodCall[0] === 'ESClient.authenticate') {
-        methodCall[1][1] = promptForPasswordAndStoreIt(
-          findIdentityByEmail(methodCall[1][0]),
-          methodQueue,
-          listener
-        ).password;
-      }
-      newMethodQueue.push(methodCall[0], methodCall[1]);
-    });
-
-    queueExecution(newMethodQueue);
-  }
-
-  function findIdentityInQueue(queue) {
-    var identity = null;
-    queue.toArray().forEach(function(methodCall) {
-      if (methodCall[0] === 'ESClient.authenticate') {
-        identity = findIdentityByEmail(methodCall[1][0]);
-      }
-    });
-
-    return identity;
-  }
-
-  function findIdentityByEmail(email) {
-    var identities = cal3eIdentity.Collection()
-      .getEnabled()
-      .findByEmail(email);
-
-    return identities.length > 0 ? identities[0] : null;
-  }
-
-  function validateMethodQueue(methodQueue, listener, errorCode) {
-    var error = findLastUserError(
-      methodQueue.serverUri().spec, errorCode
-    );
-    var threshold = new Date(
-      Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
-    );
-    if (error && error.timestamp > threshold) {
-      listener(methodQueue, error);
-    } else if (error) {
-      cleanLastUserError(methodQueue.serverUri().spec, errorCode);
-      error = null;
-    }
-
-    return !error ? methodQueue : null;
-  }
-
-  function setLastUserError(methodQueue, errorCode) {
-    prepareLastUserErrorMap(methodQueue.serverUri().spec, errorCode);
-
-    lastUserErrors[methodQueue.serverUri().spec][errorCode] =
-      new cal3eResponse.UserError(errorCode);
-
-    return lastUserErrors[methodQueue.serverUri().spec][errorCode];
-  }
-
-  function findLastUserError(errorsId, errorCode) {
-    return lastUserErrors && lastUserErrors[errorsId] &&
-        lastUserErrors[errorsId][errorCode] ?
-      lastUserErrors[errorsId][errorCode] :
-      null;
-  }
-
-  function prepareLastUserErrorMap(errorsId, errorCode) {
-    if (!lastUserErrors) {
-      lastUserErrors = {};
-      lastUserErrors.length = 0;
-    }
-    if (!lastUserErrors[errorsId]) {
-      lastUserErrors[errorsId] = {};
-      lastUserErrors[errorsId].length = 0;
-      lastUserErrors.length += 1;
-    }
-
-    lastUserErrors[errorsId].length += 1;
-  }
-
-  function cleanLastUserError(errorsId, errorCode) {
-    delete lastUserErrors[errorsId][errorCode];
-    lastUserErrors[errorsId].length -= 1;
-    if (lastUserErrors[errorsId].length === 0) {
-      delete lastUserErrors[errorsId];
-      lastUserErrors.length -= 1;
-    }
-    if (lastUserErrors.length === 0) {
-      lastUserErrors = null;
-    }
-  }
+  var synchronizedMethod = new cal3eSynchronization.Method();
 
   function getUsers(identity, listener, query) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueGetUsers(methodQueue, query);
-    queueExecution(methodQueue);
-
-    return methodQueue;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.getUsers', [query])
+      .call(onResult, listener);
   }
-
-  function enqueueGetUsers(methodQueue, query) {
-    return enqueueMethod(methodQueue, 'getUsers', query);
-  }
+  getUsers = synchronizedMethod.create(
+    createScenario(getUsers), createQueue
+  );
 
   function getCalendars(identity, listener, query) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueGetCalendars(methodQueue, query);
-    queueExecution(methodQueue);
-
-    return methodQueue;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.getCalendars', [query])
+      .call(onResult, listener);
   }
+  getCalendars = synchronizedMethod.create(
+    createScenario(getCalendars), createQueue
+  );
 
-  function enqueueGetCalendars(methodQueue, query) {
-    return enqueueMethod(methodQueue, 'getCalendars', query);
+  function getSharedCalendars(identity, listener, query) {
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.getSharedCalendars', [query])
+      .call(onResult, listener);
   }
+  getSharedCalendars = synchronizedMethod.create(
+    createScenario(getSharedCalendars), createQueue
+  );
 
   function createCalendar(identity, listener, calendar) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueCreateCalendar(methodQueue, calendar);
-    queueExecution(methodQueue);
-
-    return methodQueue;
-  }
-
-  function enqueueCreateCalendar(methodQueue, calendar) {
-    enqueueMethod(methodQueue, 'createCalendar', calendar.calname);
+    var queue = synchronizedMethod.future(arguments);
+    queue.push('ESClient.createCalendar', [calendar.calname]);
     if (calendar.calname != calendar.name) {
-      enqueueSetCalendarAttribute(
-        methodQueue, calendar, 'title', calendar.name, true
-      );
+      queue.push('ESClient.setCalendarAttribute', [
+        getCalendarCalspec(calendar),
+        'title',
+        calendar.name,
+      true
+      ]);
     }
     if (calendar.getProperty('color')) {
-      enqueueSetCalendarAttribute(
-        methodQueue, calendar, 'color', calendar.getProperty('color'), true
-      );
+      queue.push('ESClient.setCalendarAttribute', [
+        getCalendarCalspec(calendar),
+        'color',
+        calendar.getProperty('color'),
+        true
+      ]);
     }
 
-    return methodQueue;
+    return queue.call(onResult, listener);
   }
+  createCalendar = synchronizedMethod.create(
+    createScenario(createCalendar), createQueue
+  );
 
   function deleteCalendar(identity, listener, calendar) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueDeleteCalendar(methodQueue, calendar);
-    queueExecution(methodQueue);
-
-    return methodQueue;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.deleteCalendar', [calendar.calname])
+      .call(onResult, listener);
   }
+  deleteCalendar = synchronizedMethod.create(
+    createScenario(deleteCalendar), createQueue
+  );
 
-  function enqueueDeleteCalendar(methodQueue, calendar) {
-    return enqueueMethod(methodQueue, 'deleteCalendar', calendar.calname);
+  function subscribeCalendar(identity, listener, calspec) {
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.subscribeCalendar', [calspec])
+      .call(onResult, listener);
   }
+  subscribeCalendar = synchronizedMethod.create(
+    createScenario(subscribeCalendar), createQueue
+  );
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
                                 isPublic) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueSetCalendarAttribute(methodQueue, calendar, name, value, isPublic);
-    queueExecution(methodQueue);
-
-    return methodQueue;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.setCalendarAttribute', [
+        getCalendarCalspec(calendar),
+        name,
+        value,
+        isPublic])
+      .call(onResult, listener);
   }
+  setCalendarAttribute = synchronizedMethod.create(
+    createScenario(setCalendarAttribute), createQueue
+  );
 
-  function enqueueSetCalendarAttribute(methodQueue, calendar, name, value,
-                                       isPublic) {
-    return enqueueMethod(
-      methodQueue, 'setCalendarAttribute', getCalendarCalspec(calendar), name,
-      value, isPublic
-    );
+  function queryObjects(identity, listener, calendar, query) {
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.queryObjects', [
+        getCalendarCalspec(calendar),
+        query])
+      .call(onResult, listener);
   }
-
-  function queryObjects(identity, listener, calendar, id, from, to) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueQueryObjects(methodQueue, calendar, id, from, to);
-    queueExecution(methodQueue);
-
-    return methodQueue;
-  }
-
-  function enqueueQueryObjects(methodQueue, calendar, id, from, to) {
-    var query = '';
-    if (id === null) {
-      if (null !== from) {
-        query += "date_from('" + xpcomToEeeDate(from) + "')";
-      }
-      if (null !== to) {
-        if ('' !== query) {
-          query += ' AND ';
-        }
-        query += "date_to('" + xpcomToEeeDate(to) + "')";
-      }
-      if ('' !== query) {
-        query += ' AND ';
-      }
-    } else {
-      query += "match_uid('" + id + "') AND ";
-    }
-    query += 'NOT deleted()';
-
-    return enqueueMethod(
-      methodQueue, 'queryObjects', getCalendarCalspec(calendar), query
-    );
-  }
+  queryObjects = synchronizedMethod.create(
+    createScenario(queryObjects), createQueue
+  );
 
   function addObject(identity, listener, calendar, item) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
     uploadAttachments(identity, item, methodQueue, function() {
       enqueueAddObject(identity, methodQueue, calendar, item);
       queueExecution(methodQueue);
     }, listener);
 
-    return methodQueue;
+    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
+
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.addObject', [
+        getCalendarCalspec(calendar),
+        item.icalComponent.serializeToICS()])
+      .call(onResult, listener);
   }
+  addObject = synchronizedMethod.create(
+    createScenario(addObject), createQueue
+  );
+
+  function updateObject(identity, listener, calendar, item) {
+    uploadAttachments(identity, item, methodQueue, function() {
+      enqueueAddObject(identity, methodQueue, calendar, item);
+      queueExecution(methodQueue);
+    }, listener);
+
+    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
+
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.updateObject', [
+        getCalendarCalspec(calendar),
+        item.icalComponent.serializeToICS()])
+      .call(onResult, listener);
+  }
+  updateObject = synchronizedMethod.create(
+    createScenario(updateObject), createQueue
+  );
 
   function uploadAttachments(identity, item, methodQueue, onComplete, listener) {
     dump('uploadAttachments\n');
@@ -586,89 +251,120 @@ function Client() {
     });
   }
 
-  function enqueueAddObject(identity, methodQueue, calendar, item) {
-    var count = { value: 0 };
-    var timezones = item.icalComponent.getReferencedTimezones(count);
-    var idx = count.value;
-    while (idx--) {
-      enqueueMethod(
-        methodQueue, 'addObject', getCalendarCalspec(calendar),
-        timezones[idx].icalComponent.serializeToICS()
-      );
-    }
-
-    return enqueueMethod(
-      methodQueue, 'addObject', getCalendarCalspec(calendar),
-      item.icalComponent.serializeToICS()
-    );
-  }
-
-  function updateObject(identity, listener, calendar, item) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueUpdateObject(methodQueue, calendar, item);
-    queueExecution(methodQueue);
-
-    return methodQueue;
-  }
-
-  function enqueueUpdateObject(methodQueue, calendar, item) {
-    var count = { value: 0 };
-    var timezones = item.icalComponent.getReferencedTimezones(count);
-    var idx = count.value;
-    while (idx--) {
-      enqueueMethod(
-        methodQueue, 'addObject', getCalendarCalspec(calendar),
-        timezones[idx].icalComponent.serializeToICS()
-      );
-    }
-
-    return enqueueMethod(
-      methodQueue, 'updateObject', getCalendarCalspec(calendar),
-      item.icalComponent.serializeToICS()
-    );
+  function enqueueItemTimezones(queue, item) {
+    item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
+      queue.push('ESClient.addObject', [
+        getCalendarCalspec(calendar),
+        timezone.icalComponent.serializeToICS()
+      ]);
+    });
   }
 
   function deleteObject(identity, listener, calendar, item) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(identity, listener);
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueDeleteObject(methodQueue, calendar, item);
-    queueExecution(methodQueue);
-
-    return methodQueue;
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.deleteObject', [getCalendarCalspec(calendar), item.id])
+      .call(onResult, listener);
   }
-
-  function enqueueDeleteObject(methodQueue, calendar, item) {
-    return enqueueMethod(
-      methodQueue, 'deleteObject', getCalendarCalspec(calendar), item.id
-    );
-  }
+  deleteObject = synchronizedMethod.create(
+    createScenario(deleteObject), createQueue
+  );
 
   function freeBusy(identity, listener, attendee, from, to, defaultTimezone) {
-    var methodQueue = prepareMethodQueueAndAuthenticate(
-      identity, listener
-    );
-    if (!methodQueue) {
-      return null;
-    }
-    enqueueGetFreeBusy(methodQueue, attendee, from, to, defaultTimezone);
-    queueExecution(methodQueue);
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.deleteObject', [
+        attendee,
+        xpcomToEeeDate(from),
+        xpcomToEeeDate(to),
+        defaultTimezone])
+      .call(onResult, listener);
+  }
+  freeBusy = synchronizedMethod.create(
+    createScenario(freeBusy), createQueue
+  );
 
-    return methodQueue;
+  function createScenario(main) {
+    return function runScenario() {
+      return new cal3eSynchronization.Queue()
+        .push(initQueue)
+        .push(authenticateQueue)
+        .push(main)
+        .call.apply(null, arguments);
+    };
   }
 
-  function enqueueGetFreeBusy(methodQueue, attendee, from, to,
-                              defaultTimezone) {
-    var fromEee = xpcomToEeeDate(from);
-    var toEee = xpcomToEeeDate(to);
+  function createQueue() {
+    return new Queue();
+  }
 
-    return enqueueMethod(
-      methodQueue, 'freeBusy', attendee, fromEee, toEee, defaultTimezone
+  function initQueue(identity, listener) {
+    synchronizedMethod.waitUntilFinished();
+
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var synchronizationQueue = this;
+
+    serverBuilder.fromIdentity(identity, function(server) {
+      queue.setServer(server);
+
+      if (stopScenarioIfUserError(queue, listener)) {
+        return queue;
+      }
+
+      synchronizationQueue.next().apply(synchronizationQueue, args);
+    });
+
+    return queue;
+  }
+
+  function authenticateQueue(identity, listener) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var synchronizationQueue = this;
+
+    if (stopScenarioIfUserError(queue, listener)) {
+      return queue;
+    }
+
+    authenticationDelegate.authenticate(identity, queue, function(queue) {
+      if (stopScenarioIfUserError(queue, listener)) {
+        return queue;
+      }
+
+      synchronizedMethod.finished();
+      synchronizationQueue.next().apply(synchronizationQueue, args);
+    });
+
+    return queue;
+  }
+
+  function stopScenarioIfUserError(queue, listener) {
+    queueValidationDelegate.apply(queue);
+
+    return stopScenario(
+      queue,
+      listener,
+      queueValidationDelegate.validate(queue)
     );
+  }
+
+  function stopScenario(queue, listener, error) {
+    if (Components.isSuccessCode(queue.status())) {
+      return false;
+    }
+
+    synchronizedMethod.finished();
+    listener(error || cal3eResponse.fromRequestQueue(queue));
+
+    return true;
+  }
+
+  function onResult(queue, listener) {
+    if (queue.isPending()) {
+      return;
+    }
+
+    var error = queueValidationDelegate.apply(queue);
+    listener(error || cal3eResponse.fromRequestQueue(queue));
   }
 
   function getCalendarCalspec(calendar) {
@@ -677,72 +373,418 @@ function Client() {
     return uriParts[2] + ':' + (uriParts[4] || uriParts[3]);
   }
 
-  function init() {
-    queues = [];
-    activeQueue = null;
-    timer = null;
-    if (typeof cal3eDns !== 'undefined') {
-      dns = new cal3eDns();
-    }
-
-    lastUserErrors = null;
-  }
-
-  client.authenticate = authenticate;
   client.getUsers = getUsers;
   client.getCalendars = getCalendars;
+  client.getSharedCalendars = getSharedCalendars;
   client.createCalendar = createCalendar;
   client.deleteCalendar = deleteCalendar;
+  client.subscribeCalendar = subscribeCalendar;
   client.setCalendarAttribute = setCalendarAttribute;
   client.queryObjects = queryObjects;
   client.addObject = addObject;
   client.updateObject = updateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
-
-  init();
 }
 var clientInstance;
 Client.getInstance = function Client_getInstance() {
   if (!clientInstance) {
-    clientInstance = new Client();
+    clientInstance = new Client(
+      new ServerBuilder(),
+      new AuthenticationDelegate(),
+      new QueueValidationDelegate()
+    );
   }
 
   return clientInstance;
 };
 
-function xpcomToEeeDate(xpcomDate) {
-  function zeropad(number, length) {
-    var string = '' + number;
-    while (string.length < length) {
-      string = '0' + string;
+function ServerBuilder() {
+  var serverBuilder = this;
+  var dns;
+
+  function fromIdentity(identity, callback) {
+    if (!cal3eFeature.isSupported('dns')) {
+      callback(new cal3eXmlRpc.Client(Services.io.newURI(
+        'https://' +
+          identity.getCharAttribute('eee_host') + ':' +
+          identity.getIntAttribute('eee_port') + '/RPC2',
+        null,
+        null
+      )));
+      return;
     }
 
-    return string;
+    dns.resolveServer(getHostname(identity), function(record) {
+      callback(new cal3eXmlRpc.Client(Services.io.newURI(
+        'https://' + record['host'] + ':' + record['port'] + '/RPC2',
+        null,
+        null
+      )));
+    });
   }
 
-  var jsDate = new Date(xpcomDate / 1000),
-      eeeDate = '';
-  eeeDate += zeropad(jsDate.getUTCFullYear(), 4) + '-' +
-             zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
-             zeropad(jsDate.getUTCDate(), 2) + ' ' +
-             zeropad(jsDate.getUTCHours(), 2) + ':' +
-             zeropad(jsDate.getUTCMinutes(), 2) + ':' +
-             zeropad(jsDate.getUTCSeconds(), 2);
+  function getHostname(identity) {
+    return identity.email.substring(identity.email.indexOf('@') + 1);
+  }
 
-  return eeeDate;
+  function init() {
+    dns = new cal3eDns();
+  }
+
+  serverBuilder.fromIdentity = fromIdentity;
+
+  init();
+}
+
+function AuthenticationDelegate() {
+  var authenticationDelegate = this;
+  var sessionStorage;
+
+  function authenticate(identity, queue, callback) {
+    if (!Components.isSuccessCode(queue.status())) {
+      callback(queue);
+      return;
+    }
+
+    if (didQueueAuthFailed(queue)) {
+      invalidate(identity);
+    }
+
+    validate(findInStorages(identity) || prompt(identity), queue, {
+      callback: callback,
+      identity: identity
+    });
+  }
+
+  function findInStorages(identity) {
+    var login = null;
+
+    [sessionStorage, Services.logins].forEach(function(storage) {
+      if (login) {
+        return;
+      }
+
+      login = findInStorage(storage, identity);
+    });
+
+    return login;
+  }
+
+  function prompt(identity) {
+    var stringBundle = Services.strings.createBundle(
+      'chrome://calendar3e/locale/cal3eCalendar.properties'
+    );
+
+    var password = {
+      value: findInStorages(identity) ?
+        findInStorages(identity).password :
+        ''
+    };
+    var didEnterPassword =
+      Components.classes['@mozilla.org/embedcomp/window-watcher;1']
+      .getService(Components.interfaces.nsIPromptFactory)
+      .getPrompt(null, Components.interfaces.nsIAuthPrompt)
+      .promptPassword(
+        stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
+        stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+        loginUri(identity).spec,
+        Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
+        password
+      );
+
+    // LoginManagerPrompter doesn't support session storage
+    if (didEnterPassword && !findInStorages(identity)) {
+      addToStorage(sessionStorage, identity, password.value);
+    }
+
+    return didEnterPassword ? findInStorages(identity) : null;
+  }
+
+  function invalidate(identity) {
+    [sessionStorage, Services.logins].forEach(function(storage) {
+      if (!findInStorage(storage, identity)) {
+        return;
+      }
+
+      storage.removeLogin(findInStorage(storage, identity));
+    });
+  }
+
+  function validate(login, queue, context) {
+    if (!login) {
+      queue.setError(Components.Exception('No password given'));
+      context.callback(queue);
+      return;
+    }
+
+    queue
+      .push('ESClient.authenticate', [eeeUsername(login), login.password])
+      .call(didValidate, context);
+  }
+
+  function didValidate(queue, context) {
+    if (queue.isPending()) {
+      return;
+    }
+
+    if (didQueueAuthFailed(queue)) {
+      authenticate(context.identity, queue, context.callback);
+    } else {
+      context.callback(queue);
+    }
+  }
+
+  function findInStorage(storage, identity) {
+    var logins = storage.findLogins(
+      {}, loginInfoHostname(identity), null, loginInfoHostname(identity)
+    );
+
+    return logins.length > 0 ? logins[0] : null;
+  }
+
+  function addToStorage(storage, identity, password) {
+    var login = Components.classes['@mozilla.org/login-manager/loginInfo;1']
+      .createInstance(Components.interfaces.nsILoginInfo);
+    login.init(
+      loginInfoHostname(identity), null, loginInfoHostname(identity),
+      loginInfoUsername(identity), password,
+      '', ''
+    );
+    storage.addLogin(login);
+  }
+
+  function didQueueAuthFailed(queue) {
+    return queue.isFault() &&
+      (cal3eResponse.fromRequestQueue(queue).errorCode ===
+       cal3eResponse.eeeErrors.AUTH_FAILED);
+  }
+
+  function loginUri(identity) {
+    return Services.io.newURI('eee://' + identity.email + '/', null, null);
+  }
+
+  function loginInfoHostname(identity) {
+    return loginUri(identity).scheme + '://' + loginUri(identity).host;
+  }
+
+  function loginInfoUsername(identity) {
+    return loginUri(identity).username;
+  }
+
+  function eeeUsername(login) {
+    return login.username + '@' +
+      Services.io.newURI(login.hostname, null, null).host;
+  }
+
+  function init() {
+    sessionStorage = new LoginInfoSessionStorage();
+  }
+
+  authenticationDelegate.authenticate = authenticate;
+
+  init();
+}
+
+function LoginInfoSessionStorage() {
+  var loginInfoSessionStorage = this;
+  var storage;
+
+  function addLogin(login) {
+    prepareStorageForHostname(login.hostname);
+
+    storage[login.hostname][login.username] = login;
+  }
+
+  function modifyLogin(oldLogin, newLogin) {
+    removeLogin(oldLogin);
+    addLogin(newLogin);
+  }
+
+  function removeLogin(login) {
+    if (!storage[login.hostname]) {
+      return;
+    }
+
+    if (storage[login.hostname][login.username]) {
+      delete storage[login.hostname][login.username];
+    }
+
+    cleanupStorageForHostname(login.hostname);
+  }
+
+  function findLogins(count, hostname, url, realm) {
+    var logins = [];
+
+    if (!storage[hostname]) {
+      count['value'] = logins.length;
+      return logins;
+    }
+
+    prepareStorageForHostname(hostname);
+
+    var username;
+    for (username in storage[hostname]) {
+      if (!storage[hostname].hasOwnProperty(username)) {
+        continue;
+      }
+
+      logins.push(storage[hostname][username]);
+    }
+
+    count['value'] = logins.length;
+    return logins;
+  }
+
+  function prepareStorageForHostname(hostname) {
+    if (!storage[hostname]) {
+      storage[hostname] = {};
+    }
+  }
+
+  function cleanupStorageForHostname(hostname) {
+    if (!storage[hostname]) {
+      return;
+    }
+
+    var empty = true;
+    var username;
+    for (username in storage[hostname]) {
+      empty = !storage[hostname].hasOwnProperty(username);
+      if (!empty) break;
+    }
+
+    if (empty) {
+      delete storage[hostname][username];
+    }
+  }
+
+  function init() {
+    storage = {};
+  }
+
+  loginInfoSessionStorage.addLogin = addLogin;
+  loginInfoSessionStorage.modifyLogin = modifyLogin;
+  loginInfoSessionStorage.removeLogin = removeLogin;
+  loginInfoSessionStorage.findLogins = findLogins;
+
+  init();
+}
+
+function QueueValidationDelegate() {
+  var queueValidationDelegate = this;
+  var userErrors;
+
+  function validate(queue) {
+    if (getValidUserErrors(queue).length > 0) {
+      setUserError(queue, getValidUserErrors(queue)[0]);
+    } else if (getUserErrors(queue).length > 0) {
+      cleanupUserErrors(queue);
+    }
+
+    return getValidUserErrors(queue)[0];
+  }
+
+  function apply(queue) {
+    if (!findQueueErrorCode(queue)) {
+      return null;
+    }
+
+    var error = new cal3eResponse.UserError(findQueueErrorCode(queue));
+    storeUserError(queue, error);
+    setUserError(queue, error);
+
+    return error;
+  }
+
+  function getUserErrors(queue) {
+    return userErrors && userErrors[queue.server().uri().spec] ?
+      userErrors[queue.server().uri().spec] :
+      [];
+  }
+
+  function getValidUserErrors(queue) {
+    return getUserErrors(queue).filter(isValid);
+  }
+
+  function isValid(error) {
+    var threshold = new Date(
+      Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
+    );
+
+    return error.timestamp > threshold;
+  }
+
+  function setUserError(queue, error) {
+    return queue.setError(
+      Components.Exception("User error '" + error.errorCode + "'")
+    );
+  }
+
+  function findQueueErrorCode(queue) {
+    var errorCode;
+    if (isBadCert(queue)) {
+      errorCode = cal3eResponse.userErrors.BAD_CERT;
+    } else if (isNoPassword(queue)) {
+      errorCode = cal3eResponse.userErrors.NO_PASSWORD;
+    } else {
+      errorCode = null;
+    }
+
+    return errorCode;
+  }
+
+  function isBadCert(queue) {
+    return queue.error() &&
+        (queue.error().result === Components.results.NS_ERROR_FAILURE) &&
+        (queue.error().message === 'Server certificate exception not added');
+  }
+
+  function isNoPassword(queue) {
+    return queue.error() &&
+        (queue.error().result === Components.results.NS_ERROR_FAILURE) &&
+        (queue.error().message === 'No password given');
+  }
+
+  function storeUserError(queue, error) {
+    if (!userErrors) {
+      userErrors = {};
+      userErrors.length = 0;
+    }
+    if (!userErrors[queue.server().uri().spec]) {
+      userErrors[queue.server().uri().spec] = [];
+      userErrors.length += 1;
+    }
+
+    userErrors[queue.server().uri().spec].push(error);
+  }
+
+  function cleanupUserErrors(queue) {
+    userErrors[queue.server().uri().spec] =
+      userErrors[queue.server().uri().spec].filter(isValid);
+    if (userErrors[queue.server().uri().spec].length === 0) {
+      delete userErrors[queue.server().uri().spec];
+      userErrors.length -= 1;
+    }
+    if (userErrors.length === 0) {
+      userErrors = null;
+    }
+  }
+
+  queueValidationDelegate.validate = validate;
+  queueValidationDelegate.apply = apply;
 }
 
 function Queue() {
   var queue = this;
+  var lastResponse;
   var server;
+  var methodIdx;
   var methodCalls;
-  var listener;
-  var context;
   var pending;
   var status;
   var error;
-  var timestamp;
+  var id;
 
   function push(methodName, parameters) {
     if (pending) {
@@ -755,65 +797,67 @@ function Queue() {
     return queue;
   }
 
-  function toArray() {
-    return methodCalls.slice();
-  }
-
-  function call() {
+  function call(listener, context) {
     if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
-    if (serverUri === undefined) {
+    if (!server) {
       throw Components.results.NS_ERROR_NOT_INITIALIZED;
     }
 
-    methodIdx = 0;
     pending = methodCalls.length > methodIdx;
-    callNext();
+    callNext({
+      'listener': listener,
+      'context': context
+    });
+
+    return queue;
   }
 
-  function callNext() {
+  function callNext(context) {
     if (!pending) {
       return;
     }
 
-    server.call.apply(server, methodCalls[methodIdx]);
+    var callArguments = methodCalls[methodIdx].slice();
+    callArguments.push(context);
+    server.call.apply(server, callArguments);
   }
 
-  function onResult(resultServer, result) {
+  function onResult(resultServer, result, context) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
     }
 
-    passToListenerGoNext(result);
+    passToListenerGoNext(result, context);
   }
 
-  function onFault(resultServer, fault) {
+  function onFault(resultServer, fault, context) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
     }
 
-    passToListenerGoNext(fault);
+    passToListenerGoNext(fault, context);
   }
 
-  function passToListenerGoNext(response) {
+  function passToListenerGoNext(response, context) {
     lastResponse = response;
     methodIdx += 1;
     pending = methodCalls.length > methodIdx;
-    listener(queue, context);
-    callNext();
+    callNext(context);
+    context['listener'](queue, context['context']);
   }
 
-  function onError(resultServer, serverError) {
+  function onError(resultServer, serverError, context) {
     // skip handling of responses from canceled requests
     if (resultServer !== server) {
       return;
     }
 
     setError(serverError);
-    listener(queue, context);
+    context['listener'](queue, context['context']);
   }
 
   function setError(serverError) {
@@ -824,11 +868,7 @@ function Queue() {
   }
 
   function getId() {
-    var lastMethod = methodCalls.length > 0 ?
-      methodCalls[methodCalls.length - 1][0] :
-      '-- not initialized --';
-
-    return serverUri.spec + ':' + lastMethod + '.' + timestamp;
+    return id;
   }
 
   function isPending() {
@@ -843,45 +883,33 @@ function Queue() {
     return error;
   }
 
+  function setError(newError) {
+    lastResponse = null;
+    pending = false;
+    status = newError.result;
+    error = newError;
+
+    return queue;
+  }
+
   function cancel() {
     server.abort();
     pending = false;
   }
 
-  function setServerUri(newServerUri) {
-    if (pending) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    serverUri = newServerUri;
-    server.setUri(serverUri);
-    status = Components.results.NS_OK;
-
-    return queue;
-  }
-
-  function getServerUri() {
-    return serverUri;
-  }
-
-  function setListener(newListener) {
-    if (pending) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    listener = newListener;
+  function setServer(newServer) {
+    server = newServer;
+    server.setListener({
+      onResult: onResult,
+      onFault: onFault,
+      onError: onError
+    });
 
     return queue;
   }
 
-  function setContext(newContext) {
-    if (pending) {
-      throw Components.results.NS_ERROR_IN_PROGRESS;
-    }
-
-    context = newContext;
-
-    return queue;
+  function getServer() {
+    return server;
   }
 
   function getLastResponse() {
@@ -912,20 +940,14 @@ function Queue() {
   }
 
   function init() {
-    server = new cal3eXmlRpc.Client();
-    server.setListener({
-      onResult: onResult,
-      onFault: onFault,
-      onError: onError
-    });
+    queueSequence += 1;
+    id = 'cal3eRequest.Queue.' + queueSequence;
 
+    methodIdx = 0;
     methodCalls = [];
-    listener = function() {};
-    context = null;
     pending = false;
     status = Components.results.NS_OK;
     error = null;
-    timestamp = 1 * (new Date());
   }
 
   queue.component = getComponent;
@@ -933,20 +955,18 @@ function Queue() {
   queue.isPending = isPending;
   queue.isFault = isFault;
   queue.status = getStatus;
-  queue.setServerUri = setServerUri;
-  queue.serverUri = getServerUri;
-  queue.setListener = setListener;
-  queue.setContext = setContext;
-  queue.setError = setError;
+  queue.setServer = setServer;
+  queue.server = getServer;
   queue.lastResponse = getLastResponse;
   queue.error = getError;
+  queue.setError = setError;
   queue.cancel = cancel;
   queue.push = push;
-  queue.toArray = toArray;
   queue.call = call;
 
   init();
 }
+var queueSequence = 0;
 
 var cal3eRequest = {
   Client: Client
