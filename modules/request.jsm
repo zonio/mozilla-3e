@@ -839,13 +839,6 @@ function Queue() {
     context['listener'](queue, context['context']);
   }
 
-  function setError(serverError) {
-    lastResponse = null;
-    pending = false;
-    status = serverError.result;
-    error = serverError;
-  }
-
   function getId() {
     return id;
   }
