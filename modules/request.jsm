@@ -149,24 +149,27 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function updateObject(identity, listener, calendar, item) {
-    uploadAttachments(identity, item, methodQueue, function() {
-      enqueueAddObject(identity, methodQueue, calendar, item);
-      queueExecution(methodQueue);
-    }, listener);
-
-    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
-
-    return synchronizedMethod.future(arguments)
-      .push('ESClient.updateObject', [
-        getCalendarCalspec(calendar),
-        item.icalComponent.serializeToICS()])
-      .call(onResult, listener);
+    return uploadAttachments(
+      identity, listener, item, synchronizedMethod.future(arguments),
+      function(queue) {
+        enqueueItemTimezones(queue, item);
+        queue
+          .push('ESClient.updateObject', [
+            getCalendarCalspec(calendar),
+            item.icalComponent.serializeToICS()])
+          .call(onResult, listener);
+    });
   }
   updateObject = synchronizedMethod.create(
     createScenario(updateObject), createQueue
   );
 
   function uploadAttachments(identity, listener, item, queue, callback) {
+    if (!cal3eFeature.isSupported('attachments')) {
+      callback(queue);
+      return queue;
+    }
+
     var attachments = item.getAttachments({});
     var idx = 0;
 
@@ -223,6 +226,8 @@ function Client(serverBuilder, authenticationDelegate,
         );
       }
     });
+
+    return queue;
   }
 
   function enqueueItemTimezones(queue, item) {
