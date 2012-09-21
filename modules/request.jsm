@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://gre/modules/NetUtil.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/dns.jsm');
@@ -26,7 +27,6 @@ Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
-Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 /**
  * @todo create a request constructor instead of this scenario nonsense
@@ -133,18 +133,16 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function addObject(identity, listener, calendar, item) {
-    uploadAttachments(identity, item, methodQueue, function() {
-      enqueueAddObject(identity, methodQueue, calendar, item);
-      queueExecution(methodQueue);
-    }, listener);
-
-    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
-
-    return synchronizedMethod.future(arguments)
-      .push('ESClient.addObject', [
-        getCalendarCalspec(calendar),
-        item.icalComponent.serializeToICS()])
-      .call(onResult, listener);
+    return uploadAttachments(
+      identity, listener, item, synchronizedMethod.future(arguments),
+      function(queue) {
+        enqueueItemTimezones(queue, item);
+        queue
+          .push('ESClient.addObject', [
+            getCalendarCalspec(calendar),
+            item.icalComponent.serializeToICS()])
+          .call(onResult, listener);
+      });
   }
   addObject = synchronizedMethod.create(
     createScenario(addObject), createQueue
@@ -168,85 +166,61 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(updateObject), createQueue
   );
 
-  function uploadAttachments(identity, item, methodQueue, onComplete, listener) {
-    dump('uploadAttachments\n');
+  function uploadAttachments(identity, listener, item, queue, callback) {
     var attachments = item.getAttachments({});
     var idx = 0;
-    
-    function uploadAttachment() {
-      dump('uploadAttachment\n');
-      var eeeUri = cal3eUtils.fileAttachmentToEeeUri(attachments[idx].uri, identity.email);
-      var httpUri = cal3eUtils.eeeAttachmentToHttpUri(eeeUri);
-      dump('[3e] fileUri: ' + attachments[idx].uri.spec + '\n');
-      dump('[3e] eeeUri: ' + eeeUri.spec +'\n');
-      dump('[3e] httpUri: ' + httpUri.spec + '\n');
 
+    function uploadAttachment() {
       var xhr = Components.classes[
         '@mozilla.org/xmlextras/xmlhttprequest;1'
       ].createInstance(Components.interfaces.nsIXMLHttpRequest);
-      xhr.open('POST', httpUri.spec);
+      xhr.open('POST', cal3eUtils.fileAttachmentToEeeUri(
+        attachments[idx].uri, identity.email
+      ));
       xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
-      xhr.addEventListener('error', function () {
-        dump('xhr.addEventListener error\n');
-        dump('xhr.readyState: ' + xhr.readyState + '\n');
-        dump('xhr.status: ' + xhr.status + '\n');
-        dump('xhr.statusText: ' + xhr.statusText + '\n');
-        methodQueue.setError(Components.Exception('Upload error.'));
-        listener(methodQueue, cal3eResponse.fromMethodQueue(methodQueue));
+      xhr.addEventListener('error', function() {
+        queue.setError(Components.Exception('Upload error.'));
+        listener(queue, cal3eResponse.fromMethodQueue(queue));
       }, false);
-      dump('uploadAttachment 0\n');
 
-      xhr.addEventListener('load', function () {
-        dump('xhr.addEventListener load\n');
+      xhr.addEventListener('load', function() {
         if (idx < attachments.length) {
-          uploadAttachment()
+          uploadAttachment();
           idx += 1;
         } else {
-          onComplete();
+          callback(queue);
         }
       }, false);
 
-      var stream = Services.io.newChannel(attachments[idx].uri.spec, null, null).open();
-      var str = NetUtil.readInputStreamToString(stream, stream.available());
-
-      var channel = Services.io.newChannel(eeeUri.spec, null, null)
+      var channel = Services.io.newChannel(cal3eUtils.fileAttachmentToEeeUri(
+        attachments[idx].uri, identity.email
+      ).spec, null, null)
         .QueryInterface(Components.interfaces.nsIUploadChannel);
-      channel.setUploadStream(stream, 'application/octet-stream', -1);
-      var channelListener = {
+      channel.setUploadStream(
+        Services.io.newChannel(attachments[idx].uri.spec, null, null).open(),
+        'application/octet-stream',
+        -1
+      );
+      channel.asyncOpen({
         QueryInterface: XPCOMUtils.generateQI([
           Components.interfaces.nsIStreamListener
         ]),
-        onStopRequest: function(request, context, statusCode) {
-          if (statusCode !== Components.results.NS_OK) {
-            dump('[3e] onStopRequest error, code: ' + statusCode + '\n');
-          } else {
-            dump('[3e] onStopRequest OK\n');
-          }
+        onStopRequest: function() {
         },
         onStartRequest: function() {
-          dump('[3e] onStartRequest\n');
         },
-        onDataAvailable: function() {}
-      };
-      channel.asyncOpen(channelListener, null);
-      
-      //dump('[3e] stream before send: ' + stream + '\n');
-      //dump('[3e] stream .available before send: ' + stream.available() + '\n');
-      dump('[3e] stream before send: ' + str + '\n');
-      //xhr.send(
-      //  //Services.io.newChannel(attachments[idx].uri.spec, null, null).open()
-      //  str
-      //);
-      dump('uploadAttachment 1\n');
+        onDataAvailable: function() {
+        }
+      }, null);
     }
     uploadAttachment();
-    
+
     attachments.forEach(function(attach) {
       if (attach.uri.schemeIs('file')) {
-        //item.removeAttachment(attach);
-        attach.uri = cal3eUtils.fileAttachmentToEeeUri(attach.uri, identity.email);
-        //item.addAttachment(attach);
+        attach.uri = cal3eUtils.fileAttachmentToEeeUri(
+          attach.uri, identity.email
+        );
       }
     });
   }
