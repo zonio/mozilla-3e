@@ -17,12 +17,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cr = Components.results;
-const Cu = Components.utils;
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 /**
  * Simple definition of EEE URIs just enough to enable eee URI scheme.
@@ -32,23 +29,24 @@ function calEeeProtocol() {
 
 calEeeProtocol.prototype = {
 
-  classDescription: "EEE protocol handler",
+  classDescription: 'EEE protocol handler',
 
-  classID: Components.ID("{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}"),
+  classID: Components.ID('{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}'),
 
-  contractID: "@mozilla.org/network/protocol;1?name=eee",
+  contractID: '@mozilla.org/network/protocol;1?name=eee',
 
   QueryInterface: XPCOMUtils.generateQI([
-    Ci.nsIProtocolHandler
+    Components.interfaces.nsIProtocolHandler
   ]),
 
   scheme: 'eee',
 
   defaultPort: 4444,
 
-  protocolFlags: Ci.nsIProtocolHandler.URI_LOADABLE_BY_ANYONE |
-    Ci.nsIProtocolHandler.URI_NORELATIVE |
-    Ci.nsIProtocolHandler.URI_NOAUTH ,
+  protocolFlags:
+    Components.interfaces.nsIProtocolHandler.URI_LOADABLE_BY_ANYONE |
+    Components.interfaces.nsIProtocolHandler.URI_NORELATIVE |
+    Components.interfaces.nsIProtocolHandler.URI_NOAUTH,
 
   /**
    * Creates new nsIURI instance from given URI specification.
@@ -61,11 +59,11 @@ calEeeProtocol.prototype = {
    * @returns {nsIURI}
    */
   newURI: function(spec, charset, baseUri) {
-    var uri = Cc['@mozilla.org/network/standard-url;1']
-      .createInstance(Ci.nsIStandardURL);
+    var uri = Components.classes['@mozilla.org/network/standard-url;1']
+      .createInstance(Components.interfaces.nsIStandardURL);
     //TODO some checks?
     uri.init(
-      Ci.nsIStandardURL.URLTYPE_STANDARD,
+      Components.interfaces.nsIStandardURL.URLTYPE_STANDARD,
       this.defaultPort,
       spec,
       charset,
@@ -82,7 +80,18 @@ calEeeProtocol.prototype = {
    * @returns {nsIHttpProtocolHandler}
    */
   newChannel: function(uri) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    if (!this.checkAttachUri(uri)) {
+      throw Components.Exception('Only attachment URLs are supported');
+    }
+
+    return Services.io.newChannel(
+      cal3eUtils.eeeAttachmentToHttpUri(uri).spec, null, null
+    );
+  },
+
+  checkAttachUri: function(uri) {
+    return (uri.spec.split('/').length === 6) &&
+      (uri.spec.split('/')[3] === 'attach');
   },
 
   /**
@@ -99,6 +108,6 @@ calEeeProtocol.prototype = {
     return httpProtocol.allowPort(port, scheme);
   }
 
-}
+};
 
 const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeProtocol]);

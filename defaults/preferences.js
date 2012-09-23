@@ -22,3 +22,4 @@ pref('calendar.eee.queue_execution_interval', 500);
 pref('calendar.eee.user_error_timeout', 300000);
 
 pref('calendar.eee.features.dns', false);
+pref('calendar.eee.features.attachments', false);

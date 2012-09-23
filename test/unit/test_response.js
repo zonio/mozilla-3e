@@ -22,16 +22,16 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 
 function test_response_success() {
-  var methodQueue = create_success_method_queue();
-  var response = cal3eResponse.fromMethodQueue(methodQueue);
+  var queue = create_success_method_queue();
+  var response = cal3eResponse.fromRequestQueue(queue);
 
   do_check_true(response instanceof cal3eResponse.Success);
-  do_check_eq(methodQueue.lastResponse().value(), response.data);
+  do_check_eq(queue.lastResponse().value(), response.data);
 }
 
 function test_response_eee_error() {
-  var methodQueue = create_fault_method_queue();
-  var response = cal3eResponse.fromMethodQueue(methodQueue);
+  var queue = create_fault_method_queue();
+  var response = cal3eResponse.fromRequestQueue(queue);
 
   do_check_true(response instanceof cal3eResponse.EeeError);
   do_check_true(null === response.data);
@@ -39,8 +39,8 @@ function test_response_eee_error() {
 }
 
 function test_response_transport_error() {
-  var methodQueue = create_transport_error_method_queue();
-  var response = cal3eResponse.fromMethodQueue(methodQueue);
+  var queue = create_transport_error_method_queue();
+  var response = cal3eResponse.fromRequestQueue(queue);
 
   do_check_true(response instanceof cal3eResponse.TransportError);
   do_check_true(null === response.data);

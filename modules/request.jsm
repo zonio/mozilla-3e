@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://gre/modules/NetUtil.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/dns.jsm');
@@ -25,6 +26,7 @@ Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
+Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 /**
  * @todo create a request constructor instead of this scenario nonsense
@@ -131,30 +133,102 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function addObject(identity, listener, calendar, item) {
-    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
-
-    return synchronizedMethod.future(arguments)
-      .push('ESClient.addObject', [
-        getCalendarCalspec(calendar),
-        item.icalComponent.serializeToICS()])
-      .call(onResult, listener);
+    return uploadAttachments(
+      identity, listener, item, synchronizedMethod.future(arguments),
+      function(queue) {
+        enqueueItemTimezones(queue, item);
+        queue
+          .push('ESClient.addObject', [
+            getCalendarCalspec(calendar),
+            item.icalComponent.serializeToICS()])
+          .call(onResult, listener);
+      });
   }
   addObject = synchronizedMethod.create(
     createScenario(addObject), createQueue
   );
 
   function updateObject(identity, listener, calendar, item) {
-    enqueueItemTimezones(synchronizedMethod.future(arguments), item);
-
-    return synchronizedMethod.future(arguments)
-      .push('ESClient.updateObject', [
-        getCalendarCalspec(calendar),
-        item.icalComponent.serializeToICS()])
-      .call(onResult, listener);
+    return uploadAttachments(
+      identity, listener, item, synchronizedMethod.future(arguments),
+      function(queue) {
+        enqueueItemTimezones(queue, item);
+        queue
+          .push('ESClient.updateObject', [
+            getCalendarCalspec(calendar),
+            item.icalComponent.serializeToICS()])
+          .call(onResult, listener);
+    });
   }
   updateObject = synchronizedMethod.create(
     createScenario(updateObject), createQueue
   );
+
+  function uploadAttachments(identity, listener, item, queue, callback) {
+    if (!cal3eFeature.isSupported('attachments')) {
+      callback(queue);
+      return queue;
+    }
+
+    var attachments = item.getAttachments({});
+    var idx = 0;
+
+    function uploadAttachment() {
+      var xhr = Components.classes[
+        '@mozilla.org/xmlextras/xmlhttprequest;1'
+      ].createInstance(Components.interfaces.nsIXMLHttpRequest);
+      xhr.open('POST', cal3eUtils.fileAttachmentToEeeUri(
+        attachments[idx].uri, identity.email
+      ));
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+
+      xhr.addEventListener('error', function() {
+        queue.setError(Components.Exception('Upload error.'));
+        listener(queue, cal3eResponse.fromMethodQueue(queue));
+      }, false);
+
+      xhr.addEventListener('load', function() {
+        if (idx < attachments.length) {
+          uploadAttachment();
+          idx += 1;
+        } else {
+          callback(queue);
+        }
+      }, false);
+
+      var channel = Services.io.newChannel(cal3eUtils.fileAttachmentToEeeUri(
+        attachments[idx].uri, identity.email
+      ).spec, null, null)
+        .QueryInterface(Components.interfaces.nsIUploadChannel);
+      channel.setUploadStream(
+        Services.io.newChannel(attachments[idx].uri.spec, null, null).open(),
+        'application/octet-stream',
+        -1
+      );
+      channel.asyncOpen({
+        QueryInterface: XPCOMUtils.generateQI([
+          Components.interfaces.nsIStreamListener
+        ]),
+        onStopRequest: function() {
+        },
+        onStartRequest: function() {
+        },
+        onDataAvailable: function() {
+        }
+      }, null);
+    }
+    uploadAttachment();
+
+    attachments.forEach(function(attach) {
+      if (attach.uri.schemeIs('file')) {
+        attach.uri = cal3eUtils.fileAttachmentToEeeUri(
+          attach.uri, identity.email
+        );
+      }
+    });
+
+    return queue;
+  }
 
   function enqueueItemTimezones(queue, item) {
     item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
@@ -258,7 +332,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     synchronizedMethod.finished();
-    listener(queue, error || cal3eResponse.fromMethodQueue(queue));
+    listener(error || cal3eResponse.fromRequestQueue(queue));
 
     return true;
   }
@@ -269,7 +343,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     var error = queueValidationDelegate.apply(queue);
-    listener(queue, error || cal3eResponse.fromMethodQueue(queue));
+    listener(error || cal3eResponse.fromRequestQueue(queue));
   }
 
   function getCalendarCalspec(calendar) {
@@ -461,7 +535,7 @@ function AuthenticationDelegate() {
 
   function didQueueAuthFailed(queue) {
     return queue.isFault() &&
-      (cal3eResponse.fromMethodQueue(queue).errorCode ===
+      (cal3eResponse.fromRequestQueue(queue).errorCode ===
        cal3eResponse.eeeErrors.AUTH_FAILED);
   }
 
