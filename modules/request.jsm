@@ -136,7 +136,7 @@ function Client(serverBuilder, authenticationDelegate,
     return uploadAttachments(
       identity, listener, item, synchronizedMethod.future(arguments),
       function(queue) {
-        enqueueItemTimezones(queue, item);
+        enqueueItemTimezones(queue, calendar, item);
         queue
           .push('ESClient.addObject', [
             getCalendarCalspec(calendar),
@@ -152,7 +152,7 @@ function Client(serverBuilder, authenticationDelegate,
     return uploadAttachments(
       identity, listener, item, synchronizedMethod.future(arguments),
       function(queue) {
-        enqueueItemTimezones(queue, item);
+        enqueueItemTimezones(queue, calendar, item);
         queue
           .push('ESClient.updateObject', [
             getCalendarCalspec(calendar),
@@ -230,7 +230,7 @@ function Client(serverBuilder, authenticationDelegate,
     return queue;
   }
 
-  function enqueueItemTimezones(queue, item) {
+  function enqueueItemTimezones(queue, calendar, item) {
     item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
       queue.push('ESClient.addObject', [
         getCalendarCalspec(calendar),
