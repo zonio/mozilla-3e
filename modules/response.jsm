@@ -192,13 +192,13 @@ function getExportedErrorProperties(errorListNames) {
 }
 
 var properties = getExportedErrorProperties(["eeeErrors", "userErrors"]);
-properties["Success"] = { "value": Success };
-properties["EeeError"] = { "value": EeeError };
-properties["TransportError"] = { "value": TransportError };
-properties["UserError"] = { "value": UserError };
 
 var cal3eResponse = Object.create({
-  "fromRequestQueue": fromRequestQueue
+  fromRequestQueue: fromRequestQueue,
+  Success: Success,
+  EeeError: EeeError,
+  TransportError: TransportError,
+  UserError: UserError
 }, properties);
 EXPORTED_SYMBOLS = [
   'cal3eResponse'
