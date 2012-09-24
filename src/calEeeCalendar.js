@@ -144,7 +144,7 @@ calEeeCalendar.prototype = {
     };
 
     return cal3eRequest.Client.getInstance()
-      .addObject(this._identity, clientListener, this, item)
+      .addObject(this._identity, clientListener, this, newItem)
       .component();
   },
 
