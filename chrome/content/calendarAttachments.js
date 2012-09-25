@@ -149,6 +149,10 @@ function cal3eSelectAttach() {
 };
 
 cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
+  if (!cal3eFeature.isSupported('attachments')) {
+    return;
+  }
+
   new cal3eSelectAttach();
 };
 
