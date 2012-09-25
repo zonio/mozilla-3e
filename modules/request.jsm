@@ -265,6 +265,7 @@ function Client(serverBuilder, authenticationDelegate,
     return function runScenario() {
       return new cal3eSynchronization.Queue()
         .push(initQueue)
+        .push(checkQueueSecurity)
         .push(authenticateQueue)
         .push(main)
         .call.apply(null, arguments);
@@ -285,6 +286,28 @@ function Client(serverBuilder, authenticationDelegate,
     serverBuilder.fromIdentity(identity, function(server) {
       queue.setServer(server);
 
+      if (stopScenarioIfUserError(queue, listener)) {
+        return queue;
+      }
+
+      synchronizationQueue.next().apply(synchronizationQueue, args);
+    });
+
+    return queue;
+  }
+
+  //TODO use XHR or channel to check this SSL certificate on the other
+  // side
+  function checkQueueSecurity(identity, listener) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var synchronizationQueue = this;
+
+    if (stopScenarioIfUserError(queue, listener)) {
+      return queue;
+    }
+
+    queue.push('ESClient.getServerAttributes', ['']).call(function() {
       if (stopScenarioIfUserError(queue, listener)) {
         return queue;
       }
