@@ -536,7 +536,7 @@ function AuthenticationDelegate() {
   function didQueueAuthFailed(queue) {
     return queue.isFault() &&
       (cal3eResponse.fromRequestQueue(queue).errorCode ===
-       cal3eResponse.eeeErrors.AUTH_FAILED);
+       cal3eResponse['eeeErrors']['AUTH_FAILED']);
   }
 
   function loginUri(identity) {
@@ -703,9 +703,9 @@ function QueueValidationDelegate() {
   function findQueueErrorCode(queue) {
     var errorCode;
     if (isBadCert(queue)) {
-      errorCode = cal3eResponse.userErrors.BAD_CERT;
+      errorCode = cal3eResponse['userErrors']['BAD_CERT'];
     } else if (isNoPassword(queue)) {
-      errorCode = cal3eResponse.userErrors.NO_PASSWORD;
+      errorCode = cal3eResponse['userErrors']['NO_PASSWORD'];
     } else {
       errorCode = null;
     }

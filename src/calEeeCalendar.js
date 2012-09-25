@@ -119,7 +119,8 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = function calEee_adoptItem_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
-        if (cal3eResponse.eeeErrors.COMPONENT_EXISTS !== result.errorCode) {
+        if (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
+            result.errorCode) {
           throw Components.Exception();
         }
       } else if (result instanceof cal3eResponse.TransportError) {
@@ -197,7 +198,8 @@ calEeeCalendar.prototype = {
     var calendar = this;
     var clientListener = function calEee_modifyItem_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
-        if (cal3eResponse.eeeErrors.COMPONENT_EXISTS !== result.errorCode) {
+        if (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
+            result.errorCode) {
           throw Components.Exception();
         }
       } else if (result instanceof cal3eResponse.TransportError) {

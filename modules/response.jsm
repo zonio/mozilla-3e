@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import('resource://gre/modules/Services.jsm');
 
 /**
  * Representation of successful response from EEE server.
@@ -28,8 +28,8 @@ Components.utils.import("resource://gre/modules/Services.jsm");
  * @class
  */
 function Success(queue) {
-  Object.defineProperty(this, "data", {
-    "value": queue.lastResponse().parameter()
+  Object.defineProperty(this, 'data', {
+    value: queue.lastResponse().parameter()
   });
 }
 
@@ -39,15 +39,15 @@ function Success(queue) {
  * @param {cal3eRequest.Queue} queue
  *
  * @property {nsISupports} data always null
- * @property {Number} errorCode should be one of {@see eeeErrors}
+ * @property {Number} errorCode should be one of {@link eeeErrors}
  * @class
  */
 function EeeError(queue) {
-  Object.defineProperty(this, "data", {
-    "value": null
+  Object.defineProperty(this, 'data', {
+    value: null
   });
-  Object.defineProperty(this, "errorCode", {
-    "value": queue.lastResponse().faultCode()
+  Object.defineProperty(this, 'errorCode', {
+    value: queue.lastResponse().faultCode()
   });
 }
 
@@ -58,15 +58,15 @@ function EeeError(queue) {
  * errorneous request
  *
  * @property {nsISupports} data always null
- * @property {Number} errorCode should be one of {@see eeeErrors}
+ * @property {Number} errorCode should be one of {@link Components.results}
  * @class
  */
 function TransportError(queue) {
-  Object.defineProperty(this, "data", {
-    "value": null
+  Object.defineProperty(this, 'data', {
+    value: null
   });
-  Object.defineProperty(this, "errorCode", {
-    "value": queue.status()
+  Object.defineProperty(this, 'errorCode', {
+    value: queue.status()
   });
 }
 
@@ -81,14 +81,14 @@ function TransportError(queue) {
  * @class
  */
 function UserError(errorCode) {
-  Object.defineProperty(this, "data", {
-    "value": null
+  Object.defineProperty(this, 'data', {
+    value: null
   });
-  Object.defineProperty(this, "timestamp", {
-    "value": new Date()
+  Object.defineProperty(this, 'timestamp', {
+    value: new Date()
   });
-  Object.defineProperty(this, "errorCode", {
-    "value": errorCode
+  Object.defineProperty(this, 'errorCode', {
+    value: errorCode
   });
 }
 
@@ -99,19 +99,19 @@ function UserError(errorCode) {
  * @property {Object} userErrors
  */
 var errors = {
-  "eeeErrors": { "notLoaded": true },
-  "userErrors": { "notLoaded": true }
-}
+  'eeeErrors': { 'notLoaded': true },
+  'userErrors': { 'notLoaded': true }
+};
 
 function loadErrors(errorListName) {
-  if (!errors[errorListName]["notLoaded"]) {
+  if (!errors[errorListName]['notLoaded']) {
     return;
   }
 
   var errorDocument = Components.classes[
-    "@mozilla.org/xmlextras/domparser;1"
+    '@mozilla.org/xmlextras/domparser;1'
   ].createInstance(Components.interfaces.nsIDOMParser).
-    parseFromString(getErrorsXml(errorListName), "text/xml");
+    parseFromString(getErrorsXml(errorListName), 'text/xml');
 
   var errorElement = errorDocument.documentElement;
   if (errorListName !== errorElement.tagName) {
@@ -129,7 +129,7 @@ function loadErrors(errorListName) {
         "Unexpected element '" + codeElement.tagName + "' instead of 'code'"
       );
     }
-    nameElement = codeElement.nextElementSibling
+    nameElement = codeElement.nextElementSibling;
     if ('name' !== nameElement.tagName) {
       throw Components.Exception(
         "Unexpected element '" + nameElement.tagName + "' instead of 'code'"
@@ -140,16 +140,16 @@ function loadErrors(errorListName) {
       1 * codeElement.textContent;
   }
 
-  delete errors[errorListName]["notLoaded"];
+  delete errors[errorListName]['notLoaded'];
 }
 
 function getErrorsXml(errorListName) {
   var stream = Components.classes[
-    "@mozilla.org/scriptableinputstream;1"
+    '@mozilla.org/scriptableinputstream;1'
   ].getService(Components.interfaces.nsIScriptableInputStream);
 
   var channel = Services.io.newChannel(
-    "resource://calendar3e/" + errorListName + ".xml", null, null
+    'resource://calendar3e/' + errorListName + '.xml', null, null
   );
   var input = channel.open();
   stream.init(input);
@@ -185,13 +185,11 @@ function createErrorsGetter(errorListName) {
 function getExportedErrorProperties(errorListNames) {
   var properties = {};
   errorListNames.forEach(function(errorListName) {
-    properties[errorListName] = { "get": createErrorsGetter(errorListName) };
+    properties[errorListName] = { get: createErrorsGetter(errorListName) };
   });
 
   return properties;
 }
-
-var properties = getExportedErrorProperties(["eeeErrors", "userErrors"]);
 
 var cal3eResponse = Object.create({
   fromRequestQueue: fromRequestQueue,
@@ -199,7 +197,7 @@ var cal3eResponse = Object.create({
   EeeError: EeeError,
   TransportError: TransportError,
   UserError: UserError
-}, properties);
+}, getExportedErrorProperties(['eeeErrors', 'userErrors']));
 EXPORTED_SYMBOLS = [
   'cal3eResponse'
 ];
