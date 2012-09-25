@@ -44,7 +44,10 @@ function Method() {
       }
 
       calls.push(callObject);
-      scheduleCall();
+
+      if (!wait) {
+        scheduleCall();
+      }
 
       return callObject['future'];
     }
