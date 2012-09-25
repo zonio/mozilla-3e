@@ -465,8 +465,10 @@ function AuthenticationDelegate() {
       .getService(Components.interfaces.nsIPromptFactory)
       .getPrompt(null, Components.interfaces.nsIAuthPrompt)
       .promptPassword(
-        stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-        stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+        stringBundle.GetStringFromName(
+          'cal3ePasswordDialog.title'),
+        stringBundle.formatStringFromName(
+          'cal3ePasswordDialog.content', [identity.email], 1),
         loginUri(identity).spec,
         Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
         password
