@@ -35,7 +35,7 @@ function test_response_eee_error() {
 
   do_check_true(response instanceof cal3eResponse.EeeError);
   do_check_true(null === response.data);
-  do_check_eq(cal3eResponse.eeeErrors.AUTH_FAILED, response.errorCode);
+  do_check_eq(cal3eResponse['eeeErrors']['AUTH_FAILED'], response.errorCode);
 }
 
 function test_response_transport_error() {
@@ -49,11 +49,11 @@ function test_response_transport_error() {
 
 function test_response_user_error() {
   var response = new cal3eResponse.UserError(
-    cal3eResponse.userErrors.NO_PASSWORD
+    cal3eResponse['userErrors']['NO_PASSWORD']
   );
 
   do_check_true(null === response.data);
-  do_check_eq(cal3eResponse.userErrors.NO_PASSWORD, response.errorCode);
+  do_check_eq(cal3eResponse['userErrors']['NO_PASSWORD'], response.errorCode);
 }
 
 function create_success_method_queue() {

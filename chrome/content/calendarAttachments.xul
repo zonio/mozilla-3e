@@ -32,8 +32,10 @@
   <commandset id="itemCommands">
     <command id="cal3e_cmd_attach_file" disable-on-read-only="true"
              oncommand="attachFile()" />
+    <command id="cal3e_cmd_open_attachment"
+             oncommand="cal3e_openAttachment()" />
     <command id="cal3e_cmd_save_as" disable-on-read-only="true"
              oncommand="alert('cal3e_cmd_save_as')" />
   </commandset>
 
-</overlay> 
+</overlay>

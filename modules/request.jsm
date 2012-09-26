@@ -164,6 +164,41 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(updateObject), createQueue
   );
 
+  function addOrUpdateObject(identity, listener, calendar, item) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var itemExists;
+
+    function queryObjects() {
+      queue
+        .push('ESClient.queryObjects', ["match_uid('" + item.id + "')"])
+        .call(function(result) {
+          itemExists = true || false;
+          synchronizationQueue.next().apply(queue, args);
+        }, listener);
+    }
+
+    function addOrUpdateObject() {
+      enqueueItemTimezones(queue, calendar, item);
+      queue
+        .push(itemExists ? 'ESClient.updateObject' : 'ESClient.addObject', [
+          getCalendarCalspec(calendar),
+          item.icalComponent.serializeToICS()])
+        .call(onResult, listener);
+    }
+
+    var synchronizationQueue = this;
+    synchronizationQueue
+      .push(queryObjects)
+      .push(addOrUpdateObject);
+    this.next().apply(this, arguments);
+
+    return queue;
+  }
+  addOrUpdateObject = synchronizedMethod.create(
+    createScenario(addOrUpdateObject), createQueue
+  );
+
   function uploadAttachments(identity, listener, item, queue, callback) {
     if (!cal3eFeature.isSupported('attachments')) {
       callback(queue);
@@ -265,6 +300,7 @@ function Client(serverBuilder, authenticationDelegate,
     return function runScenario() {
       return new cal3eSynchronization.Queue()
         .push(initQueue)
+        .push(checkQueueSecurity)
         .push(authenticateQueue)
         .push(main)
         .call.apply(null, arguments);
@@ -285,6 +321,28 @@ function Client(serverBuilder, authenticationDelegate,
     serverBuilder.fromIdentity(identity, function(server) {
       queue.setServer(server);
 
+      if (stopScenarioIfUserError(queue, listener)) {
+        return queue;
+      }
+
+      synchronizationQueue.next().apply(synchronizationQueue, args);
+    });
+
+    return queue;
+  }
+
+  //TODO use XHR or channel to check this SSL certificate on the other
+  // side
+  function checkQueueSecurity(identity, listener) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var synchronizationQueue = this;
+
+    if (stopScenarioIfUserError(queue, listener)) {
+      return queue;
+    }
+
+    queue.push('ESClient.getServerAttributes', ['']).call(function() {
       if (stopScenarioIfUserError(queue, listener)) {
         return queue;
       }
@@ -362,6 +420,7 @@ function Client(serverBuilder, authenticationDelegate,
   client.queryObjects = queryObjects;
   client.addObject = addObject;
   client.updateObject = updateObject;
+  client.addOrUpdateObject = addOrUpdateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
 }
@@ -465,8 +524,10 @@ function AuthenticationDelegate() {
       .getService(Components.interfaces.nsIPromptFactory)
       .getPrompt(null, Components.interfaces.nsIAuthPrompt)
       .promptPassword(
-        stringBundle.GetStringFromName('cal3ePasswordDialog.title'),
-        stringBundle.GetStringFromName('cal3ePasswordDialog.content'),
+        stringBundle.GetStringFromName(
+          'cal3ePasswordDialog.title'),
+        stringBundle.formatStringFromName(
+          'cal3ePasswordDialog.content', [identity.email], 1),
         loginUri(identity).spec,
         Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
         password
@@ -536,7 +597,7 @@ function AuthenticationDelegate() {
   function didQueueAuthFailed(queue) {
     return queue.isFault() &&
       (cal3eResponse.fromRequestQueue(queue).errorCode ===
-       cal3eResponse.eeeErrors.AUTH_FAILED);
+       cal3eResponse['eeeErrors']['AUTH_FAILED']);
   }
 
   function loginUri(identity) {
@@ -703,9 +764,9 @@ function QueueValidationDelegate() {
   function findQueueErrorCode(queue) {
     var errorCode;
     if (isBadCert(queue)) {
-      errorCode = cal3eResponse.userErrors.BAD_CERT;
+      errorCode = cal3eResponse['userErrors']['BAD_CERT'];
     } else if (isNoPassword(queue)) {
-      errorCode = cal3eResponse.userErrors.NO_PASSWORD;
+      errorCode = cal3eResponse['userErrors']['NO_PASSWORD'];
     } else {
       errorCode = null;
     }

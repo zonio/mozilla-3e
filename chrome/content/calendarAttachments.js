@@ -17,70 +17,119 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import('resource://calendar3e/modules/feature.jsm');
+Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
-function cal3eSelectAttach() {
-  var ltn_updateCapabilities;
-  var ltn_openAttachment;
+function cal3eSelectAttach(ltn_updateCapabilities) {
+  var controller = this;
   var bundleString;
   var lastCalendarType;
 
-  function activate3e() {
-    var attachButton = document.getElementById('button-url');
-    attachButton.command = 'cal3e_cmd_attach_file';
+  function updateCapabilities() {
+    ltn_updateCapabilities();
+    if (getCurrentCalendar().type === lastCalendarType) {
+      return;
+    }
 
-    var menuItemIndex = document.getElementById('options-menu')
-      .getIndexOfItem(document.getElementById('options-attachments-menuitem'));
-    var menuItem = document.getElementById('options-menu')
+    if (getCurrentCalendar().type == 'eee') {
+      activate3e();
+    } else {
+      deactivate3e();
+    }
+    lastCalendarType = getCurrentCalendar().type;
+  }
+
+  function openAttachment() {
+    if (document.getElementById('attachment-link').selectedItems.length ===
+        1) {
+      var uri = document.getElementById('attachment-link')
+        .getSelectedItem(0).attachment.uri;
+      if (uri.schemeIs('eee')) {
+        uri = cal3eUtils.eeeAttachmentToHttpUri(uri);
+      }
+      // TODO There should be a nicer dialog
+      Components.classes['@mozilla.org/uriloader/external-protocol-service;1']
+        .getService(Components.interfaces.nsIExternalProtocolService)
+        .loadUrl(uri);
+    }
+  }
+
+  function activate3e() {
+    document.getElementById('button-url').command =
+      'cal3e_cmd_attach_file';
+    document.getElementById('attachment-popup-open').command =
+      'cal3e_cmd_open_attachment';
+
+    var mainMenuItem = document.getElementById('options-menu')
       .insertItemAt(
-        menuItemIndex + 1,
+        getMainMenuItemIndex() + 1,
         bundleString.getString('cal3eCalendarAttachements.attach.label'),
         null
       );
     // XXX This doesn't work: "menuItem.command = 'cal3e_cmd_attach_file';"
     // that's why setAttribute is used.
-    menuItem.setAttribute('command', 'cal3e_cmd_attach_file');
-    menuItem.setAttribute('id', 'cal3e-options-attachments-menuitem');
+    mainMenuItem.setAttribute('id', 'cal3e-options-attachments-menuitem');
+    mainMenuItem.setAttribute('command', 'cal3e_cmd_attach_file');
 
-    menuItem = document.createElementNS(
+    var contextMenuItem = document.createElementNS(
       'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'menuitem'
     );
-    menuItem.setAttribute('label', bundleString.getString('cal3eCalendarAttachements.attach.label'));
-    menuItem.setAttribute('command', 'cal3e_cmd_attach_file');
-    menuItem.setAttribute('id', 'cal3e-attachment-popup-attachFile');
-    menuItem.setAttribute(
+    contextMenuItem.setAttribute('id', 'cal3e-attachment-popup-attachFile');
+    contextMenuItem.setAttribute('command', 'cal3e_cmd_attach_file');
+    contextMenuItem.setAttribute(
+      'label',
+      bundleString.getString('cal3eCalendarAttachements.attach.label')
+    );
+    contextMenuItem.setAttribute(
       'accesskey',
       bundleString.getString('cal3eCalendarAttachements.attach.accesskey')
     );
     var attachPage = document.getElementById('attachment-popup-attachPage');
-    attachPage.parentNode.insertBefore(menuItem, attachPage.nextSibling);
-
+    attachPage.parentNode.insertBefore(contextMenuItem, attachPage.nextSibling);
     var attachListBox = document.getElementById('attachment-link');
-    attachListBox.addEventListener('select', onAttachSelect, false);
     attachListBox.removeAttribute('onclick');
-    attachListBox.removeEventListener('click', attachmentLinkClicked, false);
-    attachListBox.addEventListener('click', cal3e_attachmentLinkClicked, false);
-
-    ltn_openAttachment = openAttachment;
-    openAttachment = cal3e_openAttachment;
+    attachListBox.addEventListener(
+      'select', onAttachSelect, false
+    );
+    attachListBox.addEventListener(
+      'click', attachmentLinkClicked, false
+    );
   }
 
   function deactivate3e() {
-    var attachButton = document.getElementById('button-url');
-    attachButton.command = 'cmd_attach_url';
+    document.getElementById('button-url').command =
+      'cmd_attach_url';
+    document.getElementById('attachment-popup-open').command =
+      'cmd_openAttachment';
 
-    var elem = document.getElementById('cal3e-options-attachments-menuitem');
-    elem.parentNode.removeChild(elem);
-    elem = document.getElementById('cal3e-attachment-popup-attachFile');
-    elem.parentNode.removeChild(elem);
+    var mainMenuItem = document.getElementById(
+      'cal3e-options-attachments-menuitem'
+    );
+    mainMenuItem.parentNode.removeChild(mainMenuItem);
+
+    var contextMenuItem = document.getElementById(
+      'cal3e-attachment-popup-attachFile'
+    );
+    contextMenuItem.parentNode.removeChild(contextMenuItem);
 
     var attachListBox = document.getElementById('attachment-link');
-    attachListBox.removeEventListener('select', onAttachSelect, false);
-    attachListBox.removeEventListener('click', cal3e_attachmentLinkClicked, false);
-    attachListBox.addEventListener('click', attachmentLinkClicked, false);
+    attachListBox.removeEventListener(
+      'select', onAttachSelect, false
+    );
+    attachListBox.removeEventListener(
+      'click', attachmentLinkClicked, false
+    );
+    attachListBox.setAttribute('onclick', 'attachmentLinkClicked(event);');
+  }
 
-    openAttachment = ltn_openAttachment;
+  //TODO seems like there's a difference between ESR10 and latest
+  // releases
+  function getMainMenuItemIndex() {
+    return document.getElementById('options-menu')
+      .getIndexOfItem(document.getElementById(
+        'options-attachments-menuitem'
+      ));
   }
 
   function onAttachSelect(event) {
@@ -94,62 +143,49 @@ function cal3eSelectAttach() {
     }
   }
 
-  function cal3e_updateCapabilities() {
-    ltn_updateCapabilities();
-    var calendar = getCurrentCalendar();
-    if (calendar.type === lastCalendarType) {
-      return;
-    }
-    
-    if (calendar.type == 'eee') {
-      activate3e();
-    } else {
-      deactivate3e();
-    }
-    lastCalendarType = calendar.type;
-  }
-
-  function cal3e_attachmentLinkClicked(event) {
+  function attachmentLinkClicked(event) {
     event.currentTarget.focus();
-  
-    if (event.button != 0) {
+
+    if (!isMainButtonClick(event)) {
       return;
     }
-  
-    if (event.originalTarget.localName == "listboxbody") {
+
+    if (event.originalTarget.localName === 'listboxbody') {
       attachFile();
-    } else if (event.originalTarget.localName == "listitem" && event.detail == 2) {
+    } else if ((event.originalTarget.localName == 'listitem') &&
+               isDoubleClick(event)) {
       openAttachment();
     }
   }
 
-  function cal3e_openAttachment() {
-    var documentLink = document.getElementById("attachment-link");
-    if (documentLink.selectedItems.length == 1) {
-      var attURI = documentLink.getSelectedItem(0).attachment.uri;
-      var externalLoader = Components.classes["@mozilla.org/uriloader/external-protocol-service;1"]
-                                     .getService(Components.interfaces.nsIExternalProtocolService);
+  function isMainButtonClick(event) {
+    return event.button !== 0;
+  }
 
-      if (attURI.schemeIs('eee')) {
-        attURI = cal3eUtils.eeeAttachmentToHttpUri(attURI);
-      }
-      // TODO There should be a nicer dialog
-      externalLoader.loadUrl(attURI);
-    }
+  function isDoubleClick(event) {
+    return event.detail === 2;
   }
 
   function init() {
     bundleString = document.getElementById('calendar3e-strings');
-    ltn_updateCapabilities = updateCapabilities;
-    updateCapabilities = cal3e_updateCapabilities;
     updateCapabilities();
   }
 
-  init();
-};
+  controller.updateCapabilities = updateCapabilities;
+  controller.openAttachment = openAttachment;
 
+  init();
+}
+
+var cal3e_openAttachment;
 cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
-  new cal3eSelectAttach();
+  if (!cal3eFeature.isSupported('attachments')) {
+    return;
+  }
+
+  var controller = new cal3eSelectAttach(updateCapabilities);
+  updateCapabilities = controller.updateCapabilities;
+  cal3e_openAttachment = controller.openAttachment;
 };
 
 window.addEventListener('load', cal3eSelectAttach.onLoad, false);

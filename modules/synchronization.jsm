@@ -44,7 +44,10 @@ function Method() {
       }
 
       calls.push(callObject);
-      scheduleCall();
+
+      if (!wait) {
+        scheduleCall();
+      }
 
       return callObject['future'];
     }
@@ -131,7 +134,7 @@ function Queue() {
     var newIdx = callables.length;
     callables.push(function() {
       idx = newIdx + 1;
-      return callable.apply({ next: getNext }, arguments);
+      return callable.apply(queue, arguments);
     });
 
     return queue;

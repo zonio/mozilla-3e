@@ -17,20 +17,21 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 function cal3eEnable() {}
 
 cal3eEnable.prototype = {
 
-  name: "enable3e",
-  chromePackageName: "calendar3e",
-  classDescription: "Enable 3e calendar - Account Manager Extension",
-  classID: Components.ID("{3892b01b-7e8f-4727-9087-ef4d814f7456}"),
-  contractID: "@mozilla.org/accountmanager/extension;1?name=enable3e",
+  name: 'enable3e',
+  chromePackageName: 'calendar3e',
+  classDescription: 'Enable 3e calendar - Account Manager Extension',
+  classID: Components.ID('{3892b01b-7e8f-4727-9087-ef4d814f7456}'),
+  contractID: '@mozilla.org/accountmanager/extension;1?name=enable3e',
 
   _xpcom_categories: [{
-    category: "mailnews-accountmanager-extensions"
+    category: 'mailnews-accountmanager-extensions'
   }],
 
   QueryInterface: XPCOMUtils.generateQI([
@@ -38,10 +39,9 @@ cal3eEnable.prototype = {
   ]),
 
   showPanel: function(server) {
-    return server.type != "nntp" &&
-      server.type != "rss" &&
-      server.type != "none";
+    return cal3eUtils.isSupportedServer(server);
   }
+
 };
 
 const NSGetFactory = XPCOMUtils.generateNSGetFactory([cal3eEnable]);

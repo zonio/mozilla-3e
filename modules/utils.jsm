@@ -130,11 +130,16 @@ function fileAttachmentToEeeUri(fileUri, email) {
   );
 }
 
+function isSupportedServer(server) {
+  return ['imap', 'pop3'].indexOf(server.type) >= 0;
+}
+
 var cal3eUtils = {
   createOperationListener: createOperationListener,
   nsprTimeToEeeDate: nsprTimeToEeeDate,
   eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
-  fileAttachmentToEeeUri: fileAttachmentToEeeUri
+  fileAttachmentToEeeUri: fileAttachmentToEeeUri,
+  isSupportedServer: isSupportedServer
 };
 EXPORTED_SYMBOLS = [
   'cal3eUtils'
