@@ -20,6 +20,7 @@
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 var EEE_ENABLED_KEY = 'eee_enabled';
 
@@ -30,8 +31,7 @@ var EEE_ENABLED_KEY = 'eee_enabled';
  */
 function isSupportedAccount(account) {
   return account.incomingServer &&
-    ("nntp" != account.incomingServer.type) &&
-    ("none" != account.incomingServer.type);
+    cal3eUtils.isSupportedServer(account.incomingServer);
 }
 
 /**
