@@ -164,6 +164,41 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(updateObject), createQueue
   );
 
+  function addOrUpdateObject(identity, listener, calendar, item) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var itemExists;
+
+    function queryObjects() {
+      queue
+        .push('ESClient.queryObjects', ["match_uid('" + item.id + "')"])
+        .call(function(result) {
+          itemExists = true || false;
+          synchronizationQueue.next().apply(queue, args);
+        }, listener);
+    }
+
+    function addOrUpdateObject() {
+      enqueueItemTimezones(queue, calendar, item);
+      queue
+        .push(itemExists ? 'ESClient.updateObject' : 'ESClient.addObject', [
+          getCalendarCalspec(calendar),
+          item.icalComponent.serializeToICS()])
+        .call(onResult, listener);
+    }
+
+    var synchronizationQueue = this;
+    synchronizationQueue
+      .push(queryObjects)
+      .push(addOrUpdateObject);
+    this.next().apply(this, arguments);
+
+    return queue;
+  }
+  addOrUpdateObject = synchronizedMethod.create(
+    createScenario(addOrUpdateObject), createQueue
+  );
+
   function uploadAttachments(identity, listener, item, queue, callback) {
     if (!cal3eFeature.isSupported('attachments')) {
       callback(queue);
@@ -385,6 +420,7 @@ function Client(serverBuilder, authenticationDelegate,
   client.queryObjects = queryObjects;
   client.addObject = addObject;
   client.updateObject = updateObject;
+  client.addOrUpdateObject = addOrUpdateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
 }
