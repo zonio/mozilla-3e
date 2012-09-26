@@ -39,9 +39,9 @@ Resolv.DNS = function DNS(resolver) {
   dns.resources = getResources;
 
   init();
-}
+};
 
-Resolv.DNS.Resource = {}
+Resolv.DNS.Resource = {};
 
 Resolv.DNS.Resource.fromJson = function DNS_Resource_fromJson(json) {
   var data = JSON.parse(json);
@@ -49,7 +49,7 @@ Resolv.DNS.Resource.fromJson = function DNS_Resource_fromJson(json) {
   resource.apply.apply(resource, data['args']);
 
   return resource;
-}
+};
 
 Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
   var resource = this;
@@ -80,9 +80,9 @@ Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
   resource.data = getData;
   resource.toJson = toJson;
   resource.apply = apply;
-}
+};
 
-Resolv.DNS.Resolver = {}
+Resolv.DNS.Resolver = {};
 
 Resolv.DNS.Resolver.factory = function Resolver_factory(worker) {
   if (!Resolv.DNS.Resolver[OS]) {
@@ -90,7 +90,7 @@ Resolv.DNS.Resolver.factory = function Resolver_factory(worker) {
   }
 
   return new Resolv.DNS.Resolver[OS](worker);
-}
+};
 
 Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
   var resolver = this;
@@ -268,13 +268,13 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
   }
 
   resolver.extract = extract;
-}
+};
 
 Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;
 Resolv.DNS.Resolver['Darwin'] = Resolv.DNS.Resolver.libresolv;
 
 Resolv.DNS.Resolver.WinDns = function Resolver_WinDns() {
-}
+};
 
 Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
 
