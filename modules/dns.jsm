@@ -19,48 +19,73 @@
 
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
-function cal3eDns(resolv) {
+function cal3eDns(resolv, cache) {
   var dns = this;
 
   function resolveServer(domainName, callback) {
-    resolv.addEventListener('message', function onResult(event) {
-      resolv.removeEventListener('message', onResult, false);
-      didGetResources(domainName, event.data.result, callback);
-    }, false);
+    var resources;
+    if (resources = cache.get(domainName)) {
+      didGetResources(domainName, resources, callback);
+      return;
+    }
+
+    resolv.addEventListener(
+      'message', getOnMessageListener(resolv, domainName, callback), false
+    );
     resolv.postMessage({
       name: 'resources',
       args: [domainName, 'TXT']
     });
   }
 
-  function didGetResources(domainName, resources, callback) {
-    var records = resources
+  function getOnMessageListener(resolv, domainName, callback) {
+    return function onMessage(event) {
+      resolv.removeEventListener('message', onMessage, false);
+
+      var resources = getEeeServerResourcesFromEvent(event, domainName);
+      cache.set(domainName, resources);
+
+      didGetResources(domainName, resources, callback);
+    };
+  }
+
+  function getEeeServerResourcesFromEvent(event, domainName) {
+    var resources = event.data.result
       .map(function(data) {
         return Resolv.DNS.Resource.fromJson(data);
       })
       .filter(function(resource) {
         return resource.data().match(/^eee /) &&
           resource.data().match(cal3eDns.EEE_SERVER_RESOURCE_RE);
-      })
-      .map(function(resource) {
-        var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
-        return {
-          'host': match[1] || domainName,
-          'port': match[2] || cal3eDns.DEFAULT_PORT
-        };
       });
 
-    if (records.length === 0) {
-      records.push({
-        'host': domainName,
-        'port': cal3eDns.DEFAULT_PORT
-      });
+    if (resources.length === 0) {
+      resources.push(new Resolv.DNS.Resource['TXT'](
+        cal3eDns.DEFAULT_TTL,
+        'eee server=' + domainName + ':' + cal3eDns.DEFAULT_PORT
+      ));
     }
+
+    return resources;
+  }
+
+  function didGetResources(domainName, resources, callback) {
+    var records = resources.map(function(resource) {
+      var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
+      return {
+        'host': match[1] || domainName,
+        'port': match[2] || cal3eDns.DEFAULT_PORT
+      };
+    });
 
     callback(records[0]);
   }
 
   function init() {
+    if (!cache) {
+      cache = new Cache();
+    }
+
     if (!resolv) {
       resolv = new ChromeWorker(
         'resource://calendar3e/modules/resolv.jsm'
@@ -79,7 +104,64 @@ function cal3eDns(resolv) {
   init();
 }
 cal3eDns.DEFAULT_PORT = 4444;
+cal3eDns.DEFAULT_TTL = 86400;
 cal3eDns.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
+
+function Cache() {
+  var cache = this;
+  var store;
+
+  function get(name) {
+    cleanup();
+    return store[name] ? store[name]['resources'] : null;
+  }
+
+  function set(name, resources) {
+    store[name] = {
+      'until': getUntil(resources),
+      'resources': resources
+    };
+    cleanup();
+  }
+
+  function getUntil(resources) {
+    var ttl = resources.reduce(function(min, resource) {
+      if (min > resource.ttl()) {
+        min = resource.ttl();
+      }
+
+      return min;
+    }, Number.POSITIVE_INFINITY);
+
+    if ((ttl < 0) || (ttl === Number.POSITIVE_INFINITY)) {
+      ttl = 0;
+    }
+
+    return new Date(Date.now() + 1000 * ttl);
+  }
+
+  function cleanup() {
+    var name;
+    for (name in store) {
+      if (!store.hasOwnProperty(name)) {
+        continue;
+      }
+
+      if (store[name]['until'] < new Date()) {
+        delete store[name];
+      }
+    }
+  }
+
+  function init() {
+    store = {};
+  }
+
+  cache.get = get;
+  cache.set = set;
+
+  init();
+}
 
 EXPORTED_SYMBOLS = [
   'cal3eDns'
