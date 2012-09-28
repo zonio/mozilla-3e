@@ -308,6 +308,8 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
   function extract(name, typeConstructor) {
     typeConstructor = typeSymbolToConstructor(typeConstructor);
 
+    dump('[3e] DNS query to: ' + name + '\n');
+
     dump('[3e][' + (new Date) + '] Loading DnsAPI\n');
     loadLibrary();
     dump('[3e][' + (new Date) + '] DnsAPI loaded\n');
@@ -399,7 +401,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
       {'dwReserved': DWORD},
       {'Data': DNS_TXT_DATA}
     ]);
-    PDNS_RECORD = DNS_RECORD.prt;
+    PDNS_RECORD = ctypes.PointerType(DNS_RECORD);
 
     DnsQuery = DnsAPI.declare(
       'DnsQuery_W',
