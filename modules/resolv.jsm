@@ -274,6 +274,8 @@ Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;
 Resolv.DNS.Resolver['Darwin'] = Resolv.DNS.Resolver.libresolv;
 
 Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
+  var resolver = this;
+
   var VOID = ctypes.void_t;
   var PVOID = ctypes.voidptr_t;
   var INT8 = ctypes.char;
