@@ -167,13 +167,48 @@ function Client(serverBuilder, authenticationDelegate,
   function addOrUpdateObject(identity, listener, calendar, item) {
     var args = Array.prototype.slice.apply(arguments);
     var queue = synchronizedMethod.future(arguments);
+    var itemId = item.id + '@' + item.getProperty('RECURRENCE-ID').icalString;
     var itemExists;
 
     function queryObjects() {
       queue
-        .push('ESClient.queryObjects', ["match_uid('" + item.id + "')"])
-        .call(function(result) {
-          itemExists = true || false;
+        .push('ESClient.queryObjects', [
+          getCalendarCalspec(calendar),
+          "match_uid('" + itemId + "')"
+        ])
+        .call(function(queue, listener) {
+          var result = cal3eResponse.fromRequestQueue(queue);
+          if (result instanceof cal3eResponse.EeeError) {
+            //dump('[3e] eeeError: ' + result.errorCode + '\n');
+            throw Components.Exception();
+          } else if (result instanceof cal3eResponse.TransportError) {
+            calendar.notifyOperationComplete(
+              listener,
+              Components.results.NS_ERROR_FAILURE,
+              Components.interfaces.calIOperationListener.GET,
+              null,
+              'Objects retrieval from EEE server failed'
+            );
+            return;
+          }
+
+          var parser = Components.classes['@mozilla.org/calendar/ics-parser;1']
+            .createInstance(Components.interfaces.calIIcsParser);
+          try {
+            parser.parseString(result.data);
+          } catch (e) {
+            calendar.notifyOperationComplete(
+              listener,
+              e.result,
+              Components.interfaces.calIOperationListener.GET,
+              null,
+              e.message
+            );
+            return;
+          }
+          var itemsCount = {};
+          var items = parser.getItems(itemsCount);
+          itemExists = (items.length !== 0);
           synchronizationQueue.next().apply(queue, args);
         }, listener);
     }

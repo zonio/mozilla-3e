@@ -150,11 +150,8 @@ calEeeCalendar.prototype = {
   },
 
   modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
-    dump('modifyItem:\n');
-    dump('\told:\n')
-    dump(oldItem);
-    dump('\tnew:\n')
-    dump(newItem);
+    dump('[3e] modifyItem:\n');
+
     if (!this._identity) {
       this.notifyOperationComplete(
         listener,
@@ -228,9 +225,17 @@ calEeeCalendar.prototype = {
       calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
     };
 
-    return cal3eRequest.Client.getInstance()
+    if (newItem.hasProperty('RECURRENCE-ID')) {
+      dump('[3e] calling addOrUpdateObject\n');
+      cal3eRequest.Client.getInstance()
       .addOrUpdateObject(this._identity, clientListener, this, newItem)
       .component();
+    } else {
+      dump('[3e] calling updateObject\n');
+      cal3eRequest.Client.getInstance()
+      .updateObject(this._identity, clientListener, this, newItem)
+      .component();
+    }
   },
 
   deleteItem: function calEee_deleteItem(item, listener) {
@@ -354,8 +359,9 @@ calEeeCalendar.prototype = {
         } else {
           recurrenceItems = [item];
         }
-        for each (ritem in recurrenceItems) {
+        for each (var ritem in recurrenceItems) {
           ritem.calendar = calendar.superCalendar;
+          ritem.parentItem.calendar = calendar.superCalendar;
           ritem.makeImmutable();
           listener.onGetResult(
             calendar.superCalendar,
