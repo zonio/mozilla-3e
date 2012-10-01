@@ -273,7 +273,168 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
 Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;
 Resolv.DNS.Resolver['Darwin'] = Resolv.DNS.Resolver.libresolv;
 
-Resolv.DNS.Resolver.WinDns = function Resolver_WinDns() {
+Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
+  var resolver = this;
+
+  var VOID = ctypes.void_t;
+  var PVOID = ctypes.voidptr_t;
+  var INT8 = ctypes.char;
+  var INT16 = ctypes.short;
+  var DWORD = ctypes.unsigned_long;
+  var WORD = ctypes.unsigned_short;
+  var WCHAR = ctypes.jschar;
+  var PWSTR = WCHAR.ptr;
+  var PCTSTR = PWSTR;
+  var DNS_STATUS = ctypes.long;
+
+  var ERROR_SUCCESS = 0;
+
+  var DNS_FREE_TYPE = ctypes.int;
+  var DnsFreeFlat = 0;
+  var DnsFreeRecordList = 1;
+  var DnsFreeParsedMessageFields = 2;
+
+  var DnsApi;
+  var DnsQuery;
+  var DnsRecordListFree;
+
+  var DNS_TYPE_TEXT = 16;
+  var DNS_QUERY_STANDARD = 0;
+
+  var DNS_TXT_DATA;
+  var DNS_RECORD;
+  var PDNS_RECORD;
+
+  function extract(name, typeConstructor) {
+    typeConstructor = typeSymbolToConstructor(typeConstructor);
+
+    dump('[3e] DNS query to: ' + name + '\n');
+
+    dump('[3e][' + (new Date) + '] Loading DnsAPI\n');
+    loadLibrary();
+    dump('[3e][' + (new Date) + '] DnsAPI loaded\n');
+
+    var resources = [];
+    var queryResultsSet = PDNS_RECORD.ptr();
+    dump('[3e][' + (new Date) + '] Sending query\n');
+    if (DnsQuery(name, typeConstructorToConstant(typeConstructor),
+                 DNS_QUERY_STANDARD, null, queryResultsSet, null) !==
+        ERROR_SUCCESS) {
+      dump('[3e][' + (new Date) + '] Bad query\n');
+      return returnResources(resources);
+    }
+    dump('[3e][' + (new Date) + '] Query received\n');
+
+    var result = queryResultsSet;
+    while (result) {
+      dump('[3e][' + (new Date) + '] Result found\n');
+      if (result.wType !== typeConstructorToConstant(typeConstructor)) {
+        continue;
+      }
+
+      resources.push(new typeConstructor(
+        result.dwTtl, result.Data.pStringArray[0]
+      ));
+
+      if (result.pNext) {
+        result = result.pNext.cast(DNS_RECORD.ptr);
+      } else {
+        result = result.pNext;
+      }
+    }
+
+    dump('[3e][' + (new Date) + '] Freeing results\n');
+    DnsRecordListFree(queryResultsSet, DnsFreeRecordList);
+    dump('[3e][' + (new Date) + '] Results freed\n');
+
+    dump('[3e][' + (new Date) + '] Closing DnsAPI\n');
+    closeLibrary();
+    dump('[3e][' + (new Date) + '] DnsAPI closed\n');
+
+    return returnResources(resources);
+  }
+
+  function returnResources(resources) {
+    if (worker) {
+      worker.postMessage({
+        result: resources.map(function(resource) { return resource.toJson() })
+      });
+    }
+
+    return resources;
+  }
+
+  function typeSymbolToConstructor(typeSymbol) {
+    return typeof typeSymbol === 'string' ?
+      Resolv.DNS.Resource[typeSymbol] :
+      typeSymbol;
+  }
+
+  function typeConstructorToConstant(typeConstructor) {
+    var constant;
+
+    if (typeConstructor === Resolv.DNS.Resource['TXT']) {
+      constant = DNS_TYPE_TEXT;
+    } else {
+      constant = null;
+    }
+
+    return constant;
+  }
+
+  function loadLibrary() {
+    DnsAPI = ctypes.open(ctypes.libraryName('DnsAPI'));
+
+    DNS_TXT_DATA = ctypes.StructType('DNS_TXT_DATA', [
+      {'dwStringCount': DWORD},
+      {'pStringArray': PWSTR.array(1)}
+    ]);
+
+    DNS_RECORD = ctypes.StructType('DNS_RECORD', [
+      {'pNext': PVOID}, //XXX DNS_RECORD.ptr
+      {'pName': PWSTR},
+      {'wType': WORD},
+      {'wDataLength': WORD},
+      {'Flags': DWORD}, // union { DWORD DW, DNS_RECORD_FLAGS S }
+                        // while DNS_RECORD_FLAGS have the same size
+      {'dwTtl': DWORD},
+      {'dwReserved': DWORD},
+      {'Data': DNS_TXT_DATA}
+    ]);
+    PDNS_RECORD = ctypes.PointerType(DNS_RECORD);
+
+    DnsQuery = DnsAPI.declare(
+      'DnsQuery_W',
+      ctypes.stdcall_abi,
+      DNS_STATUS,
+      PCTSTR,
+      WORD,
+      DWORD,
+      PVOID,
+      PDNS_RECORD.ptr,
+      PVOID.ptr
+    );
+
+    DnsRecordListFree = DnsAPI.declare(
+      'DnsRecordListFree',
+      ctypes.stdcall_abi,
+      VOID,
+      PDNS_RECORD,
+      DNS_FREE_TYPE
+    );
+  }
+
+  function closeLibrary() {
+    DnsAPI.close();
+    DnsQuery = null;
+    DnsRecordListFree = null;
+    DNS_RECORD = null;
+    PDNS_RECORD = null;
+    DNS_TXT_DATA = null;
+    DnsAPI = null;
+  }
+
+  resolver.extract = extract;
 };
 
 Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
