@@ -164,22 +164,34 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(updateObject), createQueue
   );
 
-  function addOrUpdateObject(identity, listener, calendar, item) {
+  function updateRecurringObject(identity, listener, calendar, oldItem, item) {
     var args = Array.prototype.slice.apply(arguments);
     var queue = synchronizedMethod.future(arguments);
-    var itemId = item.id + '@' + item.getProperty('RECURRENCE-ID').icalString;
-    var itemExists;
+    var exceptionsToRemove = [];
+    var filterExdates = function(rItem) {
+      return (rItem instanceof Components.interfaces.calIRecurrenceDate
+              && rItem.isNegative);
+    }
+
+    var removeExceptions = !oldItem.recurrenceInfo.getRecurrenceItems({})
+      .filter(filterExdates)
+      .every(function(rOldItem) {
+        return item.recurrenceInfo.getRecurrenceItems({})
+          .filter(filterExdates)
+          .some(function(rItem) {
+            return (rItem.icalProperty.icalString === rOldItem.icalProperty.icalString);
+        });
+      });
 
     function queryObjects() {
       queue
         .push('ESClient.queryObjects', [
           getCalendarCalspec(calendar),
-          "match_uid('" + itemId + "')"
+          "match_id('" + item.id + "')"
         ])
         .call(function(queue, listener) {
           var result = cal3eResponse.fromRequestQueue(queue);
           if (result instanceof cal3eResponse.EeeError) {
-            //dump('[3e] eeeError: ' + result.errorCode + '\n');
             throw Components.Exception();
           } else if (result instanceof cal3eResponse.TransportError) {
             calendar.notifyOperationComplete(
@@ -206,8 +218,89 @@ function Client(serverBuilder, authenticationDelegate,
             );
             return;
           }
-          var itemsCount = {};
-          var items = parser.getItems(itemsCount);
+
+          var items = parser.getParentlessItems({});
+          var idx = items.length;
+          while (idx--) {
+            exceptionsToRemove.push(
+              item.id + '@' +
+              items[idx].getProperty('RECURRENCE-ID').icalString);
+          }
+
+          synchronizationQueue.next().apply(queue, args);
+        }, listener);
+    }
+
+    function updateObject() {
+        exceptionsToRemove.forEach(function(itemId) {
+          queue
+            .push('ESClient.deleteObject', [
+              getCalendarCalspec(calendar),
+              itemId])
+        });
+      enqueueItemTimezones(queue, calendar, item);
+      queue
+        .push('ESClient.updateObject', [
+          getCalendarCalspec(calendar),
+          item.icalComponent.serializeToICS()])
+        .call(onResult, listener);
+    }
+    var synchronizationQueue = this;
+    if (removeExceptions) {
+      synchronizationQueue.push(queryObjects)
+    }
+    synchronizationQueue.push(updateObject);
+    this.next().apply(this, arguments);
+
+    return queue;
+  }
+  updateRecurringObject = synchronizedMethod.create(
+    createScenario(updateRecurringObject), createQueue
+  );
+
+  function addOrUpdateObject(identity, listener, calendar, item) {
+    var args = Array.prototype.slice.apply(arguments);
+    var queue = synchronizedMethod.future(arguments);
+    var itemId = item.id + '@' + item.getProperty('RECURRENCE-ID').icalString;
+    var itemExists;
+
+    function queryObjects() {
+      queue
+        .push('ESClient.queryObjects', [
+          getCalendarCalspec(calendar),
+          "match_uid('" + itemId + "')"
+        ])
+        .call(function(queue, listener) {
+          var result = cal3eResponse.fromRequestQueue(queue);
+          if (result instanceof cal3eResponse.EeeError) {
+            throw Components.Exception();
+          } else if (result instanceof cal3eResponse.TransportError) {
+            calendar.notifyOperationComplete(
+              listener,
+              Components.results.NS_ERROR_FAILURE,
+              Components.interfaces.calIOperationListener.GET,
+              null,
+              'Objects retrieval from EEE server failed'
+            );
+            return;
+          }
+
+          var parser = Components.classes['@mozilla.org/calendar/ics-parser;1']
+            .createInstance(Components.interfaces.calIIcsParser);
+          try {
+            parser.parseString(result.data);
+          } catch (e) {
+            calendar.notifyOperationComplete(
+              listener,
+              e.result,
+              Components.interfaces.calIOperationListener.GET,
+              null,
+              e.message
+            );
+            return;
+          }
+          var items = parser.getItems({});
+          var idx = items.length;
           itemExists = (items.length !== 0);
           synchronizationQueue.next().apply(queue, args);
         }, listener);
@@ -302,10 +395,12 @@ function Client(serverBuilder, authenticationDelegate,
 
   function enqueueItemTimezones(queue, calendar, item) {
     item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
-      queue.push('ESClient.addObject', [
-        getCalendarCalspec(calendar),
-        timezone.icalComponent.serializeToICS()
-      ]);
+      if (timezone.icalComponent) {
+        queue.push('ESClient.addObject', [
+          getCalendarCalspec(calendar),
+          timezone.icalComponent.serializeToICS()
+        ]);
+      }
     });
   }
 
@@ -456,6 +551,7 @@ function Client(serverBuilder, authenticationDelegate,
   client.addObject = addObject;
   client.updateObject = updateObject;
   client.addOrUpdateObject = addOrUpdateObject;
+  client.updateRecurringObject = updateRecurringObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
 }

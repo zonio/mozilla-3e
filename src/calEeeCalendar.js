@@ -150,8 +150,6 @@ calEeeCalendar.prototype = {
   },
 
   modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
-    dump('[3e] modifyItem:\n');
-
     if (!this._identity) {
       this.notifyOperationComplete(
         listener,
@@ -226,13 +224,15 @@ calEeeCalendar.prototype = {
     };
 
     if (newItem.hasProperty('RECURRENCE-ID')) {
-      dump('[3e] calling addOrUpdateObject\n');
-      cal3eRequest.Client.getInstance()
+      return cal3eRequest.Client.getInstance()
       .addOrUpdateObject(this._identity, clientListener, this, newItem)
       .component();
+    } else if (newItem.recurrenceInfo) {
+      return cal3eRequest.Client.getInstance()
+      .updateRecurringObject(this._identity, clientListener, this, oldItem, newItem)
+      .component();
     } else {
-      dump('[3e] calling updateObject\n');
-      cal3eRequest.Client.getInstance()
+      return cal3eRequest.Client.getInstance()
       .updateObject(this._identity, clientListener, this, newItem)
       .component();
     }
