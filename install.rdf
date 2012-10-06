@@ -63,7 +63,6 @@
 #endif
     <em:creator>Zonio s.r.o.</em:creator>
     <em:homepageURL>http://www.zonio.net/</em:homepageURL>
-    <em:optionsURL>chrome://calendar3e/content/cal3ePreferences.xul</em:optionsURL>
 #ifdef LIGHTNING_UPDATE_LOCATION
     <!-- TODO em:updateURL>@LIGHTNING_UPDATE_LOCATION@?buildID=@GRE_BUILDID@&amp;appABI=%APP_ABI%&amp;appOS=%APP_OS%&amp;locale=%APP_LOCALE%&amp;appVersion=%APP_VERSION%&amp;appID=%APP_ID%</em:updateURL -->
 #endif
