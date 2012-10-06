@@ -54,8 +54,17 @@
     <em:id>@XPI_EM_ID@</em:id>
     <em:name>3e Calendar</em:name>
     <em:version>@CALENDAR_3E_VERSION@</em:version>
-    <em:description>Allows interaction with 3e calendaring system and
-    other EEE servers.</em:description>
+    <em:description>Adds support for 3e calendars
+
+3e is full scale calendaring system which allows users to manage 
+their calendars, manipulate events and coordinate meetings with 
+other users. It provides complete set of robust enterprise 
+calendaring features such as calendar sharing, subscriptions, 
+on behalf scheduling, attachments and much more.
+
+This extension enables support for 3e calendars in Lightning
+calendar addon. Remind: You must have Lightning installed before
+using this extension!</em:description>
     <em:iconURL>chrome://calendar3e/skin/cal3eIcon.png</em:iconURL>
     <em:icon64URL>chrome://calendar3e/skin/cal3eIcon64.png</em:icon64URL>
 #ifdef CALENDAR_3E_PRERELEASE_VERSION
