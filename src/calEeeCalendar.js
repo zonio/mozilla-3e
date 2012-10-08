@@ -118,11 +118,10 @@ calEeeCalendar.prototype = {
 
     var calendar = this;
     var clientListener = function calEee_adoptItem_onResult(result) {
-      if (result instanceof cal3eResponse.EeeError) {
-        if (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
-            result.errorCode) {
-          throw Components.Exception();
-        }
+      if ((result instanceof cal3eResponse.EeeError) &&
+          (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
+           result.errorCode)) {
+        throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
@@ -197,11 +196,10 @@ calEeeCalendar.prototype = {
 
     var calendar = this;
     var clientListener = function calEee_modifyItem_onResult(result) {
-      if (result instanceof cal3eResponse.EeeError) {
-        if (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
-            result.errorCode) {
-          throw Components.Exception();
-        }
+      if ((result instanceof cal3eResponse.EeeError) &&
+          (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
+           result.errorCode)) {
+        throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
@@ -224,7 +222,7 @@ calEeeCalendar.prototype = {
     };
 
     return cal3eRequest.Client.getInstance()
-      .addOrUpdateObject(this._identity, clientListener, this, newItem)
+      .updateObject(this._identity, clientListener, this, newItem, oldItem)
       .component();
   },
 
@@ -305,7 +303,7 @@ calEeeCalendar.prototype = {
   },
 
   _getQueryObjectsListener:
-  function calEee_getQueryObjectsListener(listener) {
+  function calEee_getQueryObjectsListener(listener, rangeStart, rangeEnd) {
     var calendar = this;
     return function calEee_getItems_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
@@ -336,24 +334,23 @@ calEeeCalendar.prototype = {
         return;
       }
 
-      var itemsCount = {};
-      var items = parser.getItems(itemsCount);
-      var idx = itemsCount.value;
-      var item;
-      while (idx--) {
-        item = items[idx].clone();
-        item.calendar = calendar.superCalendar;
-        item.makeImmutable();
-
-        listener.onGetResult(
-          calendar.superCalendar,
-          Components.results.NS_OK,
-          Components.interfaces.calIEvent,
-          null,
-          1,
-          [item]
-        );
-      }
+      parser.getItems({}).forEach(function(item) {
+        cal3eUtils.getExpandedItems(
+          item.clone(), rangeStart, rangeEnd
+        ).forEach(function(item) {
+          item.calendar = calendar.superCalendar;
+          item.parentItem.calendar = calendar.superCalendar;
+          item.makeImmutable();
+          listener.onGetResult(
+            calendar.superCalendar,
+            Components.results.NS_OK,
+            Components.interfaces.calIEvent,
+            null,
+            1,
+            [item]
+          );
+        });
+      });
 
       calendar.notifyOperationComplete(
         listener,
@@ -380,7 +377,7 @@ calEeeCalendar.prototype = {
     return cal3eRequest.Client.getInstance()
       .queryObjects(
         this._identity,
-        this._getQueryObjectsListener(listener),
+        this._getQueryObjectsListener(listener, null, null),
         this,
         "match_uid('" + id + "')")
       .component();
@@ -436,10 +433,15 @@ calEeeCalendar.prototype = {
       );
     }
 
+    /* -- */
+    var iCalendarString = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZONIO//3E//EN\nBEGIN:VTIMEZONE\nTZID:/freeassociation.sourceforge.net/Tzfile/Europe/Prague\nX-LIC-LOCATION:Europe/Prague\nBEGIN:STANDARD\nTZNAME:CET\nDTSTART:19701028T020000\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10\nTZOFFSETFROM:+0200\nTZOFFSETTO:+0100\nEND:STANDARD\nBEGIN:DAYLIGHT\nTZNAME:CEST\nDTSTART:19700331T030000\nRRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3\nTZOFFSETFROM:+0100\nTZOFFSETTO:+0200\nEND:DAYLIGHT\nEND:VTIMEZONE\nBEGIN:VEVENT\nUID:20120917T154551Z-6618-500-1-2@centos6\nDTSTAMP:20120917T154551Z\nDTSTART;TZID=/freeassociation.sourceforge.net/Tzfile/Europe/Prague:\n 20120917T180000\nDTEND;TZID=/freeassociation.sourceforge.net/Tzfile/Europe/Prague:\n 20120917T183000\nTRANSP:OPAQUE\nSEQUENCE:2\nSUMMARY:Simple\nLOCATION:Prague\nCLASS:PUBLIC\nORGANIZER;CN=Bob Beta:MAILTO:bob@beta.zonio.net\nATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;\n RSVP=TRUE;CN=Bob Beta;LANGUAGE=en:MAILTO:bob@beta.zonio.net\nEND:VEVENT\nBEGIN:VEVENT\nUID:20120917T154640Z-6618-500-1-4@centos6\nDTSTAMP:20120917T154640Z\nDTSTART;TZID=/freeassociation.sourceforge.net/Tzfile/Europe/Prague:\n 20120924T090000\nDTEND;TZID=/freeassociation.sourceforge.net/Tzfile/Europe/Prague:\n 20120924T093000\nTRANSP:OPAQUE\nSEQUENCE:2\nSUMMARY:Recur3\nLOCATION:Wien\nCLASS:PUBLIC\nORGANIZER;CN=Bob Beta:MAILTO:bob@beta.zonio.net\nATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;\n RSVP=TRUE;CN=Bob Beta;LANGUAGE=en:MAILTO:bob@beta.zonio.net\nRRULE:FREQ=DAILY;COUNT=3\nEND:VEVENT\nEND:VCALENDAR\n';
+
+    /* -- */
+
     return cal3eRequest.Client.getInstance()
       .queryObjects(
         this._identity,
-        this._getQueryObjectsListener(listener),
+        this._getQueryObjectsListener(listener, rangeStart, rangeEnd),
         this,
         query.join(' AND '))
       .component();
