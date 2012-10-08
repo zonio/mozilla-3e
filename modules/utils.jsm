@@ -134,12 +134,29 @@ function isSupportedServer(server) {
   return ['imap', 'pop3'].indexOf(server.type) >= 0;
 }
 
+function getExpandedItems(item, start, end) {
+  return item.recurrenceInfo ?
+    item.recurrenceInfo.getOccurrences(start, end, 0, {}) :
+    [item];
+}
+
+function getInstanceId(item, itemInstance) {
+  var instanceId = item.id;
+  if (itemInstance) {
+    instanceId = '@' + itemInstance.getProperty('RECURRENCE-ID').icalString;
+  }
+
+  return instanceId;
+}
+
 var cal3eUtils = {
   createOperationListener: createOperationListener,
   nsprTimeToEeeDate: nsprTimeToEeeDate,
   eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
   fileAttachmentToEeeUri: fileAttachmentToEeeUri,
-  isSupportedServer: isSupportedServer
+  isSupportedServer: isSupportedServer,
+  getExpandedItems: getExpandedItems,
+  getInstanceId: getInstanceId
 };
 EXPORTED_SYMBOLS = [
   'cal3eUtils'

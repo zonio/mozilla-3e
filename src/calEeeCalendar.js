@@ -118,11 +118,10 @@ calEeeCalendar.prototype = {
 
     var calendar = this;
     var clientListener = function calEee_adoptItem_onResult(result) {
-      if (result instanceof cal3eResponse.EeeError) {
-        if (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
-            result.errorCode) {
-          throw Components.Exception();
-        }
+      if ((result instanceof cal3eResponse.EeeError) &&
+          (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
+           result.errorCode)) {
+        throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
@@ -197,11 +196,10 @@ calEeeCalendar.prototype = {
 
     var calendar = this;
     var clientListener = function calEee_modifyItem_onResult(result) {
-      if (result instanceof cal3eResponse.EeeError) {
-        if (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
-            result.errorCode) {
-          throw Components.Exception();
-        }
+      if ((result instanceof cal3eResponse.EeeError) &&
+          (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
+           result.errorCode)) {
+        throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
         calendar.notifyOperationComplete(
           listener,
@@ -223,19 +221,9 @@ calEeeCalendar.prototype = {
       calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
     };
 
-    if (newItem.hasProperty('RECURRENCE-ID')) {
-      return cal3eRequest.Client.getInstance()
-      .addOrUpdateObject(this._identity, clientListener, this, newItem)
+    return cal3eRequest.Client.getInstance()
+      .updateObject(this._identity, clientListener, this, newItem, oldItem)
       .component();
-    } else if (newItem.recurrenceInfo) {
-      return cal3eRequest.Client.getInstance()
-      .updateRecurringObject(this._identity, clientListener, this, oldItem, newItem)
-      .component();
-    } else {
-      return cal3eRequest.Client.getInstance()
-      .updateObject(this._identity, clientListener, this, newItem)
-      .component();
-    }
   },
 
   deleteItem: function calEee_deleteItem(item, listener) {
@@ -346,33 +334,23 @@ calEeeCalendar.prototype = {
         return;
       }
 
-      var itemsCount = {};
-      var items = parser.getItems(itemsCount);
-      var idx = itemsCount.value;
-      var recurrenceItems;
-      var item;
-      while (idx--) {
-        item = items[idx].clone();
-
-        if (item.recurrenceInfo) {
-          recurrenceItems = item.recurrenceInfo.getOccurrences(rangeStart, rangeEnd, 0, {});
-        } else {
-          recurrenceItems = [item];
-        }
-        for each (var ritem in recurrenceItems) {
-          ritem.calendar = calendar.superCalendar;
-          ritem.parentItem.calendar = calendar.superCalendar;
-          ritem.makeImmutable();
+      parser.getItems({}).forEach(function(item) {
+        cal3eUtils.getExpandedItems(
+          item.clone(), rangeStart, rangeEnd
+        ).forEach(function(item) {
+          item.calendar = calendar.superCalendar;
+          item.parentItem.calendar = calendar.superCalendar;
+          item.makeImmutable();
           listener.onGetResult(
             calendar.superCalendar,
             Components.results.NS_OK,
             Components.interfaces.calIEvent,
             null,
             1,
-            [ritem]
+            [item]
           );
-        }
-      }
+        });
+      });
 
       calendar.notifyOperationComplete(
         listener,
