@@ -30,6 +30,9 @@ Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 /**
  * @todo create a request constructor instead of this scenario nonsense
+ * @todo since {@link updateObject} is doesn't always update call
+ * ESClient.updateObject, the general rule about method names being
+ * related to scenarios is no longer true
  */
 function Client(serverBuilder, authenticationDelegate,
                 queueValidationDelegate) {
@@ -242,8 +245,7 @@ function Client(serverBuilder, authenticationDelegate,
         item.isNegative;
     }
 
-    var hasNoExceptionsToDelete =
-      oldItem.recurrenceInfo.getRecurrenceItems({})
+    var hasNoExceptionsToDelete = oldItem.recurrenceInfo.getRecurrenceItems({})
       .filter(filterExdates)
       .every(function(oldItemInstance) {
         return newItem.recurrenceInfo.getRecurrenceItems({})

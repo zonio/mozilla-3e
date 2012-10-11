@@ -141,12 +141,9 @@ function getExpandedItems(item, start, end) {
 }
 
 function getInstanceId(item, itemInstance) {
-  var instanceId = item.id;
-  if (itemInstance) {
-    instanceId = '@' + itemInstance.getProperty('RECURRENCE-ID').icalString;
-  }
-
-  return instanceId;
+  return itemInstance ?
+    item.id + '@' + itemInstance.getProperty('RECURRENCE-ID').icalString :
+    item.id;
 }
 
 var cal3eUtils = {
