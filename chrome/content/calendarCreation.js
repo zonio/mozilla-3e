@@ -17,10 +17,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/identity.jsm");
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
 
 function cal3eCreation() {
-  var originalUri = "";
+  var originalUri = '';
   var ltn_initCustomizePage;
 
   /**
@@ -34,7 +34,7 @@ function cal3eCreation() {
     var calendarUriElement = document.getElementById('calendar-uri');
 
     // hide URI textbox and store current value
-    originalUri = calendarUriElement.value || "";
+    originalUri = calendarUriElement.value || '';
     calendarUriElement.parentNode.setAttribute('hidden', 'true');
     computeUri();
 
@@ -75,7 +75,7 @@ function cal3eCreation() {
       getEnabled().
       forEach(function(identity) {
         var item = calendar3eAccounts.appendItem(
-          identity.fullName + " <" + identity.email + ">",
+          identity.fullName + ' <' + identity.email + '>',
           identity.key
         );
 
@@ -108,7 +108,7 @@ function cal3eCreation() {
     if ('undefined' !== typeof originalUri) {
       calendarUriElement.value = originalUri;
     } else {
-      calendarUriElement.value = calendarUriElement.value || "";
+      calendarUriElement.value = calendarUriElement.value || '';
     }
     calendarUriElement.parentNode.setAttribute('hidden', 'false');
   }
@@ -144,24 +144,24 @@ function cal3eCreation() {
    */
   function overlay() {
     var accountMenuList = document.createElementNS(
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'menulist'
     );
     accountMenuList.id = 'calendar3e-account';
     accountMenuList.flex = 1;
     accountMenuList.appendChild(document.createElementNS(
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'menupopup'
     ));
 
     var accountLabel = document.createElementNS(
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'label'
     );
     accountLabel.control = 'calendar3e-account';
 
     var accountRow = document.createElementNS(
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'row'
     );
     accountRow.id = 'calendar3e-account-row';
@@ -211,10 +211,11 @@ function cal3eCreation() {
     var identities = cal3eIdentity.Collection().
       getEnabled().
       filter(function(identity) {
-        return identity.key === document.getElementById('calendar3e-account').value
+        return identity.key ===
+          document.getElementById('calendar3e-account').value;
       });
 
-    uri = "eee://";
+    uri = 'eee://';
     if (identities.length > 0) {
       uri += identities[0].email;
     }
@@ -222,9 +223,8 @@ function cal3eCreation() {
     document.getElementById('calendar-uri').value = uri;
 
     if (gCalendar) {
-      var ioService = Components.classes[
-        "@mozilla.org/network/io-service;1"
-      ].getService(Components.interfaces.nsIIOService);
+      var ioService = Components.classes['@mozilla.org/network/io-service;1'].
+        getService(Components.interfaces.nsIIOService);
       gCalendar.uri = ioService.newURI(uri, null, null);
     }
   }
@@ -258,5 +258,5 @@ function cal3eCreation() {
 
 cal3eCreation.onLoad = function () {
   var controller = new cal3eCreation();
-}
+};
 window.addEventListener('load', cal3eCreation.onLoad, false);
