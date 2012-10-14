@@ -79,7 +79,10 @@ function cal3eCreation() {
           identity.key
         );
 
-        if (identity.key == selectedIdentity) {
+        if (!selectedIdentity) {
+          selectedIdentity = identity.key;
+        }
+        if (identity.key === selectedIdentity) {
           calendar3eAccounts.selectedItem = item;
         }
       });
