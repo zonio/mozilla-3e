@@ -96,25 +96,8 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    var newItem = item.clone();
-    if (newItem.isMutable && (this.superCalendar !== newItem.calendar)) {
-      newItem.calendar = this.superCalendar;
-    }
-    if (newItem.isMutable && (null == newItem.id)) {
-      newItem.id = cal.getUUID();
-    }
-
-    // We only care about last occurrence of ATTENDEE property for
-    // each attendee.
-    item.getAttendees({}).forEach(function(attendee) {
-      var newAttendee = newItem.getAttendeeById(attendee.id);
-      if (newAttendee) {
-        newItem.removeAttendee(newAttendee);
-        newAttendee = newAttendee.clone();
-        newAttendee.participationStatus = attendee.participationStatus;
-        newItem.addAttendee(newAttendee);
-      }
-    });
+    item = this._filterOutAttendees(item);
+    item = this._ensureIdentity(item);
 
     var calendar = this;
     var clientListener = function calEee_adoptItem_onResult(result) {
@@ -144,7 +127,7 @@ calEeeCalendar.prototype = {
     };
 
     return cal3eRequest.Client.getInstance()
-      .addObject(this._identity, clientListener, this, newItem)
+      .addObject(this._identity, clientListener, this, item)
       .component();
   },
 
@@ -446,15 +429,6 @@ calEeeCalendar.prototype = {
     this.mObservers.notify('onLoad', [this]);
   },
 
-  _findAndSetIdentity: function calEee_findAndSetIdentity() {
-    var eeeUser = this._uri.spec.split('/', 4)[2];
-    var identities = cal3eIdentity.Collection()
-      .getEnabled()
-      .findByEmail(eeeUser);
-
-    this._identity = identities.length > 0 ? identities[0] : null;
-  },
-
   set uri(uri) {
     this._uri = uri;
     this._findAndSetIdentity();
@@ -492,6 +466,42 @@ calEeeCalendar.prototype = {
     var uriParts = this._uri.spec.split('/', 5);
 
     return uriParts[4] || uriParts[3];
+  },
+
+  _findAndSetIdentity: function calEee_findAndSetIdentity() {
+    var eeeUser = this._uri.spec.split('/', 4)[2];
+    var identities = cal3eIdentity.Collection()
+      .getEnabled()
+      .findByEmail(eeeUser);
+
+    this._identity = identities.length > 0 ? identities[0] : null;
+  },
+
+  _ensureIdentity: function calEee_ensureIdentity(item) {
+    var newItem = item.clone();
+    if (newItem.calendar !== this.superCalendar) {
+      newItem.calendar = this.superCalendar;
+    }
+    if (!newItem.id) {
+      newItem.id = cal.getUUID();
+    }
+
+    return newItem;
+  },
+
+  _filterOutAttendees: function (item) {
+    var newItem = item.clone();
+    item.getAttendees({}).forEach(function(attendee) {
+      var newAttendee = newItem.getAttendeeById(attendee.id);
+      if (newAttendee) {
+        newItem.removeAttendee(newAttendee);
+        newAttendee = newAttendee.clone();
+        newAttendee.participationStatus = attendee.participationStatus;
+        newItem.addAttendee(newAttendee);
+      }
+    });
+
+    return newItem;
   }
 
 };
