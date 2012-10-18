@@ -189,8 +189,8 @@ function Client(serverBuilder, authenticationDelegate,
     return synchronizedMethod.future(arguments)
       .push('ESClient.freeBusy', [
         attendee,
-        nsprTimeToEeeDate(from),
-        nsprTimeToEeeDate(to),
+        cal3eUtils.nsprTimeToEeeDate(from),
+        cal3eUtils.nsprTimeToEeeDate(to),
         defaultTimezone])
       .call(onResult, listener);
   }
