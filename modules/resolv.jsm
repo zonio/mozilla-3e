@@ -284,10 +284,11 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
   var WORD = ctypes.unsigned_short;
   var WCHAR = ctypes.jschar;
   var PWSTR = WCHAR.ptr;
-  var PCTSTR = PWSTR;
+  var LPCWSTR = WCHAR.ptr;
+  var PCTSTR = LPCWSTR;
   var DNS_STATUS = ctypes.long;
 
-  var ERROR_SUCCESS = 0;
+  var ERROR_SUCCESS;
 
   var DNS_FREE_TYPE = ctypes.int;
   var DnsFreeFlat = 0;
@@ -308,48 +309,41 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
   function extract(name, typeConstructor) {
     typeConstructor = typeSymbolToConstructor(typeConstructor);
 
-    dump('[3e] DNS query to: ' + name + '\n');
-
-    dump('[3e][' + (new Date) + '] Loading DnsAPI\n');
     loadLibrary();
-    dump('[3e][' + (new Date) + '] DnsAPI loaded\n');
 
     var resources = [];
-    var queryResultsSet = PDNS_RECORD.ptr();
-    dump('[3e][' + (new Date) + '] Sending query\n');
-    if (DnsQuery(name, typeConstructorToConstant(typeConstructor),
-                 DNS_QUERY_STANDARD, null, queryResultsSet, null) !==
-        ERROR_SUCCESS) {
-      dump('[3e][' + (new Date) + '] Bad query\n');
+    var queryResultsSet = PDNS_RECORD();
+    var dnsStatus = DnsQuery(
+      PCTSTR.targetType.array()(name),
+      typeConstructorToConstant(typeConstructor),
+      DNS_QUERY_STANDARD,
+      null,
+      queryResultsSet.address(),
+      null
+    );
+    if (ctypes.Int64.compare(dnsStatus, ERROR_SUCCESS)) {
       return returnResources(resources);
     }
-    dump('[3e][' + (new Date) + '] Query received\n');
 
-    var result = queryResultsSet;
+    var result = queryResultsSet.contents;
     while (result) {
-      dump('[3e][' + (new Date) + '] Result found\n');
-      if (result.wType !== typeConstructorToConstant(typeConstructor)) {
+      if (result['wType'] !== typeConstructorToConstant(typeConstructor)) {
+        result = nextResult(result);
         continue;
       }
 
-      resources.push(new typeConstructor(
-        result.dwTtl, result.Data.pStringArray[0]
-      ));
-
-      if (result.pNext) {
-        result = result.pNext.cast(DNS_RECORD.ptr);
-      } else {
-        result = result.pNext;
+      var idx;
+      for (idx = 0; idx < result['Data']['dwStringCount']; idx += 1) {
+        resources.push(new typeConstructor(
+          result['dwTtl'], result['Data']['pStringArray'][idx].readString()
+        ));
       }
+
+      result = nextResult(result);
     }
 
-    dump('[3e][' + (new Date) + '] Freeing results\n');
     DnsRecordListFree(queryResultsSet, DnsFreeRecordList);
-    dump('[3e][' + (new Date) + '] Results freed\n');
-
-    dump('[3e][' + (new Date) + '] Closing DnsAPI\n');
     closeLibrary();
-    dump('[3e][' + (new Date) + '] DnsAPI closed\n');
 
     return returnResources(resources);
   }
@@ -382,7 +376,15 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
     return constant;
   }
 
+  function nextResult(result) {
+    return !result.pNext.isNull() ?
+      result.pNext.cast(DNS_RECORD.ptr).contents :
+      null;
+  }
+
   function loadLibrary() {
+    ERROR_SUCCESS = ctypes.Int64(0);
+
     DnsAPI = ctypes.open(ctypes.libraryName('DnsAPI'));
 
     DNS_TXT_DATA = ctypes.StructType('DNS_TXT_DATA', [
@@ -432,6 +434,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
     PDNS_RECORD = null;
     DNS_TXT_DATA = null;
     DnsAPI = null;
+    ERROR_SUCCESS = null;
   }
 
   resolver.extract = extract;
