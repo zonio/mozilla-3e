@@ -40,17 +40,18 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
   }
 
   function openAttachment() {
-    if (document.getElementById('attachment-link').selectedItems.length ===
-        1) {
-      var uri = document.getElementById('attachment-link')
-        .getSelectedItem(0).attachment.uri;
-      if (uri.schemeIs('eee')) {
-        uri = cal3eUtils.eeeAttachmentToHttpUri(uri);
-      }
-      // TODO There should be a nicer dialog
-      Components.classes['@mozilla.org/uriloader/external-protocol-service;1']
-        .getService(Components.interfaces.nsIExternalProtocolService)
-        .loadUrl(uri);
+    if (document.getElementById('attachment-link').selectedItems.length > 0) {
+      return;
+    }
+
+    var uri = document.getElementById('attachment-link').getSelectedItem(0)
+      .attachment.uri;
+    if (uri.schemeIs('eee')) {
+      cal3eUtils.eeeAttachmentToHttpUri(uri, function(uri) {
+        loadAttachment(uri);
+      });
+    } else {
+      loadAttachment(uri);
     }
   }
 
@@ -164,6 +165,15 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
 
   function isDoubleClick(event) {
     return event.detail === 2;
+  }
+
+  /**
+   * @todo There should be a nicer dialog
+   */
+  function loadAttachment(uri) {
+    Components.classes['@mozilla.org/uriloader/external-protocol-service;1']
+      .getService(Components.interfaces.nsIExternalProtocolService)
+      .loadUrl(uri);
   }
 
   function init() {

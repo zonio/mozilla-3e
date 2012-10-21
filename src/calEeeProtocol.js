@@ -78,6 +78,7 @@ calEeeProtocol.prototype = {
    *
    * @param {nsIURI} uri EEE URI
    * @returns {nsIHttpProtocolHandler}
+   * @todo find different solution
    */
   newChannel: function(uri) {
     if (!this.checkAttachUri(uri)) {

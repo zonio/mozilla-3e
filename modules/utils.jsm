@@ -63,34 +63,17 @@ function nsprTimeToEeeDate(nsprTime) {
     zeropad(jsDate.getUTCSeconds(), 2);
 }
 
-/**
- * Translates eee attachment uri to http uri so attachment can be
- * downloaded by web browser.
- *
- * @param {nsIURI} eeeUri Uri to be translated
- * @return {nsIURI} translated Uri
- * @todo introduce callback
- */
-function eeeAttachmentToHttpUri(eeeUri) {
-  var host, port;
-  if (!cal3eFeature.isSupported('dns')) {
-    host = eeeUri.spec.split('/')[2].split('@')[1];
-    port = 4444;
-  } else {
-    dns.resolveServer(eeeUri.host, function(record) {
-      host = record['host'];
-      port = record['port'];
-    });
-  }
+function eeeAttachmentToHttpUri(eeeUri, callback) {
+  dns.resolveServer(eeeUri.host, function(record) {
+    var hash = eeeUri.spec.split('/')[4];
+    var filename = eeeUri.spec.split('/')[5];
 
-  var hash = eeeUri.spec.split('/')[4];
-  var filename = eeeUri.spec.split('/')[5];
-
-  return Services.io.newURI(
-    ['https:', '', host + ':' + port, 'attach', hash, filename].join('/'),
-    null, null
-  );
-
+    callback(Services.io.newURI(
+      ['https:', '', record['host'] + ':' + record['port'],
+       'attach', hash, filename].join('/'),
+      null, null
+    ));
+  });
 }
 
 /**

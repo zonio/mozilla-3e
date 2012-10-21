@@ -30,15 +30,6 @@ function amEnable3e() {
   }
 
   this.onSave = function amEnable3e_onSave() {
-    if (!cal3eFeature.isSupported('dns')) {
-      identity.setCharAttribute(
-        'eee_host', identity.email.substring(identity.email.indexOf("@") + 1)
-      );
-      identity.setIntAttribute(
-        'eee_port', 4444
-      );
-    }
-
     identity.setBoolAttribute(
       cal3eIdentity.EEE_ENABLED_KEY,
       document.getElementById("cal3e-enable-checkbox").checked
