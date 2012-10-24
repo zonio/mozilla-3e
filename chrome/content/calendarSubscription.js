@@ -184,8 +184,6 @@ function cal3eSubscriberController() {
         element.lastChild.value =
           identity.fullName + ' <' + identity.email + '>';
       });
-
-    elementDidLoad();
   }
 
   function fillElementWithMany() {
