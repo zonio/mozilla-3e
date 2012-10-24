@@ -18,6 +18,11 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
+<?xml-stylesheet type="text/css"
+                 href="chrome://global/skin/"?>
+<?xml-stylesheet type="text/css"
+                 href="chrome://calendar3e/skin/cal3eGlobal.css"?>
+
 <!DOCTYPE dialog [
   <!ENTITY % cal3eCalendar
     SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
@@ -28,6 +33,8 @@
     id="calendar3e-subscription-dialog"
     title="&cal3eCalendarSubscribe.title;"
     buttons="accept,cancel"
+    buttonlabelaccept="&cal3eCalendarSubscribe.buttons.accept;"
+    persist="width height screenX screenY"
     onload="cal3eSubscription.onLoad()"
     ondialogaccept="return cal3eSubscription.onDialogAccept();"
     windowtype="Calendar3e:SubscriptionDialog"
@@ -36,29 +43,50 @@
   <script type="application/javascript"
           src="chrome://calendar3e/content/calendarSubscription.js"/>
 
-  <notificationbox id="notifications" flex="1"/>
-  <grid id="calendar3e-subscription-grid">
+  <notificationbox id="notifications"/>
+  <grid id="calendar3e-subscription-grid" flex="1">
     <columns>
-      <column/>
       <column flex="1"/>
+      <column/>
     </columns>
-    <rows id="calendar3e-subscription-rows">
-      <row id="calendar3e-subscriber-row" align="center">
-        <label control="subscriber-menulist"
-               value="&cal3eCalendarSubscribe.subscriber.label;"/>
-      </row>
-      <row id="calendar3e-search-row" align="center">
-        <label control="search-pattern"
-               value="&cal3eCalendarSubscribe.search.label;"/>
-        <textbox id="search-pattern"/>
+    <rows>
+      <row>
+        <grid flex="1">
+          <columns>
+            <column/>
+            <column flex="1"/>
+          </columns>
+          <rows>
+            <row id="calendar3e-subscriber-row">
+              <hbox pack="end" align="center">
+                <label control="subscriber-menulist"
+                       value="&cal3eCalendarSubscribe.subscriber.label;"/>
+              </hbox>
+            </row>
+            <row id="calendar3e-search-row" align="center">
+              <label control="search-pattern"
+                     value="&cal3eCalendarSubscribe.search.label;"/>
+              <textbox type="search" id="search-pattern"
+                       flex="1" timeout="300"/>
+            </row>
+          </rows>
+        </grid>
+        <spacer/>
       </row>
       <row>
+        <separator class="thin"/>
         <spacer/>
+      </row>
+      <row flex="1">
         <tree id="calendars-tree" hidecolumnpicker="true" class="tree"
-              rows="6">
+              rows="6" flex="1">
           <treecols id="calendars-tree-cols">
-            <treecol id="calendar-tree-calendar-col" hideheader="true"
-                     primary="true" flex="1" persist="width"/>
+            <treecol id="calendars-tree-calendar-name"
+                     label="&cal3eCalendarSubscribe.tree.name;"
+                     primary="true" flex="10" persist="width"/>
+            <treecol id="calendars-tree-calendar-access"
+                     label="&cal3eCalendarSubscribe.tree.type;"
+                     flex="2"/>
           </treecols>
           <treechildren id="calendars-tree-children"/>
         </tree>

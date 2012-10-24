@@ -17,12 +17,18 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-treechildren::-moz-tree-checkbox,
-treechildren::-moz-tree-image(not-enabled) {
-  -moz-margin-end: 2px;
-  list-style-image: url("chrome://messenger/skin/icons/dot.png");
+@import url("chrome://messenger/skin/");
+
+@namespace url(
+    "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+);
+
+dialog#calendar3e-subscription-dialog {
+    width: 44em;
+    height: 33em;
 }
-treechildren::-moz-tree-checkbox(checked),
-treechildren::-moz-tree-image(enabled) {
-  list-style-image: url("chrome://messenger/skin/icons/check.png");
+
+grid#calendar3e-subscription-grid {
+    width: 40em;
+    height: 25em;
 }

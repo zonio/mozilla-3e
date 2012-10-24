@@ -172,20 +172,19 @@ function cal3eSubscriberController() {
   }
 
   function fillElementWithOne() {
-    var labelElement = document.createElementNS(
+    element.appendChild(document.createElementNS(
       'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'label'
-    );
+    ));
+    element.lastChild.flex = 1;
 
     cal3eIdentity.Collection()
       .getEnabled()
       .forEach(function(identity) {
-        labelElement.setAttribute(
-          'value', identity.fullName + ' <' + identity.email + '>'
-        );
+        element.lastChild.value =
+          identity.fullName + ' <' + identity.email + '>';
       });
 
-    element.appendChild(labelElement);
     elementDidLoad();
   }
 
@@ -195,6 +194,7 @@ function cal3eSubscriberController() {
       'menulist'
     ));
     element.lastChild.id = 'subscriber-menulist';
+    element.lastChild.flex = 1;
     var firstItem;
 
     cal3eIdentity.Collection()
@@ -393,34 +393,34 @@ function cal3eSharedCalendarsController() {
 
   function fillElementNoIdentity() {
     cal3eXul.clearTree(element);
-    cal3eXul.addItemToTree(
-      element,
-      document.getElementById('calendar3e-strings').getString(
-        'cal3eCalendarSubscribe.calendars.noIdentity'
-      ),
-      null
+    cal3eXul.addItemsToTree(
+      element, [{
+        'label': document.getElementById('calendar3e-strings').getString(
+          'cal3eCalendarSubscribe.calendars.noIdentity'
+        )
+      }]
     );
   }
 
   function fillElementLoading() {
     cal3eXul.clearTree(element);
-    cal3eXul.addItemToTree(
-      element,
-      document.getElementById('calendar3e-strings').getString(
-        'cal3eCalendarSubscribe.calendars.loading'
-      ),
-      null
+    cal3eXul.addItemsToTree(
+      element, [{
+        'label': document.getElementById('calendar3e-strings').getString(
+          'cal3eCalendarSubscribe.calendars.loading'
+        )
+      }]
     );
   }
 
   function fillElementNoMatch() {
     cal3eXul.clearTree(element);
-    cal3eXul.addItemToTree(
-      element,
-      document.getElementById('calendar3e-strings').getString(
-        'cal3eCalendarSubscribe.calendars.noMatch'
-      ),
-      null
+    cal3eXul.addItemsToTree(
+      element, [{
+        'label': document.getElementById('calendar3e-strings').getString(
+          'cal3eCalendarSubscribe.calendars.noMatch'
+        )
+      }]
     );
   }
 
@@ -442,16 +442,19 @@ function cal3eSharedCalendarsController() {
 
     var parentElement;
     getFilteredUsers().forEach(function(owner) {
-      parentElement = cal3eXul.addItemToTree(
-        element,
-        cal3eModel.userLabel(owner),
-        null
+      parentElement = cal3eXul.addItemsToTree(
+        element, [{
+          'label': cal3eModel.userLabel(owner)
+        }]
       );
       getFilteredCalendars(owner).forEach(function(calendar) {
-        cal3eXul.addItemToTree(
-          parentElement,
-          cal3eModel.calendarLabel(calendar),
-          calendar['owner'] + ':' + calendar['name']
+        cal3eXul.addItemsToTree(
+          parentElement, [{
+            'label': cal3eModel.calendarLabel(calendar),
+            'value': calendar['owner'] + ':' + calendar['name']
+          }, {
+            'label': cal3eModel.permissionLabel(calendar)
+          }]
         );
       });
     });

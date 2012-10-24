@@ -21,7 +21,7 @@ function clearMenu(element) {
   clearChildrenOfContainer(element, 'menupopup');
 }
 
-function addItemToTree(element, label, value) {
+function addItemsToTree(element, cells) {
   var document = element.ownerDocument;
 
   var childrenElement = findContainer(element, 'treechildren');
@@ -47,17 +47,19 @@ function addItemToTree(element, label, value) {
   );
   itemElement.appendChild(rowElement);
 
-  var cellElement = document.createElementNS(
-    'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
-    'treecell'
-  );
-  if (label !== null) {
-    cellElement.setAttribute('label', label);
-  }
-  if (value !== null) {
-    cellElement.setAttribute('value', value);
-  }
-  rowElement.appendChild(cellElement);
+  cells.forEach(function(cell) {
+    var cellElement = document.createElementNS(
+      'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+      'treecell'
+    );
+    if (cell['label'] !== null) {
+      cellElement.setAttribute('label', cell['label']);
+    }
+    if (cell['value'] !== null) {
+      cellElement.setAttribute('value', cell['value']);
+    }
+    rowElement.appendChild(cellElement);
+  });
 
   if (!itemElement.parentNode) {
     childrenElement.appendChild(itemElement);
@@ -99,7 +101,7 @@ function clearChildrenOfContainer(element, containerName) {
 
 var cal3eXul = {
   clearMenu: clearMenu,
-  addItemToTree: addItemToTree,
+  addItemsToTree: addItemsToTree,
   clearTree: clearTree
 };
 EXPORTED_SYMBOLS = [

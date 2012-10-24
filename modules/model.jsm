@@ -17,6 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://gre/modules/Services.jsm');
+
 function getAttribute(object, name) {
   if (!object['attrs']) {
     return null;
@@ -49,10 +51,23 @@ function getCalendarLabel(calendar) {
   return '' + (getAttribute(calendar, 'title') || calendar['name']);
 }
 
+function getPermissionLabel(calendar) {
+  if (['write', 'read'].indexOf(calendar['perm']) < 0) {
+    return '--';
+  }
+
+  return Services.strings
+    .createBundle('chrome://calendar3e/locale/cal3eCalendar.properties')
+    .GetStringFromName(
+      'cal3eModel.permissions.' + calendar['perm']
+    );
+}
+
 var cal3eModel = {
   attribute: getAttribute,
   userLabel: getUserLabel,
-  calendarLabel: getCalendarLabel
+  calendarLabel: getCalendarLabel,
+  permissionLabel: getPermissionLabel
 };
 EXPORTED_SYMBOLS = [
   'cal3eModel'
