@@ -17,6 +17,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+function createElement(document, name) {
+  return document.createElementNS(
+    'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
+    name
+  );
+}
+
 function clearMenu(element) {
   clearChildrenOfContainer(element, 'menupopup');
 }
@@ -100,6 +107,7 @@ function clearChildrenOfContainer(element, containerName) {
 }
 
 var cal3eXul = {
+  createElement: createElement,
   clearMenu: clearMenu,
   addItemsToTree: addItemsToTree,
   clearTree: clearTree
