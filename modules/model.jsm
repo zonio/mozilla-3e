@@ -47,6 +47,27 @@ function getUserLabel(user) {
   return userLabel;
 }
 
+function getCalendarName(calendar) {
+  return getStructuredUri(calendar.uri)['name'];
+}
+
+function getCalendarUser(calendar) {
+  return getStructuredUri(calendar.uri)['user'];
+}
+
+function getStructuredUri(uri) {
+  var uriParts = uri.spec.split('/', 5);
+  var structuredUri = {};
+  structuredUri['protocol'] = uriParts[0].substring(0, uriParts[0].length - 1);
+  structuredUri['user'] = uriParts[2];
+  structuredUri['owner'] = uriParts.length === 5 ? uriParts[3] : null;
+  structuredUri['name'] = uriParts.length >= 4 ?
+    uriParts[[uriParts.length - 1]] :
+    null;
+
+  return structuredUri;
+}
+
 function getCalendarLabel(calendar) {
   return '' + (getAttribute(calendar, 'title') || calendar['name']);
 }
@@ -66,6 +87,8 @@ function getPermissionLabel(calendar) {
 var cal3eModel = {
   attribute: getAttribute,
   userLabel: getUserLabel,
+  calendarName: getCalendarName,
+  calendarUser: getCalendarUser,
   calendarLabel: getCalendarLabel,
   permissionLabel: getPermissionLabel
 };
