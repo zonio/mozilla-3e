@@ -115,7 +115,8 @@ calEeeManager.prototype = {
 
     this._generateUniqueUri(calendar);
 
-    var listener = function calEeeManager_create_onResult(result) {
+    var manager = this;
+    var createListener = function calEeeManager_create_onResult(result) {
       if (!(result instanceof cal3eResponse.Success)) {
         throw Components.Exception();
       }
@@ -124,11 +125,33 @@ calEeeManager.prototype = {
         'calendar.registry.' + calendar.id + '.uri',
         calendar.uri.spec
       );
+
+      cal3eRequest.Client.getInstance().setCalendarAttribute(
+        manager._getIdentity(calendar),
+        listener,
+        calendar,
+        'title',
+        calendar.name,
+        true
+      );
+      cal3eRequest.Client.getInstance().setCalendarAttribute(
+        manager._getIdentity(calendar),
+        listener,
+        calendar,
+        'color',
+        calendar.getProperty('color'),
+        true
+      );
+    };
+    var listener = function calEeeManager_create_onResult(result) {
+      if (!(result instanceof cal3eResponse.Success)) {
+        throw Components.Exception();
+      }
     };
 
     cal3eRequest.Client.getInstance().createCalendar(
       this._getIdentity(calendar),
-      listener,
+      createListener,
       calendar
     );
   },

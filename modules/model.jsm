@@ -51,8 +51,18 @@ function getCalendarName(calendar) {
   return getStructuredUri(calendar.uri)['name'];
 }
 
+function getCalendarCalspec(calendar) {
+  return getCalendarOwner(calendar) + ':' + getCalendarName(calendar);
+}
+
 function getCalendarUser(calendar) {
   return getStructuredUri(calendar.uri)['user'];
+}
+
+function getCalendarOwner(calendar) {
+  return getStructuredUri(calendar.uri)['owner'] !== null ?
+    getStructuredUri(calendar.uri)['owner'] :
+    getStructuredUri(calendar.uri)['user'];
 }
 
 function getStructuredUri(uri) {
@@ -88,7 +98,9 @@ var cal3eModel = {
   attribute: getAttribute,
   userLabel: getUserLabel,
   calendarName: getCalendarName,
+  calendarCalspec: getCalendarCalspec,
   calendarUser: getCalendarUser,
+  calendarOwner: getCalendarOwner,
   calendarLabel: getCalendarLabel,
   permissionLabel: getPermissionLabel
 };

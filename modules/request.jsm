@@ -23,6 +23,7 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/dns.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/xml-rpc.jsm');
@@ -68,23 +69,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function createCalendar(identity, listener, calendar) {
     var queue = synchronizedMethod.future(arguments);
-    queue.push('ESClient.createCalendar', [calendar.calname]);
-    if (calendar.calname != calendar.name) {
-      queue.push('ESClient.setCalendarAttribute', [
-        getCalendarCalspec(calendar),
-        'title',
-        calendar.name,
-      true
-      ]);
-    }
-    if (calendar.getProperty('color')) {
-      queue.push('ESClient.setCalendarAttribute', [
-        getCalendarCalspec(calendar),
-        'color',
-        calendar.getProperty('color'),
-        true
-      ]);
-    }
+    queue.push('ESClient.createCalendar', [cal3eModel.calendarName(calendar)]);
 
     return queue.call(onResult, listener);
   }
@@ -94,7 +79,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function deleteCalendar(identity, listener, calendar) {
     return synchronizedMethod.future(arguments)
-      .push('ESClient.deleteCalendar', [calendar.calname])
+      .push('ESClient.deleteCalendar', [cal3eModel.calendarName(calendar)])
       .call(onResult, listener);
   }
   deleteCalendar = synchronizedMethod.create(
@@ -114,7 +99,7 @@ function Client(serverBuilder, authenticationDelegate,
                                 isPublic) {
     return synchronizedMethod.future(arguments)
       .push('ESClient.setCalendarAttribute', [
-        getCalendarCalspec(calendar),
+        cal3eModel.calendarCalspec(calendar),
         name,
         value,
         isPublic])
@@ -127,7 +112,7 @@ function Client(serverBuilder, authenticationDelegate,
   function queryObjects(identity, listener, calendar, query) {
     return synchronizedMethod.future(arguments)
       .push('ESClient.queryObjects', [
-        getCalendarCalspec(calendar),
+        cal3eModel.calendarCalspec(calendar),
         query])
       .call(onResult, listener);
   }
@@ -206,7 +191,7 @@ function Client(serverBuilder, authenticationDelegate,
 
     queue
       .push('ESClient.queryObjects', [
-        getCalendarCalspec(calendar),
+        cal3eModel.calendarCalspec(calendar),
         "match_uid('" + cal3eUtils.getInstanceId(newItem, newItem) + "')"
       ])
       .call(function(queue, listener) {
@@ -262,7 +247,7 @@ function Client(serverBuilder, authenticationDelegate,
 
     queue
       .push('ESClient.queryObjects', [
-        getCalendarCalspec(calendar),
+        cal3eModel.calendarCalspec(calendar),
         "match_id('" + newItem.id + "')"
       ])
       .call(function(queue, listener) {
@@ -302,7 +287,7 @@ function Client(serverBuilder, authenticationDelegate,
     item.icalComponent.getReferencedTimezones({}).forEach(function(timezone) {
       if (timezone.icalComponent) {
         queue.push('ESClient.addObject', [
-          getCalendarCalspec(calendar),
+          cal3eModel.calendarCalspec(calendar),
           timezone.icalComponent.serializeToICS()
         ]);
       }
@@ -312,7 +297,7 @@ function Client(serverBuilder, authenticationDelegate,
   function enqueueAddObject(queue, calendar, item) {
     enqueueItemTimezones(queue, calendar, item);
     queue.push('ESClient.addObject', [
-      getCalendarCalspec(calendar),
+      cal3eModel.calendarCalspec(calendar),
       item.icalComponent.serializeToICS()
     ]);
   }
@@ -320,14 +305,14 @@ function Client(serverBuilder, authenticationDelegate,
   function enqueueUpdateObject(queue, calendar, item) {
     enqueueItemTimezones(queue, calendar, item);
     queue.push('ESClient.updateObject', [
-      getCalendarCalspec(calendar),
+      cal3eModel.calendarCalspec(calendar),
       item.icalComponent.serializeToICS()
     ]);
   }
 
   function enqueueDeleteObject(queue, calendar, item, itemInstance) {
     queue.push('ESClient.deleteObject', [
-      getCalendarCalspec(calendar),
+      cal3eModel.calendarCalspec(calendar),
       cal3eUtils.getInstanceId(item, itemInstance)
     ]);
   }
@@ -504,12 +489,6 @@ function Client(serverBuilder, authenticationDelegate,
 
     var error = queueValidationDelegate.apply(queue);
     listener(error || cal3eResponse.fromRequestQueue(queue));
-  }
-
-  function getCalendarCalspec(calendar) {
-    var uriParts = calendar.uri.spec.split('/', 5);
-
-    return uriParts[2] + ':' + (uriParts[4] || uriParts[3]);
   }
 
   client.getUsers = getUsers;
