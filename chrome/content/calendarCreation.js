@@ -67,6 +67,8 @@ function cal3eOverlayDelegate() {
   var delegate = this;
   var cal3eUri;
   var lightningUri;
+  var uri;
+  var lightningInitCustomizePage;
 
   function load() {
     var calendarUriRow = document.getElementById('calendar-uri').parentNode;
@@ -90,17 +92,39 @@ function cal3eOverlayDelegate() {
     accountMenuList.appendChild(cal3eXul.createElement(document, 'menupopup'));
     accountMenuList.id = 'calendar3e-account';
     accountMenuList.flex = 1;
+
+    lightningInitCustomizePage = initCustomizePage;
+    initCustomizePage = function() {
+      lightningInitCustomizePage();
+      ensureLightningIdentityCollapsedState();
+    };
+
+    cal3eUri = { value: '' };
+    lightningUri = { value: document.getElementById('calendar-uri').value };
+    uri = lightningUri;
   }
 
   function unload() {
+    cal3eUri = null;
+    lightningUri = null;
+    uri = null;
+
+    initCustomizePage = lightningInitCustomizePage;
+    lightningInitCustomizePage = null;
+
     document.getElementById('calendar3e-account-row').parentNode.removeChild(
       document.getElementById('calendar3e-account-row')
     );
   }
 
   function activate() {
-    lightningUri = document.getElementById('calendar-uri').value || '';
-    document.getElementById('calendar-uri').value = cal3eUri;
+    uri.value = document.getElementById('calendar-uri').value || '';
+    uri = cal3eUri;
+    forceUriChange();
+
+    var commandEvent = document.createEvent('Event');
+    commandEvent.initEvent('command', true, true);
+    document.getElementById('calendar-uri').dispatchEvent(commandEvent);
 
     document.getElementById('calendar-uri').parentNode.collapsed = true;
     document.getElementById('calendar-email-identity-row').collapsed = true;
@@ -108,16 +132,36 @@ function cal3eOverlayDelegate() {
   }
 
   function deactivate() {
-    cal3eUri = document.getElementById('calendar-uri').value || '';
-    document.getElementById('calendar-uri').value = lightningUri;
+    uri.value = document.getElementById('calendar-uri').value || '';
+    uri = lightningUri;
+    forceUriChange();
 
     document.getElementById('calendar-uri').parentNode.collapsed = false;
     document.getElementById('calendar-email-identity-row').collapsed = false;
     document.getElementById('calendar3e-account-row').collapsed = true;
   }
 
+  function ensureLightningIdentityCollapsedState() {
+    if (uri !== cal3eUri) {
+      return;
+    }
+
+    document.getElementById('calendar-email-identity-row').collapsed = true;
+  }
+
+  function forceUriChange() {
+    document.getElementById('calendar-uri').value = uri.value;
+
+    var commandEvent = document.createEvent('Event');
+    commandEvent.initEvent('command', true, true);
+    document.getElementById('calendar-uri').dispatchEvent(commandEvent);
+  }
+
   function set3eUri(newUri) {
-    cal3eUri = newUri;
+    cal3eUri.value = newUri;
+    if (uri === cal3eUri) {
+      document.getElementById('calendar-uri').value = uri.value;
+    }
 
     return delegate;
   }
