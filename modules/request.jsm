@@ -645,9 +645,13 @@ function AuthenticationDelegate() {
   }
 
   function findInStorage(storage, identity) {
-    var logins = storage.findLogins(
-      {}, loginInfoHostname(identity), null, loginInfoHostname(identity)
-    );
+    var logins = storage
+      .findLogins(
+        {}, loginInfoHostname(identity), null, loginInfoHostname(identity)
+      )
+      .filter(function(login) {
+        return login.username === loginInfoUsername(identity);
+      });
 
     return logins.length > 0 ? logins[0] : null;
   }
