@@ -129,6 +129,17 @@ function Collection() {
   }
 
   /**
+   * Returns identities which are EEE disabled only.
+   *
+   * @return {Array}
+   */
+  function getDisabled() {
+    return filter.call(this, function(identity) {
+      return !identity.getBoolAttribute(EEE_ENABLED_KEY);
+    });
+  }
+
+  /**
    * Returns identities which have given email.
    *
    * @return {Array}
@@ -163,6 +174,7 @@ function Collection() {
    */
   function extendArray(array) {
     array.getEnabled = getEnabled;
+    array.getDisabled = getDisabled;
     array.findByEmail = findByEmail;
     array.hasOnlyOne = hasOnlyOne;
 
@@ -192,6 +204,7 @@ function Collection() {
       forEach: forEach,
       filter: filter,
       getEnabled: getEnabled,
+      getDisabled: getDisabled,
       findByEmail: findByEmail,
       hasOnlyOne: hasOnlyOne
     };

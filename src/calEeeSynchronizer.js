@@ -99,24 +99,26 @@ calEeeSynchronizationService.prototype = {
       knownIdentities[identityKey] = true;
     }
 
-    var identities = cal3eIdentity.Collection().
+    var synchronizationService = this;
+    cal3eIdentity.Collection().
       getEnabled().
       filter(function(identity) {
-        return !knownIdentities[identity.key];
+        return !knownIdentities.hasOwnProperty(identity.key) ||
+          !knownIdentities[identity.key];
+      }).
+      forEach(function(identity) {
+        synchronizationService.addIdentity(identity);
       });
-    var identity;
-    for each (identity in identities) {
-      this.addIdentity(identity);
-      delete knownIdentities[identity.key];
-    }
 
-    var identityKey;
-    for (identityKey in knownIdentities) {
-      if (!knownIdentities.hasOwnProperty(identityKey)) {
-        continue;
-      }
-      this.removeIdentity(identityKey);
-    }
+    cal3eIdentity.Collection().
+      getDisabled().
+      filter(function(identity) {
+        return knownIdentities.hasOwnProperty(identity.key) &&
+          knownIdentities[identity.key];
+      }).
+      forEach(function(identity) {
+        synchronizationService.removeIdentity(identity.key);
+      });
   },
 
   /**
