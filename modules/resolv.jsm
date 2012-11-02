@@ -211,7 +211,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
   function loadLibrary() {
     libresolv = ctypes.open(ctypes.libraryName('resolv'));
     res_query = libresolv.declare(
-      'res_query',
+      symbolName(libresolv, 'res_query'),
       ctypes.default_abi,
       ctypes.int,
       ctypes.char.ptr,
@@ -221,7 +221,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
       ctypes.int
     );
     dn_expand = libresolv.declare(
-      'dn_expand',
+      symbolName(libresolv, 'dn_expand'),
       ctypes.default_abi,
       ctypes.int,
       ctypes.unsigned_char.ptr,
@@ -231,30 +231,52 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
       ctypes.int
     );
     dn_skipname = libresolv.declare(
-      symbolName('dn_skipname'),
+      symbolName(libresolv, 'dn_skipname'),
       ctypes.default_abi,
       ctypes.int,
       ctypes.unsigned_char.ptr,
       ctypes.unsigned_char.ptr
     );
     ns_get16 = libresolv.declare(
-      symbolName('ns_get16'),
+      symbolName(libresolv, 'ns_get16'),
       ctypes.default_abi,
       ctypes.unsigned_int,
       ctypes.unsigned_char.ptr
     );
     ns_get32 = libresolv.declare(
-      symbolName('ns_get32'),
+      symbolName(libresolv, 'ns_get32'),
       ctypes.default_abi,
       ctypes.unsigned_long,
       ctypes.unsigned_char.ptr
     );
   }
 
-  function symbolName(name) {
-    var prefix = 'Darwin' === OS ? 'res_9_' : '__';
+  function symbolName(library, name) {
+    var foundPrefix = null;
+    var lastException;
 
-    return prefix + name;
+    ['res_9_', '__', ''].forEach(function(prefix) {
+      if (foundPrefix !== null) {
+        return;
+      }
+
+      try {
+        library.declare(
+          prefix + name,
+          ctypes.default_abi,
+          ctypes.void_t
+        );
+        foundPrefix = prefix;
+      } catch (e) {
+        lastException = e;
+      }
+    });
+
+    if (foundPrefix === null) {
+      throw lastException;
+    }
+
+    return foundPrefix + name;
   }
 
   function closeLibrary() {
@@ -378,7 +400,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
 
   function nextResult(result) {
     return !result.pNext.isNull() ?
-      result.pNext.cast(DNS_RECORD.ptr).contents :
+      result['pNext'].cast(DNS_RECORD.ptr).contents :
       null;
   }
 
