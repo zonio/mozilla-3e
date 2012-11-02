@@ -429,7 +429,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
 
     DnsQuery = DnsAPI.declare(
       'DnsQuery_W',
-      ctypes.stdcall_abi,
+      ctypes.winapi_abi,
       DNS_STATUS,
       PCTSTR,
       WORD,
@@ -441,7 +441,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
 
     DnsRecordListFree = DnsAPI.declare(
       'DnsRecordListFree',
-      ctypes.stdcall_abi,
+      ctypes.winapi_abi,
       VOID,
       PDNS_RECORD,
       DNS_FREE_TYPE
