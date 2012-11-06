@@ -54,26 +54,16 @@
     <em:id>@XPI_EM_ID@</em:id>
     <em:name>3e Calendar</em:name>
     <em:version>@CALENDAR_3E_VERSION@</em:version>
-    <em:description>Adds support for 3e calendars
-
-3e is full scale calendaring system which allows users to manage 
-their calendars, manipulate events and coordinate meetings with 
-other users. It provides complete set of robust enterprise 
-calendaring features such as calendar sharing, subscriptions, 
-on behalf scheduling, attachments and much more.
-
-This extension enables support for 3e calendars in Lightning
-calendar addon. Remind: You must have Lightning installed before
-using this extension!</em:description>
+    <em:description>Adds support for 3e calendars</em:description>
     <em:iconURL>chrome://calendar3e/skin/cal3eIcon.png</em:iconURL>
     <em:icon64URL>chrome://calendar3e/skin/cal3eIcon64.png</em:icon64URL>
 #ifdef CALENDAR_3E_PRERELEASE_VERSION
     <em:developer>Build ID: @GRE_BUILDID@</em:developer>
 #endif
-    <em:creator>Zonio s.r.o.</em:creator>
+    <em:creator>Zonio</em:creator>
     <em:homepageURL>http://www.zonio.net/</em:homepageURL>
-#ifdef LIGHTNING_UPDATE_LOCATION
-    <!-- TODO em:updateURL>@LIGHTNING_UPDATE_LOCATION@?buildID=@GRE_BUILDID@&amp;appABI=%APP_ABI%&amp;appOS=%APP_OS%&amp;locale=%APP_LOCALE%&amp;appVersion=%APP_VERSION%&amp;appID=%APP_ID%</em:updateURL -->
+#ifdef CALENDAR_3E_UPDATE_LOCATION
+    <!-- TODO em:updateURL>@CALENDAR_3E_UPDATE_LOCATION@?buildID=@GRE_BUILDID@&amp;appABI=%APP_ABI%&amp;appOS=%APP_OS%&amp;locale=%APP_LOCALE%&amp;appVersion=%APP_VERSION%&amp;appID=%APP_ID%</em:updateURL -->
 #endif
     <em:unpack>true</em:unpack>
   </Description>
