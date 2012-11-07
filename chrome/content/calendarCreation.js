@@ -38,7 +38,7 @@ function cal3eCreation(ownerController, calendarController, overlayDelegate) {
   }
 
   function init() {
-    ownerController.addObserver(controller.ownerDidChange);
+    ownerController.addObserver(ownerDidChange);
     ownerDidChange();
 
     document.getElementById('calendar-format').addEventListener(
