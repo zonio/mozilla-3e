@@ -107,7 +107,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
   var NS_RRFIXEDSZ = 10;
 
   var libresolv;
-  var res_query;
+  var res_search;
   var dn_expand;
   var dn_skipname;
   var ns_get16;
@@ -120,7 +120,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
 
     var resources = [];
     var answer = ctypes.unsigned_char.array(anslen)();
-    var length = res_query(
+    var length = res_search(
       ctypes.char.array()(name),
       ns_c_in,
       typeConstructorToConstant(typeConstructor),
@@ -210,8 +210,8 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
 
   function loadLibrary() {
     libresolv = ctypes.open(ctypes.libraryName('resolv'));
-    res_query = libresolv.declare(
-      symbolName(libresolv, 'res_query'),
+    res_search = libresolv.declare(
+      symbolName(libresolv, 'res_search'),
       ctypes.default_abi,
       ctypes.int,
       ctypes.char.ptr,
@@ -255,7 +255,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
     var foundPrefix = null;
     var lastException;
 
-    ['res_9_', '__', ''].forEach(function(prefix) {
+    ['', '__', 'res_9_'].forEach(function(prefix) {
       if (foundPrefix !== null) {
         return;
       }
@@ -281,7 +281,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
 
   function closeLibrary() {
     libresolv.close();
-    res_query = null;
+    res_search = null;
     dn_expand = null;
     dn_skipname = null;
     ns_get16 = null;
