@@ -230,10 +230,7 @@ calEeeSynchronizationService.prototype = {
    * @returns {calEeeISynchronizationService} receiver
    */
   addIdentity: function calEeeSyncService_addIdentity(identity) {
-    this._synchronizersByIdentity[identity.key] = Components.classes[
-      '@zonio.net/calendar3e/synchronizer;1'
-    ].createInstance(Components.interfaces.calEeeISynchronizer);
-    this._synchronizersByIdentity[identity.key].identity = identity;
+    this._synchronizersByIdentity[identity.key] = new Synchronizer(identity);
 
     this._timersByIdentity[identity.key] = Components.classes[
       '@mozilla.org/timer;1'
@@ -326,7 +323,7 @@ calEeeSynchronizationService.prototype = {
       .getService(Components.interfaces.calICalendarManager);
     manager
       .getCalendars({})
-      .filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
+      .filter(function(calendar) {
         return (calendar.type === 'eee') &&
           calendar.getProperty('imip.identity') &&
           (calendar.getProperty('imip.identity').key === identityKey);
@@ -338,47 +335,15 @@ calEeeSynchronizationService.prototype = {
 
 };
 
-/**
- * Synchronizer of calendars present in Mozilla client application
- * (i.e. Lightning) with those on EEE server.
- */
-function calEeeSynchronizer() {
-  this._identity = null;
-}
+function Synchronizer(identity) {
+  var synchronizer = this;
 
-calEeeSynchronizer.prototype = {
-
-  classDescription: 'EEE-enabled client calendar synchronizer',
-
-  classID: Components.ID('{9045ff85-9e1c-47e4-9872-44c5ab424b73}'),
-
-  contractID: '@zonio.net/calendar3e/synchronizer;1',
-
-  QueryInterface: XPCOMUtils.generateQI([
-    Components.interfaces.calEeeISynchronizer
-  ]),
-
-  get identity() {
-    return this._identity;
-  },
-
-  set identity(identity) {
-    this._identity = identity;
-  },
-
-  /**
-   * Synchronizes calendars of client's identity with those on EEE
-   * server.
-   *
-   * @returns {calEeeISynchronizer} receiver
-   */
-  synchronize: function calEeeSynchronizer_synchronize() {
-    var synchronizer = this;
+  function synchronize() {
     var future = new cal3eSynchronization.Future();
 
     cal3eRequest.Client.getInstance().getCalendars(
-      this._identity,
-      function calEeeSynchronizer_onGetCalendars(result) {
+      identity,
+      function Synchronizer_onGetCalendars(result) {
         if (result instanceof cal3eResponse.UserError) {
           future.done();
           return;
@@ -391,8 +356,7 @@ calEeeSynchronizer.prototype = {
             bundle.GetStringFromName('cal3eAlertDialog.calendarSync.title'),
             bundle.formatStringFromName(
               'cal3eAlertDialog.calendarSync.text',
-              [synchronizer._identity.fullName +
-               ' <' + synchronizer._identity.email + '>'],
+              [identity.fullName + ' <' + identity.email + '>'],
               1
             )
           );
@@ -400,17 +364,17 @@ calEeeSynchronizer.prototype = {
           return;
         }
 
-        var knownCalendars = synchronizer._loadEeeCalendarsByUri();
+        var knownCalendars = loadEeeCalendarsByUri();
 
         result.data.forEach(function(data, idx) {
-          var uri = synchronizer._buildCalendarUri(data);
+          var uri = buildCalendarUri(data);
           Services.console.logStringMessage(
             '[3e] Calendar #' + idx + ': ' + uri.spec
           );
           if (!knownCalendars.hasOwnProperty(uri.spec)) {
-            synchronizer._addCalendar(data);
+            addCalendar(data);
           } else {
-            synchronizer._updateCalendar(knownCalendars[uri.spec], data);
+            updateCalendar(knownCalendars[uri.spec], data);
           }
           delete knownCalendars[uri.spec];
         });
@@ -421,7 +385,7 @@ calEeeSynchronizer.prototype = {
             continue;
           }
 
-          synchronizer._deleteCalendar(knownCalendars[uriSpec]);
+          deleteCalendar(knownCalendars[uriSpec]);
         }
 
         future.done();
@@ -430,91 +394,50 @@ calEeeSynchronizer.prototype = {
     );
 
     return future.returnValue();
-  },
+  }
 
-  /**
-   * Builds calendar URI specifiacation from data retrieved from
-   * 'getCalendar' method call.
-   *
-   * @param {Object} data
-   * @returns {String}
-   */
-  _buildCalendarUri: function calEeeSynchronizer_buildCalendarUri(data) {
+  function buildCalendarUri(data) {
     return Services.io.newURI(
       'eee://' + data['owner'] + '/' + data['name'], null, null
     );
-  },
+  }
 
-  /**
-   * Adds given calendar build from given data.
-   *
-   * @param {Object} data
-   */
-  _addCalendar:
-  function calEeeSynchronizer_synchronizeCalendar(data) {
+  function addCalendar(data) {
     var manager = Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager);
 
-    var calendar = manager.createCalendar('eee', this._buildCalendarUri(data));
+    var calendar = manager.createCalendar('eee', buildCalendarUri(data));
     calendar.setProperty('cache.enabled', true);
     manager.registerCalendar(calendar);
 
-    calendar.setProperty('imip.identity.key', this._identity.key);
-    this._setCalendarProperties(calendar, data);
-  },
+    calendar.setProperty('imip.identity.key', identity.key);
+    setCalendarProperties(calendar, data);
+  }
 
-  /**
-   * Updates given calendar with given data.
-   *
-   * @param {calEeeICalendar} calendar
-   * @param {nsIDictionary} data
-   */
-  _updateCalendar:
-  function calEeeSynchronizer_synchronizeCalendar(calendar, data) {
-    this._setCalendarProperties(calendar, data);
-  },
+  function updateCalendar(calendar, data) {
+    setCalendarProperties(calendar, data);
+  }
 
-  /**
-   * Removes given calendar.
-   *
-   * @param {calEeeICalendar} calendar
-   */
-  _deleteCalendar:
-  function calEeeSynchronizer_synchronizeCalendar(calendar) {
+  function deleteCalendar(calendar) {
     Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
       .unregisterCalendar(calendar);
-  },
+  }
 
-  /**
-   * Sets properties to calendar according to given raw data from
-   * XML-RPC response.
-   *
-   * @param {calICalendar} calendar
-   * @param {nsIDictionary} data
-   */
-  _setCalendarProperties:
-  function calEeeSynchronizer_setCalendarProperties(calendar, data) {
+  function setCalendarProperties(calendar, data) {
     calendar.name = cal3eModel.calendarLabel(data);
 
     //TODO validation
     if (cal3eModel.attribute(data, 'color')) {
       calendar.setProperty('color', cal3eModel.attribute(data, 'color'));
     }
-  },
+  }
 
-  /**
-   * Loads calendars of client's identity and maps them to their URI.
-   *
-   * @returns {Object}
-   */
-  _loadEeeCalendarsByUri:
-  function calEeeSynchronizer_loadEeeCalendars() {
-    var identity = this._identity;
+  function loadEeeCalendarsByUri() {
     var eeeCalendars = Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
       .getCalendars({})
-      .filter(function calEeeSynchronizer_filterEeeCalendars(calendar) {
+      .filter(function(calendar) {
         return (calendar.type === 'eee') &&
           (calendar.getProperty('imip.identity') === identity);
       });
@@ -527,9 +450,9 @@ calEeeSynchronizer.prototype = {
     return calendarsByUri;
   }
 
-};
+  synchronizer.synchronize = synchronize;
+}
 
 const NSGetFactory = XPCOMUtils.generateNSGetFactory([
-  calEeeSynchronizationService,
-  calEeeSynchronizer
+  calEeeSynchronizationService
 ]);

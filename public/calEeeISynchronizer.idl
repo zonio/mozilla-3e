@@ -60,29 +60,3 @@ interface calEeeISynchronizationService: nsISupports {
   calEeeISynchronizationService unregister();
 
 };
-
-/**
- * Synchronizer of calendars present in Mozilla client application
- * (i.e. Lightning) with those on EEE server.
- */
-[scriptable, uuid(17646dc9-178b-4a49-8201-d07167165331)]
-interface calEeeISynchronizer: nsISupports {
-
-    /**
-     * EEE-enabled identity whose calendars are synchronized.
-     */
-    attribute nsIMsgIdentity identity;
-
-    /**
-     * Synchronizes identity's local EEE calendars with those on EEE
-     * server.
-     *
-     * Calendars removed on server are deleted, new calendars on
-     * server are added and properties of already loaded are taken
-     * from values on server as well.
-     *
-     * @return receiver
-     */
-    calEeeISynchronizer synchronize();
-
-};

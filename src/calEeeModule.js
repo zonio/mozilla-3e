@@ -112,7 +112,7 @@ var components = {
     },
 
     getHelperForLanguage:
-    function calEeeSynchronizer_getHelperForLanguage(language) {
+    function calEeeSynchronizationService_getHelperForLanguage(language) {
       return null;
     },
 
@@ -122,30 +122,6 @@ var components = {
     implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
     constructor: "calEeeSynchronizationService",
     flags: Ci.nsIClassInfo.SINGLETON,
-    resource: "resource://calendar3e/js/calEeeSynchronizer.js"
-  },
-
-  calEeeSynchronizer: {
-    getInterfaces: function calEeeSynchronizer_getInterfaces(count) {
-      var interfaces = [
-        Ci.calEeeISynchronizer,
-        Ci.nsIClassInfo
-      ];
-      count.value = interfaces.length;
-      return interfaces;
-    },
-
-    getHelperForLanguage:
-    function calEeeSynchronizer_getHelperForLanguage(language) {
-      return null;
-    },
-
-    classDescription: "EEE-enabled client calendar synchronizer",
-    contractID: "@zonio.net/calendar3e/synchronizer;1",
-    classID: Components.ID("{9045ff85-9e1c-47e4-9872-44c5ab424b73}"),
-    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
-    constructor: "calEeeSynchronizer",
-    flags: 0,
     resource: "resource://calendar3e/js/calEeeSynchronizer.js"
   },
 
@@ -174,7 +150,7 @@ var components = {
     flags: Ci.nsIClassInfo.SINGLETON,
     resource: "resource://calendar3e/js/calEeeFreeBusyProvider.js"
   },
-  
+
   calEeeItip: {
     getInterfaces: function calEeeItip_getInterfaces(count) {
       var interfaces = [
