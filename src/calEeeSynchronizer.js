@@ -24,6 +24,7 @@ Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
+Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 /**
@@ -44,15 +45,6 @@ function calEeeSynchronizationService() {
    * @type Object
    */
   this._synchronizersByIdentity = {};
-
-  /**
-   * Synchronizer of EEE calendars.
-   *
-   * @type calEeeISynchronizer
-   */
-  this._synchronizer = Components.classes[
-    '@zonio.net/calendar3e/synchronizer;1'
-  ].createInstance(Components.interfaces.calEeeISynchronizer);
 
   /**
    * Observer of changes in identities.
@@ -243,15 +235,13 @@ calEeeSynchronizationService.prototype = {
     ].createInstance(Components.interfaces.calEeeISynchronizer);
     this._synchronizersByIdentity[identity.key].identity = identity;
 
-    this._synchronizersByIdentity[identity.key].synchronize();
-
     this._timersByIdentity[identity.key] = Components.classes[
       '@mozilla.org/timer;1'
     ].createInstance(Components.interfaces.nsITimer);
     this._timersByIdentity[identity.key].init(
       this,
-      Services.prefs.getIntPref('calendar.eee.calendar_sync_interval'),
-      Components.interfaces.nsITimer.TYPE_REPEATING_SLACK
+      1,
+      Components.interfaces.nsITimer.TYPE_ONE_SHOT
     );
 
     return this;
@@ -281,9 +271,20 @@ calEeeSynchronizationService.prototype = {
    * @returns {calEeeISynchronizationService} receiver
    */
   runSynchronizer: function calEeeSyncService_runSynchronizer(identityKey) {
-    if (this._synchronizersByIdentity[identityKey]) {
-      this._synchronizersByIdentity[identityKey].synchronize();
+    if (!this._synchronizersByIdentity[identityKey]) {
+      return this;
     }
+
+    var synchronizationService = this;
+    this._synchronizersByIdentity[identityKey]
+      .synchronize()
+      .whenDone(function() {
+        synchronizationService._timersByIdentity[identityKey].init(
+          synchronizationService,
+          Services.prefs.getIntPref('calendar.eee.calendar_sync_interval'),
+          Components.interfaces.nsITimer.TYPE_ONE_SHOT
+        );
+      });
 
     return this;
   },
@@ -373,10 +374,13 @@ calEeeSynchronizer.prototype = {
    */
   synchronize: function calEeeSynchronizer_synchronize() {
     var synchronizer = this;
+    var future = new cal3eSynchronization.Future();
+
     cal3eRequest.Client.getInstance().getCalendars(
       this._identity,
       function calEeeSynchronizer_onGetCalendars(result) {
         if (result instanceof cal3eResponse.UserError) {
+          future.done();
           return;
         } else if (!(result instanceof cal3eResponse.Success)) {
           var bundle = Services.strings.createBundle(
@@ -392,6 +396,7 @@ calEeeSynchronizer.prototype = {
               1
             )
           );
+          future.done();
           return;
         }
 
@@ -418,9 +423,13 @@ calEeeSynchronizer.prototype = {
 
           synchronizer._deleteCalendar(knownCalendars[uriSpec]);
         }
+
+        future.done();
       },
       'owned()'
     );
+
+    return future.returnValue();
   },
 
   /**

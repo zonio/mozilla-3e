@@ -160,9 +160,58 @@ function Queue() {
   init();
 }
 
+function Future() {
+  var future = this;
+  var done;
+  var observers;
+
+  function done() {
+    done = true;
+    notify();
+    observers = null;
+  }
+
+  function whenDone(observer) {
+    if (done) {
+      observer(future);
+    } else {
+      observers.push(observer);
+    }
+
+    return future;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      observer(future);
+    });
+  }
+
+  function getValue() {
+    return value;
+  }
+
+  function getReturnValue() {
+    return {
+      whenDone: whenDone
+    };
+  }
+
+  function init() {
+    done = false;
+    observers = [];
+  }
+
+  future.done = done;
+  future.returnValue = getReturnValue;
+
+  init();
+}
+
 var cal3eSynchronization = {
   Method: Method,
-  Queue: Queue
+  Queue: Queue,
+  Future: Future
 };
 EXPORTED_SYMBOLS = [
   'cal3eSynchronization'
