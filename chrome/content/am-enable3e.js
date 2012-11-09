@@ -62,7 +62,9 @@ function amEnable3e() {
     return cal3eIdentity.Collection()
       .getEnabled()
       .filter(function(filteredIdentity) {
-        return filteredIdentity !== identity;
+        return (filteredIdentity !== identity) &&
+          (getIdentityHostname(filteredIdentity) ===
+           getIdentityHostname(identity));
       })
       .length <= 0;
   }
@@ -73,6 +75,10 @@ function amEnable3e() {
 
   function getSafeEnabledValue() {
     return element.checked && isSafeNumberOfEnabled();
+  }
+
+  function getIdentityHostname(identity) {
+    return identity.email.substring(identity.email.indexOf('@') + 1);
   }
 
 }
