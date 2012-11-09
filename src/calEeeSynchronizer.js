@@ -442,7 +442,7 @@ function Synchronizer(identity) {
         return (calendar.type === 'eee') &&
           (calendar.getProperty('imip.identity') === identity);
       })
-      .reduce(function(calendarByUri, calendar) {
+      .reduce(function(calendarsByUri, calendar) {
         calendarsByUri[calendar.uri.spec] = calendar;
       }, {});
   }
