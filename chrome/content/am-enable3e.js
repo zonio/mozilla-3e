@@ -17,23 +17,64 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/identity.jsm");
+Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
 
 function amEnable3e() {
   var identity;
+  var element;
 
   this.onPreInit = function amEnable3e_onPreInit(account, accountValues) {
     identity = account.defaultIdentity;
-    document.getElementById("cal3e-enable-checkbox").checked =
-      identity.getBoolAttribute(cal3eIdentity.EEE_ENABLED_KEY) || false;
+    element = document.getElementById('cal3e-enable-checkbox');
+    element.checked = getPersistedEnabledValue();
   }
 
   this.onSave = function amEnable3e_onSave() {
+    ensureIsSafeToEnable();
+    element.checked = getSafeEnabledValue();
     identity.setBoolAttribute(
       cal3eIdentity.EEE_ENABLED_KEY,
-      document.getElementById("cal3e-enable-checkbox").checked
+      getSafeEnabledValue()
     );
   }
+
+  function ensureIsSafeToEnable() {
+    if (!element.checked || isSafeNumberOfEnabled()) {
+      return;
+    }
+
+    var bundle = Services.strings.createBundle(
+      'chrome://calendar3e/locale/cal3eCalendar.properties'
+    );
+    Services.prompt.alert(
+      Services.wm.getMostRecentWindow(null),
+      bundle.GetStringFromName('cal3eAlertDialog.accountEnable.title'),
+      bundle.formatStringFromName(
+        'cal3eAlertDialog.accountEnable.text',
+        [identity.fullName + ' <' + identity.email + '>'],
+        1
+      )
+    );
+  }
+
+  function isSafeNumberOfEnabled() {
+    return cal3eIdentity.Collection()
+      .getEnabled()
+      .filter(function(filteredIdentity) {
+        return filteredIdentity !== identity;
+      })
+      .length <= 0;
+  }
+
+  function getPersistedEnabledValue() {
+    return identity.getBoolAttribute(cal3eIdentity.EEE_ENABLED_KEY) || false;
+  }
+
+  function getSafeEnabledValue() {
+    return element.checked && isSafeNumberOfEnabled();
+  }
+
 }
 
 var onPreInit, onSave;
@@ -44,4 +85,4 @@ amEnable3e.onLoad = function () {
   onSave = controller.onSave;
 
   parent.onPanelLoaded('am-enable3e.xul');
-}
+};
