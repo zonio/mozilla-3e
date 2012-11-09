@@ -175,7 +175,6 @@ function cal3eOwnerController() {
   var controller = this;
   var identity;
   var element;
-  var lightningIdentityElement;
   var lightningInitCustomizePage;
   var identityObserver;
   var observers;
@@ -233,17 +232,6 @@ function cal3eOwnerController() {
     }
   }
 
-  function setLightningIdentity() {
-    var idx = lightningIdentity.itemCount;
-    while (idx--) {
-      if (lightningIdentityElement.getItemAtIndex(idx).value ===
-          identity.key) {
-        lightningIdentityElement.selectedIndex = idx;
-        break;
-      }
-    }
-  }
-
   function getIdentity() {
     return identity;
   }
@@ -253,13 +241,11 @@ function cal3eOwnerController() {
 
     element = document.getElementById('calendar3e-account');
     element.addEventListener('command', identityDidChange, false);
-    lightningIdentityElement =
-      document.getElementById('email-identity-menulist');
 
     lightningInitCustomizePage = initCustomizePage;
     initCustomizePage = function() {
       lightningInitCustomizePage();
-      setLightningIdentity();
+      document.getElementById('email-identity-menulist').value = identity.key;
     };
 
     observers = [];
@@ -283,7 +269,6 @@ function cal3eOwnerController() {
     element.removeEventListener('command', identityDidChange, false);
     cal3eXul.clearMenu(element);
     element = null;
-    lightningIdentityElement = null;
 
     identity = null;
   }
