@@ -50,11 +50,6 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function getCalendars(identity, listener, query) {
-    Services.console.logStringMessage(
-      '[3e][' + identity.email + '] Request #' +
-        synchronizedMethod.future(arguments).id()
-    );
-
     return synchronizedMethod.future(arguments)
       .push('ESClient.getCalendars', [query])
       .call(onResult, listener);

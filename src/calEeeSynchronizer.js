@@ -110,7 +110,7 @@ calEeeSynchronizationService.prototype = {
           knownIdentities[identity.key];
       })
       .forEach(function(identity) {
-        synchronizationService.removeIdentity(identity.key);
+        synchronizationService.removeIdentity(identity);
       });
   },
 
@@ -250,11 +250,11 @@ calEeeSynchronizationService.prototype = {
    * @param {String} identity
    * @returns {calEeeISynchronizationService} receiver
    */
-  removeIdentity: function calEeeSyncService_removeIdentity(identityKey) {
-    this._timersByIdentity[identityKey].cancel();
-    delete this._timersByIdentity[identityKey];
-    delete this._synchronizersByIdentity[identityKey];
-    this._unregisterCalendarsOfIdentity(identityKey);
+  removeIdentity: function calEeeSyncService_removeIdentity(identity) {
+    this._timersByIdentity[identity.key].cancel();
+    delete this._timersByIdentity[identity.key];
+    delete this._synchronizersByIdentity[identity.key];
+    this._unregisterCalendarsOfIdentity(identity);
 
     return this;
   },
@@ -264,19 +264,19 @@ calEeeSynchronizationService.prototype = {
    *
    * If identity's synchronizer is not found, nothing happens.
    *
-   * @param {String} identityKey
+   * @param {nsIMsgIdentity} identity
    * @returns {calEeeISynchronizationService} receiver
    */
-  runSynchronizer: function calEeeSyncService_runSynchronizer(identityKey) {
-    if (!this._synchronizersByIdentity[identityKey]) {
+  runSynchronizer: function calEeeSyncService_runSynchronizer(identity) {
+    if (!this._synchronizersByIdentity[identity.key]) {
       return this;
     }
 
     var synchronizationService = this;
-    this._synchronizersByIdentity[identityKey]
+    this._synchronizersByIdentity[identity.key]
       .synchronize()
       .whenDone(function() {
-        synchronizationService._timersByIdentity[identityKey].init(
+        synchronizationService._timersByIdentity[identity.key].init(
           synchronizationService,
           Services.prefs.getIntPref('calendar.eee.calendar_sync_interval'),
           Components.interfaces.nsITimer.TYPE_ONE_SHOT
@@ -290,7 +290,7 @@ calEeeSynchronizationService.prototype = {
    * Tries to find identity (its key) of given timer.
    *
    * @param {nsITimer} timer
-   * @returns {String|null}
+   * @returns {nsIMsgIdentity|null}
    */
   _findIdentityOfTimer:
   function calEeeSyncService_findIdentityOfTimer(timer) {
@@ -309,16 +309,20 @@ calEeeSynchronizationService.prototype = {
       }
     }
 
-    return found ? identityKey : null;
+    return found ?
+      Components.classes['@mozilla.org/messenger/account-manager;1']
+      .getService(Components.interfaces.nsIMsgAccountManager)
+      .getIdentity(identityKey) :
+      null;
   },
 
   /**
    * Unregisters all identity's calendars.
    *
-   * @param {String} identityKey
+   * @param {nsIMsgIdentity} identity
    */
   _unregisterCalendarsOfIdentity:
-  function calEeeService_unregisterCalendarsOfIdentity(identityKey) {
+  function calEeeService_unregisterCalendarsOfIdentity(identity) {
     var manager = Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager);
     manager
@@ -326,7 +330,7 @@ calEeeSynchronizationService.prototype = {
       .filter(function(calendar) {
         return (calendar.type === 'eee') &&
           calendar.getProperty('imip.identity') &&
-          (calendar.getProperty('imip.identity').key === identityKey);
+          (calendar.getProperty('imip.identity') === identity);
       })
       .forEach(function(calendar) {
         manager.unregisterCalendar(calendar);
@@ -368,9 +372,6 @@ function Synchronizer(identity) {
 
         result.data.forEach(function(data, idx) {
           var uri = buildCalendarUri(data);
-          Services.console.logStringMessage(
-            '[3e] Calendar #' + idx + ': ' + uri.spec
-          );
           if (!knownCalendars.hasOwnProperty(uri.spec)) {
             addCalendar(data);
           } else {
