@@ -435,20 +435,16 @@ function Synchronizer(identity) {
   }
 
   function loadEeeCalendarsByUri() {
-    var eeeCalendars = Components.classes['@mozilla.org/calendar/manager;1']
+    return Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
       .getCalendars({})
       .filter(function(calendar) {
         return (calendar.type === 'eee') &&
           (calendar.getProperty('imip.identity') === identity);
-      });
-    var calendarsByUri = {};
-    var calendar;
-    for each (calendar in eeeCalendars) {
-      calendarsByUri[calendar.uri.spec] = calendar;
-    }
-
-    return calendarsByUri;
+      })
+      .reduce(function(calendarByUri, calendar) {
+        calendarsByUri[calendar.uri.spec] = calendar;
+      }, {});
   }
 
   synchronizer.synchronize = synchronize;
