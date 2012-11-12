@@ -444,6 +444,8 @@ function Synchronizer(identity) {
       })
       .reduce(function(calendarsByUri, calendar) {
         calendarsByUri[calendar.uri.spec] = calendar;
+
+        return calendarsByUri;
       }, {});
   }
 
