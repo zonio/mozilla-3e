@@ -16,8 +16,6 @@ calendar3e.jar:
   content/calendarProperties.xul   (content/calendarProperties.xul)
   content/calendarSubscription.js  (content/calendarSubscription.js)
   content/calendarSubscription.xul (content/calendarSubscription.xul)
-  content/calendarNewEventAttach.js (content/calendarNewEventAttach.js)
-  content/calendarNewEventAttach.xul (content/calendarNewEventAttach.xul)
   content/am-enable3e.js           (content/am-enable3e.js)
   content/am-enable3e.xul          (content/am-enable3e.xul)
   content/calendarAttachments.js   (content/calendarAttachments.js)
