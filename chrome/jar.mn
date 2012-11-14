@@ -6,7 +6,6 @@ calendar3e.jar:
 % overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 % overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
 % overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
-% overlay chrome://calendar/content/calendar-event-dialog.xul      chrome://calendar3e/content/calendarNewEventAttach.xul
 % overlay chrome://calendar/content/calendar-event-dialog.xul      chrome://calendar3e/content/calendarAttachments.xul
 
   content/calendarContextMenu.xul  (content/calendarContextMenu.xul)
