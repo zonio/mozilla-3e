@@ -3,16 +3,12 @@ calendar3e.jar:
 % content  calendar3e               %content/
 % locale   calendar3e   en-US       %locale/en-US/
 % skin     calendar3e   classic/1.0 %skin/
-% overlay chrome://lightning/content/messenger-overlay-toolbar.xul chrome://calendar3e/content/cal3eSync.xul
 % overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 % overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
 % overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
 % overlay chrome://calendar/content/calendar-event-dialog.xul      chrome://calendar3e/content/calendarNewEventAttach.xul
+% overlay chrome://calendar/content/calendar-event-dialog.xul      chrome://calendar3e/content/calendarAttachments.xul
 
-  content/cal3ePreferences.js      (content/cal3ePreferences.js)
-  content/cal3ePreferences.xul     (content/cal3ePreferences.xul)
-  content/cal3eSync.js             (content/cal3eSync.js)
-  content/cal3eSync.xul            (content/cal3eSync.xul)
   content/calendarContextMenu.xul  (content/calendarContextMenu.xul)
   content/calendarCreation.js      (content/calendarCreation.js)
   content/calendarCreation.xul     (content/calendarCreation.xul)
@@ -22,9 +18,15 @@ calendar3e.jar:
   content/calendarSubscription.xul (content/calendarSubscription.xul)
   content/calendarNewEventAttach.js (content/calendarNewEventAttach.js)
   content/calendarNewEventAttach.xul (content/calendarNewEventAttach.xul)
+  content/am-enable3e.js           (content/am-enable3e.js)
+  content/am-enable3e.xul          (content/am-enable3e.xul)
+  content/calendarAttachments.js   (content/calendarAttachments.js)
+  content/calendarAttachments.xul  (content/calendarAttachments.xul)
 
   skin/cal3eGlobal.css (skin/cal3eGlobal.css)
+  skin/cal3eIcon.png   (skin/cal3eIcon.png)
+  skin/cal3eIcon64.png (skin/cal3eIcon64.png)
 
   locale/en-US/cal3eCalendar.dtd        (locale/en-US/cal3eCalendar.dtd)
   locale/en-US/cal3eCalendar.properties (locale/en-US/cal3eCalendar.properties)
-  locale/en-US/cal3ePreferences.dtd     (locale/en-US/cal3ePreferences.dtd)
+  locale/en-US/am-enable3e.properties   (locale/en-US/am-enable3e.properties)

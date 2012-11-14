@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- ***** BEGIN LICENSE BLOCK *****
    - 3e Calendar
-   - Copyright © 2011  Zonio s.r.o.
+   - Copyright © 2012  Zonio s.r.o.
    -
    - This program is free software: you can redistribute it and/or modify
    - it under the terms of the GNU General Public License as published by
@@ -18,21 +18,24 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!DOCTYPE overlay SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
-
-<overlay id="calendar-list-overlay"
+<overlay id="calendar-new-event-attach"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <popupset id="calendar-popupset">
-    <popup id="list-calendars-context-menu">
-      <menuitem id="list-calendars-context-subscribe"
-                label="&cal3eCalendarContext.subscribe.label;"
-                insertafter="list-calendars-context-delete"
-                oncommand="cal3eSubscription.open();"/>
-    </popup>
-  </popupset>
+  <stringbundleset id="stringbundleset">
+    <stringbundle id="calendar3e-strings"
+                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+  </stringbundleset>
 
-  <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarSubscription.js"/>
+  <script type="application/x-javascript"
+          src="chrome://calendar3e/content/calendarAttachments.js"/>
+
+  <commandset id="itemCommands">
+    <command id="cal3e_cmd_attach_file" disable-on-read-only="true"
+             oncommand="attachFile()" />
+    <command id="cal3e_cmd_open_attachment"
+             oncommand="cal3e_openAttachment()" />
+    <command id="cal3e_cmd_save_as" disable-on-read-only="true"
+             oncommand="alert('cal3e_cmd_save_as')" />
+  </commandset>
 
 </overlay>

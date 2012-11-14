@@ -1,6 +1,6 @@
 # ***** BEGIN LICENSE BLOCK *****
 # 3e Calendar
-# Copyright © 2012  Zonio s.r.o.
+# Copyright © 2011  Zonio s.r.o.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,17 +17,25 @@
 #
 # ***** END LICENSE BLOCK *****
 
-ifndef COMM_BUILD # Mozilla Makefile
+DEPTH = ../../../..
+topsrcdir = @top_srcdir@
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-ifndef LIBXUL_SDK
-include $(topsrcdir)/toolkit/toolkit-tiers.mk
-endif
+include $(DEPTH)/config/autoconf.mk
 
-TIERS += app
+MODULE = calendar3e
+XPI_NAME = calendar3e-provider
 
-else # toplevel Makefile
+EXTRA_COMPONENTS = \
+	calEeeCalendar.js \
+	calEeeProtocol.js \
+	calEeeManager.js \
+	calEeeSynchronizer.js \
+	calEeeFreeBusyProvider.js \
+	cal3eEnable.js \
+	calEeeModule.manifest \
+	calEeeItip.js \
+	$(NULL)
 
-TIERS += app
-tier_app_dirs += calendar/providers/calendar3e
-
-endif
+include $(topsrcdir)/config/rules.mk

@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2012  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,251 +17,330 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
+Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
-var cal3eCreation = {};
+function cal3eCreation(ownerController, calendarController, overlayDelegate) {
+  var controller = this;
 
-/**
- * Checks value of selected calendar format and modifies dialog
- * accordingly.
- *
- * If calendar format is 3e, then URI textbox is hidden because URI is
- * computed automatically. Previous value is stored in case user
- * changes her mind.
- */
-cal3eCreation.selectionChanged = function selectionChanged() {
-  var calendarFormat = document.getElementById('calendar-format');
-  if ('eee' == calendarFormat.value) {
-    cal3eCreation._activate3eContext();
-  } else {
-    cal3eCreation._deactivate3eContext();
-  }
-};
-
-/**
- * Activates context for creation of 3e calendar.
- *
- * Activation is done by hiding row with calendar location textbox and
- * by showing menulist to select 3e account which will be used for
- * calendar creation.
- */
-cal3eCreation._activate3eContext = function activate3eContext() {
-  var calendarUri = document.getElementById('calendar-uri');
-
-  // hide URI textbox and store current value
-  cal3eCreation._originalUri = calendarUri.value || "";
-  calendarUri.parentNode.setAttribute('hidden', 'true');
-  cal3eCreation.computeUri();
-
-  // hide lightning identity menu list if it is there
-  var identityRow = document.getElementById('calendar-email-identity-row');
-  if (null !== identityRow) {
-    identityRow.setAttribute('hidden', 'true');
-  }
-
-  // fixes problem with setting calendar URI value for the first time
-  // when XUL doesn't dispatch command event properly
-  var commandEvent = document.createEvent('Event');
-  commandEvent.initEvent('command', true, true);
-  calendarUri.dispatchEvent(commandEvent);
-
-  // show account menulist with 3e-enabled accounts
-  cal3eCreation._load3eAccounts();
-  var calendar3eRow = document.getElementById('calendar3e-account-row');
-  calendar3eRow.setAttribute('hidden', 'false');
-};
-
-/**
- * Loads fixtures of 3e accounts to accounts menu.
- *
- * @todo account loading this should be united for calendar
- * preferences, calendar creation and other dialogs in some util
- * function or found elsewhere
- */
-cal3eCreation._load3eAccounts = function load3eAccounts() {
-  var calendar3eAccounts = document.getElementById('calendar3e-account'),
-      menuPopup = calendar3eAccounts.firstChild;
-  var selectedIdentity = calendar3eAccounts.value;
-  while (menuPopup.lastChild) {
-    menuPopup.removeChild(menuPopup.lastChild);
-  }
-
-  var accountCollection = new cal3e.AccountCollection();
-  var accounts = accountCollection.filter(
-        cal3e.AccountCollection.filterEnabled),
-      idx = accounts.length, account, identity, item;
-  while (idx--) {
-    account = accounts[idx];
-    identity = account.defaultIdentity;
-    item = calendar3eAccounts.appendItem(
-      identity.fullName + " <" + identity.email + ">",
-      identity.key);
-
-    if (identity.key == selectedIdentity) {
-      calendar3eAccounts.selectedItem = item;
+  function calendarTypeDidChange() {
+    if (document.getElementById('calendar-format').value === 'eee') {
+      overlayDelegate.activate();
+    } else {
+      overlayDelegate.deactivate();
     }
   }
-};
 
-/**
- * Deactivates context for creation of 3e calendar.
- *
- * Deactivation is done by hiding menulist to select 3e account which
- * will be used for calendar creation and by showing row with calendar
- * location textbox.
- */
-cal3eCreation._deactivate3eContext = function deactivate3eContext() {
-  // hide account menulist
-  var accountRow = document.getElementById('calendar3e-account-row');
-  accountRow.setAttribute('hidden', 'true');
-
-  // hide lightning identity menu list if it is there
-  var identityRow = document.getElementById('calendar-email-identity-row');
-  if (null !== identityRow) {
-    identityRow.setAttribute('hidden', 'false');
+  function ownerDidChange() {
+    calendarController.setIdentity(ownerController.identity());
+    overlayDelegate.set3eUri(calendarController.uri());
   }
 
-  // show location textbox with previously entered URI
-  var calendarUri = document.getElementById('calendar-uri');
-  if ('undefined' !== typeof cal3eCreation._originalUri) {
-    calendarUri.value = cal3eCreation._originalUri;
-  } else {
-    calendarUri.value = calendarUri.value || "";
-  }
-  calendarUri.parentNode.setAttribute('hidden', 'false');
-};
+  function init() {
+    ownerController.addObserver(ownerDidChange);
+    ownerDidChange();
 
-/**
- * Sets EEE URI to location textbox according to currently available
- * information about created 3e calendar.
- *
- * Does nothing if created calendar isn't 3e calendar.
- */
-cal3eCreation.computeUri = function computeUri() {
-  var calendarFormat = document.getElementById('calendar-format');
-  if ('eee' != calendarFormat.value) {
-    return;
-  }
-  if (cal3eCreation._uriComputed) {
-    return;
+    document.getElementById('calendar-format').addEventListener(
+      'command', calendarTypeDidChange, false
+    );
+
+    window.addEventListener('unload', finalize, false);
   }
 
-  var account = document.getElementById('calendar3e-account'),
-      uri = "eee://";
+  function finalize() {
+    window.removeEventListener('unload', finalize, false);
 
-  var accountCollection = new cal3e.AccountCollection();
-  var accounts = accountCollection.filter(
-        cal3e.AccountCollection.filterEnabled),
-      idx = accounts.length;
-  var found = false
-  while (idx--) {
-    if (accounts[idx].defaultIdentity.key == account.value) {
-      uri += accounts[idx].defaultIdentity.email;
-      found = true;
-      break;
+    document.getElementById('calendar-format').removeEventListener(
+      'command', calendarTypeDidChange, false
+    );
+
+    ownerController.removeObserver(controller.ownerDidChange);
+  }
+
+  init();
+}
+
+function cal3eOverlayDelegate() {
+  var delegate = this;
+  var cal3eUri;
+  var lightningUri;
+  var uri;
+  var lightningInitCustomizePage;
+
+  function load() {
+    var calendarUriRow = document.getElementById('calendar-uri').parentNode;
+    var accountRow = calendarUriRow.parentNode.insertBefore(
+      cal3eXul.createElement(document, 'row'), calendarUriRow
+    );
+    accountRow.id = 'calendar3e-account-row';
+    accountRow.align = 'center';
+    accountRow.collapsed = true;
+
+    var accountLabel = accountRow.appendChild(
+      cal3eXul.createElement(document, 'label')
+    );
+    accountLabel.control = 'calendar3e-account';
+    accountLabel.value = document.getElementById('calendar3e-strings')
+      .getString('cal3eCalendarProperties.account.label');
+
+    var accountMenuList = accountRow.appendChild(
+      cal3eXul.createElement(document, 'menulist')
+    );
+    accountMenuList.appendChild(cal3eXul.createElement(document, 'menupopup'));
+    accountMenuList.id = 'calendar3e-account';
+    accountMenuList.flex = 1;
+
+    lightningInitCustomizePage = initCustomizePage;
+    initCustomizePage = function() {
+      lightningInitCustomizePage();
+      ensureLightningIdentityCollapsedState();
+    };
+
+    cal3eUri = { value: '' };
+    lightningUri = { value: document.getElementById('calendar-uri').value };
+    uri = lightningUri;
+  }
+
+  function unload() {
+    cal3eUri = null;
+    lightningUri = null;
+    uri = null;
+
+    initCustomizePage = lightningInitCustomizePage;
+    lightningInitCustomizePage = null;
+
+    document.getElementById('calendar3e-account-row').parentNode.removeChild(
+      document.getElementById('calendar3e-account-row')
+    );
+  }
+
+  function activate() {
+    uri.value = document.getElementById('calendar-uri').value || '';
+    uri = cal3eUri;
+    forceUriChange();
+
+    var commandEvent = document.createEvent('Event');
+    commandEvent.initEvent('command', true, true);
+    document.getElementById('calendar-uri').dispatchEvent(commandEvent);
+
+    document.getElementById('calendar-uri').parentNode.collapsed = true;
+    document.getElementById('calendar-email-identity-row').collapsed = true;
+    document.getElementById('calendar3e-account-row').collapsed = false;
+  }
+
+  function deactivate() {
+    uri.value = document.getElementById('calendar-uri').value || '';
+    uri = lightningUri;
+    forceUriChange();
+
+    document.getElementById('calendar-uri').parentNode.collapsed = false;
+    document.getElementById('calendar-email-identity-row').collapsed = false;
+    document.getElementById('calendar3e-account-row').collapsed = true;
+  }
+
+  function ensureLightningIdentityCollapsedState() {
+    if (uri !== cal3eUri) {
+      return;
+    }
+
+    document.getElementById('calendar-email-identity-row').collapsed = true;
+  }
+
+  function forceUriChange() {
+    document.getElementById('calendar-uri').value = uri.value;
+
+    var commandEvent = document.createEvent('Event');
+    commandEvent.initEvent('command', true, true);
+    document.getElementById('calendar-uri').dispatchEvent(commandEvent);
+  }
+
+  function set3eUri(newUri) {
+    cal3eUri.value = newUri;
+    if (uri === cal3eUri) {
+      document.getElementById('calendar-uri').value = uri.value;
+    }
+
+    return delegate;
+  }
+
+  delegate.load = load;
+  delegate.unload = unload;
+  delegate.activate = activate;
+  delegate.deactivate = deactivate;
+  delegate.set3eUri = set3eUri;
+}
+
+function cal3eOwnerController() {
+  var controller = this;
+  var identity;
+  var element;
+  var lightningInitCustomizePage;
+  var identityObserver;
+  var observers;
+
+  function addObserver(observer) {
+    observers.push(observer);
+
+    return controller;
+  }
+
+  function removeObserver() {
+    if (observers.indexOf(observer) < 0) {
+      return controller;
+    }
+
+    observers.splice(observers.indexOf(observer), 1);
+
+    return controller;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      try {
+        observer(controller);
+      } catch (e) {
+        //TODO log
+      }
+    });
+  }
+
+  function fillElement() {
+    cal3eXul.clearMenu(element);
+
+    cal3eIdentity.Collection().getEnabled().forEach(function(identity) {
+      element.appendItem(
+        identity.fullName + ' <' + identity.email + '>',
+        identity.key
+      );
+    });
+    element.selectedIndex = 0;
+
+    identityDidChange();
+  }
+
+  function identityDidChange() {
+    var identities = cal3eIdentity.Collection()
+      .getEnabled()
+      .filter(function(identity) {
+        return identity.key === element.value;
+      });
+
+    if (identity !== identities[0]) {
+      identity = identities[0] || null;
+      notify();
     }
   }
-  uri += '/';
 
-  if (found) {
-    cal3eCreation._uriComputed = true;
+  function getIdentity() {
+    return identity;
   }
 
-  var calendarUri = document.getElementById('calendar-uri');
-  calendarUri.value = uri;
+  function init() {
+    identity = null;
 
-  if (gCalendar) {
-    var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-      .getService(Components.interfaces.nsIIOService);
-    gCalendar.uri = ioService.newURI(uri, null, null);
+    element = document.getElementById('calendar3e-account');
+    element.addEventListener('command', identityDidChange, false);
+
+    lightningInitCustomizePage = initCustomizePage;
+    initCustomizePage = function() {
+      lightningInitCustomizePage();
+      document.getElementById('email-identity-menulist').value = identity.key;
+    };
+
+    observers = [];
+
+    identityObserver = cal3eIdentity.Observer();
+    identityObserver.addObserver(fillElement);
+    fillElement();
+    window.addEventListener('unload', finalize, false);
   }
-};
 
-/**
- * Synces identity set on 3e overlay controls to Lightning overlay
- * controls.
- *
- * This ensures that calendar gets proper identity set.
- */
-cal3eCreation.syncIdentity = function syncIdentity() {
-  var cal3eIdentity = document.getElementById('calendar3e-account');
-  var lightningIdentity = document.getElementById('email-identity-menulist');
+  function finalize() {
+    identityObserver.destroy();
+    identityObserver = null;
+    window.removeEventListener('unload', finalize, false);
 
-  var idx = lightningIdentity.itemCount, item;
-  while (idx--) {
-    item = lightningIdentity.getItemAtIndex(idx);
-    if (item.value == cal3eIdentity.value) {
-      lightningIdentity.selectedItem = item;
-      break;
+    initCustomizePage = lightningInitCustomizePage;
+    lightningInitCustomizePage = null;
+
+    observers = null;
+
+    element.removeEventListener('command', identityDidChange, false);
+    cal3eXul.clearMenu(element);
+    element = null;
+
+    identity = null;
+  }
+
+  controller.identity = getIdentity;
+  controller.addObserver = addObserver;
+  controller.removeObserver = removeObserver;
+
+  init();
+}
+
+function cal3eCalendarController() {
+  var controller = this;
+  var identity;
+
+  function setIdentity(newIdentity) {
+    identity = newIdentity;
+
+    if (gCalendar) {
+      gCalendar.uri = Services.io.newURI(getUri(), null, null);
     }
+
+    return controller;
   }
+
+  function getUri() {
+    var uri = 'eee://';
+    if (identity) {
+      uri += identity.email;
+    }
+    uri += '/';
+
+    return uri;
+  }
+
+  function init() {
+    identity = null;
+
+    window.addEventListener('unload', finalize, false);
+  }
+
+  function finalize() {
+    window.removeEventListener('unload', finalize, false);
+
+    identity = null;
+  }
+
+  controller.setIdentity = setIdentity;
+  controller.uri = getUri;
+
+  init();
+}
+
+cal3eCreation.onLoad = function cal3eCreation_onLoad() {
+  cal3eCreation.overlay = new cal3eOverlayDelegate();
+  cal3eCreation.overlay.load();
+
+  cal3eCreation.controller = new cal3eCreation(
+    new cal3eOwnerController(),
+    new cal3eCalendarController(),
+    cal3eCreation.overlay
+  );
+
+  window.addEventListener('unload', cal3eCreation.onUnload, false);
+};
+cal3eCreation.onUnload = function cal3eCreation_onUnload() {
+  window.removeEventListener('unload', cal3eCreation.onUnload, false);
+
+  cal3eCreation.overlay.unload();
+  delete cal3eCreation.overlay;
+
+  delete cal3eCreation.controller;
 };
 
-/**
- * Dynamically creates elements necessary for 3e calendar creation.
- *
- * Ovelay isn't used in this situation because calendar creation
- * wizard makes it hard to provide custom UI on the page where
- * calendar type and location are edited.
- *
- * Menulist and its label along with a row where they will reside are
- * created and inserted on the page mentioned before. Row is
- * identified as 'calendar3e-account-row' and menulist as
- * 'calendar3e-account'.
- */
-cal3eCreation.overlay = function overlay() {
-  var accountMenuList = document.createElement('menulist');
-  accountMenuList.id = 'calendar3e-account';
-  accountMenuList.flex = 1;
-  accountMenuList.appendChild(document.createElement('menupopup'));
-
-  var accountLabel = document.createElement('label');
-  accountLabel.control = 'calendar3e-account';
-
-  var accountRow = document.createElement('row');
-  accountRow.id = 'calendar3e-account-row';
-  accountRow.align = 'center';
-  accountRow.insertBefore(accountMenuList, null);
-  accountRow.insertBefore(accountLabel, accountMenuList);
-
-  var notifications = document.getElementById('location-notifications');
-  notifications.parentNode.insertBefore(accountRow, notifications);
-
-  // doesn't work when set before actually being in the document
-  var stringBundle = document.getElementById('calendar3e-strings');
-  accountLabel.value = stringBundle.getString(
-    'cal3eCalendarProperties.account.label');
-
-  accountMenuList.addEventListener('command', cal3eCreation.computeUri, false);
-
-  var nameTextbox = document.getElementById('calendar-name');
-  nameTextbox.addEventListener('input', cal3eCreation.computeUri, false);
-
-  // sadly, this is better solution but cannot there's no way to make
-  // event handler hadle page show in the right time (after
-  // Lightning's page initialization)
-  //var calendarWizard = document.getElementById('calendar-wizard');
-  //calendarWizard.getPageById('customizePage').addEventListener(
-  //  'pageshow', cal3eCreation.syncIdentity, false);
-  // ... so we have to override that Lightning's page initialization
-  cal3eCreation._ltn_initCustomizePage = initCustomizePage;
-  initCustomizePage = function cal3e_initCustomizePage() {
-    cal3eCreation._ltn_initCustomizePage();
-    cal3eCreation.syncIdentity();
-  };
-};
-
-/**
- * Initializes calendar creation dialog with 3e extesion specific
- * behavior.
- */
-cal3eCreation.init = function init() {
-  cal3eCreation.overlay();
-
-  var calendarFormat = document.getElementById('calendar-format');
-  calendarFormat.addEventListener(
-    'command', cal3eCreation.selectionChanged, false);
-  cal3eCreation.selectionChanged();
-};
-
-window.addEventListener('load', cal3eCreation.init, false);
+window.addEventListener('load', cal3eCreation.onLoad, false);

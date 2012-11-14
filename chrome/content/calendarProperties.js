@@ -17,8 +17,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource:///modules/iteratorUtils.jsm");
-Components.utils.import("resource://calendar3e/modules/cal3eUtils.jsm");
+Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/model.jsm");
+Components.utils.import("resource://calendar3e/modules/request.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
 
 var cal3eProperties = {};
 
@@ -73,29 +75,18 @@ cal3eProperties._loadUsers = function loadUsers() {
     permissionsListBox.removeChild(permissionsListCols.nextSibling);
   }
 
-  var clientListener = cal3e.createOperationListener(
-    function cal3eProperties_loadUsers_onResult(methodQueue, result) {
-      if (Components.results.NS_OK !== methodQueue.status) {
-        //TODO can't get list of users
-        return;
-      }
+  var clientListener = function cal3eProperties_loadUsers_onResult(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      //TODO can't get list of users
+      return;
+    }
 
-      var users;
-      try {
-        users = result.QueryInterface(Components.interfaces.nsISupportsArray);
-      } catch (e) {
-        //TODO can't get list of users
-        return;
-      }
-
-      for (var idx = 0; idx < users.Count(); idx++) {
-        permissionsListBox.appendChild(
-          cal3eProperties._listItemFromUser(users.GetElementAt(idx)));
-      }
+    result.data.forEach(function(user) {
+      permissionsListBox.appendChild(
+        cal3eProperties._listItemFromUser(user)
+      );
     });
-
-  var client = Cc["@zonio.net/calendar3e/client-service;1"]
-    .createInstance(Components.interfaces.calEeeIClient);
+  };
 
   var uriSpec = cal3eProperties._calendar.uri.spec,
       uriParts = uriSpec.split('/', 4),
@@ -114,46 +105,17 @@ cal3eProperties._loadUsers = function loadUsers() {
       break;
     }
   }
-  client.getUsers(identity, clientListener, "");
+  cal3eRequest.Client.getInstance().getUsers(identity, clientListener, "");
 };
 
 cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
-  user = user.QueryInterface(Components.interfaces.nsIDictionary);
-
   var listItem = document.createElement("listitem");
   listItem.allowevents = 'true';
 
   var nameListCell = document.createElement("listcell");
-  var realname = null;
-  if (user.hasKey('attrs')) {
-    var userAttrs = user.getValue('attrs').QueryInterface(
-      Components.interfaces.nsISupportsArray
-    );
-    for (var idx = 0, attr; idx < userAttrs.Count(); idx++) {
-      attr = userAttrs.QueryElementAt(
-        idx, Components.interfaces.nsIDictionary
-      );
-      if ('realname' == attr.getValue('name').QueryInterface(
-        Components.interfaces.nsISupportsCString
-      )) {
-        realname = attr.getValue('value').QueryInterface(
-          Components.interfaces.nsISupportsCString
-        );
-        break;
-      }
-    }
-  }
-  var userLabel = "";
-  if (realname) {
-    userLabel += realname + " <";
-  }
-  userLabel += user.getValue('username').QueryInterface(
-    Components.interfaces.nsISupportsCString
+  nameListCell.appendChild(document.createTextNode(
+    cal3eModel.userLabel(user))
   );
-  if (realname) {
-    userLabel += ">";
-  }
-  nameListCell.appendChild(document.createTextNode(userLabel));
   listItem.appendChild(nameListCell);
 
   var stringBundle = document.getElementById('calendar3e-strings');

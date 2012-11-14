@@ -1,6 +1,6 @@
 # ***** BEGIN LICENSE BLOCK *****
 # 3e Calendar
-# Copyright © 2011  Zonio s.r.o.
+# Copyright © 2012  Zonio s.r.o.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,25 +26,77 @@ include $(DEPTH)/config/autoconf.mk
 
 MODULE = calendar3e
 
-export USE_EXTENSION_MANIFEST = 1
 export XPI_NAME = calendar3e-provider
-DIST_FILES = install.rdf
-INSTALL_EXTENSION_ID = calendar3e@zonio.net
+export USE_EXTENSION_MANIFEST = 1
 XPI_PKGNAME = calendar3e-provider
 
-CALENDAR_VERSION := $(shell cat $(topsrcdir)/calendar/sunbird/config/version.txt)
+XPI_EM_ID = calendar3e@zonio.net
+INSTALL_EXTENSION_ID = $(XPI_EM_ID)
+
+DIST_FILES = install.rdf application.ini
+
+CALENDAR_3E_VERSION := $(shell cat $(srcdir)/config/version.txt)
+LIGHTNING_VERSION := $(shell cat $(topsrcdir)/calendar/sunbird/config/version.txt)
 THUNDERBIRD_VERSION := $(shell cat $(topsrcdir)/mail/config/version.txt)
 SEAMONKEY_VERSION := $(shell cat $(topsrcdir)/suite/config/version.txt)
-DEFINES += -DAB_CD=$(AB_CD) \
-           -DCALENDAR_VERSION=$(CALENDAR_VERSION) \
+
+ifneq (,$(findstring pre,$(CALENDAR_3E_VERSION)))
+DEFINES += -DCALENDAR_3E_PRERELEASE_VERSION=1
+endif
+
+ifdef CALENDAR_3E_UPDATE_LOCATION
+DEFINES += -DCALENDAR_3E_UPDATE_LOCATION=$(CALENDAR_3E_UPDATE_LOCATION)
+endif
+
+# Gecko milestone
+GRE_MILESTONE = $(shell $(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build Milestone)
+ifdef GRE_MILESTONE
+DEFINES += -DGRE_MILESTONE=$(GRE_MILESTONE)
+endif
+
+# mozilla3e source repo and stamp
+SOURCE_STAMP ?= $(firstword $(shell git --git-dir=$(srcdir)/.git log -n 1 --pretty=format:%h 2>/dev/null))
+ifdef SOURCE_STAMP
+DEFINES += -DSOURCE_STAMP="$(SOURCE_STAMP)"
+endif
+
+SOURCE_REPO := $(shell git --git-dir=$(srcdir)/.git config remote.origin.url 2>/dev/null)
+ifdef SOURCE_REPO
+DEFINES += -DSOURCE_REPO="$(SOURCE_REPO)"
+endif
+
+# Mozilla source repo and stamps
+MOZ_SOURCE_STAMP = $(firstword $(shell hg -R $(MOZILLA_SRCDIR) parent --template="{node|short}\n" 2>/dev/null))
+ifdef MOZ_SOURCE_STAMP
+DEFINES += -DMOZ_SOURCE_STAMP="$(MOZ_SOURCE_STAMP)"
+endif
+
+MOZ_SOURCE_REPO := $(shell hg -R $(MOZILLA_SRCDIR) showconfig paths.default 2>/dev/null | sed -e "s/^ssh:/http:/")
+ifdef MOZ_SOURCE_REPO
+DEFINES += -DMOZ_SOURCE_REPO="$(MOZ_SOURCE_REPO)"
+endif
+
+# include config.mk here so myconfig or app-config can set DISABLE_LIGHTNING_INSTALL
+include $(topsrcdir)/config/config.mk
+
+PREF_JS_EXPORTS = $(srcdir)/defaults/preferences.js
+DIRS = public modules src data chrome
+
+ifdef ENABLE_TESTS
+DIRS += test
+endif
+
+
+DEFINES += -DTHUNDERBIRD_VERSION=$(THUNDERBIRD_VERSION) \
+           -DAB_CD=$(AB_CD) \
            -DSEAMONKEY_VERSION=$(SEAMONKEY_VERSION) \
-           -DTHUNDERBIRD_VERSION=$(THUNDERBIRD_VERSION) \
-           -DCOMM_BUILD=$(COMM_BUILD) \
+           -DLIGHTNING_VERSION=$(LIGHTNING_VERSION) \
+           -DCALENDAR_3E_VERSION=$(CALENDAR_3E_VERSION) \
+           -DTARGET_PLATFORM=$(OS_TARGET)_$(TARGET_XPCOM_ABI) \
+           -DXPI_EM_ID=$(XPI_EM_ID) \
            $(NULL)
 
-DIRS = xml-rpc calendar chrome
-
-libs-%:
-	$(MAKE) -C locales libs AB_CD=$* XPI_NAME=$(XPI_NAME) USE_EXTENSION_MANIFEST=1
+GRE_BUILDID = $(shell $(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build BuildID)
+DEFINES += -DGRE_BUILDID=$(GRE_BUILDID)
 
 include $(topsrcdir)/config/rules.mk

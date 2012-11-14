@@ -17,7 +17,7 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!ENTITY cal3eCalendarProperties.type.label "Calendar Type:">
+<!ENTITY cal3eCalendarProperties.type.label "Calendar Type: ">
 <!ENTITY cal3eCalendarProperties.permissions.label "Permissions">
 <!ENTITY cal3eCalendarProperties.user.label "User">
 <!ENTITY cal3eCalendarProperties.add.label "Add">
@@ -31,5 +31,12 @@
 <!ENTITY cal3eCalendarContext.subscribe.label "Subscribe Calendar…">
 
 <!ENTITY cal3eCalendarSubscribe.title "Subscribe Calendar">
-<!ENTITY cal3eCalendarSubscribe.subscriber.label "Account:">
-<!ENTITY cal3eCalendarSubscribe.search.label "Search:">
+<!ENTITY cal3eCalendarSubscribe.buttons.accept "Subscribe">
+<!ENTITY cal3eCalendarSubscribe.subscriber.label "Account: ">
+<!ENTITY cal3eCalendarSubscribe.search.label "Show items that contain: ">
+<!ENTITY cal3eCalendarSubscribe.tree.name "Available Calendars">
+<!ENTITY cal3eCalendarSubscribe.tree.type "Access Type">
+
+<!ENTITY cal3eCalendarEnable.title "3e Calendar">
+<!ENTITY cal3eCalendarEnable.description "You can enable 3e calendar for your account. If you are not sure you have 3e calendar, ask your system administrator or provider of your email service.">
+<!ENTITY cal3eCalendarEnable.checkbox "Enable 3e calendar">

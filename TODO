@@ -1,9 +1,0 @@
-* Handling 3e account configuration changes (load user's calendars)
-* Synchronize user's calendars from time to time
-* Calendar events CRUD operations
-** Integration with Mozilla Calendar (ICS parsers and other build-in
-   helpers)
-** Client methods
-** Proper UI overload (current implementation breaks whole Lightning
-   functionality)
-* Other calendaring and scheduling operations

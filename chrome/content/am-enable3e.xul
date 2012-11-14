@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- ***** BEGIN LICENSE BLOCK *****
    - 3e Calendar
-   - Copyright © 2011  Zonio s.r.o.
+   - Copyright © 2012  Zonio s.r.o.
    -
    - This program is free software: you can redistribute it and/or modify
    - it under the terms of the GNU General Public License as published by
@@ -18,21 +18,28 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!DOCTYPE overlay SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+<?xml-stylesheet type="text/css"
+                 href="chrome://messenger/skin/accountManage.css"?>
+<!DOCTYPE page [
+  <!ENTITY % cal3eCalendar
+    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+  %cal3eCalendar;
+]>
 
-<overlay id="calendar-list-overlay"
-         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-
-  <popupset id="calendar-popupset">
-    <popup id="list-calendars-context-menu">
-      <menuitem id="list-calendars-context-subscribe"
-                label="&cal3eCalendarContext.subscribe.label;"
-                insertafter="list-calendars-context-delete"
-                oncommand="cal3eSubscription.open();"/>
-    </popup>
-  </popupset>
+<page xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      title="&cal3eCalendarEnable.title;"
+      onload="amEnable3e.onLoad()">
 
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarSubscription.js"/>
+          src="chrome://messenger/content/AccountManager.js"/>
+  <script type="application/javascript"
+          src="chrome://calendar3e/content/am-enable3e.js"/>
 
-</overlay>
+  <dialogheader title="&cal3eCalendarEnable.title;"/>
+
+  <description>&cal3eCalendarEnable.description;</description>
+  <checkbox id="cal3e-enable-checkbox"
+            label="&cal3eCalendarEnable.checkbox;"
+            checked="true"/>
+
+</page>

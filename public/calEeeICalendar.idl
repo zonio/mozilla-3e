@@ -17,18 +17,31 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-@import url("chrome://messenger/skin/");
+#include "calICalendar.idl"
 
-@namespace url(
-    "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-);
+interface nsIMsgIdentity;
 
-dialog#calendar3e-subscription-dialog {
-    width: 44em;
-    height: 33em;
-}
+/**
+ * Behavior specific to EEE calendars.
+ */
+[scriptable, uuid(2378d543-22ce-4449-9c11-5d3ff736c72e)]
+interface calEeeICalendar: calICalendar {
 
-grid#calendar3e-subscription-grid {
-    width: 40em;
-    height: 25em;
-}
+    /**
+     * Calendar identifier used in EEE protocol unique in the scope of
+     * owner's domain.
+     */
+    readonly attribute string calspec;
+
+    /**
+     * Calendar identifier used in EEE protocol unique in the scope of
+     * its owner.
+     */
+    readonly attribute string calname;
+
+    /**
+     * Identity which operates this calendar.
+     */
+    readonly attribute nsIMsgIdentity identity;
+
+};

@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2012  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,23 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-@import url("chrome://messenger/skin/");
+Components.utils.import("resource://calendar3e/modules/dns.jsm");
 
-@namespace url(
-    "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-);
-
-dialog#calendar3e-subscription-dialog {
-    width: 44em;
-    height: 33em;
+function test_successful_dns_resolv() {
+  var dns = new cal3eDns();
+  var [host, port] = dns.resolveServer("nightly.zonio.net");
+  do_check_eq(host, "nightly.zonio.net");
+  do_check_eq(port, 4445);
 }
 
-grid#calendar3e-subscription-grid {
-    width: 40em;
-    height: 25em;
+function test_default_response() {
+  var dns = new cal3eDns();
+  var [host, port] = dns.resolveServer("3e.nonexistent");
+  do_check_eq(host, "3e.nonexistent");
+  do_check_eq(port, 4444);
+}
+
+function run_test() {
+  test_successful_dns_resolv();
+  test_default_response();
 }

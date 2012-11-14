@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2012  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-@import url("chrome://messenger/skin/");
+Components.utils.import("resource://calendar3e/modules/resolv.jsm");
 
-@namespace url(
-    "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-);
-
-dialog#calendar3e-subscription-dialog {
-    width: 44em;
-    height: 33em;
-}
-
-grid#calendar3e-subscription-grid {
-    width: 40em;
-    height: 25em;
+function run_test() {
+  todo_check_true(false);
 }
