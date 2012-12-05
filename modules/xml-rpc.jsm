@@ -86,7 +86,7 @@ function Client(uri) {
 
     if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
       Services.console.logStringMessage(
-        '[3e] XML-RPC Request\n' + request.body()
+        '[3e] XML-RPC Request to ' + uri.spec + '\n' + request.body()
       );
     }
 
