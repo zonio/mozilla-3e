@@ -47,6 +47,10 @@ function getUserLabel(user) {
   return userLabel;
 }
 
+function getUsernameFromEeeUri(uri) {
+  return getStructuredUri(uri)['user'];
+}
+
 function getCalendarName(calendar) {
   return getStructuredUri(calendar.uri)['name'];
 }
@@ -69,13 +73,20 @@ function getStructuredUri(uri) {
   var uriParts = uri.spec.split('/', 5);
   var structuredUri = {};
   structuredUri['protocol'] = uriParts[0].substring(0, uriParts[0].length - 1);
-  structuredUri['user'] = uriParts[2];
+  structuredUri['user'] = decodeUsernameFromUri(uriParts[2]);
   structuredUri['owner'] = uriParts.length === 5 ? uriParts[3] : null;
   structuredUri['name'] = uriParts.length >= 4 ?
     uriParts[[uriParts.length - 1]] :
     null;
 
   return structuredUri;
+}
+
+function decodeUsernameFromUri(username) {
+  var parts = username.split('@');
+  parts[0] = decodeURIComponent(parts[0]);
+
+  return parts.join('@');
 }
 
 function getCalendarLabel(calendar) {
@@ -92,13 +103,6 @@ function getPermissionLabel(calendar) {
     .GetStringFromName(
       'cal3eModel.permissions.' + calendar['perm']
     );
-}
-
-function getUsernameFromEeeUri(uri) {
-  var usernameParts = uri.spec.split('/', 4)[2].split('@', 2);
-  usernameParts[0] = decodeURIComponent(usernameParts[0]);
-
-  return usernameParts.join('@');
 }
 
 var cal3eModel = {
