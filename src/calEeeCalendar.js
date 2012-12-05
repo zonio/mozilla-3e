@@ -42,6 +42,7 @@ calEeeCalendar.prototype = {
   QueryInterface: XPCOMUtils.generateQI([
     Components.interfaces.calEeeICalendar,
     Components.interfaces.calICalendar,
+    Components.interfaces.calISchedulingSupport,
     Components.interfaces.nsIObserver
   ]),
 
