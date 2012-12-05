@@ -84,6 +84,12 @@ function Client(uri) {
     }, false);
     xhr.channel.notificationCallbacks = channelCallbacks;
 
+    if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
+      Services.console.logStringMessage(
+        '[3e] XML-RPC Request\n' + request.body()
+      );
+    }
+
     xhr.send(request.body());
   }
 
@@ -98,6 +104,15 @@ function Client(uri) {
     event.target.responseXML.normalize();
     try {
       response = createResponse(event.target.responseXML);
+
+      if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
+        Services.console.logStringMessage(
+          '[3e] XML-RPC Response\n' +
+            Components.classes["@mozilla.org/xmlextras/xmlserializer;1"]
+            .createInstance(Components.interfaces.nsIDOMSerializer)
+            .serializeToString(event.target.responseXML)
+        );
+      }
     } catch (e) {
       passErrorToListener(
         Components.Exception(e.message, e.result), context
@@ -109,6 +124,12 @@ function Client(uri) {
   }
 
   function onXhrError(event, context) {
+    if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
+      Services.console.logStringMessage(
+        '[3e] XML-RPC Error: ' + event.target.statusText
+      );
+    }
+
     passErrorToListener(
       Components.Exception('Unknown network error'), context
     );
