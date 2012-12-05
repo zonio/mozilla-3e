@@ -20,7 +20,9 @@
 Components.utils.import('resource://gre/modules/Services.jsm');
 
 function isSupported(feature) {
-  return !!Services.prefs.getBoolPref('calendar.eee.features.' + feature);
+  return !!Services.prefs.getBoolPref(
+    'extensions.calendar3e.features.' + feature
+  );
 }
 
 var cal3eFeature = {

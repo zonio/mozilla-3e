@@ -822,7 +822,8 @@ function QueueValidationDelegate() {
 
   function isValid(error) {
     var threshold = new Date(
-      Date.now() - Services.prefs.getIntPref('calendar.eee.user_error_timeout')
+      Date.now() -
+      Services.prefs.getIntPref('extensions.calendar3e.user_error_timeout')
     );
 
     return error.timestamp > threshold;

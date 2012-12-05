@@ -278,7 +278,8 @@ calEeeSynchronizationService.prototype = {
       .whenDone(function() {
         synchronizationService._timersByIdentity[identity.key].init(
           synchronizationService,
-          Services.prefs.getIntPref('calendar.eee.calendar_sync_interval'),
+          Services.prefs.getIntPref(
+            'extensions.calendar3e.calendar_sync_interval'),
           Components.interfaces.nsITimer.TYPE_ONE_SHOT
         );
       });
