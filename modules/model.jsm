@@ -47,10 +47,6 @@ function getUserLabel(user) {
   return userLabel;
 }
 
-function getUsernameFromEeeUri(uri) {
-  return getStructuredUri(uri)['user'];
-}
-
 function getCalendarName(calendar) {
   return getStructuredUri(calendar.uri)['name'];
 }
@@ -113,8 +109,7 @@ var cal3eModel = {
   calendarUser: getCalendarUser,
   calendarOwner: getCalendarOwner,
   calendarLabel: getCalendarLabel,
-  permissionLabel: getPermissionLabel,
-  usernameFromEeeUri: getUsernameFromEeeUri
+  permissionLabel: getPermissionLabel
 };
 EXPORTED_SYMBOLS = [
   'cal3eModel'

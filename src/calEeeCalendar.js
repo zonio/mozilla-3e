@@ -473,7 +473,7 @@ calEeeCalendar.prototype = {
   _findAndSetIdentity: function calEee_findAndSetIdentity() {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
-      .findByEmail(cal3eModel.usernameFromEeeUri(this._uri));
+      .findByEmail(cal3eModel.calendarUser(this));
 
     this._identity = identities.length > 0 ? identities[0] : null;
   },
