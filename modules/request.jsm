@@ -682,7 +682,7 @@ function AuthenticationDelegate() {
   }
 
   function loginInfoUsername(identity) {
-    return loginUri(identity).username;
+    return decodeURIComponent(loginUri(identity).username);
   }
 
   function eeeUsername(login) {
