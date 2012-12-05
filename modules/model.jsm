@@ -94,6 +94,13 @@ function getPermissionLabel(calendar) {
     );
 }
 
+function getUsernameFromEeeUri(uri) {
+  var usernameParts = uri.spec.split('/', 4)[2].split('@', 2);
+  usernameParts[0] = decodeURIComponent(usernameParts[0]);
+
+  return usernameParts.join('@');
+}
+
 var cal3eModel = {
   attribute: getAttribute,
   userLabel: getUserLabel,
@@ -102,7 +109,8 @@ var cal3eModel = {
   calendarUser: getCalendarUser,
   calendarOwner: getCalendarOwner,
   calendarLabel: getCalendarLabel,
-  permissionLabel: getPermissionLabel
+  permissionLabel: getPermissionLabel,
+  usernameFromEeeUri: getUsernameFromEeeUri
 };
 EXPORTED_SYMBOLS = [
   'cal3eModel'

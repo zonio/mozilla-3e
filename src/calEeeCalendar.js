@@ -21,6 +21,7 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
@@ -470,10 +471,9 @@ calEeeCalendar.prototype = {
   },
 
   _findAndSetIdentity: function calEee_findAndSetIdentity() {
-    var eeeUser = this._uri.spec.split('/', 4)[2];
     var identities = cal3eIdentity.Collection()
       .getEnabled()
-      .findByEmail(eeeUser);
+      .findByEmail(cal3eModel.usernameFromEeeUri(this._uri));
 
     this._identity = identities.length > 0 ? identities[0] : null;
   },
