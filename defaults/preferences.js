@@ -25,3 +25,4 @@ pref('extensions.calendar3e.log.xml_rpc', false);
 
 pref('extensions.calendar3e.features.attachments', false);
 pref('extensions.calendar3e.features.sidebar', false);
+pref('extensions.calendar3e.features.offline_mode', false);

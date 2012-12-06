@@ -96,11 +96,14 @@ function Collection() {
    * Applies callback on each identity.
    *
    * It works in the same way as standard JavaScript Array#forEach.
+   *
+   * @returns {Array}
    */
   function forEach(callback, context) {
-    return extendArray(
-      getIdentitiesFromContext(this).forEach(callback, context)
-    );
+    var identities = getIdentitiesFromContext(this);
+    identities.forEach(callback, context);
+
+    return extendArray(identities);
   }
 
   /**
@@ -114,6 +117,19 @@ function Collection() {
   function filter(callback, context) {
     return extendArray(
       getIdentitiesFromContext(this).filter(callback, context)
+    );
+  }
+
+  /**
+   * Creates single value from a collection of identities.
+   *
+   * It works in the same way as standard JavaScript Array#reduce.
+   *
+   * @returns {Array}
+   */
+  function reduce(callback, initial) {
+    return extendArray(
+      getIdentitiesFromContext(this).reduce(callback, initial)
     );
   }
 

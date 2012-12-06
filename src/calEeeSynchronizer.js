@@ -20,6 +20,7 @@
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
@@ -52,6 +53,8 @@ function calEeeSynchronizationService() {
    * @type Object
    */
   this._identityObserver = null;
+
+  this.onIdentityChange = this.onIdentityChange.bind(this);
 }
 
 calEeeSynchronizationService.classInfo = XPCOMUtils.generateCI({
@@ -83,21 +86,22 @@ calEeeSynchronizationService.prototype = {
    * collection.
    */
   onIdentityChange: function calEeeSyncService_onIdentityChange() {
-    var knownIdentities = {};
-    var identityKey;
-    for (identityKey in this._timersByIdentity) {
-      if (!this._timersByIdentity.hasOwnProperty(identityKey)) {
-        continue;
-      }
-      knownIdentities[identityKey] = true;
-    }
-
     var synchronizationService = this;
+
+    var knownIdentities = cal3eIdentity.Collection()
+      .filter(function(identity) {
+        return synchronizationService.has(identity);
+      })
+      .reduce(function(knownIdentities, identity) {
+        knownIdentities[identity.key] = identity;
+
+        return knownIdentities;
+      }, {});
+
     cal3eIdentity.Collection()
       .getEnabled()
       .filter(function(identity) {
-        return !knownIdentities.hasOwnProperty(identity.key) ||
-          !knownIdentities[identity.key];
+        return !knownIdentities.hasOwnProperty(identity.key);
       })
       .forEach(function(identity) {
         synchronizationService.addIdentity(identity);
@@ -106,8 +110,7 @@ calEeeSynchronizationService.prototype = {
     cal3eIdentity.Collection()
       .getDisabled()
       .filter(function(identity) {
-        return knownIdentities.hasOwnProperty(identity.key) &&
-          knownIdentities[identity.key];
+        return knownIdentities.hasOwnProperty(identity.key);
       })
       .forEach(function(identity) {
         synchronizationService.removeIdentity(identity);
@@ -133,7 +136,13 @@ calEeeSynchronizationService.prototype = {
       this.registerAfterMainWindowOpen();
       break;
     case 'timer-callback':
-      this.runSynchronizer(this._findIdentityOfTimer(subject));
+      this.runSynchronizer(this.findIdentityOfTimer(subject));
+      break;
+    case 'network:offline-about-to-go-offline':
+      this.stopSyncing();
+      break;
+    case 'network:offline-status-changed':
+      this.startSyncingIfOnline();
       break;
     }
   },
@@ -200,9 +209,22 @@ calEeeSynchronizationService.prototype = {
       return this;
     }
     this._registered = true;
+
+    if (cal3eFeature.isSupported('offline_mode')) {
+      Services.obs.addObserver(
+        this,
+        'network:offline-about-to-go-offline',
+        false
+      );
+      Services.obs.addObserver(
+        this,
+        'network:offline-status-changed',
+        false
+      );
+    }
+
     this._identityObserver = cal3eIdentity.Observer();
-    this._identityObserver.addObserver(this.onIdentityChange.bind(this));
-    this.onIdentityChange();
+    this.startSyncingIfOnline();
 
     return this;
   },
@@ -218,6 +240,18 @@ calEeeSynchronizationService.prototype = {
       return this;
     }
     this._identityObserver.destroy();
+
+    if (cal3eFeature.isSupported('offline_mode')) {
+      Services.obs.removeObserver(
+        this,
+        'network:offline-about-to-go-offline'
+      );
+      Services.obs.removeObserver(
+        this,
+        'network:offline-status-changed'
+      );
+    }
+
     this._registered = false;
 
     return this;
@@ -251,10 +285,8 @@ calEeeSynchronizationService.prototype = {
    * @returns {calEeeISynchronizationService} receiver
    */
   removeIdentity: function calEeeSyncService_removeIdentity(identity) {
-    this._timersByIdentity[identity.key].cancel();
-    delete this._timersByIdentity[identity.key];
-    delete this._synchronizersByIdentity[identity.key];
-    this._unregisterCalendarsOfIdentity(identity);
+    this.stopSyncingIdentity(identity);
+    this.unregisterCalendarsOfIdentity(identity);
 
     return this;
   },
@@ -287,13 +319,45 @@ calEeeSynchronizationService.prototype = {
     return this;
   },
 
+  startSyncingIfOnline: function calEeeSyncService_startSyncingIfOnline() {
+    if (Services.io.offline) {
+      return;
+    }
+
+    var synchronizationService = this;
+    cal3eIdentity.Collection().forEach(function(identity) {
+      if (!synchronizationService.has(identity)) {
+        return;
+      }
+
+      synchronizationService.enableCalendarsOfIdentity(identity);
+    });
+
+    this._identityObserver.addObserver(this.onIdentityChange);
+    this.onIdentityChange();
+  },
+
+  stopSyncing: function calEeeSyncService_stopSyncing() {
+    this._identityObserver.removeObserver(this.onIdentityChange);
+
+    var synchronizationService = this;
+    cal3eIdentity.Collection().forEach(function(identity) {
+      if (!synchronizationService.has(identity)) {
+        return;
+      }
+
+      synchronizationService.stopSyncingIdentity(identity);
+      synchronizationService.disableCalendarsOfIdentity(identity);
+    });
+  },
+
   /**
    * Tries to find identity (its key) of given timer.
    *
    * @param {nsITimer} timer
    * @returns {nsIMsgIdentity|null}
    */
-  _findIdentityOfTimer:
+  findIdentityOfTimer:
   function calEeeSyncService_findIdentityOfTimer(timer) {
     timer = timer.QueryInterface(Components.interfaces.nsITimer);
 
@@ -322,11 +386,46 @@ calEeeSynchronizationService.prototype = {
    *
    * @param {nsIMsgIdentity} identity
    */
-  _unregisterCalendarsOfIdentity:
+  unregisterCalendarsOfIdentity:
   function calEeeService_unregisterCalendarsOfIdentity(identity) {
-    var manager = Components.classes['@mozilla.org/calendar/manager;1']
-      .getService(Components.interfaces.calICalendarManager);
-    manager
+    this.getIdentityCalendars(identity)
+      .filter(function(calendar) {
+        return (calendar.type === 'eee') &&
+          calendar.getProperty('imip.identity') &&
+          (calendar.getProperty('imip.identity') === identity);
+      })
+      .forEach(function(calendar) {
+        Components.classes['@mozilla.org/calendar/manager;1']
+          .getService(Components.interfaces.calICalendarManager)
+          .unregisterCalendar(calendar);
+      });
+  },
+
+  getIdentityCalendars:
+  function calEeeService_getIdentityCalendars(identity) {
+    return Components.classes['@mozilla.org/calendar/manager;1']
+      .getService(Components.interfaces.calICalendarManager)
+      .getCalendars({})
+      .filter(function(calendar) {
+        return (calendar.type === 'eee') &&
+          calendar.getProperty('imip.identity') &&
+          (calendar.getProperty('imip.identity') === identity);
+      });
+  },
+
+  enableCalendarsOfIdentity:
+  function calEeeService_disableCalendarsOfIdentity(identity) {
+    this.setDisabledOnCalendarsOfIdentity(identity, false);
+  },
+
+  disableCalendarsOfIdentity:
+  function calEeeService_disableCalendarsOfIdentity(identity) {
+    this.setDisabledOnCalendarsOfIdentity(identity, true);
+  },
+
+  setDisabledOnCalendarsOfIdentity:
+  function calEeeService_disableCalendarsOfIdentity(identity, disabled) {
+    this.getIdentityCalendars(identity)
       .getCalendars({})
       .filter(function(calendar) {
         return (calendar.type === 'eee') &&
@@ -334,21 +433,37 @@ calEeeSynchronizationService.prototype = {
           (calendar.getProperty('imip.identity') === identity);
       })
       .forEach(function(calendar) {
-        manager.unregisterCalendar(calendar);
+        calendar.setProperty('disabled', disabled);
       });
+  },
+
+  stopSyncingIdentity:
+  function calEeeSyncService_stopSyncingIdentity(identity) {
+    this._timersByIdentity[identity.key].cancel();
+    delete this._timersByIdentity[identity.key];
+    this._synchronizersByIdentity[identity.key].cancel();
+    delete this._synchronizersByIdentity[identity.key];
+  },
+
+  has: function calEeeSyncService_has(identity) {
+    return this._synchronizersByIdentity[identity.key] &&
+      this._timersByIdentity[identity.key];
   }
 
 };
 
 function Synchronizer(identity) {
   var synchronizer = this;
+  var operation;
+  var future;
 
   function synchronize() {
-    var future = new cal3eSynchronization.Future();
-
-    cal3eRequest.Client.getInstance().getCalendars(
+    future = new cal3eSynchronization.Future();
+    operation = cal3eRequest.Client.getInstance().getCalendars(
       identity,
       function Synchronizer_onGetCalendars(result) {
+        operation = null;
+
         if (result instanceof cal3eResponse.UserError) {
           future.done();
           return;
@@ -396,6 +511,15 @@ function Synchronizer(identity) {
     );
 
     return future.returnValue();
+  }
+
+  function cancel() {
+    if (!operation) {
+      return;
+    }
+
+    operation.cancel();
+    future.done();
   }
 
   function buildCalendarUri(data) {
@@ -451,6 +575,7 @@ function Synchronizer(identity) {
   }
 
   synchronizer.synchronize = synchronize;
+  synchronizer.cancel = cancel;
 }
 
 const NSGetFactory = XPCOMUtils.generateNSGetFactory([
