@@ -21,6 +21,7 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
@@ -50,7 +51,18 @@ calEeeCalendar.prototype = {
   getProperty: function calEee_getProperty(name) {
     switch (name) {
     case 'cache.supported':
+      if (cal3eFeature.isSupported('offline_mode')) {
+        return true;
+      }
       return false;
+    case 'cache.enabled':
+      if (cal3eFeature.isSupported('offline_mode')) {
+        return true;
+      }
+    case 'cache.always':
+      if (cal3eFeature.isSupported('offline_mode')) {
+        return true;
+      }
     case 'itip.transport':
       return Components.classes['@zonio.net/calendar3e/itip;1']
         .createInstance(Components.interfaces.calIItipTransport);

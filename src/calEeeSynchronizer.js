@@ -325,9 +325,7 @@ calEeeSynchronizationService.prototype = {
       return;
     }
 
-    this.getSyncedIdentities()
-      .forEach(this.enableCalendarsOfIdentity.bind(this))
-      .forEach(this.runSynchronizer.bind(this));
+    this.getSyncedIdentities().forEach(this.runSynchronizer.bind(this));
   },
 
   stopSyncing: function calEeeSyncService_stopSyncing(identities) {
@@ -335,9 +333,7 @@ calEeeSynchronizationService.prototype = {
     // changed to true, so it is benefitial to set our internal state
     // to not syncing even now.
     this._isSyncing = false;
-    this.getSyncedIdentities()
-      .forEach(this.stopSynchronizer.bind(this))
-      .forEach(this.disableCalendarsOfIdentity.bind(this));
+    this.getSyncedIdentities().forEach(this.stopSynchronizer.bind(this));
   },
 
   /**
@@ -380,23 +376,6 @@ calEeeSynchronizationService.prototype = {
       Components.classes['@mozilla.org/calendar/manager;1']
         .getService(Components.interfaces.calICalendarManager)
         .unregisterCalendar(calendar);
-    });
-  },
-
-  enableCalendarsOfIdentity:
-  function calEeeService_enableCalendarsOfIdentity(identity) {
-    this.setDisabledOnCalendarsOfIdentity(identity, false);
-  },
-
-  disableCalendarsOfIdentity:
-  function calEeeService_disableCalendarsOfIdentity(identity) {
-    this.setDisabledOnCalendarsOfIdentity(identity, true);
-  },
-
-  setDisabledOnCalendarsOfIdentity:
-  function calEeeService_setDisabledOnCalendarsOfIdentity(identity, disabled) {
-    this.getIdentityCalendars(identity).forEach(function(calendar) {
-      calendar.setProperty('disabled', disabled);
     });
   },
 
