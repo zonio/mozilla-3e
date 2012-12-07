@@ -95,13 +95,14 @@ function Collection() {
   /**
    * Applies callback on each identity.
    *
-   * It works in the same way as standard JavaScript Array#forEach.
+   * It works in the same way as standard JavaScript Array#forEach
+   * except it returns itself, so fluent API is supported.
    *
    * @returns {Array}
    */
   function forEach(callback, context) {
     var identities = getIdentitiesFromContext(this);
-    identities.forEach(callback, context);
+    Array.prototype.forEach.apply(identities, arguments);
 
     return extendArray(identities);
   }
@@ -116,7 +117,7 @@ function Collection() {
    */
   function filter(callback, context) {
     return extendArray(
-      getIdentitiesFromContext(this).filter(callback, context)
+      Array.prototype.filter.apply(getIdentitiesFromContext(this), arguments)
     );
   }
 
@@ -125,11 +126,11 @@ function Collection() {
    *
    * It works in the same way as standard JavaScript Array#reduce.
    *
-   * @returns {Array}
+   * @returns {Object}
    */
   function reduce(callback, initial) {
-    return extendArray(
-      getIdentitiesFromContext(this).reduce(callback, initial)
+    return Array.prototype.reduce.apply(
+      getIdentitiesFromContext(this), arguments
     );
   }
 
@@ -189,6 +190,8 @@ function Collection() {
    * @return {nsIMsgIdentity[]}
    */
   function extendArray(array) {
+    array.forEach = forEach;
+    array.filter = filter;
     array.getEnabled = getEnabled;
     array.getDisabled = getDisabled;
     array.findByEmail = findByEmail;
@@ -219,6 +222,7 @@ function Collection() {
     return {
       forEach: forEach,
       filter: filter,
+      reduce: reduce,
       getEnabled: getEnabled,
       getDisabled: getDisabled,
       findByEmail: findByEmail,
