@@ -29,9 +29,9 @@
 <overlay id="calendar3e-calendar-properties-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <rows id="calendar-properties-rows">
-    <row id="calendar-uri-row" align="center" collapsed="true"/>
-    <row id="calendar-email-identity-row" collapsed="true"/>
-    <row id="calendar-readOnly-row" collapsed="true"/>
+    <row id="calendar-uri-row" align="center" hidden="true"/>
+    <row id="calendar-email-identity-row" hidden="true"/>
+    <row id="calendar-readOnly-row" hidden="true"/>
     <row id="calendar3e-permissions-row"
          insertafter="calendar-color-row">
       <label value="&cal3eCalendarProperties.permissions.label;"/>

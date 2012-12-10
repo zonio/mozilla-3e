@@ -50,11 +50,11 @@ cal3eProperties.typeChange = function typeChanged() {
  */
 cal3eProperties.hide3eControls = function hide3eControls() {
   var uriRow = document.getElementById('calendar-uri-row');
-  uriRow.removeAttribute('collapsed');
+  uriRow.removeAttribute('hidden');
   var emailIdentityRow = document.getElementById('calendar-email-identity-row');
-  emailIdentityRow.removeAttribute('collapsed');
+  emailIdentityRow.removeAttribute('hidden');
   var readOnlyRow = document.getElementById('calendar-readOnly-row');
-  readOnlyRow.removeAttribute('collapsed');
+  readOnlyRow.removeAttribute('hidden');
 
   var typeRow = document.getElementById('calendar3e-type-row');
   typeRow.hidden = 'true';
