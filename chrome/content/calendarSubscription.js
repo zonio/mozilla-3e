@@ -101,28 +101,62 @@ function cal3eSubscription(subscriberController, filterController,
 function cal3eSubscriptionDelegate() {
   var subscriptionDelegate = this;
 
-  function subscribe(identity, calendars, callback) {
+  function subscribe(identity, selection, callback) {
     var errors = [];
     var processed = 0;
 
-    function didSubscribeCalendar(result) {
-      if (!(result instanceof cal3eResponse.Success)) {
-        errors.push(result);
+    function onNext(error) {
+      processed += 1;
+      if (error) {
+        errors.push(error);
       }
 
-      processed += 1;
-      if (calendars.length === processed) {
+      if (selection.length === processed) {
         callback(errors);
       }
     }
 
-    calendars.forEach(function(calendar) {
-      cal3eRequest.Client.getInstance().subscribeCalendar(
-        identity,
-        didSubscribeCalendar,
-        calendar
-      );
+    selection.forEach(function(element) {
+      subscribeCalendar(identity, element, onNext);
     });
+  }
+
+  function subscribeCalendar(identity, element, onNext) {
+    function didSubscribeCalendar(result) {
+      if (!(result instanceof cal3eResponse.Success)) {
+        onNext(result);
+        return;
+      }
+
+      Components.classes['@mozilla.org/calendar/manager;1']
+        .getService(Components.interfaces.calICalendarManager)
+        .registerCalendar(calendar);
+
+      calendar.setProperty('imip.identity.key', identity.key);
+      calendar.name = cal3eModel.fullCalendarLabel(
+        element.owner, element.calendar
+      );
+      calendar.setProperty(
+        'color', cal3eModel.attribute(element.calendar, 'color')
+      );
+
+      onNext();
+    }
+
+    var calendar = Components.classes['@mozilla.org/calendar/manager;1']
+      .getService(Components.interfaces.calICalendarManager)
+      .createCalendar('eee', cal3eModel.buildUri({
+        'protocol': 'eee',
+        'user': identity.email,
+        'owner': element.owner['username'],
+        'name': element.calendar['name']
+      }));
+
+    cal3eRequest.Client.getInstance().subscribeCalendar(
+      identity,
+      didSubscribeCalendar,
+      calendar
+    );
   }
 
   subscriptionDelegate.subscribe = subscribe;
@@ -508,9 +542,16 @@ function cal3eSharedCalendarsController() {
 
     selection.splice(0, selection.length);
     selectionForEach(function(idx) {
-      selection.push(
-        element.view.getCellValue(idx, element.columns.getPrimaryColumn())
-      );
+      var [username, calendarName] = element.view.getCellValue(
+        idx, element.columns.getPrimaryColumn()
+      ).split(':', 2);
+      var owner = owners.filter(function(user) {
+        return user['username'] === username;
+      });
+      var calendar = calendars[username].filter(function(calendar) {
+        return calendar['name'] === calendarName;
+      });
+      selection.push({ owner: owner[0], calendar: calendar[0] });
     });
   }
 

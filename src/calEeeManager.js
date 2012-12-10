@@ -177,11 +177,19 @@ calEeeManager.prototype = {
       }
     };
 
-    cal3eRequest.Client.getInstance().deleteCalendar(
-      this._getIdentity(calendar),
-      listener,
-      calendar
-    );
+    if (cal3eModel.isOwnedCalendar(calendar)) {
+      cal3eRequest.Client.getInstance().deleteCalendar(
+        this._getIdentity(calendar),
+        listener,
+        calendar
+      );
+    } else {
+      cal3eRequest.Client.getInstance().unsubscribeCalendar(
+        this._getIdentity(calendar),
+        listener,
+        calendar
+      );
+    }
   },
 
   onPropertyChanged:

@@ -47,6 +47,11 @@ function getUserLabel(user) {
   return userLabel;
 }
 
+function getRealnameOrUsername(user) {
+  return getAttribute(user, 'realname') || user['username'] || '';
+
+}
+
 function getCalendarName(calendar) {
   return getStructuredUri(calendar.uri)['name'];
 }
@@ -63,6 +68,12 @@ function getCalendarOwner(calendar) {
   return getStructuredUri(calendar.uri)['owner'] !== null ?
     getStructuredUri(calendar.uri)['owner'] :
     getStructuredUri(calendar.uri)['user'];
+}
+
+function isOwnedCalendar(calendar) {
+  return (getStructuredUri(calendar.uri)['owner'] === null) ||
+    (getStructuredUri(calendar.uri)['owner'] ===
+     getStructuredUri(calendar.uri)['user']);
 }
 
 function getStructuredUri(uri) {
@@ -102,6 +113,11 @@ function getCalendarLabel(calendar) {
   return '' + (getAttribute(calendar, 'title') || calendar['name']);
 }
 
+function getFullCalendarLabel(owner, calendar) {
+  return '' + getRealnameOrUsername(owner) + ': ' + getCalendarLabel(calendar);
+
+}
+
 function getPermissionLabel(calendar) {
   if (['write', 'read'].indexOf(calendar['perm']) < 0) {
     return '--';
@@ -122,7 +138,9 @@ var cal3eModel = {
   calendarCalspec: getCalendarCalspec,
   calendarUser: getCalendarUser,
   calendarOwner: getCalendarOwner,
+  isOwnedCalendar: isOwnedCalendar,
   calendarLabel: getCalendarLabel,
+  fullCalendarLabel: getFullCalendarLabel,
   permissionLabel: getPermissionLabel
 };
 EXPORTED_SYMBOLS = [

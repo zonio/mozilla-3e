@@ -86,13 +86,24 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(deleteCalendar), createQueue
   );
 
-  function subscribeCalendar(identity, listener, calspec) {
+  function subscribeCalendar(identity, listener, calendar) {
     return synchronizedMethod.future(arguments)
-      .push('ESClient.subscribeCalendar', [calspec])
+      .push('ESClient.subscribeCalendar', [
+        cal3eModel.calendarCalspec(calendar)])
       .call(onResult, listener);
   }
   subscribeCalendar = synchronizedMethod.create(
     createScenario(subscribeCalendar), createQueue
+  );
+
+  function unsubscribeCalendar(identity, listener, calendar) {
+    return synchronizedMethod.future(arguments)
+      .push('ESClient.unsubscribeCalendar', [
+        cal3eModel.calendarCalspec(calendar)])
+      .call(onResult, listener);
+  }
+  unsubscribeCalendar = synchronizedMethod.create(
+    createScenario(unsubscribeCalendar), createQueue
   );
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
@@ -497,6 +508,7 @@ function Client(serverBuilder, authenticationDelegate,
   client.createCalendar = createCalendar;
   client.deleteCalendar = deleteCalendar;
   client.subscribeCalendar = subscribeCalendar;
+  client.unsubscribeCalendar = unsubscribeCalendar;
   client.setCalendarAttribute = setCalendarAttribute;
   client.queryObjects = queryObjects;
   client.addObject = addObject;
