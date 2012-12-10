@@ -218,8 +218,8 @@ calEeeSynchronizationService.prototype = {
 
     this._identityObserver = cal3eIdentity.Observer();
     this._identityObserver.addObserver(this.onIdentityChange.bind(this));
-    this.onIdentityChange();
     this.checkSyncing();
+    this.onIdentityChange();
 
     return this;
   },
