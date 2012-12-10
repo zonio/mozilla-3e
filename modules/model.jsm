@@ -78,6 +78,19 @@ function getStructuredUri(uri) {
   return structuredUri;
 }
 
+function buildUri(structuredUri) {
+  var spec = '';
+  spec += structuredUri['protocol'] + ':/';
+  spec += '/' + structuredUri['user'];
+  if ((structuredUri['owner'] !== null) &&
+      (structuredUri['owner'] !== structuredUri['user'])) {
+    spec += '/' + structuredUri['owner'];
+  }
+  spec += '/' + structuredUri['name'];
+
+  return Services.io.newURI(spec, null, null);
+}
+
 function decodeUsernameFromUri(username) {
   var parts = username.split('@');
   parts[0] = decodeURIComponent(parts[0]);
@@ -104,6 +117,7 @@ function getPermissionLabel(calendar) {
 var cal3eModel = {
   attribute: getAttribute,
   userLabel: getUserLabel,
+  buildUri: buildUri,
   calendarName: getCalendarName,
   calendarCalspec: getCalendarCalspec,
   calendarUser: getCalendarUser,

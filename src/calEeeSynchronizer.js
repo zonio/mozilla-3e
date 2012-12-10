@@ -443,33 +443,37 @@ function Synchronizer(identity) {
           return;
         }
 
-        var knownCalendars = loadEeeCalendarsByUri();
-
-        result.data.forEach(function(data, idx) {
-          var uri = buildCalendarUri(data);
-          if (!knownCalendars.hasOwnProperty(uri.spec)) {
-            addCalendar(data);
-          } else {
-            updateCalendar(knownCalendars[uri.spec], data);
-          }
-          delete knownCalendars[uri.spec];
-        });
-
-        var uriSpec;
-        for (uriSpec in knownCalendars) {
-          if (!knownCalendars.hasOwnProperty(uriSpec)) {
-            continue;
-          }
-
-          deleteCalendar(knownCalendars[uriSpec]);
-        }
+        synchronizeCalendarsFromResult(result);
 
         future.done();
       },
-      'owned()'
+      'owned() OR subscribed()'
     );
 
     return future.returnValue();
+  }
+
+  function synchronizeCalendarsFromResult(result) {
+    var knownCalendars = loadEeeCalendarsByUri();
+
+    result.data.forEach(function(data, idx) {
+      var uri = buildCalendarUri(data);
+      if (!knownCalendars.hasOwnProperty(uri.spec)) {
+        addCalendar(data);
+      } else {
+        updateCalendar(knownCalendars[uri.spec], data);
+      }
+      delete knownCalendars[uri.spec];
+    });
+
+    var uriSpec;
+    for (uriSpec in knownCalendars) {
+      if (!knownCalendars.hasOwnProperty(uriSpec)) {
+        continue;
+      }
+
+      deleteCalendar(knownCalendars[uriSpec]);
+    }
   }
 
   function cancel() {
@@ -482,9 +486,12 @@ function Synchronizer(identity) {
   }
 
   function buildCalendarUri(data) {
-    return Services.io.newURI(
-      'eee://' + data['owner'] + '/' + data['name'], null, null
-    );
+    return cal3eModel.buildUri({
+      'protocol': 'eee',
+      'user': identity.email,
+      'owner': data['owner'],
+      'name': data['name']
+    });
   }
 
   function addCalendar(data) {
@@ -492,7 +499,6 @@ function Synchronizer(identity) {
       .getService(Components.interfaces.calICalendarManager);
 
     var calendar = manager.createCalendar('eee', buildCalendarUri(data));
-    calendar.setProperty('cache.enabled', true);
     manager.registerCalendar(calendar);
 
     calendar.setProperty('imip.identity.key', identity.key);
@@ -511,6 +517,7 @@ function Synchronizer(identity) {
 
   function setCalendarProperties(calendar, data) {
     calendar.name = cal3eModel.calendarLabel(data);
+    calendar.readOnly = data['perm'] === 'read';
 
     //TODO validation
     if (cal3eModel.attribute(data, 'color')) {
