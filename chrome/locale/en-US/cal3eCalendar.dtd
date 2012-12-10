@@ -39,7 +39,7 @@
 <!ENTITY cal3eCalendarSubscribe.tree.type "Access Type">
 
 <!ENTITY cal3eCalendarUriHelper.title "Calendar webcal URI">
-<!ENTITY cal3eCalendarUriHelper.description "Calendar’s webcal URI can be used by calendar user agent without EEE support.">
+<!ENTITY cal3eCalendarUriHelper.description "Calendar’s webcal URI can be used by calendar user agent without EEE support.  URI is not meant for public use and requires your authentication when used.">
 <!ENTITY cal3eCalendarUriHelper.buttons.ok.label "OK">
 <!ENTITY cal3eCalendarUriHelper.buttons.copy.label "Copy to Clipboard">
 <!ENTITY cal3eCalendarUriHelper.buttons.copy.accesskey "C">
