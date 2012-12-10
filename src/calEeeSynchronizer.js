@@ -135,6 +135,7 @@ calEeeSynchronizationService.prototype = {
       break;
     case 'network:offline-status-changed':
       this.startSyncingIfOnline();
+      this.stopSyncingIfOffline();
       break;
     }
   },
@@ -326,6 +327,15 @@ calEeeSynchronizationService.prototype = {
     }
 
     this.getSyncedIdentities().forEach(this.runSynchronizer.bind(this));
+  },
+
+  stopSyncingIfOffline: function calEeeSyncService_stopSyncingIfOffline() {
+    var wasSyncing = this._isSyncing;
+    if (this.checkSyncing() || (wasSyncing === this._isSyncing)) {
+      return;
+    }
+
+    this.stopSyncing();
   },
 
   stopSyncing: function calEeeSyncService_stopSyncing(identities) {
