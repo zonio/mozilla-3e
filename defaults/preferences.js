@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * ***** END LICENSE BLOCK ***** */
+/*
+#filter substitution
+*/
 
 pref('extensions.calendar3e.calendar_sync_interval', 15000);
 pref('extensions.calendar3e.queue_execution_interval', 500);
@@ -25,4 +28,15 @@ pref('extensions.calendar3e.log.xml_rpc', false);
 
 pref('extensions.calendar3e.features.attachments', false);
 pref('extensions.calendar3e.features.sidebar', false);
+/*
+#ifdef CALENDAR_3E_PERMISSION
+*/
+pref('extensions.calendar3e.features.permissions', true);
+/*
+#else
+*/
+pref('extensions.calendar3e.features.permissions', false);
+/*
+#endif
+*/
 pref('extensions.calendar3e.features.offline_mode', false);

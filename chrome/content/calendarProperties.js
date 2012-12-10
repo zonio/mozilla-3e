@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/feature.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
@@ -38,9 +39,13 @@ cal3eProperties.typeChange = function typeChanged() {
       permissionsRow = document.getElementById('calendar3e-permissions-row');
   if ('shared' == calendarEeeType.selectedItem.value) {
     cal3eProperties._loadUsers();
-    permissionsRow.removeAttribute('hidden');
+    if (cal3eFeature.isSupported('permissions')) {
+      permissionsRow.removeAttribute('hidden');
+    }
   } else {
-    permissionsRow.hidden = 'true';
+    if (cal3eFeature.isSupported('permissions')) {
+      permissionsRow.hidden = 'true';
+    }
   }
 };
 
@@ -56,10 +61,14 @@ cal3eProperties.hide3eControls = function hide3eControls() {
   var readOnlyRow = document.getElementById('calendar-readOnly-row');
   readOnlyRow.removeAttribute('hidden');
 
-  var typeRow = document.getElementById('calendar3e-type-row');
-  typeRow.hidden = 'true';
-  var permissionsRow = document.getElementById('calendar3e-permissions-row');
-  permissionsRow.hidden = 'true';
+  if (cal3eFeature.isSupported('permissions')) {
+    var typeRow = document.getElementById('calendar3e-type-row');
+    typeRow.hidden = 'true';
+    var permissionsRow = document.getElementById(
+      'calendar3e-permissions-row'
+    );
+    permissionsRow.hidden = 'true';
+  }
 
   if (cal3eProperties._init) {
     window.sizeToContent();
