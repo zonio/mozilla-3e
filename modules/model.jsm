@@ -76,6 +76,10 @@ function isOwnedCalendar(calendar) {
      getStructuredUri(calendar.uri)['user']);
 }
 
+function isSubscribedCalendar(calendar) {
+  return !isOwnedCalendar(calendar);
+}
+
 function getStructuredUri(uri) {
   var uriParts = uri.spec.split('/', 5);
   var structuredUri = {};
@@ -139,6 +143,7 @@ var cal3eModel = {
   calendarUser: getCalendarUser,
   calendarOwner: getCalendarOwner,
   isOwnedCalendar: isOwnedCalendar,
+  isSubscribedCalendar: isSubscribedCalendar,
   calendarLabel: getCalendarLabel,
   fullCalendarLabel: getFullCalendarLabel,
   permissionLabel: getPermissionLabel

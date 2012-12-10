@@ -33,6 +33,13 @@
   </popupset>
 
   <script type="application/javascript"
+          src="chrome://calendar3e/content/calendarContextMenu.js"/>
+  <script type="application/javascript"
           src="chrome://calendar3e/content/calendarSubscription.js"/>
+
+  <stringbundleset id="stringbundleset">
+    <stringbundle id="calendar3e-strings"
+                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+  </stringbundleset>
 
 </overlay>
