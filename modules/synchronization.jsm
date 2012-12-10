@@ -164,8 +164,10 @@ function Future() {
   var future = this;
   var done;
   var observers;
+  var value;
 
-  function done() {
+  function done(futureValue) {
+    value = futureValue;
     done = true;
     notify();
     observers = null;
@@ -173,7 +175,7 @@ function Future() {
 
   function whenDone(observer) {
     if (done) {
-      observer(future);
+      callObserver(observer);
     } else {
       observers.push(observer);
     }
@@ -183,8 +185,12 @@ function Future() {
 
   function notify() {
     observers.forEach(function(observer) {
-      observer(future);
+      callObserver(observer);
     });
+  }
+
+  function callObserver(observer) {
+    observer({ value: getValue });
   }
 
   function getValue() {

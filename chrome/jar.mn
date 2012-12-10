@@ -23,6 +23,8 @@ calendar3e.jar:
   content/am-enable3e.xul          (content/am-enable3e.xul)
   content/calendarAttachments.js   (content/calendarAttachments.js)
   content/calendarAttachments.xul  (content/calendarAttachments.xul)
+  content/calendarUriHelper.js     (content/calendarUriHelper.js)
+  content/calendarUriHelper.xul    (content/calendarUriHelper.xul)
 
   skin/cal3eGlobal.css (skin/cal3eGlobal.css)
   skin/cal3eIcon.png   (skin/cal3eIcon.png)

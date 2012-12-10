@@ -25,16 +25,30 @@ function cal3eContextMenu() {
   var contextMenuItem;
   var sunbirdMenuItem;
   var lightningMenuItem;
+  var uriHelperMenuItem;
   var stringBundle;
 
   function selectedCalendarDidChange() {
-    var selectedCalendar = getCompositeCalendar().defaultCalendar;
-    if (selectedCalendar && (selectedCalendar.type === 'eee') &&
-        cal3eModel.isSubscribedCalendar(selectedCalendar)) {
+    changeMenuLabels(getCompositeCalendar().defaultCalendar);
+    showUriHelperIfApplicable(getCompositeCalendar().defaultCalendar);
+  }
+
+  function changeMenuLabels(calendar) {
+    if (calendar && (calendar.type === 'eee') &&
+        cal3eModel.isSubscribedCalendar(calendar)) {
       setMenuLabels('subscribedOnly');
     } else {
       setMenuLabels('ownedOnly');
     }
+  }
+
+  function showUriHelperIfApplicable(calendar) {
+    if (!calendar || (calendar.type !== 'eee')) {
+      uriHelperMenuItem.collapsed = true;
+      return;
+    }
+
+    uriHelperMenuItem.collapsed = false;
   }
 
   function setMenuLabels(type) {
@@ -64,6 +78,10 @@ function cal3eContextMenu() {
       'appmenu_ltnDeleteSelectedCalendar'
     );
 
+    uriHelperMenuItem = document.getElementById(
+      'list-calendars-context-uri-helper'
+    );
+
     treeElement = document.getElementById('calendar-list-tree-widget');
     treeElement.addEventListener('select', selectedCalendarDidChange, false);
     selectedCalendarDidChange();
@@ -73,6 +91,8 @@ function cal3eContextMenu() {
     contextMenuItem = null;
     sunbirdMenuItem = null;
     lightningMenuItem = null;
+
+    uriHelperMenuItem = null;
 
     treeElement.removeEventListener(
       'select', selectedCalendarDidChange, false

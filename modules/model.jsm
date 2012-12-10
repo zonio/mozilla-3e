@@ -18,6 +18,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 
 function getAttribute(object, name) {
   if (!object['attrs']) {
@@ -106,6 +108,24 @@ function buildUri(structuredUri) {
   return Services.io.newURI(spec, null, null);
 }
 
+function buildWebcalUri(calendar) {
+  var future = new cal3eSynchronization.Future();
+  var dns = new cal3eDns();
+
+  var [localPart, domainPart] = getCalendarOwner(calendar).split('@', 2);
+  dns.resolveServer(domainPart, function(result) {
+    var spec = '';
+    spec += 'webcal:/';
+    spec += '/' + result['host'] + ':' + result['port'];
+    spec += '/' + getCalendarOwner(calendar);
+    spec += '/' + getCalendarName(calendar);
+
+    future.done(Services.io.newURI(spec, null, null));
+  });
+
+  return future.returnValue();
+}
+
 function decodeUsernameFromUri(username) {
   var parts = username.split('@');
   parts[0] = decodeURIComponent(parts[0]);
@@ -138,6 +158,7 @@ var cal3eModel = {
   attribute: getAttribute,
   userLabel: getUserLabel,
   buildUri: buildUri,
+  buildWebcalUri: buildWebcalUri,
   calendarName: getCalendarName,
   calendarCalspec: getCalendarCalspec,
   calendarUser: getCalendarUser,

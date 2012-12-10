@@ -18,35 +18,40 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!DOCTYPE overlay SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+<?xml-stylesheet type="text/css"
+                 href="chrome://global/skin/"?>
+<?xml-stylesheet type="text/css"
+                 href="chrome://calendar3e/skin/cal3eGlobal.css"?>
 
-<overlay id="calendar-list-overlay"
-         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<!DOCTYPE dialog [
+  <!ENTITY % cal3eCalendar
+    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+  %cal3eCalendar;
+]>
 
-  <popupset id="calendar-popupset">
-    <popup id="list-calendars-context-menu">
-      <menuitem id="list-calendars-context-subscribe"
-                label="&cal3eCalendarContext.subscribe.label;"
-                insertafter="list-calendars-context-delete"
-                oncommand="cal3eSubscription.open();"/>
-      <menuitem id="list-calendars-context-uri-helper"
-                label="&cal3eCalendarContext.uriHelper.label;"
-                insertafter="list-calendars-context-publish"
-                oncommand="cal3eUriHelper.open();"
-                collased="true"/>
-    </popup>
-  </popupset>
+<dialog
+    id="calendar3e-uri-helper-dialog"
+    title="&cal3eCalendarUriHelper.title;"
+    buttons="accept,extra1"
+    buttonlabelaccept="&cal3eCalendarUriHelper.buttons.ok.label;"
+    buttonlabelextra1="&cal3eCalendarUriHelper.buttons.copy.label;"
+    persist="screenX screenY"
+    onload="cal3eUriHelper.onLoad()"
+    ondialogextra1="return cal3eUriHelper.onExtra1()"
+    buttonaccesskeyextra1="&cal3eCalendarUriHelper.buttons.copy.accesskey;"
+    windowtype="Calendar3e:UriHelperDialog"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarContextMenu.js"/>
-  <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarSubscription.js"/>
   <script type="application/javascript"
           src="chrome://calendar3e/content/calendarUriHelper.js"/>
 
-  <stringbundleset id="stringbundleset">
+  <vbox flex="1">
+    <description>&cal3eCalendarUriHelper.description;</description>
+    <textbox id="calendar3e-uri-helper-uri" readonly="true"/>
+  </vbox>
+
+  <stringbundleset id="calendar3e-stringbundleset">
     <stringbundle id="calendar3e-strings"
                   src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
   </stringbundleset>
-
-</overlay>
+</dialog>
