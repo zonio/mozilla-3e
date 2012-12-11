@@ -29,21 +29,21 @@
 <!ENTITY cal3eCalendarCreation.format.label "3e Calendar">
 
 <!ENTITY cal3eCalendarContext.subscribe.label "Subscribe Calendar…">
-<!ENTITY cal3eCalendarContext.uriHelper.label "Calendar webcal URI…">
+<!ENTITY cal3eCalendarContext.uriHelper.label "Show calendar URI…">
 
 <!ENTITY cal3eCalendarSubscribe.title "Subscribe Calendar">
 <!ENTITY cal3eCalendarSubscribe.buttons.accept "Subscribe">
 <!ENTITY cal3eCalendarSubscribe.subscriber.label "Account: ">
-<!ENTITY cal3eCalendarSubscribe.search.label "Show items that contain: ">
+<!ENTITY cal3eCalendarSubscribe.search.label "Filter items that contain: ">
 <!ENTITY cal3eCalendarSubscribe.tree.name "Available Calendars">
 <!ENTITY cal3eCalendarSubscribe.tree.type "Access Type">
 
-<!ENTITY cal3eCalendarUriHelper.title "Calendar webcal URI">
-<!ENTITY cal3eCalendarUriHelper.description "Calendar’s webcal URI can be used by calendar user agent without EEE support.">
+<!ENTITY cal3eCalendarUriHelper.title "Calendar URI">
+<!ENTITY cal3eCalendarUriHelper.description "Use this webcal URI to subscribe this calendar in calendar apps which do not fully support 3e Calendars.">
 <!ENTITY cal3eCalendarUriHelper.buttons.ok.label "OK">
 <!ENTITY cal3eCalendarUriHelper.buttons.copy.label "Copy to Clipboard">
 <!ENTITY cal3eCalendarUriHelper.buttons.copy.accesskey "C">
 
 <!ENTITY cal3eCalendarEnable.title "3e Calendar">
-<!ENTITY cal3eCalendarEnable.description "You can enable 3e calendar for your account. If you are not sure you have 3e calendar, ask your system administrator or provider of your email service.">
-<!ENTITY cal3eCalendarEnable.checkbox "Enable 3e calendar">
+<!ENTITY cal3eCalendarEnable.description "You may use 3e Calendar together with your email account. If you are not sure you have 3e Calendar, ask your system administrator or provider of your email service.">
+<!ENTITY cal3eCalendarEnable.checkbox "Enable 3e Calendar">
