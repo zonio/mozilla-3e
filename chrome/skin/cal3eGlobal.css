@@ -23,8 +23,12 @@
     "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 );
 
+dialog#calendar3e-webcal-dialog,
 dialog#calendar3e-subscription-dialog {
     width: 44em;
+}
+
+dialog#calendar3e-subscription-dialog {
     height: 33em;
 }
 
