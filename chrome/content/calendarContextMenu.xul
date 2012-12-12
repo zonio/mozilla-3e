@@ -29,10 +29,10 @@
                 label="&cal3eCalendarContext.subscribe.label;"
                 insertafter="list-calendars-context-delete"
                 oncommand="cal3eSubscription.open();"/>
-      <menuitem id="list-calendars-context-uri-helper"
-                label="&cal3eCalendarContext.uriHelper.label;"
+      <menuitem id="list-calendars-context-webcal"
+                label="&cal3eCalendarContext.webcal.label;"
                 insertafter="list-calendars-context-publish"
-                oncommand="cal3eUriHelper.open();"
+                oncommand="cal3eWebcal.open();"
                 collased="true"/>
     </popup>
   </popupset>
@@ -42,7 +42,7 @@
   <script type="application/javascript"
           src="chrome://calendar3e/content/calendarSubscription.js"/>
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarUriHelper.js"/>
+          src="chrome://calendar3e/content/calendarWebcal.js"/>
 
   <stringbundleset id="stringbundleset">
     <stringbundle id="calendar3e-strings"

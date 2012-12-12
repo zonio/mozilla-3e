@@ -30,24 +30,24 @@
 ]>
 
 <dialog
-    id="calendar3e-uri-helper-dialog"
-    title="&cal3eCalendarUriHelper.title;"
+    id="calendar3e-webcal-dialog"
+    title="&cal3eCalendarWebcal.title;"
     buttons="accept,extra1"
-    buttonlabelaccept="&cal3eCalendarUriHelper.buttons.ok.label;"
-    buttonlabelextra1="&cal3eCalendarUriHelper.buttons.copy.label;"
+    buttonlabelaccept="&cal3eCalendarWebcal.buttons.ok.label;"
+    buttonlabelextra1="&cal3eCalendarWebcal.buttons.copy.label;"
     persist="screenX screenY"
-    onload="cal3eUriHelper.onLoad()"
-    ondialogextra1="return cal3eUriHelper.onExtra1()"
-    buttonaccesskeyextra1="&cal3eCalendarUriHelper.buttons.copy.accesskey;"
-    windowtype="Calendar3e:UriHelperDialog"
+    onload="cal3eWebcal.onLoad()"
+    ondialogextra1="return cal3eWebcal.onExtra1()"
+    buttonaccesskeyextra1="&cal3eCalendarWebcal.buttons.copy.accesskey;"
+    windowtype="Calendar3e:WebcalDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarUriHelper.js"/>
+          src="chrome://calendar3e/content/calendarWebcal.js"/>
 
   <vbox flex="1">
-    <description>&cal3eCalendarUriHelper.description;</description>
-    <textbox id="calendar3e-uri-helper-uri" readonly="true"/>
+    <description>&cal3eCalendarWebcal.description;</description>
+    <textbox id="calendar3e-webcal-uri" readonly="true"/>
   </vbox>
 
   <stringbundleset id="calendar3e-stringbundleset">

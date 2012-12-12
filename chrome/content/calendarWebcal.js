@@ -19,13 +19,13 @@
 
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 
-function cal3eUriHelper(calendar) {
+function cal3eWebcal(calendar) {
   var controller = this;
 
   function copyUriToClipboard() {
     Components.classes['@mozilla.org/widget/clipboardhelper;1']
       .getService(Components.interfaces.nsIClipboardHelper)
-      .copyString(document.getElementById('calendar3e-uri-helper-uri').value);
+      .copyString(document.getElementById('calendar3e-webcal-uri').value);
   }
 
   function initCalendarUri() {
@@ -33,7 +33,7 @@ function cal3eUriHelper(calendar) {
   }
 
   function setCalendarUri(future) {
-    document.getElementById('calendar3e-uri-helper-uri').value =
+    document.getElementById('calendar3e-webcal-uri').value =
       future.value().spec;
     document.documentElement.getButton('extra1').disabled = false;
   }
@@ -48,22 +48,22 @@ function cal3eUriHelper(calendar) {
   init();
 }
 
-cal3eUriHelper.open = function cal3eUriHelper_open() {
+cal3eWebcal.open = function cal3eWebcal_open() {
   openDialog(
-    'chrome://calendar3e/content/calendarUriHelper.xul',
-    'cal3eUriHelper',
+    'chrome://calendar3e/content/calendarWebcal.xul',
+    'cal3eWebcal',
     'chrome,titlebar,modal',
     getCompositeCalendar().defaultCalendar
   );
 };
-cal3eUriHelper.onExtra1 = function cal3eUriHelper_onExtra1() {
-  return cal3eUriHelper.controller.copyUriToClipboard();
+cal3eWebcal.onExtra1 = function cal3eWebcal_onExtra1() {
+  return cal3eWebcal.controller.copyUriToClipboard();
 };
-cal3eUriHelper.onLoad = function cal3eUriHelper_onLoad() {
-  cal3eUriHelper.controller = new cal3eUriHelper(window.arguments[0]);
-  window.addEventListener('unload', cal3eUriHelper.onUnload, false);
+cal3eWebcal.onLoad = function cal3eWebcal_onLoad() {
+  cal3eWebcal.controller = new cal3eWebcal(window.arguments[0]);
+  window.addEventListener('unload', cal3eWebcal.onUnload, false);
 };
-cal3eUriHelper.onUnload = function cal3eUriHelper_onUnload() {
-  window.removeEventListener('unload', cal3eUriHelper.onUnload, false);
-  delete cal3eUriHelper.controller;
+cal3eWebcal.onUnload = function cal3eWebcal_onUnload() {
+  window.removeEventListener('unload', cal3eWebcal.onUnload, false);
+  delete cal3eWebcal.controller;
 };

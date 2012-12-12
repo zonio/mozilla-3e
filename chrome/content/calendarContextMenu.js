@@ -25,12 +25,12 @@ function cal3eContextMenu() {
   var contextMenuItem;
   var sunbirdMenuItem;
   var lightningMenuItem;
-  var uriHelperMenuItem;
+  var webcalMenuItem;
   var stringBundle;
 
   function selectedCalendarDidChange() {
     changeMenuLabels(getCompositeCalendar().defaultCalendar);
-    showUriHelperIfApplicable(getCompositeCalendar().defaultCalendar);
+    showWebcalIfApplicable(getCompositeCalendar().defaultCalendar);
   }
 
   function changeMenuLabels(calendar) {
@@ -42,13 +42,13 @@ function cal3eContextMenu() {
     }
   }
 
-  function showUriHelperIfApplicable(calendar) {
+  function showWebcalIfApplicable(calendar) {
     if (!calendar || (calendar.type !== 'eee')) {
-      uriHelperMenuItem.collapsed = true;
+      webcalMenuItem.collapsed = true;
       return;
     }
 
-    uriHelperMenuItem.collapsed = false;
+    webcalMenuItem.collapsed = false;
   }
 
   function setMenuLabels(type) {
@@ -78,8 +78,8 @@ function cal3eContextMenu() {
       'appmenu_ltnDeleteSelectedCalendar'
     );
 
-    uriHelperMenuItem = document.getElementById(
-      'list-calendars-context-uri-helper'
+    webcalMenuItem = document.getElementById(
+      'list-calendars-context-webcal'
     );
 
     treeElement = document.getElementById('calendar-list-tree-widget');
@@ -92,7 +92,7 @@ function cal3eContextMenu() {
     sunbirdMenuItem = null;
     lightningMenuItem = null;
 
-    uriHelperMenuItem = null;
+    webcalMenuItem = null;
 
     treeElement.removeEventListener(
       'select', selectedCalendarDidChange, false
