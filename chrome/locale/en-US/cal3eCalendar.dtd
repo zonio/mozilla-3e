@@ -29,7 +29,7 @@
 <!ENTITY cal3eCalendarCreation.format.label "3e Calendar">
 
 <!ENTITY cal3eCalendarContext.subscribe.label "Subscribe Calendar…">
-<!ENTITY cal3eCalendarContext.webcal.label "Show calendar URI…">
+<!ENTITY cal3eCalendarContext.webcal.label "Show Calendar URI…">
 
 <!ENTITY cal3eCalendarSubscribe.title "Subscribe Calendar">
 <!ENTITY cal3eCalendarSubscribe.buttons.accept "Subscribe">
