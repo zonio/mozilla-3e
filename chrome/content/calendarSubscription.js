@@ -136,6 +136,7 @@ function cal3eSubscriptionDelegate() {
       calendar.name = cal3eModel.fullCalendarLabel(
         element.owner, element.calendar
       );
+      calendar.readOnly = element.calendar['perm'] === 'read';
       calendar.setProperty(
         'color', cal3eModel.attribute(element.calendar, 'color')
       );
@@ -400,6 +401,7 @@ function cal3eSharedCalendarsController() {
   var filter;
   var calendars;
   var owners;
+  var isLoaded;
   var fixingSelection;
   var selection;
 
@@ -414,8 +416,10 @@ function cal3eSharedCalendarsController() {
   function fillElement() {
     if (!identity) {
       fillElementNoIdentity();
-    } else if (owners.length === 0) {
+    } else if (!isLoaded) {
       fillElementLoading();
+    } else if (owners.length === 0) {
+      fillElementNoCalendars();
     } else if (getFilteredUsers().length === 0) {
       fillElementNoMatch();
     } else {
@@ -440,6 +444,17 @@ function cal3eSharedCalendarsController() {
       element, [{
         'label': document.getElementById('calendar3e-strings').getString(
           'cal3eCalendarSubscribe.calendars.loading'
+        )
+      }]
+    );
+  }
+
+  function fillElementNoCalendars() {
+    cal3eXul.clearTree(element);
+    cal3eXul.addItemsToTree(
+      element, [{
+        'label': document.getElementById('calendar3e-strings').getString(
+          'cal3eCalendarSubscribe.calendars.noCalendars'
         )
       }]
     );
@@ -581,12 +596,12 @@ function cal3eSharedCalendarsController() {
   }
 
   function didError(error) {
-    calendars = {};
-    owners = [];
+    resetData(true)
     fillElementError();
   }
 
   function loadSharedCalendars() {
+    resetData(false);
     fillElement();
 
     cal3eRequest.Client.getInstance()
@@ -599,8 +614,6 @@ function cal3eSharedCalendarsController() {
       return;
     }
 
-    calendars = {};
-    owners = [];
     result.data.forEach(function(calendar) {
       if (!calendars[calendar['owner']]) {
         calendars[calendar['owner']] = [];
@@ -663,9 +676,14 @@ function cal3eSharedCalendarsController() {
     }
 
     result.data.forEach(function(owner) {
+      if (!calendars.hasOwnProperty(owner['username'])) {
+        return;
+      }
+
       owners.push(owner);
     });
 
+    isLoaded = true;
     fillElement();
   }
 
@@ -690,6 +708,12 @@ function cal3eSharedCalendarsController() {
     return selection;
   }
 
+  function resetData(isLoaded) {
+    calendars = {};
+    owners = [];
+    isLoaded = isLoaded;
+  }
+
   function init() {
     window.addEventListener('unload', finalize, false);
 
@@ -700,8 +724,7 @@ function cal3eSharedCalendarsController() {
     selection = [];
 
     filter = '';
-    calendars = {};
-    owners = [];
+    resetData(false);
 
     identity = null;
   }
