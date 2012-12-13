@@ -396,7 +396,7 @@ calEeeSynchronizationService.prototype = {
       .getCalendars({})
       .filter(function(calendar) {
         return (calendar.type === 'eee') &&
-          (calendar.getProperty('imip.identity') === identity);
+          (calendar.getProperty('imip.identity.key') === identity.key);
       });
   },
 
@@ -531,7 +531,7 @@ function Synchronizer(identity) {
       .getCalendars({})
       .filter(function(calendar) {
         return (calendar.type === 'eee') &&
-          (calendar.getProperty('imip.identity') === identity);
+          (calendar.getProperty('imip.identity.key') === identity.key);
       })
       .reduce(function(calendarsByUri, calendar) {
         calendarsByUri[calendar.uri.spec] = calendar;

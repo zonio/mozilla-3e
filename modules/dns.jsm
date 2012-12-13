@@ -81,15 +81,26 @@ function cal3eDns(resolv, cache) {
     callback(records[0]);
   }
 
+  function getDefaultResolv() {
+    var resolv;
+    if (typeof ChromeWorker === 'undefined') {
+      resolv = Components.classes['@mozilla.org/threads/workerfactory;1']
+        .createInstance(Components.interfaces.nsIWorkerFactory)
+        .newChromeWorker('resource://calendar3e/modules/resolv.jsm');
+    } else {
+      resolv = new ChromeWorker('resource://calendar3e/modules/resolv.jsm');
+    }
+
+    return resolv;
+  }
+
   function init() {
     if (!cache) {
       cache = new Cache();
     }
 
     if (!resolv) {
-      resolv = new ChromeWorker(
-        'resource://calendar3e/modules/resolv.jsm'
-      );
+      resolv = getDefaultResolv();
       resolv.postMessage({
         name: 'init',
         args: [

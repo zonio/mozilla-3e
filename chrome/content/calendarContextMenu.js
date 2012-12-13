@@ -52,15 +52,21 @@ function cal3eContextMenu() {
   }
 
   function setMenuLabels(type) {
-    contextMenuItem.label = stringBundle.getString(
-      'cal3eCalendarMenu.context.delete.' + type + '.label'
-    );
-    sunbirdMenuItem.label = stringBundle.getString(
-      'cal3eCalendarMenu.app.delete.' + type + '.label'
-    );
-    lightningMenuItem.label = stringBundle.getString(
-      'cal3eCalendarMenu.app.delete.' + type + '.label'
-    );
+    if (contextMenuItem) {
+      contextMenuItem.label = stringBundle.getString(
+        'cal3eCalendarMenu.context.delete.' + type + '.label'
+      );
+    }
+    if (sunbirdMenuItem) {
+      sunbirdMenuItem.label = stringBundle.getString(
+        'cal3eCalendarMenu.app.delete.' + type + '.label'
+      );
+    }
+    if (lightningMenuItem) {
+      lightningMenuItem.label = stringBundle.getString(
+        'cal3eCalendarMenu.app.delete.' + type + '.label'
+      );
+    }
   }
 
   function init() {
