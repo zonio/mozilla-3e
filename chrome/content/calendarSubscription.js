@@ -596,7 +596,7 @@ function cal3eSharedCalendarsController() {
   }
 
   function didError(error) {
-    resetData(true)
+    resetData(true);
     fillElementError();
   }
 
