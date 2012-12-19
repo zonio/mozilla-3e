@@ -151,11 +151,12 @@ function Client(serverBuilder, authenticationDelegate,
     return uploadAttachments(
       identity, listener, newItem, synchronizedMethod.future(arguments),
       function(queue) {
-        if (newItem.hasProperty('RECURRENCE-ID')) {
+        if (oldItem.hasProperty('RECURRENCE-ID') &&
+            newItem.hasProperty('RECURRENCE-ID')) {
           synchronizationQueue
             .push(findExistingObjectAndPrepareCall)
             .push(enqueueCrudAndCall);
-        } else if (newItem.recurrenceInfo) {
+        } else if (oldItem.recurrenceInfo && newItem.recurrenceInfo) {
           synchronizationQueue
             .push(prepareExceptionsToDelete)
             .push(enqueueCrudAndCall);
