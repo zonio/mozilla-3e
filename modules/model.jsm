@@ -117,8 +117,9 @@ function buildWebcalUri(calendar) {
     var spec = '';
     spec += 'webcal:/';
     spec += '/' + result['host'] + ':' + result['port'];
-    spec += '/' + getCalendarOwner(calendar);
-    spec += '/' + getCalendarName(calendar);
+    spec += '/calendars';
+    spec += '/' + encodeURIComponent(getCalendarOwner(calendar));
+    spec += '/' + encodeURIComponent(getCalendarName(calendar));
 
     future.done(Services.io.newURI(spec, null, null));
   });
