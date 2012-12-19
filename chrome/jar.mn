@@ -2,7 +2,7 @@ calendar3e.jar:
 % resource calendar3e               .
 % content  calendar3e               %content/
 % locale   calendar3e   en-US       %locale/en-US/
-% locale   calendar3e   cs-CZ       %locale/cs-CZ/
+% locale   calendar3e   cs          %locale/cs/
 % skin     calendar3e   classic/1.0 %skin/
 % overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
 % overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
