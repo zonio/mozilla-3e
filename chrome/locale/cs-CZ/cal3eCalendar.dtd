@@ -29,7 +29,7 @@
 <!ENTITY cal3eCalendarCreation.format.label "3e kalendář">
 
 <!ENTITY cal3eCalendarContext.subscribe.label "Připojit kalendář…">
-<!ENTITY cal3eCalendarContext.uriHelper.label "Zobratit URI kalendáře…">
+<!ENTITY cal3eCalendarContext.webcal.label "Zobrazit URI kalendáře…">
 
 <!ENTITY cal3eCalendarSubscribe.title "Připojit kalendář">
 <!ENTITY cal3eCalendarSubscribe.buttons.accept "Připojit">
@@ -38,11 +38,11 @@
 <!ENTITY cal3eCalendarSubscribe.tree.name "Dostupné kalendáře">
 <!ENTITY cal3eCalendarSubscribe.tree.type "Typ přístupu">
 
-<!ENTITY cal3eCalendarUriHelper.title "URI kalendáře">
-<!ENTITY cal3eCalendarUriHelper.description "Použijte toto webcal URI pro připojení tohoto kalendáře v aplikacích, které plně nepodporují 3e kalendáře.">
-<!ENTITY cal3eCalendarUriHelper.buttons.ok.label "OK">
-<!ENTITY cal3eCalendarUriHelper.buttons.copy.label "Zkopírovat do schránky">
-<!ENTITY cal3eCalendarUriHelper.buttons.copy.accesskey "C">
+<!ENTITY cal3eCalendarWebcal.title "URI kalendáře">
+<!ENTITY cal3eCalendarWebcal.description "Použijte toto webcal URI pro připojení tohoto kalendáře v aplikacích, které plně nepodporují 3e kalendáře.">
+<!ENTITY cal3eCalendarWebcal.buttons.ok.label "OK">
+<!ENTITY cal3eCalendarWebcal.buttons.copy.label "Zkopírovat do schránky">
+<!ENTITY cal3eCalendarWebcal.buttons.copy.accesskey "C">
 
 <!ENTITY cal3eCalendarEnable.title "3e kalendář">
 <!ENTITY cal3eCalendarEnable.description "Společně s vaším emailovým účtem můžete používat i 3e kalendář. Pokud si nejste jisti, zda máte 3e kalendář, kontaktujte administrátora svého systému či poskytovatele vašeho emailu.">
