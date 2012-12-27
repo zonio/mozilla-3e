@@ -317,7 +317,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
   var DnsFreeRecordList = 1;
   var DnsFreeParsedMessageFields = 2;
 
-  var DnsApi;
+  var DnsAPI;
   var DnsQuery;
   var DnsRecordListFree;
 
@@ -399,8 +399,8 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
   }
 
   function nextResult(result) {
-    return !result.pNext.isNull() ?
-      result['pNext'].cast(DNS_RECORD.ptr).contents :
+    return !result['pNext'].isNull() ?
+      ctypes.cast(result['pNext'], DNS_RECORD.ptr).contents :
       null;
   }
 

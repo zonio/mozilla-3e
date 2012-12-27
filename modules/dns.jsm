@@ -83,12 +83,13 @@ function cal3eDns(resolv, cache) {
 
   function getDefaultResolv() {
     var resolv;
-    if (typeof ChromeWorker === 'undefined') {
+
+    if (typeof ChromeWorker !== 'undefined') {
+      resolv = new ChromeWorker('resource://calendar3e/modules/resolv.jsm');
+    } else {
       resolv = Components.classes['@mozilla.org/threads/workerfactory;1']
         .createInstance(Components.interfaces.nsIWorkerFactory)
         .newChromeWorker('resource://calendar3e/modules/resolv.jsm');
-    } else {
-      resolv = new ChromeWorker('resource://calendar3e/modules/resolv.jsm');
     }
 
     return resolv;
