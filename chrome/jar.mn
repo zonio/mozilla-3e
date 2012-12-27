@@ -34,3 +34,7 @@ calendar3e.jar:
   locale/en-US/cal3eCalendar.dtd        (locale/en-US/cal3eCalendar.dtd)
   locale/en-US/cal3eCalendar.properties (locale/en-US/cal3eCalendar.properties)
   locale/en-US/am-enable3e.properties   (locale/en-US/am-enable3e.properties)
+
+  locale/cs/cal3eCalendar.dtd        (locale/cs/cal3eCalendar.dtd)
+  locale/cs/cal3eCalendar.properties (locale/cs/cal3eCalendar.properties)
+  locale/cs/am-enable3e.properties   (locale/cs/am-enable3e.properties)
