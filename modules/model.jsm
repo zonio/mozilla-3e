@@ -115,11 +115,12 @@ function buildWebcalUri(calendar) {
   var [localPart, domainPart] = getCalendarOwner(calendar).split('@', 2);
   dns.resolveServer(domainPart, function(result) {
     var spec = '';
-    spec += 'webcal:/';
+    spec += 'https:/';
     spec += '/' + result['host'] + ':' + result['port'];
     spec += '/calendars';
     spec += '/' + encodeURIComponent(getCalendarOwner(calendar));
     spec += '/' + encodeURIComponent(getCalendarName(calendar));
+    spec += '.ics';
 
     future.done(Services.io.newURI(spec, null, null));
   });
