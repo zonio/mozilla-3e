@@ -28,14 +28,14 @@ MODULE = calendar3e
 XPI_NAME = calendar3e-provider
 
 EXTRA_COMPONENTS = \
-	calEeeCalendar.js \
-	calEeeProtocol.js \
-	calEeeManager.js \
-	calEeeSynchronizer.js \
-	calEeeFreeBusyProvider.js \
-	cal3eEnable.js \
-	calEeeModule.manifest \
-	calEeeItip.js \
+	calendar.js \
+	protocol.js \
+	manager.js \
+	synchronizer.js \
+	freeBusyProvider.js \
+	settings.js \
+	module.manifest \
+	itipTransport.js \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

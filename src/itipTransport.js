@@ -21,7 +21,7 @@
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 
-function calEeeItip() {
+function calEeeItipTransport() {
   var senderAddress;
 
   function getScheme() {
@@ -49,9 +49,9 @@ function calEeeItip() {
   cal3eObject.exportMethod(this, sendItems);
 }
 
-const NSGetFactory = cal3eObject.asXpcom(calEeeItip, {
+const NSGetFactory = cal3eObject.asXpcom(calEeeItipTransport, {
   classID: Components.ID('{ee2d0640-a786-4caf-ad54-1cc51f251ba8}'),
-  contractID: '@zonio.net/calendar3e/itip;1',
+  contractID: '@zonio.net/calendar3e/itip-transport;1',
   classDescription: 'EEE calendar iTIP',
   interfaces: [Components.interfaces.calIItipTransport]
 });

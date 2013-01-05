@@ -20,7 +20,7 @@
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 
-function cal3eEnable() {
+function cal3eSettings() {
 
   function getName() {
     return 'enable3e';
@@ -37,9 +37,9 @@ function cal3eEnable() {
   }
   cal3eObject.exportMethod(this, showPanel);
 
-};
+}
 
-const NSGetFactory = cal3eObject.asXpcom(cal3eEnable, {
+const NSGetFactory = cal3eObject.asXpcom(cal3eSettings, {
   classID: Components.ID('{3892b01b-7e8f-4727-9087-ef4d814f7456}'),
   contractID: '@mozilla.org/accountmanager/extension;1?name=enable3e',
   classDescription: 'Enable 3e calendar - Account Manager Extension',
