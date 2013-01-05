@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2011-2013  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,160 +17,89 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
-/**
- * Synchronizer of calendars present in Mozilla client application
- * (i.e. Lightning) with those on EEE server.
- */
 function calEeeSynchronizationService() {
-  /**
-   * Map of timers by identity.
-   *
-   * @type Object
-   */
-  this._timersByIdentity = {};
+  var synchronizationService = this;
+  var timersByIdentity;
+  var synchronizersByIdentity;
+  var identityObserver;
+  var isSyncing;
 
-  /**
-   * Map of synchronizers by identity.
-   *
-   * @type Object
-   */
-  this._synchronizersByIdentity = {};
-
-  /**
-   * Observer of changes in identities.
-   *
-   * @type Object
-   */
-  this._identityObserver = null;
-
-  /**
-   * Indicator whether syncing is active.
-   *
-   * @type Boolean
-   */
-  this._isSyncing = false;
-}
-
-calEeeSynchronizationService.classInfo = XPCOMUtils.generateCI({
-  classID: Components.ID('{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}'),
-  contractID: '@zonio.net/calendar3e/synchronization-service;1',
-  classDescription: 'EEE calendar synchronization service',
-  interfaces: [Components.interfaces.calEeeISynchronizationService,
-               Components.interfaces.nsIObserver,
-               Components.interfaces.nsIClassInfo],
-  flags: Components.interfaces.nsIClassInfo.SINGLETON
-});
-
-calEeeSynchronizationService.prototype = {
-
-  classDescription: calEeeSynchronizationService.classInfo.classDescription,
-
-  classID: calEeeSynchronizationService.classInfo.classID,
-
-  contractID: calEeeSynchronizationService.classInfo.contractID,
-
-  QueryInterface: XPCOMUtils.generateQI(
-    calEeeSynchronizationService.classInfo.getInterfaces({})
-  ),
-
-  classInfo: calEeeSynchronizationService.classInfo,
-
-  /**
-   * Adds or removes identities according to state of identity
-   * collection.
-   */
-  onIdentityChange: function calEeeSyncService_onIdentityChange() {
-    var knownIdentities = this.getSyncedIdentities();
+  function onIdentityChange() {
+    var knownIdentities = getSyncedIdentities();
 
     cal3eIdentity.Collection()
       .getDisabled()
       .filter(function(identity) {
         return knownIdentities.indexOf(identity) >= 0;
       })
-      .forEach(this.removeIdentity.bind(this));
+      .forEach(removeIdentity);
 
     cal3eIdentity.Collection()
       .getEnabled()
       .filter(function(identity) {
         return knownIdentities.indexOf(identity) < 0;
       })
-      .forEach(this.addIdentity.bind(this))
-      .forEach(this.runSynchronizer.bind(this));
-  },
+      .forEach(addIdentity)
+      .forEach(runSynchronizer);
+  }
 
-  /**
-   * Calls {@link register} when Thunderbird starts and runs
-   * synchronization regularly.
-   *
-   * We're observing profile-after-change to recognize Thunderbird
-   * startup.  There's also calendar-startup-done but it actually
-   * occurs before profile-after-change from our components'
-   * perspective.
-   *
-   * @param {nsISupports} subject
-   * @param {String} topic
-   * @param {String} data
-   */
-  observe: function calEeeSyncService_observe(subject, topic, data) {
+  function observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
-      this.registerAfterMainWindowOpen();
+      registerAfterMainWindowOpen();
       break;
     case 'timer-callback':
-      this.runSynchronizer(this.findIdentityOfTimer(subject));
+      runSynchronizer(findIdentityOfTimer(subject));
       break;
     case 'network:offline-about-to-go-offline':
-      this.stopSyncing();
+      stopSyncing();
       break;
     case 'network:offline-status-changed':
-      this.startSyncingIfOnline();
-      this.stopSyncingIfOffline();
+      startSyncingIfOnline();
+      stopSyncingIfOffline();
       break;
     }
-  },
+  }
+  cal3eObject.exportMethod(this, observe);
 
-  registerAfterMainWindowOpen:
-  function calEeeSyncService_registerAfterMainWindowOpen() {
+  function registerAfterMainWindowOpen() {
     //XXX WindowMediator nor WindowWatcher don't work and
     // final-ui-startup startup category isn't what we want
     var timer = Components.classes['@mozilla.org/timer;1']
       .createInstance(Components.interfaces.nsITimer);
-    var mainWindowObserver = this._mainWindowObserver.bind(this);
     if (!mainWindowObserver(timer)) {
-      timer.init({
-        QueryInterface: XPCOMUtils.generateQI([
-          Components.interfaces.nsIObserver
-        ]),
-        observe: mainWindowObserver
-      }, 100, Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
+      timer.init(
+        cal3eObject.asXpcomObserver(mainWindowObserver),
+        100,
+        Components.interfaces.nsITimer.TYPE_REPEATING_SLACK
+      );
     }
-  },
+  }
 
-  _mainWindowObserver: function calEeeSyncService_windowObserver(timer) {
+  function mainWindowObserver(timer) {
     var mailWindow = Services.wm.getMostRecentWindow('mail:3pane');
     if (!mailWindow) {
       return false;
     }
 
     timer.cancel();
-    this.registerOnReady(mailWindow.document);
+    registerOnReady(mailWindow.document);
 
     return true;
-  },
+  }
 
-  registerOnReady: function calEeeSyncService_registerOnReady(document) {
-    var synchronizationService = this;
+  function registerOnReady(document) {
     if (document.readyState !== 'complete') {
       document.addEventListener(
         'readystatechange',
@@ -182,187 +111,142 @@ calEeeSynchronizationService.prototype = {
           document.removeEventListener(
             'readystatechange', onStateChange, false
           );
-          synchronizationService.register();
+          register();
         },
         false
       );
     } else {
-      this.register();
+      register();
     }
-  },
+  }
 
-  /**
-   * Registers synchronization service to globally observe identity
-   * changes and synchronize their EEE calendars.
-   *
-   * @returns {calEeeISynchronizationService} receiver
-   */
-  register: function calEeeSyncService_register() {
-    if (this._registered) {
-      return this;
+  function register() {
+    if (register.registered) {
+      return synchronizationService;
     }
-    this._registered = true;
+    register.registered = true;
 
     if (cal3eFeature.isSupported('offline_mode')) {
       Services.obs.addObserver(
-        this,
+        synchronizationService,
         'network:offline-about-to-go-offline',
         false
       );
       Services.obs.addObserver(
-        this,
+        synchronizationService,
         'network:offline-status-changed',
         false
       );
     }
 
-    this._identityObserver = cal3eIdentity.Observer();
-    this._identityObserver.addObserver(this.onIdentityChange.bind(this));
-    this.checkSyncing();
-    this.onIdentityChange();
+    identityObserver = cal3eIdentity.Observer();
+    identityObserver.addObserver(onIdentityChange);
+    checkSyncing();
+    onIdentityChange();
 
-    return this;
-  },
+    return synchronizationService;
+  }
 
-  /**
-   * Unregisters synchronization service globally observing account
-   * changes and synchronizing their EEE calendars.
-   *
-   * @returns {calEeeISynchronizationService} receiver
-   */
-  unregister: function calEeeSyncService_register() {
-    if (!this._registered) {
-      return this;
+  function unregister() {
+    if (!register.registered) {
+      return synchronizationService;
     }
-    this._identityObserver.destroy();
+    identityObserver.destroy();
 
     if (cal3eFeature.isSupported('offline_mode')) {
       Services.obs.removeObserver(
-        this,
+        synchronizationService,
         'network:offline-about-to-go-offline'
       );
       Services.obs.removeObserver(
-        this,
+        synchronizationService,
         'network:offline-status-changed'
       );
     }
 
-    this._registered = false;
+    register.registered = false;
 
-    return this;
-  },
+    return synchronizationService;
+  }
 
-  /**
-   * Registers identity to synchronize its calendars once in 15 seconds.
-   *
-   * @param {nsIMsgIdentity} identity
-   * @returns {calEeeISynchronizationService} receiver
-   */
-  addIdentity: function calEeeSyncService_addIdentity(identity) {
-    this._synchronizersByIdentity[identity.key] = new Synchronizer(identity);
-    this._timersByIdentity[identity.key] = Components.classes[
+  function addIdentity(identity) {
+    synchronizersByIdentity[identity.key] = new Synchronizer(identity);
+    timersByIdentity[identity.key] = Components.classes[
       '@mozilla.org/timer;1'
     ].createInstance(Components.interfaces.nsITimer);
+  }
 
-    return this;
-  },
+  function removeIdentity(identity) {
+    stopSynchronizer(identity);
+    delete timersByIdentity[identity.key];
+    delete synchronizersByIdentity[identity.key];
+    unregisterCalendarsOfIdentity(identity);
+  }
 
-  /**
-   * Removes identity from periodical calendar synchronization.
-   *
-   * @param {String} identity
-   * @returns {calEeeISynchronizationService} receiver
-   */
-  removeIdentity: function calEeeSyncService_removeIdentity(identity) {
-    this.stopSynchronizer(identity);
-    delete this._timersByIdentity[identity.key];
-    delete this._synchronizersByIdentity[identity.key];
-    this.unregisterCalendarsOfIdentity(identity);
-
-    return this;
-  },
-
-  /**
-   * Runs synchronizer of given identity.
-   *
-   * If identity's synchronizer is not found, nothing happens.
-   *
-   * @param {nsIMsgIdentity} identity
-   * @returns {calEeeISynchronizationService} receiver
-   */
-  runSynchronizer: function calEeeSyncService_runSynchronizer(identity) {
-    if (!this._isSyncing || !this.has(identity)) {
-      return this;
+  function runSynchronizer(identity) {
+    if (!isSyncing || !isSyncedIdentity(identity)) {
+      return;
     }
 
-    var synchronizationService = this;
-    this._synchronizersByIdentity[identity.key]
+    synchronizersByIdentity[identity.key]
       .synchronize()
       .whenDone(function() {
-        synchronizationService._timersByIdentity[identity.key].init(
+        timersByIdentity[identity.key].init(
           synchronizationService,
           Services.prefs.getIntPref(
             'extensions.calendar3e.calendar_sync_interval'),
           Components.interfaces.nsITimer.TYPE_ONE_SHOT
         );
       });
+  }
 
-    return this;
-  },
+  function stopSynchronizer(identity) {
+    timersByIdentity[identity.key].cancel();
+    synchronizersByIdentity[identity.key].cancel();
+  }
 
-  stopSynchronizer: function calEeeSyncService_stopSynchronizer(identity) {
-    this._timersByIdentity[identity.key].cancel();
-    this._synchronizersByIdentity[identity.key].cancel();
-  },
+  function checkSyncing() {
+    isSyncing = !Services.io.offline;
 
-  checkSyncing: function calEeeSyncService_checkSyncing() {
-    this._isSyncing = !Services.io.offline;
+    return isSyncing;
+  }
 
-    return this._isSyncing;
-  },
-
-  startSyncingIfOnline: function calEeeSyncService_startSyncingIfOnline() {
-    if (!this.checkSyncing()) {
+  function startSyncingIfOnline() {
+    if (!checkSyncing()) {
       return;
     }
 
-    this.getSyncedIdentities().forEach(this.runSynchronizer.bind(this));
-  },
+    getSyncedIdentities().forEach(runSynchronizer);
+  }
 
-  stopSyncingIfOffline: function calEeeSyncService_stopSyncingIfOffline() {
-    var wasSyncing = this._isSyncing;
-    if (this.checkSyncing() || (wasSyncing === this._isSyncing)) {
+  function stopSyncingIfOffline() {
+    var wasSyncing = isSyncing;
+    if (checkSyncing() || (wasSyncing === isSyncing)) {
       return;
     }
 
-    this.stopSyncing();
-  },
+    stopSyncing();
+  }
 
-  stopSyncing: function calEeeSyncService_stopSyncing(identities) {
+  function stopSyncing(identities) {
     //XXX Stop syncing can be called before Services.io.offline is
     // changed to true, so it is benefitial to set our internal state
     // to not syncing even now.
-    this._isSyncing = false;
-    this.getSyncedIdentities().forEach(this.stopSynchronizer.bind(this));
-  },
+    isSyncing = false;
+    getSyncedIdentities().forEach(stopSynchronizer);
+  }
 
-  /**
-   * Tries to find identity (its key) of given timer.
-   *
-   * @param {nsITimer} timer
-   * @returns {nsIMsgIdentity|null}
-   */
-  findIdentityOfTimer: function calEeeSyncService_findIdentityOfTimer(timer) {
+  function findIdentityOfTimer(timer) {
     timer = timer.QueryInterface(Components.interfaces.nsITimer);
 
     var identityKey;
     var found = false;
-    for (identityKey in this._timersByIdentity) {
-      if (!this._timersByIdentity.hasOwnProperty(identityKey)) {
+    for (identityKey in timersByIdentity) {
+      if (!timersByIdentity.hasOwnProperty(identityKey)) {
         continue;
       }
 
-      if (timer === this._timersByIdentity[identityKey]) {
+      if (timer === timersByIdentity[identityKey]) {
         found = true;
         break;
       }
@@ -373,24 +257,17 @@ calEeeSynchronizationService.prototype = {
       .getService(Components.interfaces.nsIMsgAccountManager)
       .getIdentity(identityKey) :
       null;
-  },
+  }
 
-  /**
-   * Unregisters all identity's calendars.
-   *
-   * @param {nsIMsgIdentity} identity
-   */
-  unregisterCalendarsOfIdentity:
-  function calEeeService_unregisterCalendarsOfIdentity(identity) {
-    this.getIdentityCalendars(identity).forEach(function(calendar) {
+  function unregisterCalendarsOfIdentity(identity) {
+    getIdentityCalendars(identity).forEach(function(calendar) {
       Components.classes['@mozilla.org/calendar/manager;1']
         .getService(Components.interfaces.calICalendarManager)
         .unregisterCalendar(calendar);
     });
-  },
+  }
 
-  getIdentityCalendars:
-  function calEeeService_getIdentityCalendars(identity) {
+  function getIdentityCalendars(identity) {
     return Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
       .getCalendars({})
@@ -398,18 +275,26 @@ calEeeSynchronizationService.prototype = {
         return (calendar.type === 'eee') &&
           (calendar.getProperty('imip.identity.key') === identity.key);
       });
-  },
-
-  getSyncedIdentities: function calEeeSyncService_getSyncedIdentities() {
-    return cal3eIdentity.Collection().filter(this.has.bind(this));
-  },
-
-  has: function calEeeSyncService_has(identity) {
-    return this._synchronizersByIdentity[identity.key] &&
-      this._timersByIdentity[identity.key];
   }
 
-};
+  function getSyncedIdentities() {
+    return cal3eIdentity.Collection().filter(isSyncedIdentity);
+  }
+
+  function isSyncedIdentity(identity) {
+    return synchronizersByIdentity[identity.key] &&
+      timersByIdentity[identity.key];
+  }
+
+  function init() {
+    timersByIdentity = {};
+    synchronizersByIdentity = {};
+    identityObserver = null;
+    isSyncing = false;
+  }
+
+  init();
+}
 
 function Synchronizer(identity) {
   var synchronizer = this;
@@ -544,6 +429,11 @@ function Synchronizer(identity) {
   synchronizer.cancel = cancel;
 }
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([
-  calEeeSynchronizationService
-]);
+const NSGetFactory = cal3eObject.asXpcom(calEeeSynchronizationService, {
+  classID: Components.ID('{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}'),
+  contractID: '@zonio.net/calendar3e/synchronization-service;1',
+  classDescription: 'EEE calendar synchronization service',
+  interfaces: [Components.interfaces.nsIObserver,
+               Components.interfaces.nsIClassInfo],
+  flags: Components.interfaces.nsIClassInfo.SINGLETON
+});

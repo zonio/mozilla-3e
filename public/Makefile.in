@@ -31,7 +31,6 @@ XPI_NAME = calendar3e-provider
 XPIDLSRCS = \
 	calEeeICalendar.idl \
 	calEeeIManager.idl \
-	calEeeISynchronizer.idl \
 	calEeeIFreeBusyProvider.idl \
 	$(NULL)
 
