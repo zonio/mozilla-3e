@@ -433,7 +433,6 @@ const NSGetFactory = cal3eObject.asXpcom(calEeeSynchronizationService, {
   classID: Components.ID('{d7a08a5f-46ad-4a84-ad66-1cc27e9f388e}'),
   contractID: '@zonio.net/calendar3e/synchronization-service;1',
   classDescription: 'EEE calendar synchronization service',
-  interfaces: [Components.interfaces.nsIObserver,
-               Components.interfaces.nsIClassInfo],
+  interfaces: [Components.interfaces.nsIObserver],
   flags: Components.interfaces.nsIClassInfo.SINGLETON
 });

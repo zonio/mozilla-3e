@@ -185,7 +185,6 @@ const NSGetFactory = cal3eObject.asXpcom(calEeeFreeBusyProvider, {
   classDescription: 'EEE calendar freebusy provider',
   interfaces: [Components.interfaces.calEeeIFreeBusyProvider,
                Components.interfaces.calIFreeBusyProvider,
-               Components.interfaces.nsIObserver,
-               Components.interfaces.nsIClassInfo],
+               Components.interfaces.nsIObserver],
   flags: Components.interfaces.nsIClassInfo.SINGLETON
 });

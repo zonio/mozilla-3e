@@ -20,6 +20,7 @@
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 
 function asXpcom(constructor, classInfoDefinition) {
+  classInfoDefinition.interfaces.push(Components.interfaces.nsIClassInfo);
   var classInfo = XPCOMUtils.generateCI(classInfoDefinition);
   constructor.classInfo = classInfo;
   constructor.prototype.classInfo = classInfo;

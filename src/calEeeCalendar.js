@@ -524,6 +524,5 @@ const NSGetFactory = cal3eObject.asXpcom(calEeeCalendar, {
   classDescription: 'EEE calendar provider',
   interfaces: [Components.interfaces.calICalendar,
                Components.interfaces.calISchedulingSupport,
-               Components.interfaces.nsIObserver,
-               Components.interfaces.nsIClassInfo]
+               Components.interfaces.nsIObserver]
 });
