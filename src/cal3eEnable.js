@@ -17,31 +17,33 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 
-function cal3eEnable() {}
+function cal3eEnable() {
 
-cal3eEnable.prototype = {
+  function getName() {
+    return 'enable3e';
+  }
+  cal3eObject.exportProperty(this, 'name', getName);
 
-  name: 'enable3e',
-  chromePackageName: 'calendar3e',
-  classDescription: 'Enable 3e calendar - Account Manager Extension',
-  classID: Components.ID('{3892b01b-7e8f-4727-9087-ef4d814f7456}'),
-  contractID: '@mozilla.org/accountmanager/extension;1?name=enable3e',
+  function getChromePackageName() {
+    return 'calendar3e';
+  }
+  cal3eObject.exportProperty(this, 'chromePackageName', getChromePackageName);
 
-  _xpcom_categories: [{
-    category: 'mailnews-accountmanager-extensions'
-  }],
-
-  QueryInterface: XPCOMUtils.generateQI([
-    Components.interfaces.nsIMsgAccountManagerExtension
-  ]),
-
-  showPanel: function(server) {
+  function showPanel(server) {
     return cal3eUtils.isSupportedServer(server);
   }
+  cal3eObject.exportMethod(this, showPanel);
 
 };
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([cal3eEnable]);
+const NSGetFactory = cal3eObject.asXpcom(cal3eEnable, {
+  classID: Components.ID('{3892b01b-7e8f-4727-9087-ef4d814f7456}'),
+  contractID: '@mozilla.org/accountmanager/extension;1?name=enable3e',
+  classDescription: 'Enable 3e calendar - Account Manager Extension',
+  interfaces: [Components.interfaces.nsIMsgAccountManagerExtension]
+}, [
+  'mailnews-accountmanager-extensions'
+]);

@@ -19,8 +19,12 @@
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 
-function asXpcom(constructor, classInfoDefinition) {
+function asXpcom(constructor, classInfoDefinition, categories) {
+  if (!classInfoDefinition.interfaces) {
+    classInfoDefinition.interfaces = [];
+  }
   classInfoDefinition.interfaces.push(Components.interfaces.nsIClassInfo);
+
   var classInfo = XPCOMUtils.generateCI(classInfoDefinition);
   constructor.classInfo = classInfo;
   constructor.prototype.classInfo = classInfo;
@@ -30,6 +34,13 @@ function asXpcom(constructor, classInfoDefinition) {
   constructor.prototype.QueryInterface = XPCOMUtils.generateQI(
     classInfo.getInterfaces({})
   );
+
+  if (categories) {
+    constructor.prototype._xpcom_categories = [];
+    categories.forEach(function(category) {
+      constructor.prototype._xpcom_categories.push({ category: category });
+    });
+  }
 
   return XPCOMUtils.generateNSGetFactory([constructor]);
 }
