@@ -18,97 +18,70 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://gre/modules/Services.jsm');
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
-/**
- * Simple definition of EEE URIs just enough to enable eee URI scheme.
- */
 function calEeeProtocol() {
-}
 
-calEeeProtocol.prototype = {
+  function getScheme() {
+    return 'eee';
+  }
+  cal3eObject.exportProperty(this, 'scheme', getScheme);
 
-  classDescription: 'EEE protocol handler',
+  function getDefaultPort() {
+    return 4444;
+  }
+  cal3eObject.exportProperty(this, 'defaultPort', getDefaultPort);
 
-  classID: Components.ID('{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}'),
+  function getProtocolFlags() {
+    return Components.interfaces.nsIProtocolHandler.URI_LOADABLE_BY_ANYONE |
+      Components.interfaces.nsIProtocolHandler.URI_NORELATIVE |
+      Components.interfaces.nsIProtocolHandler.URI_NOAUTH;
+  }
+  cal3eObject.exportProperty(this, 'protocolFlags', getProtocolFlags);
 
-  contractID: '@mozilla.org/network/protocol;1?name=eee',
-
-  QueryInterface: XPCOMUtils.generateQI([
-    Components.interfaces.nsIProtocolHandler
-  ]),
-
-  scheme: 'eee',
-
-  defaultPort: 4444,
-
-  protocolFlags:
-    Components.interfaces.nsIProtocolHandler.URI_LOADABLE_BY_ANYONE |
-    Components.interfaces.nsIProtocolHandler.URI_NORELATIVE |
-    Components.interfaces.nsIProtocolHandler.URI_NOAUTH,
-
-  /**
-   * Creates new nsIURI instance from given URI specification.
-   *
-   * @param {String} spec URI specification
-   * @param {String|null} charset (ignored) all data in EEE protocol
-   * are UTF-8 encoded
-   * @param {String|null} baseUri (ignored) no relative URIs are
-   * relevant in EEE URI scheme
-   * @returns {nsIURI}
-   */
-  newURI: function(spec, charset, baseUri) {
+  function newURI(spec, charset, baseUri) {
     var uri = Components.classes['@mozilla.org/network/standard-url;1']
       .createInstance(Components.interfaces.nsIStandardURL);
     //TODO some checks?
     uri.init(
       Components.interfaces.nsIStandardURL.URLTYPE_STANDARD,
-      this.defaultPort,
+      getDefaultPort(),
       spec,
       charset,
       baseUri
     );
 
     return uri;
-  },
+  }
+  cal3eObject.exportMethod(this, newURI);
 
-  /**
-   * Currently simply returns channel to XML-RPC gateway on EEE server.
-   *
-   * @param {nsIURI} uri EEE URI
-   * @returns {nsIHttpProtocolHandler}
-   * @todo find different solution
-   */
-  newChannel: function(uri) {
-    if (!this.checkAttachUri(uri)) {
+  function newChannel(uri) {
+    if (!checkAttachUri(uri)) {
       throw Components.Exception('Only attachment URLs are supported');
     }
 
     return Services.io.newChannel(
       cal3eUtils.eeeAttachmentToHttpUri(uri).spec, null, null
     );
-  },
+  }
+  cal3eObject.exportMethod(this, newURI);
 
-  checkAttachUri: function(uri) {
+  function checkAttachUri(uri) {
     return (uri.spec.split('/').length === 6) &&
       (uri.spec.split('/')[3] === 'attach');
-  },
-
-  /**
-   * Checks whether given port is backlisted.
-   *
-   * Resolution of this problem is delegated to {@link
-   * nsIHttpProtocolHandler}.
-   *
-   * @param {Number} port
-   * @param {String} scheme
-   * @returns {Boolean}
-   */
-  allowPort: function(port, scheme) {
-    return httpProtocol.allowPort(port, scheme);
   }
 
-};
+  function allowPort(port, scheme) {
+    return httpProtocol.allowPort(port, scheme);
+  }
+  cal3eObject.exportMethod(this, allowPort);
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeProtocol]);
+}
+
+const NSGetFactory = cal3eObject.asXpcom(calEeeProtocol, {
+  classID: Components.ID('{a9ffc806-c8e1-4feb-84c9-d748bc5e34f3}'),
+  contractID: '@mozilla.org/network/protocol;1?name=eee',
+  classDescription: 'EEE protocol handler',
+  interfaces: [Components.interfaces.nsIProtocolHandler]
+});
