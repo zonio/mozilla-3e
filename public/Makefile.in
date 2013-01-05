@@ -30,7 +30,6 @@ XPI_NAME = calendar3e-provider
 
 XPIDLSRCS = \
 	calEeeIManager.idl \
-	calEeeIFreeBusyProvider.idl \
 	$(NULL)
 
 include $(topsrcdir)/config/rules.mk

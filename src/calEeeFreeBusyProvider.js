@@ -17,70 +17,49 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
+Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar/modules/calIteratorUtils.jsm');
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 
 
-function calEeeFreeBusyProvider() {}
+function calEeeFreeBusyProvider() {
+  var freeBusyProvider = this;
+  var TYPES = {
+    'FREE':
+      Components.interfaces.calIFreeBusyInterval.FREE,
+    'BUSY':
+      Components.interfaces.calIFreeBusyInterval.BUSY,
+    'BUSY-UNAVAILABLE':
+      Components.interfaces.calIFreeBusyInterval.BUSY_UNAVAILABLE,
+    'BUSY-TENTATIVE':
+      Components.interfaces.calIFreeBusyInterval.BUSY_TENTATIVE
+  };
 
-calEeeFreeBusyProvider.classInfo = XPCOMUtils.generateCI({
-  classID: Components.ID('{310e5872-2101-40cc-8315-a05578f3e5df}'),
-  contractID: '@zonio.net/calendar3e/freebusy-provider;1',
-  classDescription: 'EEE calendar freebusy provider',
-  interfaces: [Components.interfaces.calEeeIFreeBusyProvider,
-               Components.interfaces.calIFreeBusyProvider,
-               Components.interfaces.nsIObserver,
-               Components.interfaces.nsIClassInfo],
-  flags: Components.interfaces.nsIClassInfo.SINGLETON
-});
-
-calEeeFreeBusyProvider.TYPES = {
-  'FREE':
-    Components.interfaces.calIFreeBusyInterval.FREE,
-  'BUSY':
-    Components.interfaces.calIFreeBusyInterval.BUSY,
-  'BUSY-UNAVAILABLE':
-    Components.interfaces.calIFreeBusyInterval.BUSY_UNAVAILABLE,
-  'BUSY-TENTATIVE':
-    Components.interfaces.calIFreeBusyInterval.BUSY_TENTATIVE
-};
-
-calEeeFreeBusyProvider.prototype = {
-
-  classDescription: calEeeFreeBusyProvider.classInfo.classDescription,
-  classID: calEeeFreeBusyProvider.classInfo.classID,
-  contractID: calEeeFreeBusyProvider.classInfo.contractID,
-  QueryInterface: XPCOMUtils.generateQI(
-    calEeeFreeBusyProvider.classInfo.getInterfaces({})),
-  classInfo: calEeeFreeBusyProvider.classInfo,
-
-  observe: function calEeeManager_observe(subject, topic, data) {
+  function observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
-      this.register();
+      register();
       break;
     }
-  },
+  }
+  cal3eObject.exportMethod(this, observe);
 
-  register: function calEeeFreeBusyProvider_register() {
-    if (this._registered) {
-      return this;
+  function register() {
+    if (register.registered) {
+      return;
     }
 
-    this._registered = true;
-    cal.getFreeBusyService().addProvider(this);
-    return this;
-  },
+    register.registered = true;
+    cal.getFreeBusyService().addProvider(freeBusyProvider);
+  }
 
-  getFreeBusyIntervals: function(calId, start, end, busyTypes, listener) {
-    var freeBusyProvider = this;
-
+  function getFreeBusyIntervals(calId, start, end, busyTypes, listener) {
     var clientListener = function calEee_getFreeBusy_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
         throw Components.Exception();
@@ -127,10 +106,7 @@ calEeeFreeBusyProvider.prototype = {
           for (let property in
                cal.ical.propertyIterator(component, 'FREEBUSY')) {
             periodsToReturn.push(
-              freeBusyProvider._buildFreeBusyIntervalFromProperty(
-                calId,
-                property
-              )
+              buildFreeBusyIntervalFromProperty(calId, property)
             );
           }
         }
@@ -141,13 +117,13 @@ calEeeFreeBusyProvider.prototype = {
       listener.onResult(null, periodsToReturn);
     };
 
-    var organizer = this._getEeeOrganizer();
+    var organizer = getEeeOrganizer();
     if (!organizer) {
       listener.onResult(null, null);
       return;
     }
 
-    var attendee = this._parseAttendeeEmail(calId);
+    var attendee = parseAttendeeEmail(calId);
     if (!attendee) {
       listener.onResult(null, null);
       return;
@@ -161,15 +137,14 @@ calEeeFreeBusyProvider.prototype = {
       end.nativeTime,
       cal.calendarDefaultTimezone().icalComponent.serializeToICS()
     );
-  },
+  }
+  cal3eObject.exportMethod(this, getFreeBusyIntervals);
 
-  _getEeeOrganizer: function() {
-    var organizerEmail = this._parseAttendeeEmail(
-      Components.classes['@mozilla.org/appshell/window-mediator;1']
-      .getService(Components.interfaces.nsIWindowMediator)
-      .getMostRecentWindow('Calendar:EventDialog:Attendees')
-      .document.getElementById('attendees-list')
-      .organizer.id
+  function getEeeOrganizer() {
+    var organizerEmail = parseAttendeeEmail(
+      Services.wm.getMostRecentWindow('Calendar:EventDialog:Attendees')
+        .document.getElementById('attendees-list')
+        .organizer.id
     );
 
     var identities = cal3eIdentity.Collection()
@@ -177,15 +152,15 @@ calEeeFreeBusyProvider.prototype = {
       .findByEmail(organizerEmail);
 
     return identities.length > 0 ? identities[0] : null;
-  },
+  }
 
-  _parseAttendeeEmail: function(calId) {
+  function parseAttendeeEmail(calId) {
     var parts = calId.split(':', 2);
 
     return parts[0].toLowerCase() === 'mailto' ? parts[1] : null;
-  },
+  }
 
-  _buildFreeBusyIntervalFromProperty: function(calId, property) {
+  function buildFreeBusyIntervalFromProperty(calId, property) {
     var parts = property.value.split('/');
     var begin = cal.createDateTime(parts[0]);
     var end = parts[1].charAt(0) == 'P' ?
@@ -195,13 +170,22 @@ calEeeFreeBusyProvider.prototype = {
     return new cal.FreeBusyInterval(
       calId,
       property.getParameter('FBTYPE') ?
-        calEeeFreeBusyProvider.TYPES[property.getParameter('FBTYPE')] :
+        TYPES[property.getParameter('FBTYPE')] :
         Components.interfaces.calIFreeBusyInterval.BUSY,
       begin,
       end
     );
   }
 
-};
+}
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeFreeBusyProvider]);
+const NSGetFactory = cal3eObject.asXpcom(calEeeFreeBusyProvider, {
+  classID: Components.ID('{310e5872-2101-40cc-8315-a05578f3e5df}'),
+  contractID: '@zonio.net/calendar3e/freebusy-provider;1',
+  classDescription: 'EEE calendar freebusy provider',
+  interfaces: [Components.interfaces.calEeeIFreeBusyProvider,
+               Components.interfaces.calIFreeBusyProvider,
+               Components.interfaces.nsIObserver,
+               Components.interfaces.nsIClassInfo],
+  flags: Components.interfaces.nsIClassInfo.SINGLETON
+});
