@@ -17,105 +17,72 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 function calEeeManager() {
-}
+  var manager = this;
 
-calEeeManager.classInfo = XPCOMUtils.generateCI({
-  classID: Components.ID('{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}'),
-  contractID: '@zonio.net/calendar3e/manager;1',
-  classDescription: 'EEE calendar manager',
-  interfaces: [
-    Components.interfaces.calEeeIManager,
-    Components.interfaces.calICalendarManagerObserver,
-    Components.interfaces.calIObserver,
-    Components.interfaces.nsIObserver,
-    Components.interfaces.nsIClassInfo
-  ],
-  flags: Components.interfaces.nsIClassInfo.SINGLETON
-});
-
-calEeeManager.prototype = {
-
-  classDescription: calEeeManager.classInfo.classDescription,
-
-  classID: calEeeManager.classInfo.classID,
-
-  contractID: calEeeManager.classInfo.contractID,
-
-  QueryInterface: XPCOMUtils.generateQI(
-    calEeeManager.classInfo.getInterfaces({})
-  ),
-
-  classInfo: calEeeManager.classInfo,
-
-  observe: function calEeeManager_observe(subject, topic, data) {
+  function observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
-      this.register();
+      register();
       break;
     }
-  },
+  }
+  cal3eObject.exportMethod(this, observe);
 
-  register: function calEeeManager_register() {
-    if (this._registered) {
-      return this;
+  function register() {
+    if (register.registered) {
+      return;
     }
 
-    this._registered = true;
+    register.registered = true;
     Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
-      .addObserver(this);
+      .addObserver(manager);
 
-    var manager = this;
     Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
       .getCalendars({})
       .filter(function(calendar) {
-        return 'eee' === calendar.type;
+        return calendar.type === 'eee';
       })
       .forEach(function(calendar) {
         calendar.addObserver(manager);
       });
+  }
 
-    return this;
-  },
-
-  unregister: function calEeeManager_unregister() {
-    if (!this._registered) {
-      return this;
+  function unregister() {
+    if (!register.registered) {
+      return;
     }
 
     Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
-      .removeObserver(this);
-    this._registered = false;
+      .removeObserver(manager);
+    register.registered = false;
+  }
 
-    return this;
-  },
-
-  onCalendarRegistered: function calEeeManager_registered(calendar) {
-    if ('eee' !== calendar.type) {
+  function onCalendarRegistered(calendar) {
+    if (calendar.type !== 'eee') {
       return;
     }
 
-    calendar.addObserver(this);
+    calendar.addObserver(manager);
 
     // calendar already is registered if it has calname set
     if (cal3eModel.calendarName(calendar)) {
       return;
     }
 
-    this._generateUniqueUri(calendar);
+    generateUniqueUri(calendar);
 
-    var manager = this;
     var createListener = function calEeeManager_create_onResult(result) {
       if (!(result instanceof cal3eResponse.Success)) {
         throw Components.Exception();
@@ -127,7 +94,7 @@ calEeeManager.prototype = {
       );
 
       cal3eRequest.Client.getInstance().setCalendarAttribute(
-        manager._getIdentity(calendar),
+        getIdentity(calendar),
         listener,
         calendar,
         'title',
@@ -135,7 +102,7 @@ calEeeManager.prototype = {
         true
       );
       cal3eRequest.Client.getInstance().setCalendarAttribute(
-        manager._getIdentity(calendar),
+        getIdentity(calendar),
         listener,
         calendar,
         'color',
@@ -150,21 +117,21 @@ calEeeManager.prototype = {
     };
 
     cal3eRequest.Client.getInstance().createCalendar(
-      this._getIdentity(calendar),
+      getIdentity(calendar),
       createListener,
       calendar
     );
-  },
+  }
+  cal3eObject.exportMethod(this, onCalendarRegistered);
 
-  onCalendarUnregistering: function calEeeManager_unregistering(calendar) {
-  },
+  cal3eObject.exportMethod(this, function onCalendarUnregistering() {});
 
-  onCalendarDeleting: function calEeeManager_deleting(calendar) {
-    if ('eee' !== calendar.type) {
+  function onCalendarDeleting(calendar) {
+    if (calendar.type !== 'eee') {
       return;
     }
 
-    calendar.removeObserver(this);
+    calendar.removeObserver(manager);
 
     // calendar is not registered if it has no calname set
     if (!cal3eModel.calendarName(calendar)) {
@@ -179,22 +146,22 @@ calEeeManager.prototype = {
 
     if (cal3eModel.isOwnedCalendar(calendar)) {
       cal3eRequest.Client.getInstance().deleteCalendar(
-        this._getIdentity(calendar),
+        getIdentity(calendar),
         listener,
         calendar
       );
     } else {
       cal3eRequest.Client.getInstance().unsubscribeCalendar(
-        this._getIdentity(calendar),
+        getIdentity(calendar),
         listener,
         calendar
       );
     }
-  },
+  }
+  cal3eObject.exportMethod(this, onCalendarDeleting);
 
-  onPropertyChanged:
-  function calEeeManager_onPropertyChanged(calendar, name, value, oldValue) {
-    if ('eee' !== calendar.type) {
+  function onPropertyChanged(calendar, name, value, oldValue) {
+    if (calendar.type !== 'eee') {
       return;
     }
 
@@ -227,36 +194,37 @@ calEeeManager.prototype = {
     };
 
     cal3eRequest.Client.getInstance().setCalendarAttribute(
-      this._getIdentity(calendar),
+      getIdentity(calendar),
       listener,
       calendar,
       attrName,
       attrValue,
       isPublic
     );
-  },
+  }
+  cal3eObject.exportMethod(this, onPropertyChanged);
 
-  onStartBatch: function() {},
-  onEndBatch: function() {},
-  onLoad: function() {},
-  onAddItem: function() {},
-  onModifyItem: function() {},
-  onDeleteItem: function() {},
-  onError: function() {},
-  onPropertyDeleting: function() {},
+  cal3eObject.exportMethod(this, function onStartBatch() {});
+  cal3eObject.exportMethod(this, function onEndBatch() {});
+  cal3eObject.exportMethod(this, function onLoad() {});
+  cal3eObject.exportMethod(this, function onAddItem() {});
+  cal3eObject.exportMethod(this, function onModifyItem() {});
+  cal3eObject.exportMethod(this, function onDeleteItem() {});
+  cal3eObject.exportMethod(this, function onError() {});
+  cal3eObject.exportMethod(this, function onPropertyDeleting() {});
 
-  _generateUniqueUri: function calEeeManager_generateUniqueUri(calendar) {
+  function generateUniqueUri(calendar) {
     calendar.uri = Services.io.newURI(
-      'eee://' + this._getIdentity(calendar).email + '/' +
+      'eee://' + getIdentity(calendar).email + '/' +
         Components.classes['@mozilla.org/uuid-generator;1']
         .getService(Components.interfaces.nsIUUIDGenerator)
         .generateUUID().toString().substring(1, 36),
       null,
       null
     );
-  },
+  }
 
-  _getIdentity: function calEeeManager_getIdentity(calendar) {
+  function getIdentity(calendar) {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
       .findByEmail(cal3eModel.calendarUser(calendar));
@@ -264,6 +232,14 @@ calEeeManager.prototype = {
     return identities.length > 0 ? identities[0] : null;
   }
 
-};
+}
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeManager]);
+const NSGetFactory = cal3eObject.asXpcom(calEeeManager, {
+  classID: Components.ID('{b65ddbd7-c4f0-46fe-9a36-f2bc8ffe113b}'),
+  contractID: '@zonio.net/calendar3e/manager;1',
+  classDescription: 'EEE calendar manager',
+  interfaces: [Components.interfaces.calICalendarManagerObserver,
+               Components.interfaces.calIObserver,
+               Components.interfaces.nsIObserver],
+  flags: Components.interfaces.nsIClassInfo.SINGLETON
+});

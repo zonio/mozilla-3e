@@ -84,7 +84,7 @@ endif
 include $(topsrcdir)/config/config.mk
 
 PREF_JS_EXPORTS = $(srcdir)/defaults/preferences.js
-DIRS = public modules src data chrome
+DIRS = modules src data chrome
 
 ifdef ENABLE_TESTS
 DIRS += test
