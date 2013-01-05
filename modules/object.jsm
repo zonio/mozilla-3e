@@ -57,10 +57,20 @@ function exportMethod(object, name, method) {
   object[name] = method;
 }
 
+function exportProperty(object, name, getter, setter) {
+  var descriptor = {};
+  descriptor.get = getter;
+  if (setter) {
+    descriptor.set = setter;
+  }
+  Object.defineProperty(object, name, descriptor);
+}
+
 var cal3eObject = {
   asXpcom: asXpcom,
   asXpcomObserver: asXpcomObserver,
-  exportMethod: exportMethod
+  exportMethod: exportMethod,
+  exportProperty: exportProperty
 };
 
 EXPORTED_SYMBOLS = [

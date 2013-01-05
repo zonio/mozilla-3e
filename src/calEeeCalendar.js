@@ -17,38 +17,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 function calEeeCalendar() {
-  this.initProviderBase();
-}
+  var calendar = this;
+  var uri;
+  var identity;
 
-calEeeCalendar.prototype = {
-
-  __proto__: cal.ProviderBase.prototype,
-
-  classDescription: 'EEE calendar provider',
-
-  classID: Components.ID('{e2b342d0-6119-43d0-8fc6-6116876d2fdb}'),
-
-  contractID: '@mozilla.org/calendar/calendar;1?type=eee',
-
-  QueryInterface: XPCOMUtils.generateQI([
-    Components.interfaces.calEeeICalendar,
-    Components.interfaces.calICalendar,
-    Components.interfaces.calISchedulingSupport,
-    Components.interfaces.nsIObserver
-  ]),
-
-  getProperty: function calEee_getProperty(name) {
+  function getProperty(name) {
     switch (name) {
     case 'cache.supported':
       if (cal3eFeature.isSupported('offline_mode')) {
@@ -68,16 +52,18 @@ calEeeCalendar.prototype = {
         .createInstance(Components.interfaces.calIItipTransport);
     }
 
-    return this.__proto__.__proto__.getProperty.apply(this, arguments);
-  },
+    return calendar.__proto__.__proto__.getProperty.apply(calendar, arguments);
+  }
+  cal3eObject.exportMethod(this, getProperty);
 
-  addItem: function calEee_addItem(item, listener) {
-    return this.adoptItem(item.clone(), listener);
-  },
+  function addItem(item, listener) {
+    return adoptItem(item.clone(), listener);
+  }
+  cal3eObject.exportMethod(this, addItem);
 
-  adoptItem: function calEee_adoptItem(item, listener) {
-    if (!this._identity) {
-      this.notifyOperationComplete(
+  function adoptItem(item, listener) {
+    if (!identity) {
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
         Components.interfaces.calIOperationListener.ADD,
@@ -86,8 +72,8 @@ calEeeCalendar.prototype = {
       );
       return null;
     }
-    if (this.readOnly) {
-      this.notifyOperationComplete(
+    if (calendar.readOnly) {
+      calendar.notifyOperationComplete(
         listener,
         Components.interfaces.calIErrors.CAL_IS_READONLY,
         Components.interfaces.calIOperationListener.ADD,
@@ -100,7 +86,7 @@ calEeeCalendar.prototype = {
     try {
       item = item.QueryInterface(Components.interfaces.calIEvent);
     } catch (e) {
-      this.notifyOperationComplete(
+      calendar.notifyOperationComplete(
         listener,
         e.result,
         Components.interfaces.calIOperationListener.ADD,
@@ -110,10 +96,9 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    item = this._filterOutAttendees(item);
-    item = this._ensureIdentity(item);
+    item = filterOutAttendees(item);
+    item = ensureIdentity(item);
 
-    var calendar = this;
     var clientListener = function calEee_adoptItem_onResult(result) {
       if ((result instanceof cal3eResponse.EeeError) &&
           (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
@@ -141,13 +126,14 @@ calEeeCalendar.prototype = {
     };
 
     return cal3eRequest.Client.getInstance()
-      .addObject(this._identity, clientListener, this, item)
+      .addObject(identity, clientListener, calendar, item)
       .component();
-  },
+  }
+  cal3eObject.exportMethod(this, adoptItem);
 
-  modifyItem: function calEee_modifyItem(newItem, oldItem, listener) {
-    if (!this._identity) {
-      this.notifyOperationComplete(
+  function modifyItem(newItem, oldItem, listener) {
+    if (!identity) {
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
         Components.interfaces.calIOperationListener.MODIFY,
@@ -156,8 +142,8 @@ calEeeCalendar.prototype = {
       );
       return null;
     }
-    if (this.readOnly) {
-      this.notifyOperationComplete(
+    if (calendar.readOnly) {
+      calendar.notifyOperationComplete(
         listener,
         Components.interfaces.calIErrors.CAL_IS_READONLY,
         Components.interfaces.calIOperationListener.MODIFY,
@@ -168,7 +154,7 @@ calEeeCalendar.prototype = {
     }
 
     if (!newItem.id) {
-      this.notifyOperationComplete(
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_FAILURE,
         Components.interfaces.calIOperationListener.MODIFY,
@@ -181,7 +167,7 @@ calEeeCalendar.prototype = {
     try {
       newItem = newItem.QueryInterface(Components.interfaces.calIEvent);
     } catch (e) {
-      this.notifyOperationComplete(
+      calendar.notifyOperationComplete(
         listener,
         e.result,
         Components.interfaces.calIOperationListener.MODIFY,
@@ -191,7 +177,6 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    var calendar = this;
     var clientListener = function calEee_modifyItem_onResult(result) {
       if ((result instanceof cal3eResponse.EeeError) &&
           (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
@@ -219,13 +204,14 @@ calEeeCalendar.prototype = {
     };
 
     return cal3eRequest.Client.getInstance()
-      .updateObject(this._identity, clientListener, this, newItem, oldItem)
+      .updateObject(identity, clientListener, calendar, newItem, oldItem)
       .component();
-  },
+  }
+  cal3eObject.exportMethod(this, modifyItem);
 
-  deleteItem: function calEee_deleteItem(item, listener) {
-    if (!this._identity) {
-      this.notifyOperationComplete(
+  function deleteItem(item, listener) {
+    if (!identity) {
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
         Components.interfaces.calIOperationListener.DELETE,
@@ -234,8 +220,8 @@ calEeeCalendar.prototype = {
       );
       return null;
     }
-    if (this.readOnly) {
-      this.notifyOperationComplete(
+    if (calendar.readOnly) {
+      calendar.notifyOperationComplete(
         listener,
         Components.interfaces.calIErrors.CAL_IS_READONLY,
         Components.interfaces.calIOperationListener.DELETE,
@@ -246,7 +232,7 @@ calEeeCalendar.prototype = {
     }
 
     if (!item.id) {
-      this.notifyOperationComplete(
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_FAILURE,
         Components.interfaces.calIOperationListener.DELETE,
@@ -259,7 +245,7 @@ calEeeCalendar.prototype = {
     try {
       item = item.QueryInterface(Components.interfaces.calIEvent);
     } catch (e) {
-      this.notifyOperationComplete(
+      calendar.notifyOperationComplete(
         listener,
         e.result,
         Components.interfaces.calIOperationListener.DELETE,
@@ -269,7 +255,6 @@ calEeeCalendar.prototype = {
       return null;
     }
 
-    var calendar = this;
     var clientListener = function calEee_deleteItem_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
         throw Components.Exception();
@@ -295,13 +280,12 @@ calEeeCalendar.prototype = {
     };
 
     return cal3eRequest.Client.getInstance()
-      .deleteObject(this._identity, clientListener, this, item)
+      .deleteObject(identity, clientListener, calendar, item)
       .component();
-  },
+  }
+  cal3eObject.exportMethod(this, deleteItem);
 
-  _getQueryObjectsListener:
-  function calEee_getQueryObjectsListener(listener, rangeStart, rangeEnd) {
-    var calendar = this;
+  function getQueryObjectsListener(listener, rangeStart, rangeEnd) {
     return function calEee_getItems_onResult(result) {
       if (result instanceof cal3eResponse.EeeError) {
         throw Components.Exception();
@@ -357,11 +341,11 @@ calEeeCalendar.prototype = {
         null
       );
     };
-  },
+  }
 
-  getItem: function calEee_getItem(id, listener) {
-    if (!this._identity) {
-      this.notifyOperationComplete(
+  function getItem(id, listener) {
+    if (!identity) {
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
         Components.interfaces.calIOperationListener.GET,
@@ -373,17 +357,17 @@ calEeeCalendar.prototype = {
 
     return cal3eRequest.Client.getInstance()
       .queryObjects(
-        this._identity,
-        this._getQueryObjectsListener(listener, null, null),
-        this,
+        identity,
+        getQueryObjectsListener(listener, null, null),
+        calendar,
         "match_uid('" + id + "')")
       .component();
-  },
+  }
+  cal3eObject.exportMethod(this, getItem);
 
-  getItems: function calEee_getItems(itemFilter, count, rangeStart, rangeEnd,
-                                     listener) {
-    if (!this._identity) {
-      this.notifyOperationComplete(
+  function getItems(itemFilter, count, rangeStart, rangeEnd, listener) {
+    if (!identity) {
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
         Components.interfaces.calIOperationListener.GET,
@@ -404,7 +388,7 @@ calEeeCalendar.prototype = {
 
     if (!wantEvents) {
       // Events are not wanted, nothing to do.
-      this.notifyOperationComplete(
+      calendar.notifyOperationComplete(
         listener,
         Components.results.NS_OK,
         Components.interfaces.calIOperationListener.GET,
@@ -432,77 +416,85 @@ calEeeCalendar.prototype = {
 
     return cal3eRequest.Client.getInstance()
       .queryObjects(
-        this._identity,
-        this._getQueryObjectsListener(listener, rangeStart, rangeEnd),
-        this,
+        identity,
+        getQueryObjectsListener(listener, rangeStart, rangeEnd),
+        calendar,
         query.join(' AND '))
       .component();
-  },
+  }
+  cal3eObject.exportMethod(this, getItems);
 
-  refresh: function calEee_refresh() {
-    this.mObservers.notify('onLoad', [this]);
-  },
+  function refresh() {
+    calendar.mObservers.notify('onLoad', [calendar]);
+  }
+  cal3eObject.exportMethod(this, refresh);
 
-  set uri(uri) {
-    this._uri = uri;
-    this._findAndSetIdentity();
+  function getUri() {
+    return uri;
+  }
+  function setUri(newUri) {
+    uri = newUri;
+    findAndSetIdentity();
 
     return uri;
-  },
+  }
+  cal3eObject.exportProperty(this, 'uri', getUri, setUri);
 
-  get uri() {
-    return this._uri;
-  },
+  function getIdentity() {
+    return identity;
+  }
+  cal3eObject.exportProperty(this, 'identity', getIdentity);
 
-  get identity() {
-    return this._identity;
-  },
-
-  get type() {
+  function getType() {
     return 'eee';
-  },
+  }
+  cal3eObject.exportProperty(this, 'type', getType);
 
-  get providerID() {
+  function getProviderID() {
     return 'calendar3e@zonio.net';
-  },
+  }
+  cal3eObject.exportProperty(this, 'providerID', getProviderID);
 
-  get canRefresh() {
+  function canRefresh() {
     return true;
-  },
+  }
+  cal3eObject.exportProperty(this, 'canRefresh', canRefresh);
 
-  get calspec() {
-    var uriParts = this._uri.spec.split('/', 5);
+  function getCalspec() {
+    var uriParts = uri.spec.split('/', 5);
 
     return uriParts[2] + ':' + (uriParts[4] || uriParts[3]);
-  },
+  }
+  cal3eObject.exportProperty(this, 'calspec', getCalspec);
 
-  get calname() {
-    var uriParts = this._uri.spec.split('/', 5);
+  function getCalname() {
+    var uriParts = uri.spec.split('/', 5);
 
     return uriParts[4] || uriParts[3];
-  },
+  }
+  cal3eObject.exportProperty(this, 'calname', getCalname);
 
-  _findAndSetIdentity: function calEee_findAndSetIdentity() {
+  function findAndSetIdentity() {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
-      .findByEmail(cal3eModel.calendarUser(this));
+      .findByEmail(cal3eModel.calendarUser(calendar));
 
-    this._identity = identities.length > 0 ? identities[0] : null;
-  },
+    identity = identities.length > 0 ? identities[0] : null;
+  }
 
-  _ensureIdentity: function calEee_ensureIdentity(item) {
+  function ensureIdentity(item) {
     var newItem = item.clone();
-    if (newItem.calendar !== this.superCalendar) {
-      newItem.calendar = this.superCalendar;
+    if (newItem.calendar !== calendar.superCalendar) {
+      newItem.calendar = calendar.superCalendar;
     }
     if (!newItem.id) {
       newItem.id = cal.getUUID();
     }
 
     return newItem;
-  },
+  }
 
-  _filterOutAttendees: function (item) {
+  function filterOutAttendees(item) {
     var newItem = item.clone();
     item.getAttendees({}).forEach(function(attendee) {
       var newAttendee = newItem.getAttendeeById(attendee.id);
@@ -517,6 +509,21 @@ calEeeCalendar.prototype = {
     return newItem;
   }
 
-};
+  function init() {
+    calendar.initProviderBase();
+  }
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeCalendar]);
+  init();
+}
+
+calEeeCalendar.prototype = { __proto__: cal.ProviderBase.prototype };
+
+const NSGetFactory = cal3eObject.asXpcom(calEeeCalendar, {
+  classID: Components.ID('{e2b342d0-6119-43d0-8fc6-6116876d2fdb}'),
+  contractID: '@mozilla.org/calendar/calendar;1?type=eee',
+  classDescription: 'EEE calendar provider',
+  interfaces: [Components.interfaces.calICalendar,
+               Components.interfaces.calISchedulingSupport,
+               Components.interfaces.nsIObserver,
+               Components.interfaces.nsIClassInfo]
+});

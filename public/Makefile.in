@@ -29,7 +29,6 @@ XPIDL_MODULE = calendar3e
 XPI_NAME = calendar3e-provider
 
 XPIDLSRCS = \
-	calEeeICalendar.idl \
 	calEeeIManager.idl \
 	calEeeIFreeBusyProvider.idl \
 	$(NULL)
