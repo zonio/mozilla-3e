@@ -18,49 +18,40 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-Components.utils.import("resource://calendar/modules/calUtils.jsm");
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import('resource://calendar/modules/calUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/object.jsm');
 
-function calEeeItip() {}
+function calEeeItip() {
+  var senderAddress;
 
-calEeeItip.classInfo = XPCOMUtils.generateCI({
-  classID: Components.ID("{ee2d0640-a786-4caf-ad54-1cc51f251ba8}"),
-  contractID: "@zonio.net/calendar3e/itip;1",
-  classDescription: "EEE calendar iTip",
-  interfaces: [Components.interfaces.calIItipTransport,
-               Components.interfaces.nsIClassInfo],
-  flags: 0
-});
-
-calEeeItip.prototype = {
-  classDescription: calEeeItip.classInfo.classDescription,
-  classID: calEeeItip.classInfo.classID,
-  contractID: calEeeItip.classInfo.contractID,
-  QueryInterface: XPCOMUtils.generateQI(
-    calEeeItip.classInfo.getInterfaces({})),
-  classInfo: calEeeItip.classInfo,
-
-  get scheme() {
-      return "mailto";
-  },
-
-  _senderAddress: null,
-  get senderAddress() {
-    return this._senderAddress;
-  },
-
-  set senderAddress(value) {
-    this._senderAddress = value
-    return this._senderAddress;
-  },
-
-  get type() {
-    return "email";
-  },
-
-  sendItems: function calEeeItip_sendItems(aCount, aRecipients, aItipItem) {
-    // Sending messages is handled in 3e-server.
+  function getScheme() {
+      return 'mailto';
   }
-};
+  cal3eObject.exportProperty(this, 'scheme', getScheme);
 
-const NSGetFactory = XPCOMUtils.generateNSGetFactory([calEeeItip]);
+  function getType() {
+    return 'email';
+  }
+  cal3eObject.exportProperty(this, 'type', getType);
+
+  function getSenderAddress() {
+    return senderAddress;
+  }
+  function setSenderAddress(newSenderAddress) {
+    senderAddress = newSenderAddress;
+  }
+  cal3eObject.exportProperty(this, 'senderAddress', getSenderAddress,
+                                                    setSenderAddress);
+
+  function sendItems(count, recipients, itipItem) {
+    // Messages are sent by EEE server.
+  }
+  cal3eObject.exportMethod(this, sendItems);
+}
+
+const NSGetFactory = cal3eObject.asXpcom(calEeeItip, {
+  classID: Components.ID('{ee2d0640-a786-4caf-ad54-1cc51f251ba8}'),
+  contractID: '@zonio.net/calendar3e/itip;1',
+  classDescription: 'EEE calendar iTIP',
+  interfaces: [Components.interfaces.calIItipTransport]
+});
