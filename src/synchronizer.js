@@ -124,7 +124,7 @@ function calEeeSynchronizationService() {
         false
       );
     } else {
-      logger.info('Registration - mail window ready');
+      logger.info('Registration - mail window already ready');
       register();
     }
   }
@@ -180,7 +180,7 @@ function calEeeSynchronizationService() {
   }
 
   function addIdentity(identity) {
-    logger.info('Identity change - adding "' + identity.key + '"');
+    logger.info('Identity change - adding "' + identity.email + '"');
 
     synchronizersByIdentity[identity.key] = new Synchronizer(identity, logger);
     timersByIdentity[identity.key] = Components.classes[
@@ -189,7 +189,7 @@ function calEeeSynchronizationService() {
   }
 
   function removeIdentity(identity) {
-    logger.info('Identity change - removing "' + identity.key + '"');
+    logger.info('Identity change - removing "' + identity.email + '"');
 
     stopSynchronizer(identity);
     delete timersByIdentity[identity.key];
@@ -313,29 +313,28 @@ function calEeeSynchronizationService() {
 
 function Synchronizer(identity, logger) {
   var synchronizer = this;
-  var operation;
+  var currentOperation;
   var future;
 
   function synchronize() {
-    logger.info('Synchronization - syncing calendars of identity "' +
-                identity.key + '"');
-
     future = new cal3eSynchronization.Future();
-    operation = cal3eRequest.Client.getInstance().getCalendars(
+    currentOperation = cal3eRequest.Client.getInstance().getCalendars(
       identity,
-      function Synchronizer_onGetCalendars(result) {
-        operation = null;
+      function Synchronizer_onGetCalendars(result, operation) {
+        currentOperation = null;
 
         if (result instanceof cal3eResponse.UserError) {
-          logger.warn("Synchronization - can't sync calendars of identity " +
-                      identity.key + '" because of error ' +
+          logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
+                      'sync calendars of identity "' + identity.email + '" ' +
+                      'because of error ' +
                       result.constructor.name + '(' + result.errorCode + ')');
 
           future.done();
           return;
         } else if (!(result instanceof cal3eResponse.Success)) {
-          logger.warn("Synchronization - can't sync calendars of identity " +
-                      identity.key + '" because of error ' +
+          logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
+                      'sync calendars of identity "' + identity.email + '" ' +
+                      'because of error ' +
                       result.constructor.name + '(' + result.errorCode + ')');
 
           var bundle = Services.strings.createBundle(
@@ -354,14 +353,16 @@ function Synchronizer(identity, logger) {
           return;
         }
 
-        logger.info('Synchronization - received calendars of identity "' +
-                    identity.key + '"');
+        logger.info('Synchronization [' + operation.id() + '] - received ' +
+                    'calendars of identity "' + identity.email + '"');
         synchronizeCalendarsFromResult(result);
 
         future.done();
       },
       'owned() OR subscribed()'
     );
+    logger.info('Synchronization [' + currentOperation.id() + '] - syncing ' +
+                'calendars of identity "' + identity.email + '"');
 
     return future.returnValue();
   }
@@ -390,14 +391,15 @@ function Synchronizer(identity, logger) {
   }
 
   function cancel() {
-    if (!operation) {
+    if (!currentOperation) {
       return;
     }
 
-    logger.info('Synchronization - canceling syncing of calendars of ' +
-                'identity "' + identity.key + '"');
+    logger.info('Synchronization [' + currentOperation.id() + '] - ' +
+                'canceling syncing of calendars of identity "' +
+                identity.email + '"');
 
-    operation.cancel();
+    currentOperation.cancel();
     future.done();
   }
 
