@@ -27,34 +27,30 @@
   <Description about="urn:mozilla:install-manifest">
     <em:targetApplication>
       <Description>
-        <!-- postbox -->
         <em:id>postbox@postbox-inc.com</em:id>
-        <em:minVersion>3.0.0b1</em:minVersion>
+        <em:minVersion>3.0</em:minVersion>
         <em:maxVersion>3.0.*</em:maxVersion>
       </Description>
     </em:targetApplication>
 
     <em:targetApplication>
       <Description>
-        <!-- thunderbird -->
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-        <em:minVersion>10.0</em:minVersion>
+        <em:minVersion>7.0</em:minVersion>
         <em:maxVersion>@THUNDERBIRD_VERSION@</em:maxVersion>
       </Description>
     </em:targetApplication>
 
     <em:targetApplication>
       <Description>
-        <!-- seamonkey -->
         <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
-        <em:minVersion>2.7</em:minVersion>
+        <em:minVersion>2.4</em:minVersion>
         <em:maxVersion>@SEAMONKEY_VERSION@</em:maxVersion>
       </Description>
     </em:targetApplication>
 
     <em:requires>
       <Description>
-        <!-- lightning -->
         <em:id>{e2fda1a4-762b-4020-b5ad-a41df1933103}</em:id>
         <em:minVersion>1.0</em:minVersion>
         <em:maxVersion>@LIGHTNING_VERSION@</em:maxVersion>
@@ -67,22 +63,8 @@
     <em:description>Adds support for 3e calendars</em:description>
     <em:iconURL>chrome://calendar3e/skin/cal3eIcon.png</em:iconURL>
     <em:icon64URL>chrome://calendar3e/skin/cal3eIcon64.png</em:icon64URL>
-<!--
-#ifdef CALENDAR_3E_PRERELEASE_VERSION
--->
-    <em:developer>Build ID: @GRE_BUILDID@</em:developer>
-<!--
-#endif
--->
     <em:creator>Zonio</em:creator>
     <em:homepageURL>http://www.zonio.net/</em:homepageURL>
-<!--
-#ifdef CALENDAR_3E_UPDATE_LOCATION
--->
-    <!-- TODO em:updateURL>@CALENDAR_3E_UPDATE_LOCATION@?buildID=@GRE_BUILDID@&amp;appABI=%APP_ABI%&amp;appOS=%APP_OS%&amp;locale=%APP_LOCALE%&amp;appVersion=%APP_VERSION%&amp;appID=%APP_ID%</em:updateURL -->
-<!--
-#endif
--->
     <em:unpack>true</em:unpack>
   </Description>
 </RDF>

@@ -35,22 +35,11 @@ INSTALL_EXTENSION_ID = $(XPI_EM_ID)
 
 DIST_FILES = install.rdf application.ini
 
-CALENDAR_3E_VERSION := $(shell cat $(srcdir)/config/version.txt)
-LIGHTNING_VERSION := $(shell cat $(topsrcdir)/calendar/sunbird/config/version.txt)
-THUNDERBIRD_VERSION := $(shell cat $(topsrcdir)/mail/config/version.txt)
-SEAMONKEY_VERSION := $(shell cat $(topsrcdir)/suite/config/version.txt)
-
-ifneq (,$(findstring pre,$(CALENDAR_3E_VERSION)))
-DEFINES += -DCALENDAR_3E_PRERELEASE_VERSION=1
-endif
-
-ifdef CALENDAR_3E_UPDATE_LOCATION
-DEFINES += -DCALENDAR_3E_UPDATE_LOCATION=$(CALENDAR_3E_UPDATE_LOCATION)
-endif
-
-ifdef CALENDAR_3E_PERMISSION
-DEFINES += -DCALENDAR_3E_PERMISSION=$(CALENDAR_3E_PERMISSION)
-endif
+CALENDAR_3E_VERSION = $(shell cat $(srcdir)/config/version.txt)
+CALENDAR_3E_BUILDID = $(shell $(PYTHON) $(topsrcdir)/mozilla/toolkit/xre/make-platformini.py --print-buildid)
+LIGHTNING_VERSION = $(shell cat $(topsrcdir)/calendar/sunbird/config/version.txt)
+THUNDERBIRD_VERSION = $(shell cat $(topsrcdir)/mail/config/version.txt)
+SEAMONKEY_VERSION = $(shell cat $(topsrcdir)/suite/config/version.txt)
 
 # Gecko milestone
 GRE_MILESTONE = $(shell $(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build Milestone)
@@ -58,13 +47,13 @@ ifdef GRE_MILESTONE
 DEFINES += -DGRE_MILESTONE=$(GRE_MILESTONE)
 endif
 
-# mozilla3e source repo and stamp
+# Mozilla 3e source repo and stamp
 SOURCE_STAMP ?= $(firstword $(shell git --git-dir=$(srcdir)/.git log -n 1 --pretty=format:%h 2>/dev/null))
 ifdef SOURCE_STAMP
 DEFINES += -DSOURCE_STAMP="$(SOURCE_STAMP)"
 endif
 
-SOURCE_REPO := $(shell git --git-dir=$(srcdir)/.git config remote.origin.url 2>/dev/null)
+SOURCE_REPO = $(shell git --git-dir=$(srcdir)/.git config remote.origin.url 2>/dev/null)
 ifdef SOURCE_REPO
 DEFINES += -DSOURCE_REPO="$(SOURCE_REPO)"
 endif
@@ -75,12 +64,20 @@ ifdef MOZ_SOURCE_STAMP
 DEFINES += -DMOZ_SOURCE_STAMP="$(MOZ_SOURCE_STAMP)"
 endif
 
-MOZ_SOURCE_REPO := $(shell hg -R $(MOZILLA_SRCDIR) showconfig paths.default 2>/dev/null | sed -e "s/^ssh:/http:/")
+MOZ_SOURCE_REPO = $(shell hg -R $(MOZILLA_SRCDIR) showconfig paths.default 2>/dev/null | sed -e "s/^ssh:/http:/")
 ifdef MOZ_SOURCE_REPO
 DEFINES += -DMOZ_SOURCE_REPO="$(MOZ_SOURCE_REPO)"
 endif
 
-# include config.mk here so myconfig or app-config can set DISABLE_LIGHTNING_INSTALL
+ifneq (,$(findstring pre,$(CALENDAR_3E_VERSION)))
+CALENDAR_3E_VERSION = $(shell cat $(srcdir)/config/version.txt).$(CALENDAR_3E_BUILDID).$(SOURCE_STAMP)
+DEFINES += -DCALENDAR_3E_PRERELEASE_VERSION=1
+endif
+
+ifdef CALENDAR_3E_PERMISSION
+DEFINES += -DCALENDAR_3E_PERMISSION=$(CALENDAR_3E_PERMISSION)
+endif
+
 include $(topsrcdir)/config/config.mk
 
 PREF_JS_EXPORTS = $(srcdir)/defaults/preferences.js
@@ -96,11 +93,9 @@ DEFINES += -DTHUNDERBIRD_VERSION=$(THUNDERBIRD_VERSION) \
            -DSEAMONKEY_VERSION=$(SEAMONKEY_VERSION) \
            -DLIGHTNING_VERSION=$(LIGHTNING_VERSION) \
            -DCALENDAR_3E_VERSION=$(CALENDAR_3E_VERSION) \
+           -DCALENDAR_3E_BUILDID=$(CALENDAR_3E_BUILDID) \
            -DTARGET_PLATFORM=$(OS_TARGET)_$(TARGET_XPCOM_ABI) \
            -DXPI_EM_ID=$(XPI_EM_ID) \
            $(NULL)
-
-GRE_BUILDID = $(shell $(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build BuildID)
-DEFINES += -DGRE_BUILDID=$(GRE_BUILDID)
 
 include $(topsrcdir)/config/rules.mk
