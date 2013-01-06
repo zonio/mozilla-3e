@@ -500,7 +500,7 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     var error = queueValidationDelegate.apply(queue);
-    listener(error || cal3eResponse.fromRequestQueue(queue));
+    listener(error || cal3eResponse.fromRequestQueue(queue), queue);
   }
 
   client.getUsers = getUsers;

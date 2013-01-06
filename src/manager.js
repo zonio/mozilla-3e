@@ -19,6 +19,7 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
@@ -27,10 +28,12 @@ Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 function calEeeManager() {
   var manager = this;
+  var logger;
 
   function observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
+      logger.info('Registration - initializing');
       register();
       break;
     }
@@ -54,8 +57,12 @@ function calEeeManager() {
         return calendar.type === 'eee';
       })
       .forEach(function(calendar) {
+        logger.info('Registration - starting to observe calendar "' +
+                    calendar.uri.spec + '"');
         calendar.addObserver(manager);
       });
+
+    logger.info('Registration - done');
   }
 
   function unregister() {
@@ -74,6 +81,8 @@ function calEeeManager() {
       return;
     }
 
+    logger.info('Create calendar - starting to observe calendar "' +
+                calendar.uri.spec + '"');
     calendar.addObserver(manager);
 
     // calendar already is registered if it has calname set
@@ -82,11 +91,22 @@ function calEeeManager() {
     }
 
     generateUniqueUri(calendar);
+    logger.info('Create calendar - ID generated for calendar "' +
+                calendar.uri.spec + '"');
 
-    var createListener = function calEeeManager_create_onResult(result) {
+    var createListener = function calEeeManager_create_onResult(result,
+                                                                operation) {
       if (!(result instanceof cal3eResponse.Success)) {
+        logger.warn('Create calendar [' + operation.id() + '] - cannot ' +
+                    'create calendar "' + calendar.uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
+
         throw Components.Exception();
       }
+
+      logger.info('Create calendar [' + operation.id() + '] - calendar "' +
+                  calendar.uri.spec + '" created');
 
       Services.prefs.setCharPref(
         'calendar.registry.' + calendar.id + '.uri',
@@ -110,17 +130,23 @@ function calEeeManager() {
         true
       );
     };
-    var listener = function calEeeManager_create_onResult(result) {
+    var listener = function calEeeManager_create_onResult(result, operation) {
       if (!(result instanceof cal3eResponse.Success)) {
+        logger.warn('Create calendar [' + operation.id() + '] - cannot set ' +
+                    'attributes of calendar "' + calendar.uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       }
     };
 
-    cal3eRequest.Client.getInstance().createCalendar(
+    var operation = cal3eRequest.Client.getInstance().createCalendar(
       getIdentity(calendar),
       createListener,
       calendar
     );
+    logger.info('Create calendar [' + operation.id() + '] - creating ' +
+                'calendar "' + calendar.uri.spec + '"');
   }
   cal3eObject.exportMethod(this, onCalendarRegistered);
 
@@ -132,30 +158,41 @@ function calEeeManager() {
     }
 
     calendar.removeObserver(manager);
+    logger.info('Delete calendar - observing calendar "' +
+                calendar.uri.spec + '" stopped');
 
     // calendar is not registered if it has no calname set
     if (!cal3eModel.calendarName(calendar)) {
       return;
     }
 
-    var listener = function calEeeManager_delete_onResult(result) {
+    var listener = function calEeeManager_delete_onResult(result, operation) {
       if (!(result instanceof cal3eResponse.Success)) {
+        logger.warn('Delete calendar [' + operation.id() + '] - cannot ' +
+                    'delete calendar "' + calendar.uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       }
     };
 
+    var operation;
     if (cal3eModel.isOwnedCalendar(calendar)) {
-      cal3eRequest.Client.getInstance().deleteCalendar(
+      operation = cal3eRequest.Client.getInstance().deleteCalendar(
         getIdentity(calendar),
         listener,
         calendar
       );
+      logger.info('Delete calendar [' + operation.id() + '] - deleting ' +
+                  'calendar "' + calendar.uri.spec + '"');
     } else {
-      cal3eRequest.Client.getInstance().unsubscribeCalendar(
+      operation = cal3eRequest.Client.getInstance().unsubscribeCalendar(
         getIdentity(calendar),
         listener,
         calendar
       );
+      logger.info('Delete calendar [' + operation.id() + '] - unsubscribing ' +
+                  'calendar "' + calendar.uri.spec + '"');
     }
   }
   cal3eObject.exportMethod(this, onCalendarDeleting);
@@ -187,13 +224,19 @@ function calEeeManager() {
       break;
     }
 
-    var listener = function calEeeManager_update_onResult(result) {
+    var listener = function calEeeManager_update_onResult(result, operation) {
       if (!(result instanceof cal3eResponse.Success)) {
+        logger.warn('Update calendar [' + operation.id() + '] - cannot set ' +
+                    (isPublic ? 'public' : 'private') + ' attribute ' +
+                    '"' + attrName + '" to value "' + attrValue + '" ' +
+                    'on calendar "' + calendar.uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       }
     };
 
-    cal3eRequest.Client.getInstance().setCalendarAttribute(
+    var operation = cal3eRequest.Client.getInstance().setCalendarAttribute(
       getIdentity(calendar),
       listener,
       calendar,
@@ -201,6 +244,10 @@ function calEeeManager() {
       attrValue,
       isPublic
     );
+    logger.info('Update calendar [' + operation.id() + '] - setting ' +
+                (isPublic ? 'public' : 'private') + ' attribute ' +
+                '"' + attrName + '" to value "' + attrValue + '" ' +
+                'on calendar "' + calendar.uri.spec + '"');
   }
   cal3eObject.exportMethod(this, onPropertyChanged);
 
@@ -232,6 +279,11 @@ function calEeeManager() {
     return identities.length > 0 ? identities[0] : null;
   }
 
+  function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.manager');
+  }
+
+  init();
 }
 
 const NSGetFactory = cal3eObject.asXpcom(calEeeManager, {

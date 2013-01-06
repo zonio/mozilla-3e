@@ -44,3 +44,7 @@ pref('extensions.calendar3e.features.offline_mode', false);
 pref('extensions.calendar3e.log.synchronizer.logDevice', 'console');
 pref('extensions.calendar3e.log.synchronizer.severity', 'warn');
 pref('extensions.calendar3e.log.synchronizer.name', 'calendar3e.synchronizer');
+
+pref('extensions.calendar3e.log.manager.logDevice', 'console');
+pref('extensions.calendar3e.log.manager.severity', 'warn');
+pref('extensions.calendar3e.log.manager.name', 'calendar3e.manager');
