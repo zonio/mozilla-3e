@@ -40,3 +40,7 @@ pref('extensions.calendar3e.features.permissions', false);
 #endif
 */
 pref('extensions.calendar3e.features.offline_mode', false);
+
+pref('extensions.calendar3e.log.synchronizer.logDevice', 'console');
+pref('extensions.calendar3e.log.synchronizer.severity', 'warn');
+pref('extensions.calendar3e.log.synchronizer.name', 'calendar3e.synchronizer');

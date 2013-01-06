@@ -21,6 +21,7 @@ Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
@@ -34,8 +35,11 @@ function calEeeSynchronizationService() {
   var synchronizersByIdentity;
   var identityObserver;
   var isSyncing;
+  var logger;
 
   function onIdentityChange() {
+    logger.info('Identity change - initializing');
+
     var knownIdentities = getSyncedIdentities();
 
     cal3eIdentity.Collection()
@@ -57,6 +61,7 @@ function calEeeSynchronizationService() {
   function observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
+      logger.info('Registration - initializing');
       registerAfterMainWindowOpen();
       break;
     case 'timer-callback':
@@ -79,6 +84,7 @@ function calEeeSynchronizationService() {
     var timer = Components.classes['@mozilla.org/timer;1']
       .createInstance(Components.interfaces.nsITimer);
     if (!mainWindowObserver(timer)) {
+      logger.info('Registration - waiting for mail window');
       timer.init(
         cal3eObject.asXpcomObserver(mainWindowObserver),
         100,
@@ -92,6 +98,7 @@ function calEeeSynchronizationService() {
     if (!mailWindow) {
       return false;
     }
+    logger.info('Registration - mail window found');
 
     timer.cancel();
     registerOnReady(mailWindow.document);
@@ -111,11 +118,13 @@ function calEeeSynchronizationService() {
           document.removeEventListener(
             'readystatechange', onStateChange, false
           );
+          logger.info('Registration - mail window ready');
           register();
         },
         false
       );
     } else {
+      logger.info('Registration - mail window ready');
       register();
     }
   }
@@ -125,6 +134,7 @@ function calEeeSynchronizationService() {
       return synchronizationService;
     }
     register.registered = true;
+    logger.info('Registration - done');
 
     if (cal3eFeature.isSupported('offline_mode')) {
       Services.obs.addObserver(
@@ -170,13 +180,17 @@ function calEeeSynchronizationService() {
   }
 
   function addIdentity(identity) {
-    synchronizersByIdentity[identity.key] = new Synchronizer(identity);
+    logger.info('Identity change - adding "' + identity.key + '"');
+
+    synchronizersByIdentity[identity.key] = new Synchronizer(identity, logger);
     timersByIdentity[identity.key] = Components.classes[
       '@mozilla.org/timer;1'
     ].createInstance(Components.interfaces.nsITimer);
   }
 
   function removeIdentity(identity) {
+    logger.info('Identity change - removing "' + identity.key + '"');
+
     stopSynchronizer(identity);
     delete timersByIdentity[identity.key];
     delete synchronizersByIdentity[identity.key];
@@ -291,17 +305,21 @@ function calEeeSynchronizationService() {
     synchronizersByIdentity = {};
     identityObserver = null;
     isSyncing = false;
+    logger = cal3eLogger.create('extensions.calendar3e.log.synchronizer');
   }
 
   init();
 }
 
-function Synchronizer(identity) {
+function Synchronizer(identity, logger) {
   var synchronizer = this;
   var operation;
   var future;
 
   function synchronize() {
+    logger.info('Synchronization - syncing calendars of identity "' +
+                identity.key + '"');
+
     future = new cal3eSynchronization.Future();
     operation = cal3eRequest.Client.getInstance().getCalendars(
       identity,
@@ -309,9 +327,17 @@ function Synchronizer(identity) {
         operation = null;
 
         if (result instanceof cal3eResponse.UserError) {
+          logger.warn("Synchronization - can't sync calendars of identity " +
+                      identity.key + '" because of error ' +
+                      result.constructor.name + '(' + result.errorCode + ')');
+
           future.done();
           return;
         } else if (!(result instanceof cal3eResponse.Success)) {
+          logger.warn("Synchronization - can't sync calendars of identity " +
+                      identity.key + '" because of error ' +
+                      result.constructor.name + '(' + result.errorCode + ')');
+
           var bundle = Services.strings.createBundle(
             'chrome://calendar3e/locale/cal3eCalendar.properties'
           );
@@ -328,6 +354,8 @@ function Synchronizer(identity) {
           return;
         }
 
+        logger.info('Synchronization - received calendars of identity "' +
+                    identity.key + '"');
         synchronizeCalendarsFromResult(result);
 
         future.done();
@@ -366,6 +394,9 @@ function Synchronizer(identity) {
       return;
     }
 
+    logger.info('Synchronization - canceling syncing of calendars of ' +
+                'identity "' + identity.key + '"');
+
     operation.cancel();
     future.done();
   }
@@ -380,6 +411,9 @@ function Synchronizer(identity) {
   }
 
   function addCalendar(data) {
+    logger.info('Synchronization - adding the calendar "' +
+                buildCalendarUri(data) + '"');
+
     var manager = Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager);
 
@@ -391,10 +425,16 @@ function Synchronizer(identity) {
   }
 
   function updateCalendar(calendar, data) {
+    logger.info('Synchronization - updating the calendar "' +
+                calendar.uri.spec + '"');
+
     setCalendarProperties(calendar, data);
   }
 
   function deleteCalendar(calendar) {
+    logger.info('Synchronization - deleting the calendar "' +
+                calendar.uri.spec + '"');
+
     Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager)
       .unregisterCalendar(calendar);
