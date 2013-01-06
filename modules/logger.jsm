@@ -78,7 +78,7 @@ function Logger(logDevice) {
   }
 
   function init() {
-    if (!logDevive) {
+    if (!logDevice) {
       logDevice = new ConsoleLogDevice();
     }
     formatter = DefautlFormatter;
@@ -117,11 +117,25 @@ function DumpLogDevice() {
 }
 
 function DefautlFormatter(severity, time, name, message) {
-  var formattedMessage = '';
-  if (name) {
-    formattedMessage += name + ' ';
+  function rightAlign(string, length) {
+    while (string.length < length) {
+      string = ' ' + string;
+    }
+    if (string.length > length) {
+      string = string.substring(0, length);
+    }
+
+    return string;
   }
-  formattedMessage += time + ' ' + severity + ': ' + message;
+
+  var formattedMessage = '';
+  formattedMessage += severity[0] + ', ';
+  formattedMessage += '[' + time.toISOString() + '] ';
+  formattedMessage += rightAlign(severity, 5) + ' -- ';
+  if (name) {
+    formattedMessage += name + ': ';
+  }
+  formattedMessage += message;
 
   return formattedMessage;
 }
