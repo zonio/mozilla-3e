@@ -55,6 +55,10 @@ pref('extensions.calendar3e.log.itip.logDevice', 'console');
 pref('extensions.calendar3e.log.itip.severity', 'warn');
 pref('extensions.calendar3e.log.itip.name', 'calendar3e.itip');
 
+pref('extensions.calendar3e.log.dns.logDevice', 'console');
+pref('extensions.calendar3e.log.dns.severity', 'warn');
+pref('extensions.calendar3e.log.dns.name', 'calendar3e.dns');
+
 pref('extensions.calendar3e.log.xmlRpc.logDevice', 'console');
 pref('extensions.calendar3e.log.xmlRpc.severity', 'warn');
 pref('extensions.calendar3e.log.xmlRpc.name', 'calendar3e.xmlRpc');

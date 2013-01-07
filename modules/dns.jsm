@@ -17,17 +17,23 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
 function cal3eDns(resolv, cache) {
   var dns = this;
+  var logger;
 
   function resolveServer(domainName, callback) {
+    logger.info('Resolving domain name "' + domainName + '"');
+
     var resources;
     if (resources = cache.get(domainName)) {
       didGetResources(domainName, resources, callback);
       return;
     }
+
+    logger.info('Asking resolver for "' + domainName + '"');
 
     resolv.addEventListener(
       'message', getOnMessageListener(resolv, domainName, callback), false
@@ -41,6 +47,8 @@ function cal3eDns(resolv, cache) {
   function getOnMessageListener(resolv, domainName, callback) {
     return function onMessage(event) {
       resolv.removeEventListener('message', onMessage, false);
+
+      logger.info('Data from resolver for "' + domainName + '" received');
 
       var resources = getEeeServerResourcesFromEvent(event, domainName);
       cache.set(domainName, resources);
@@ -78,6 +86,9 @@ function cal3eDns(resolv, cache) {
       };
     });
 
+    logger.info('Domain name "' + domainName + '" resolved as "' +
+                records[0]['host'] + ':' + records[0]['port'] + '"');
+
     callback(records[0]);
   }
 
@@ -96,8 +107,10 @@ function cal3eDns(resolv, cache) {
   }
 
   function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.dns');
+
     if (!cache) {
-      cache = new Cache();
+      cache = new Cache(logger);
     }
 
     if (!resolv) {
@@ -119,12 +132,17 @@ cal3eDns.DEFAULT_PORT = 4444;
 cal3eDns.DEFAULT_TTL = 86400;
 cal3eDns.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
 
-function Cache() {
+function Cache(logger) {
   var cache = this;
   var store;
 
   function get(name) {
     cleanup();
+
+    if (store[name]) {
+      logger.info('Cache hit for "' + name + '"');
+    }
+
     return store[name] ? store[name]['resources'] : null;
   }
 
@@ -134,6 +152,10 @@ function Cache() {
       'resources': resources
     };
     cleanup();
+
+    if (store[name]) {
+      logger.info('Cache set for "' + name + '"');
+    }
   }
 
   function getUntil(resources) {
