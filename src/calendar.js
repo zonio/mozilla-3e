@@ -48,7 +48,7 @@ function calEeeCalendar() {
         return true;
       }
     case 'itip.transport':
-      return Components.classes['@zonio.net/calendar3e/itip;1']
+      return Components.classes['@zonio.net/calendar3e/itip-transport;1']
         .createInstance(Components.interfaces.calIItipTransport);
     }
 
