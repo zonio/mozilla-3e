@@ -100,7 +100,7 @@ function calEeeSynchronizationService() {
     }
     logger.info('Registration - mail window found');
 
-    timer.cancel();
+    timer.QueryInterface(Components.interfaces.nsITimer).cancel();
     registerOnReady(mailWindow.document);
 
     return true;
