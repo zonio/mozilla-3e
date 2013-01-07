@@ -19,8 +19,9 @@
 
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
-Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
@@ -31,6 +32,7 @@ function calEeeCalendar() {
   var calendar = this;
   var uri;
   var identity;
+  var logger;
 
   function getProperty(name) {
     switch (name) {
@@ -57,12 +59,19 @@ function calEeeCalendar() {
   cal3eObject.exportMethod(this, getProperty);
 
   function addItem(item, listener) {
+    logger.info('Adding item "' + item.title + '" ' +
+                'to calendar "' + uri.spec + '"');
+
     return adoptItem(item.clone(), listener);
   }
   cal3eObject.exportMethod(this, addItem);
 
   function adoptItem(item, listener) {
+    logger.info('Adopting item "' + item.title + '" ' +
+                'to calendar "' + uri.spec + '"');
+
     if (!identity) {
+      logger.error('Calendar "' + uri.spec + '" has unknown identity');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -73,6 +82,7 @@ function calEeeCalendar() {
       return null;
     }
     if (calendar.readOnly) {
+      logger.warn('Calendar is "' + uri.spec + '" read-only');
       calendar.notifyOperationComplete(
         listener,
         Components.interfaces.calIErrors.CAL_IS_READONLY,
@@ -86,6 +96,7 @@ function calEeeCalendar() {
     try {
       item = item.QueryInterface(Components.interfaces.calIEvent);
     } catch (e) {
+      logger.error('Item "' + item.title + '" is not an event');
       calendar.notifyOperationComplete(
         listener,
         e.result,
@@ -99,12 +110,23 @@ function calEeeCalendar() {
     item = filterOutAttendees(item);
     item = ensureIdentity(item);
 
-    var clientListener = function calEee_adoptItem_onResult(result) {
+    var clientListener = function calEee_adoptItem_onResult(result,
+                                                            operation) {
       if ((result instanceof cal3eResponse.EeeError) &&
           (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
            result.errorCode)) {
+        logger.error('[' + operation.id() + '] Cannot add ' +
+                     'item "' + item.title + '" to ' +
+                     'calendar "' + uri.spec + '" ' +
+                     'because of error ' +
+                     result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
+        logger.warn('[' + operation.id() + '] Cannot add ' +
+                    'item "' + item.title + '" to ' +
+                    'calendar "' + uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         calendar.notifyOperationComplete(
           listener,
           Components.results.NS_ERROR_FAILURE,
@@ -114,6 +136,9 @@ function calEeeCalendar() {
         );
         return;
       }
+
+      logger.info('[' + operation.id() + '] Item "' + item.title + '" added ' +
+                  'to calendar "' + uri.spec + '"');
 
       calendar.notifyOperationComplete(
         listener,
@@ -125,14 +150,22 @@ function calEeeCalendar() {
       calendar.mObservers.notify('onAddItem', [item]);
     };
 
-    return cal3eRequest.Client.getInstance()
-      .addObject(identity, clientListener, calendar, item)
-      .component();
+    var operation = cal3eRequest.Client.getInstance()
+      .addObject(identity, clientListener, calendar, item);
+    logger.info('[' + operation.id() + '] Adopting ' +
+                'item "' + item.title + '" ' +
+                'to calendar "' + uri.spec + '"');
+
+    return operation.component();
   }
   cal3eObject.exportMethod(this, adoptItem);
 
   function modifyItem(newItem, oldItem, listener) {
+    logger.info('Modifying item "' + newItem.title + '" ' +
+                'in calendar "' + uri.spec + '"');
+
     if (!identity) {
+      logger.error('Calendar "' + uri.spec + '" has unknown identity');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -143,6 +176,7 @@ function calEeeCalendar() {
       return null;
     }
     if (calendar.readOnly) {
+      logger.warn('Calendar is "' + uri.spec + '" read-only');
       calendar.notifyOperationComplete(
         listener,
         Components.interfaces.calIErrors.CAL_IS_READONLY,
@@ -154,6 +188,7 @@ function calEeeCalendar() {
     }
 
     if (!newItem.id) {
+      logger.error('Unidentified item "' + newItem.title + '" to modify');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_FAILURE,
@@ -167,6 +202,7 @@ function calEeeCalendar() {
     try {
       newItem = newItem.QueryInterface(Components.interfaces.calIEvent);
     } catch (e) {
+      logger.error('Item "' + newItem.title + '" is not an event');
       calendar.notifyOperationComplete(
         listener,
         e.result,
@@ -177,12 +213,23 @@ function calEeeCalendar() {
       return null;
     }
 
-    var clientListener = function calEee_modifyItem_onResult(result) {
+    var clientListener = function calEee_modifyItem_onResult(result,
+                                                             operation) {
       if ((result instanceof cal3eResponse.EeeError) &&
           (cal3eResponse['eeeErrors']['COMPONENT_EXISTS'] !==
            result.errorCode)) {
+        logger.error('[' + operation.id() + '] Cannot modify ' +
+                     'item "' + newItem.title + '" in ' +
+                     'calendar "' + uri.spec + '" ' +
+                     'because of error ' +
+                     result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
+        logger.warn('[' + operation.id() + '] Cannot modify ' +
+                    'item "' + newItem.title + '" in ' +
+                    'calendar "' + uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         calendar.notifyOperationComplete(
           listener,
           Components.results.NS_ERROR_FAILURE,
@@ -192,6 +239,9 @@ function calEeeCalendar() {
         );
         return;
       }
+
+      logger.info('[' + operation.id() + '] Item "' + newItem.title + '" ' +
+                  'modified in calendar "' + uri.spec + '"');
 
       calendar.notifyOperationComplete(
         listener,
@@ -203,14 +253,22 @@ function calEeeCalendar() {
       calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
     };
 
-    return cal3eRequest.Client.getInstance()
-      .updateObject(identity, clientListener, calendar, newItem, oldItem)
-      .component();
+    var operation = cal3eRequest.Client.getInstance()
+      .updateObject(identity, clientListener, calendar, newItem, oldItem);
+    logger.info('[' + operation.id() + '] Modifying ' +
+                'item "' + newItem.title + '" ' +
+                'in calendar "' + uri.spec + '"');
+
+    return operation.component();
   }
   cal3eObject.exportMethod(this, modifyItem);
 
   function deleteItem(item, listener) {
+    logger.info('Deleting item "' + item.title + '" ' +
+                'from calendar "' + uri.spec + '"');
+
     if (!identity) {
+      logger.error('Calendar "' + uri.spec + '" has unknown identity');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -221,6 +279,7 @@ function calEeeCalendar() {
       return null;
     }
     if (calendar.readOnly) {
+      logger.warn('Calendar is "' + uri.spec + '" read-only');
       calendar.notifyOperationComplete(
         listener,
         Components.interfaces.calIErrors.CAL_IS_READONLY,
@@ -232,6 +291,7 @@ function calEeeCalendar() {
     }
 
     if (!item.id) {
+      logger.error('Unidentified item "' + item.title + '" to delete');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_FAILURE,
@@ -245,6 +305,7 @@ function calEeeCalendar() {
     try {
       item = item.QueryInterface(Components.interfaces.calIEvent);
     } catch (e) {
+      logger.error('Item "' + item.title + '" is not an event');
       calendar.notifyOperationComplete(
         listener,
         e.result,
@@ -255,10 +316,21 @@ function calEeeCalendar() {
       return null;
     }
 
-    var clientListener = function calEee_deleteItem_onResult(result) {
+    var clientListener = function calEee_deleteItem_onResult(result,
+                                                             operation) {
       if (result instanceof cal3eResponse.EeeError) {
+        logger.error('[' + operation.id() + '] Cannot delete ' +
+                     'item "' + item.title + '" from ' +
+                     'calendar "' + uri.spec + '" ' +
+                     'because of error ' +
+                     result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
+        logger.warn('[' + operation.id() + '] Cannot delete ' +
+                    'item "' + item.title + '" from ' +
+                    'calendar "' + uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         calendar.notifyOperationComplete(
           listener,
           Components.results.NS_ERROR_FAILURE,
@@ -268,6 +340,9 @@ function calEeeCalendar() {
         );
         return;
       }
+
+      logger.info('[' + operation.id() + '] Item "' + item.title + '" ' +
+                  'deleted from calendar "' + uri.spec + '"');
 
       calendar.notifyOperationComplete(
         listener,
@@ -279,17 +354,29 @@ function calEeeCalendar() {
       calendar.mObservers.notify('onDeleteItem', [item]);
     };
 
-    return cal3eRequest.Client.getInstance()
-      .deleteObject(identity, clientListener, calendar, item)
-      .component();
+    var operation = cal3eRequest.Client.getInstance()
+      .deleteObject(identity, clientListener, calendar, item);
+    logger.info('[' + operation.id() + '] Deleting ' +
+                'item "' + item.title + '" ' +
+                'from calendar "' + uri.spec + '"');
+
+    return operation.component();
   }
   cal3eObject.exportMethod(this, deleteItem);
 
   function getQueryObjectsListener(listener, rangeStart, rangeEnd) {
-    return function calEee_getItems_onResult(result) {
+    return function calEee_getItems_onResult(result, operation) {
       if (result instanceof cal3eResponse.EeeError) {
+        logger.error('[' + operation.id() + '] Cannot query items in ' +
+                     'calendar "' + uri.spec + '" ' +
+                     'because of error ' +
+                     result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
+        logger.warn('[' + operation.id() + '] Cannot query items in ' +
+                    'calendar "' + uri.spec + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         calendar.notifyOperationComplete(
           listener,
           Components.results.NS_ERROR_FAILURE,
@@ -300,11 +387,19 @@ function calEeeCalendar() {
         return;
       }
 
+      logger.info('[' + operation.id() + '] Query result from calendar ' +
+                  '"' + uri.spec + '" received');
+
       var parser = Components.classes['@mozilla.org/calendar/ics-parser;1']
         .createInstance(Components.interfaces.calIIcsParser);
       try {
+        logger.info('[' + operation.id() + '] Parsing items from query ' +
+                    'result from calendar "' + uri.spec + '"');
         parser.parseString(result.data);
       } catch (e) {
+        logger.error('[' + operation.id() + '] Canno parse items from query ' +
+                     'result from calendar "' + uri.spec + '" ' +
+                     'because of error ' + e);
         calendar.notifyOperationComplete(
           listener,
           e.result,
@@ -316,22 +411,26 @@ function calEeeCalendar() {
       }
 
       parser.getItems({}).forEach(function(item) {
-        cal3eUtils.getExpandedItems(
-          item.clone(), rangeStart, rangeEnd
-        ).forEach(function(item) {
-          item.calendar = calendar.superCalendar;
-          item.parentItem.calendar = calendar.superCalendar;
-          item.makeImmutable();
-          listener.onGetResult(
-            calendar.superCalendar,
-            Components.results.NS_OK,
-            Components.interfaces.calIEvent,
-            null,
-            1,
-            [item]
-          );
-        });
+        cal3eUtils
+          .getExpandedItems(item.clone(), rangeStart, rangeEnd)
+          .forEach(function(item) {
+            item.calendar = calendar.superCalendar;
+            item.parentItem.calendar = calendar.superCalendar;
+            item.makeImmutable();
+
+            listener.onGetResult(
+              calendar.superCalendar,
+              Components.results.NS_OK,
+              Components.interfaces.calIEvent,
+              null,
+              1,
+              [item]
+            );
+          });
       });
+
+      logger.info('[' + operation.id() + '] Queried items from calendar ' +
+                  '"' + uri.spec + '" processed');
 
       calendar.notifyOperationComplete(
         listener,
@@ -344,7 +443,11 @@ function calEeeCalendar() {
   }
 
   function getItem(id, listener) {
+    logger.info('Querying item identified by "' + id + '" ' +
+                'in calendar "' + uri.spec + '"');
+
     if (!identity) {
+      logger.error('Calendar "' + uri.spec + '" has unknown identity');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -355,18 +458,27 @@ function calEeeCalendar() {
       return null;
     }
 
-    return cal3eRequest.Client.getInstance()
+    var operation = cal3eRequest.Client.getInstance()
       .queryObjects(
         identity,
         getQueryObjectsListener(listener, null, null),
         calendar,
-        "match_uid('" + id + "')")
-      .component();
+        "match_uid('" + id + "')");
+    logger.info('[' + operation.id() + '] Querying item with ' +
+                '"match_uid(' + id + ')" in calendar "' + uri.spec + '"');
+
+    return operation.component();
   }
   cal3eObject.exportMethod(this, getItem);
 
   function getItems(itemFilter, count, rangeStart, rangeEnd, listener) {
+    logger.info('Querying items between "' +
+                (rangeStart ? rangeStart.nativeTime : '(start)') + '" and "' +
+                (rangeEnd ? rangeEnd.nativeTime : '(end)') + '" ' +
+                'in calendar "' + uri.spec + '"');
+
     if (!identity) {
+      logger.error('Calendar "' + uri.spec + '" has unknown identity');
       calendar.notifyOperationComplete(
         listener,
         Components.results.NS_ERROR_NOT_INITIALIZED,
@@ -414,13 +526,17 @@ function calEeeCalendar() {
       );
     }
 
-    return cal3eRequest.Client.getInstance()
+    var operation = cal3eRequest.Client.getInstance()
       .queryObjects(
         identity,
         getQueryObjectsListener(listener, rangeStart, rangeEnd),
         calendar,
-        query.join(' AND '))
-      .component();
+        query.join(' AND '));
+    logger.info('[' + operation.id() + '] Querying items with ' +
+                '"' + query.join(' AND ') + '" ' +
+                'in calendar "' + uri.spec + '"');
+
+    return operation.component();
   }
   cal3eObject.exportMethod(this, getItems);
 
@@ -511,6 +627,7 @@ function calEeeCalendar() {
 
   function init() {
     calendar.initProviderBase();
+    logger = cal3eLogger.create('extensions.calendar3e.log.calendar');
   }
 
   init();
