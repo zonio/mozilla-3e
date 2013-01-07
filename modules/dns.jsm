@@ -68,6 +68,9 @@ function cal3eDns(resolv, cache) {
       });
 
     if (resources.length === 0) {
+      if (event.data.result.length === 0) {
+        logger.warn('No data found for "' + domainName + '", trying default');
+      }
       resources.push(new Resolv.DNS.Resource['TXT'](
         cal3eDns.DEFAULT_TTL,
         'eee server=' + domainName + ':' + cal3eDns.DEFAULT_PORT
@@ -80,6 +83,13 @@ function cal3eDns(resolv, cache) {
   function didGetResources(domainName, resources, callback) {
     var records = resources.map(function(resource) {
       var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
+      if (!match[1]) {
+        logger.warn('No host found for "' + domainName + '", trying default');
+      }
+      if (!match[2]) {
+        logger.warn('No port found for "' + domainName + '", trying default');
+      }
+
       return {
         'host': match[1] || domainName,
         'port': match[2] || cal3eDns.DEFAULT_PORT

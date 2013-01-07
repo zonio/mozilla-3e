@@ -87,8 +87,9 @@ function Client(uri) {
     }, false);
     xhr.channel.notificationCallbacks = channelCallbacks;
 
-    logger.info('Request to "' + uri.spec + '" with body:\n' +
-                request.logBody());
+    logger.info('Calling method "' + request.name() + '" ' +
+                'on "' + uri.spec + '"');
+    logger.debug('Request body: ' + request.logBody());
 
     xhr.send(request.body());
   }
@@ -105,10 +106,10 @@ function Client(uri) {
     try {
       response = createResponse(event.target.responseXML);
 
-      logger.info('Response body:\n' +
-                  Components.classes["@mozilla.org/xmlextras/xmlserializer;1"]
-                  .createInstance(Components.interfaces.nsIDOMSerializer)
-                  .serializeToString(event.target.responseXML));
+      logger.debug('Response body: ' +
+                   Components.classes["@mozilla.org/xmlextras/xmlserializer;1"]
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(event.target.responseXML));
     } catch (e) {
       passErrorToListener(
         Components.Exception(e.message, e.result), context
@@ -130,13 +131,18 @@ function Client(uri) {
   function passResultToListener(context) {
     reset();
     if (isSuccess()) {
+      logger.info('Successful response');
       listener.onResult(client, response, context);
     } else {
+      logger.info('Fault response "' + response.faultCode() + '": ' +
+                  response.faultString());
       listener.onFault(client, response, context);
     }
   }
 
   function passErrorToListener(error, context) {
+    logger.error('Invalid response because of error ' + error);
+
     reset();
     listener.onError(client, error, context);
   }
@@ -298,6 +304,10 @@ function Request(name, parameters, masked) {
     logBody += string;
   }
 
+  function getName() {
+    return name;
+  }
+
   function getBody() {
     return body;
   }
@@ -319,6 +329,7 @@ function Request(name, parameters, masked) {
     appendMethodCallEndToBody();
   }
 
+  request.name = getName;
   request.body = getBody;
   request.logBody = getLogBody;
 
