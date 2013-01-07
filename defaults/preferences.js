@@ -24,8 +24,6 @@ pref('extensions.calendar3e.calendar_sync_interval', 15000);
 pref('extensions.calendar3e.queue_execution_interval', 500);
 pref('extensions.calendar3e.user_error_timeout', 300000);
 
-pref('extensions.calendar3e.log.xml_rpc', false);
-
 pref('extensions.calendar3e.features.attachments', false);
 pref('extensions.calendar3e.features.sidebar', false);
 /*
@@ -56,3 +54,7 @@ pref('extensions.calendar3e.log.freeBusy.name', 'calendar3e.freeBusy');
 pref('extensions.calendar3e.log.itip.logDevice', 'console');
 pref('extensions.calendar3e.log.itip.severity', 'warn');
 pref('extensions.calendar3e.log.itip.name', 'calendar3e.itip');
+
+pref('extensions.calendar3e.log.xmlRpc.logDevice', 'console');
+pref('extensions.calendar3e.log.xmlRpc.severity', 'warn');
+pref('extensions.calendar3e.log.xmlRpc.name', 'calendar3e.xmlRpc');

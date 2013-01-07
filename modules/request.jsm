@@ -641,7 +641,7 @@ function AuthenticationDelegate() {
     }
 
     queue
-      .push('ESClient.authenticate', [eeeUsername(login), login.password])
+      .push('ESClient.authenticate', [eeeUsername(login), login.password], [1])
       .call(didValidate, context);
   }
 
@@ -913,12 +913,12 @@ function Queue() {
   var error;
   var id;
 
-  function push(methodName, parameters) {
+  function push(methodName, parameters, masked) {
     if (pending) {
       throw Components.results.NS_ERROR_IN_PROGRESS;
     }
 
-    methodCalls.push([methodName, parameters]);
+    methodCalls.push([methodName, parameters, masked]);
     status = Components.results.NS_OK;
 
     return queue;

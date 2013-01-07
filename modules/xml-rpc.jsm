@@ -20,6 +20,7 @@
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/ISO8601DateUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 
 function Client(uri) {
   var client = this;
@@ -28,8 +29,9 @@ function Client(uri) {
   var request;
   var xhr;
   var response;
+  var logger;
 
-  function call(methodName, parameters, context) {
+  function call(methodName, parameters, masked, context) {
     if (request) {
       throw Components.Exception(
         'Only one request at the same time',
@@ -37,7 +39,7 @@ function Client(uri) {
       );
     }
 
-    request = new Request(methodName, parameters);
+    request = new Request(methodName, parameters, masked);
     doXhrSend(context);
 
     return client;
@@ -65,7 +67,8 @@ function Client(uri) {
       doXhrSend,
       passErrorToListener,
       context,
-      window
+      window,
+      logger
     );
     xhr = Components.classes[
       '@mozilla.org/xmlextras/xmlhttprequest;1'
@@ -84,11 +87,8 @@ function Client(uri) {
     }, false);
     xhr.channel.notificationCallbacks = channelCallbacks;
 
-    if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
-      Services.console.logStringMessage(
-        '[3e] XML-RPC Request to ' + uri.spec + '\n' + request.body()
-      );
-    }
+    logger.info('Request to "' + uri.spec + '" with body:\n' +
+                request.logBody());
 
     xhr.send(request.body());
   }
@@ -105,14 +105,10 @@ function Client(uri) {
     try {
       response = createResponse(event.target.responseXML);
 
-      if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
-        Services.console.logStringMessage(
-          '[3e] XML-RPC Response\n' +
-            Components.classes["@mozilla.org/xmlextras/xmlserializer;1"]
-            .createInstance(Components.interfaces.nsIDOMSerializer)
-            .serializeToString(event.target.responseXML)
-        );
-      }
+      logger.info('Response body:\n' +
+                  Components.classes["@mozilla.org/xmlextras/xmlserializer;1"]
+                  .createInstance(Components.interfaces.nsIDOMSerializer)
+                  .serializeToString(event.target.responseXML));
     } catch (e) {
       passErrorToListener(
         Components.Exception(e.message, e.result), context
@@ -124,11 +120,7 @@ function Client(uri) {
   }
 
   function onXhrError(event, context) {
-    if (Services.prefs.getBoolPref('extensions.calendar3e.log.xml_rpc')) {
-      Services.console.logStringMessage(
-        '[3e] XML-RPC Error: ' + event.target.statusText
-      );
-    }
+    logger.info('Response error ' + event.target.statusText);
 
     passErrorToListener(
       Components.Exception('Unknown network error'), context
@@ -174,30 +166,40 @@ function Client(uri) {
     return response && (response instanceof Response);
   }
 
+  function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.xmlRpc');
+  }
+
   client.call = call;
   client.abort = abort;
   client.uri = getUri;
   client.setListener = setListener;
   client.setWindow = setWindow;
+
+  init();
 }
 
-function Request(name, parameters) {
+function Request(name, parameters, masked) {
   var request = this;
-  var body = '<?xml version="1.0" encoding="UTF-8"?>';
+  var body;
+  var logBody;
 
   function appendMethodCallStartAndNameToBody() {
-    body += '<methodCall>';
-    body += '<methodName>' + name + '</methodName>';
+    append('<methodCall>');
+    append('<methodName>' + name + '</methodName>');
   }
 
   function appendParametersToBody() {
-    body += '<params>';
+    append('<params>');
     parameters.forEach(appendParameterToBody);
-    body += '</params>';
+    append('</params>');
   }
 
-  function appendParameterToBody(parameter) {
+  function appendParameterToBody(parameter, idx) {
     body += '<param><value>' + createValue(parameter) + '</value></param>';
+    logBody += masked.indexOf(idx) < 0 ?
+      '<param><value>' + createValue(parameter) + '</value></param>' :
+      '<param>###MASKED###</param>';
   }
 
   function createValue(parameter) {
@@ -291,17 +293,34 @@ function Request(name, parameters) {
     body += '</methodCall>';
   }
 
+  function append(string) {
+    body += string;
+    logBody += string;
+  }
+
   function getBody() {
     return body;
   }
 
+  function getLogBody() {
+    return logBody;
+  }
+
   function init() {
+    if (!masked) {
+      masked = [];
+    }
+
+    body = logBody = '';
+    append('<?xml version="1.0" encoding="UTF-8"?>');
+
     appendMethodCallStartAndNameToBody();
     appendParametersToBody();
     appendMethodCallEndToBody();
   }
 
   request.body = getBody;
+  request.logBody = getLogBody;
 
   init();
 }
@@ -633,7 +652,7 @@ function Value(valueElement) {
   init();
 }
 
-function ChannelCallbacks(repeatCall, onError, context, window) {
+function ChannelCallbacks(repeatCall, onError, context, window, logger) {
   var channelCallbacks = this;
   var badCertListener;
 
@@ -654,7 +673,7 @@ function ChannelCallbacks(repeatCall, onError, context, window) {
 
   function init() {
     badCertListener = new BadCertListener(
-      repeatCall, onError, context, window
+      repeatCall, onError, context, window, logger
     );
   }
 
@@ -667,11 +686,14 @@ function ChannelCallbacks(repeatCall, onError, context, window) {
   init();
 }
 
-function BadCertListener(repeatCall, onError, context, window) {
+function BadCertListener(repeatCall, onError, context, window, logger) {
   var badCertListener = this;
   var active;
 
   function notifyCertProblem(socketInfo, status, targetSite) {
+    logger.warn('Certificate problem when calling server ' +
+                '"' + targetSite + '"')
+
     active = true;
     window.setTimeout(function() {
       showBadCertDialogAndRetryCall({
@@ -692,8 +714,10 @@ function BadCertListener(repeatCall, onError, context, window) {
 
     active = false;
     if (parameters['exceptionAdded']) {
+      logger.info('Repeating call to server "' + targetSite + '"')
       repeatCall(context);
     } else {
+      logger.error('Call to untrusted server "' + targetSite + '"')
       onError(Components.Exception(
         'Server certificate exception not added',
         Components.results.NS_ERROR_FAILURE
