@@ -22,6 +22,7 @@ Components.utils.import('resource://calendar/modules/calUtils.jsm');
 Components.utils.import('resource://calendar/modules/calIteratorUtils.jsm');
 Components.utils.import('resource://calendar/modules/calProviderUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
@@ -40,10 +41,12 @@ function calEeeFreeBusyProvider() {
     'BUSY-TENTATIVE':
       Components.interfaces.calIFreeBusyInterval.BUSY_TENTATIVE
   };
+  var logger;
 
   function observe(subject, topic, data) {
     switch (topic) {
     case 'profile-after-change':
+      logger.info('Registration - initializing');
       register();
       break;
     }
@@ -57,16 +60,29 @@ function calEeeFreeBusyProvider() {
 
     register.registered = true;
     cal.getFreeBusyService().addProvider(freeBusyProvider);
+
+    logger.info('Registration - done');
   }
 
   function getFreeBusyIntervals(calId, start, end, busyTypes, listener) {
-    var clientListener = function calEee_getFreeBusy_onResult(result) {
+    var clientListener = function calEee_getFreeBusy_onResult(result,
+                                                              operation) {
       if (result instanceof cal3eResponse.EeeError) {
+        logger.warn('[' + operation.id() + '] Cannot retrieve free/busy ' +
+                    'as "' + organizer.email + '" for "' + attendee + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         throw Components.Exception();
       } else if (result instanceof cal3eResponse.TransportError) {
+        logger.warn('[' + operation.id() + '] Cannot retrieve free/busy ' +
+                    'as "' + organizer.email + '" for "' + attendee + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
         listener.onResult(null, null);
         return;
       }
+
+      logger.info('[' + operation.id() + '] Free/busy received');
 
       rawItems =
         'BEGIN:VCALENDAR\nVERSION:2.0\n' +
@@ -110,10 +126,13 @@ function calEeeFreeBusyProvider() {
             );
           }
         }
-      } catch (exc) {
-        cal.ERROR('3e Calendar: Error parsing free-busy info.');
+      } catch (e) {
+        logger.error('[' + operation.id() + '] Invalid free/busy ' +
+                     'as "' + organizer.email + '" for "' + attendee + '" ' +
+                     'because of ' + e);
       }
 
+      logger.info('[' + operation.id() + '] Free/busy parsed');
       listener.onResult(null, periodsToReturn);
     };
 
@@ -129,7 +148,7 @@ function calEeeFreeBusyProvider() {
       return;
     }
 
-    cal3eRequest.Client.getInstance().freeBusy(
+    var operation = cal3eRequest.Client.getInstance().freeBusy(
       organizer,
       clientListener,
       attendee,
@@ -137,6 +156,8 @@ function calEeeFreeBusyProvider() {
       end.nativeTime,
       cal.calendarDefaultTimezone().icalComponent.serializeToICS()
     );
+    logger.info('[' + operation.id() + '] Retriving free/busy ' +
+                'as "' + organizer.email + '" for "' + attendee + '"');
   }
   cal3eObject.exportMethod(this, getFreeBusyIntervals);
 
@@ -177,6 +198,11 @@ function calEeeFreeBusyProvider() {
     );
   }
 
+  function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.freeBusy');
+  }
+
+  init();
 }
 
 const NSGetFactory = cal3eObject.asXpcom(calEeeFreeBusyProvider, {

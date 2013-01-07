@@ -48,3 +48,7 @@ pref('extensions.calendar3e.log.synchronizer.name', 'calendar3e.synchronizer');
 pref('extensions.calendar3e.log.manager.logDevice', 'console');
 pref('extensions.calendar3e.log.manager.severity', 'warn');
 pref('extensions.calendar3e.log.manager.name', 'calendar3e.manager');
+
+pref('extensions.calendar3e.log.freeBusy.logDevice', 'console');
+pref('extensions.calendar3e.log.freeBusy.severity', 'warn');
+pref('extensions.calendar3e.log.freeBusy.name', 'calendar3e.freeBusy');
