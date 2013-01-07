@@ -216,7 +216,7 @@ function Request(name, parameters, masked) {
       value = '<boolean>' + parameter + '</boolean>';
       break;
     case 'string':
-      value = parameter.replace('&', '&amp;').replace('<', '&lt;');
+      value = parameter.replace(/&/g, '&amp;').replace(/</g, '&lt;');
       break;
     case 'object':
       if (parameter instanceof Date) {
