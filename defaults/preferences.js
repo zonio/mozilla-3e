@@ -52,3 +52,7 @@ pref('extensions.calendar3e.log.manager.name', 'calendar3e.manager');
 pref('extensions.calendar3e.log.freeBusy.logDevice', 'console');
 pref('extensions.calendar3e.log.freeBusy.severity', 'warn');
 pref('extensions.calendar3e.log.freeBusy.name', 'calendar3e.freeBusy');
+
+pref('extensions.calendar3e.log.itip.logDevice', 'console');
+pref('extensions.calendar3e.log.itip.severity', 'warn');
+pref('extensions.calendar3e.log.itip.name', 'calendar3e.itip');

@@ -19,10 +19,12 @@
 
 
 Components.utils.import('resource://calendar/modules/calUtils.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/object.jsm');
 
 function calEeeItipTransport() {
   var senderAddress;
+  var logger;
 
   function getScheme() {
       return 'mailto';
@@ -44,9 +46,30 @@ function calEeeItipTransport() {
                                                     setSenderAddress);
 
   function sendItems(count, recipients, itipItem) {
-    // Messages are sent by EEE server.
+    var recipientsToLog = '';
+    recipients.forEach(function(recipient) {
+      if (recipientsToLog !== '') {
+        recipientsToLog += ', ';
+      }
+      recipientsToLog += '"' + recipient.id + '"';
+    });
+    var itemsToLog = '';
+    itipItem.getItemList({}).forEach(function(item) {
+      if (itemsToLog !== '') {
+        itemsToLog += ', ';
+      }
+      itemsToLog += '"' + item.title + '"';
+    });
+    logger.info('Not sending any iTIP message to ' + recipientsToLog + ' ' +
+                'about ' + itemsToLog);
   }
   cal3eObject.exportMethod(this, sendItems);
+
+  function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.itip');
+  }
+
+  init();
 }
 
 const NSGetFactory = cal3eObject.asXpcom(calEeeItipTransport, {
