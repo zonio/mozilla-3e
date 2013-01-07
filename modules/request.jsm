@@ -23,6 +23,7 @@ Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/dns.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
@@ -36,9 +37,10 @@ Components.utils.import('resource://calendar3e/modules/utils.jsm');
  * related to scenarios is no longer true
  */
 function Client(serverBuilder, authenticationDelegate,
-                queueValidationDelegate) {
+                queueValidationDelegate, logger) {
   var client = this;
   var synchronizedMethod = new cal3eSynchronization.Method();
+  var logger;
 
   function getUsers(identity, listener, query) {
     return synchronizedMethod.future(arguments)
@@ -397,6 +399,9 @@ function Client(serverBuilder, authenticationDelegate,
 
   function createScenario(main) {
     return function runScenario() {
+      var queue = synchronizedMethod.future(arguments);
+      logger.info('[' + queue.id() + '] Running scenario "' + main.name + '"');
+
       return new cal3eSynchronization.Queue()
         .push(initQueue)
         .push(checkQueueSecurity)
@@ -443,6 +448,8 @@ function Client(serverBuilder, authenticationDelegate,
 
     queue.push('ESClient.getServerAttributes', ['']).call(function() {
       if (stopScenarioIfUserError(queue, listener)) {
+        logger.warn('[' + queue.id() + '] Cannot verify whether the server ' +
+                    'is secure');
         return queue;
       }
 
@@ -463,6 +470,7 @@ function Client(serverBuilder, authenticationDelegate,
 
     authenticationDelegate.authenticate(identity, queue, function(queue) {
       if (stopScenarioIfUserError(queue, listener)) {
+        logger.warn('[' + queue.id() + '] Cannot authenticate');
         return queue;
       }
 
@@ -488,8 +496,15 @@ function Client(serverBuilder, authenticationDelegate,
       return false;
     }
 
+
     synchronizedMethod.finished();
-    listener(error || cal3eResponse.fromRequestQueue(queue));
+
+    var result = error || cal3eResponse.fromRequestQueue(queue);
+    logger.info('[' + queue.id() + '] Scenario finished unsuccessfully ' +
+                'with result ' +
+                result.constructor.name + '(' + result.errorCode + ')');
+
+    listener(result, queue);
 
     return true;
   }
@@ -500,7 +515,11 @@ function Client(serverBuilder, authenticationDelegate,
     }
 
     var error = queueValidationDelegate.apply(queue);
-    listener(error || cal3eResponse.fromRequestQueue(queue), queue);
+    var result = error || cal3eResponse.fromRequestQueue(queue);
+    logger.info('[' + queue.id() + '] Scenario finished with result ' +
+                result.constructor.name + '(' + result.errorCode + ')');
+
+    listener(result, queue);
   }
 
   client.getUsers = getUsers;
@@ -523,7 +542,8 @@ Client.getInstance = function Client_getInstance() {
     clientInstance = new Client(
       new ServerBuilder(),
       new AuthenticationDelegate(),
-      new QueueValidationDelegate()
+      new QueueValidationDelegate(),
+      cal3eLogger.create('extensions.calendar3e.log.request')
     );
   }
 
