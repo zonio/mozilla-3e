@@ -725,10 +725,10 @@ function BadCertListener(repeatCall, onError, context, window, logger) {
 
     active = false;
     if (parameters['exceptionAdded']) {
-      logger.info('Repeating call to server "' + targetSite + '"')
+      logger.info('Repeating call to server "' + parameters['location'] + '"')
       repeatCall(context);
     } else {
-      logger.error('Call to untrusted server "' + targetSite + '"')
+      logger.error('Call to untrusted server "' + parameters['location'] + '"')
       onError(Components.Exception(
         'Server certificate exception not added',
         Components.results.NS_ERROR_FAILURE
