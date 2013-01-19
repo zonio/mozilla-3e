@@ -545,6 +545,11 @@ function calEeeCalendar() {
   }
   cal3eObject.exportMethod(this, refresh);
 
+  function canNotify(method, item) {
+    return true;
+  }
+  cal3eObject.exportMethod(this, canNotify);
+
   function getUri() {
     return uri;
   }
