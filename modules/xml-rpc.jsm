@@ -102,14 +102,23 @@ function Client(uri) {
       return;
     }
 
-    event.target.responseXML.normalize();
-    try {
-      response = createResponse(event.target.responseXML);
+    if (event.target.responseXML) {
+      event.target.responseXML.normalize();
 
       logger.debug('Response body: ' +
-                   Components.classes["@mozilla.org/xmlextras/xmlserializer;1"]
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
                    .createInstance(Components.interfaces.nsIDOMSerializer)
                    .serializeToString(event.target.responseXML));
+    } else {
+      logger.debug('Response non XML body: ' + event.target.responseText);
+
+      passErrorToListener(
+        Components.Exception('Non XML response received', e.result), context
+      );
+    }
+
+    try {
+      response = createResponse(event.target.responseXML);
     } catch (e) {
       passErrorToListener(
         Components.Exception(e.message, e.result), context
@@ -471,9 +480,14 @@ function Value(valueElement) {
   var value = this;
   var type;
   var parsedValue;
+  var logger;
 
   function normalizeType(valueElement) {
     if (!valueElement.firstChild) {
+      logger.error('No content in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Empty value element',
         Components.results.NS_ERROR_UNEXPECTED
@@ -482,6 +496,10 @@ function Value(valueElement) {
     if ([Components.interfaces.nsIDOMNode.TEXT_NODE,
          Components.interfaces.nsIDOMNode.ELEMENT_NODE]
         .indexOf(valueElement.firstChild.nodeType) < 0) {
+      logger.error('Unexpected content in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Unexpected type element',
         Components.results.NS_ERROR_UNEXPECTED
@@ -494,7 +512,13 @@ function Value(valueElement) {
       'string';
   }
 
-  function parseValue(valueElement) {
+  function parseValue(valueElement, level) {
+    logger.info('Parsing value on level ' + level);
+    logger.debug('Parsing XML: ' +
+                Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                .createInstance(Components.interfaces.nsIDOMSerializer)
+                .serializeToString(valueElement));
+
     var types = {
       'i4': intValue,
       'int': intValue,
@@ -508,13 +532,20 @@ function Value(valueElement) {
     };
 
     if (!types[normalizeType(valueElement)]) {
+      logger.error('Unknown value type in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Unexpected value type',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
 
-    return types[normalizeType(valueElement)](valueElement);
+    logger.info('Value is of ' +
+                '"' + types[normalizeType(valueElement)].name + '" type');
+
+    return types[normalizeType(valueElement)](valueElement, level + 1);
   }
 
   function scalarValue(valueElement) {
@@ -530,11 +561,17 @@ function Value(valueElement) {
                 Components.interfaces.nsIDOMNode.TEXT_NODE)) {
       scalarValue = valueElement.firstChild.firstChild.data;
     } else {
+      logger.error('Unrecognizable scalar value in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Not a scalar value',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
+
+    logger.info('Scalar value retrieved "' + scalarValue + '"');
 
     return scalarValue;
   }
@@ -542,6 +579,10 @@ function Value(valueElement) {
   function intValue(valueElement) {
     var value = parseInt(scalarValue(valueElement));
     if (isNaN(value)) {
+      logger.error('Not an integer found in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Unexpected int value',
         Components.results.NS_ERROR_UNEXPECTED
@@ -553,6 +594,10 @@ function Value(valueElement) {
 
   function booleanValue(valueElement) {
     if (['0', '1'].indexOf(scalarValue(valueElement)) < 0) {
+      logger.error('Not a boolean found in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Unexpected boolean value',
         Components.results.NS_ERROR_UNEXPECTED
@@ -569,6 +614,10 @@ function Value(valueElement) {
   function doubleValue(valueElement) {
     var value = parseFloat(scalarValue(valueElement));
     if (isNaN(value)) {
+      logger.error('Not a double found in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Unexpected float value',
         Components.results.NS_ERROR_UNEXPECTED
@@ -579,33 +628,60 @@ function Value(valueElement) {
   }
 
   function dateTimeValue(valueElement) {
-    return ISO8601DateUtils.parse(scalarValue(valueElement));
+    var value;
+    try {
+      value = ISO8601DateUtils.parse(scalarValue(valueElement));
+    } catch (e) {
+      logger.error('Not a date found in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
+      throw e;
+    }
+
+    return value;
   }
 
   function base64Value(valueElement) {
     return atob(scalarValue(valueElement));
   }
 
-  function structValue(valueElement) {
+  function structValue(valueElement, level) {
     var struct = {};
     var structElement = valueElement.firstChild;
     var idx, member;
     for (idx = 0; idx < structElement.childNodes.length; idx += 1) {
-      member = memberValue(structElement.childNodes.item(idx));
+      logger.info('Parsing member value');
+
+      member = memberValue(
+        valueElement, structElement.childNodes.item(idx), level
+      );
       struct[member['name']] = member['value'];
+
+      logger.info('Member named "' + member['name'] + '" ' +
+                  'with value "' + member['value'] + '"');
     }
 
     return struct;
   }
 
-  function memberValue(memberElement) {
+  function memberValue(valueElement, memberElement, level) {
     if (!memberElement.tagName || (memberElement.tagName !== 'member')) {
+      logger.error('Member is in element named ' +
+                   '"' + memberElement.tagName + '" in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Member element expected in struct',
         Components.results.NS_ERROR_UNEXPECTED
       );
     }
     if (memberElement.childNodes.length !== 2) {
+      logger.error('Unexpected content of member element in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Only name and value elements expected in struct',
         Components.results.NS_ERROR_UNEXPECTED
@@ -613,6 +689,10 @@ function Value(valueElement) {
     }
     if (!memberElement.firstChild || !memberElement.firstChild.tagName ||
         (memberElement.firstChild.tagName !== 'name')) {
+      logger.error('No name element in member element in value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Name element expected in struct',
         Components.results.NS_ERROR_UNEXPECTED
@@ -621,14 +701,18 @@ function Value(valueElement) {
 
     return {
       'name': scalarValue(memberElement.firstChild),
-      'value': parseValue(memberElement.lastChild)
+      'value': parseValue(memberElement.lastChild, level)
     };
   }
 
-  function arrayValue(valueElement) {
+  function arrayValue(valueElement, level) {
     var dataElement = valueElement.firstChild.firstChild;
     if (!dataElement || !dataElement.tagName ||
         (dataElement.tagName !== 'data')) {
+      logger.error('No data element in array value element: ' +
+                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
+                   .createInstance(Components.interfaces.nsIDOMSerializer)
+                   .serializeToString(valueElement));
       throw Components.Exception(
         'Data element expected in array',
         Components.results.NS_ERROR_UNEXPECTED
@@ -637,8 +721,10 @@ function Value(valueElement) {
 
     var array = [];
     var idx;
+    logger.info('Parsing ' + dataElement.childNodes.length + ' data ' +
+                'elements in array');
     for (idx = 0; idx < dataElement.childNodes.length; idx += 1) {
-      array.push(parseValue(dataElement.childNodes.item(idx)));
+      array.push(parseValue(dataElement.childNodes.item(idx), level + 1));
     }
 
     return array;
@@ -653,8 +739,9 @@ function Value(valueElement) {
   }
 
   function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.xmlRpcParser');
     type = normalizeType(valueElement);
-    parsedValue = parseValue(valueElement);
+    parsedValue = parseValue(valueElement, 0);
   }
 
   value.type = getType;
@@ -703,7 +790,7 @@ function BadCertListener(repeatCall, onError, context, window, logger) {
 
   function notifyCertProblem(socketInfo, status, targetSite) {
     logger.warn('Certificate problem when calling server ' +
-                '"' + targetSite + '"')
+                '"' + targetSite + '"');
 
     active = true;
     window.setTimeout(function() {
@@ -725,10 +812,11 @@ function BadCertListener(repeatCall, onError, context, window, logger) {
 
     active = false;
     if (parameters['exceptionAdded']) {
-      logger.info('Repeating call to server "' + parameters['location'] + '"')
+      logger.info('Repeating call to server "' + parameters['location'] + '"');
       repeatCall(context);
     } else {
-      logger.error('Call to untrusted server "' + parameters['location'] + '"')
+      logger.error('Call to untrusted server ' +
+                   '"' + parameters['location'] + '"');
       onError(Components.Exception(
         'Server certificate exception not added',
         Components.results.NS_ERROR_FAILURE
