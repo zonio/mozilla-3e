@@ -26,7 +26,8 @@ Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
 function cal3eSubscription(subscriberController, filterController,
-                           calendarsController, subscriptionDelegate) {
+                           calendarsController, subscriptionDelegate,
+                           dialogStateDelegate) {
   var controller = this;
   var stringBundle;
 
@@ -36,6 +37,10 @@ function cal3eSubscription(subscriberController, filterController,
 
   function filterDidChange() {
     calendarsController.setFilter(filterController.filter());
+  }
+
+  function calendarsDidChange() {
+    dialogStateDelegate.update(calendarsController);
   }
 
   function subscribe() {
@@ -82,6 +87,8 @@ function cal3eSubscription(subscriberController, filterController,
     identityDidChange();
     filterController.addObserver(filterDidChange);
     filterDidChange();
+    calendarsController.addObserver(calendarsDidChange);
+    calendarsDidChange();
   }
 
   function finalize() {
@@ -161,6 +168,24 @@ function cal3eSubscriptionDelegate() {
   }
 
   subscriptionDelegate.subscribe = subscribe;
+}
+
+function cal3eDialogStateDelegate() {
+  var dialogStateDelegate = this;
+  var subscribeButton;
+
+  function update(calendarsController) {
+    subscribeButton.disabled = !calendarsController.hasSelection();
+  }
+
+  function init() {
+    subscribeButton = document.getElementById('calendar3e-subscription-dialog')
+      .getButton('accept');
+  }
+
+  dialogStateDelegate.update = update;
+
+  init();
 }
 
 function cal3eSubscriberController() {
@@ -404,6 +429,33 @@ function cal3eSharedCalendarsController() {
   var isLoaded;
   var fixingSelection;
   var selection;
+  var observers;
+
+  function addObserver(observer) {
+    observers.push(observer);
+
+    return controller;
+  }
+
+  function removeObserver() {
+    if (observers.indexOf(observer) < 0) {
+      return controller;
+    }
+
+    observers.splice(observers.indexOf(observer), 1);
+
+    return controller;
+  }
+
+  function notify() {
+    observers.forEach(function(observer) {
+      try {
+        observer(controller);
+      } catch (e) {
+        //TODO log
+      }
+    });
+  }
 
   function freezSelection() {
     element.disabled = true;
@@ -568,6 +620,8 @@ function cal3eSharedCalendarsController() {
       });
       selection.push({ owner: owner[0], calendar: calendar[0] });
     });
+
+    notify();
   }
 
   function fixSelection() {
@@ -704,6 +758,10 @@ function cal3eSharedCalendarsController() {
     return controller;
   }
 
+  function hasSelection() {
+    return selection.length > 0;
+  }
+
   function getSelection() {
     return selection;
   }
@@ -720,6 +778,8 @@ function cal3eSharedCalendarsController() {
     element = document.getElementById('calendars-tree');
     element.addEventListener('select', selectionDidChange, false);
 
+    observers = [];
+
     fixingSelection = false;
     selection = [];
 
@@ -731,6 +791,8 @@ function cal3eSharedCalendarsController() {
 
   function finalize() {
     window.removeEventListener('unload', finalize, false);
+
+    observers = null;
 
     identity = null;
 
@@ -746,9 +808,12 @@ function cal3eSharedCalendarsController() {
 
   controller.freezSelection = freezSelection;
   controller.unfreezSelection = unfreezSelection;
+  controller.hasSelection = hasSelection;
   controller.selection = getSelection;
   controller.setIdentity = setIdentity;
   controller.setFilter = setFilter;
+  controller.addObserver = addObserver;
+  controller.removeObserver = removeObserver;
 
   init();
 }
@@ -766,7 +831,8 @@ cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
     new cal3eSubscriberController(),
     new cal3eCalendarsFilterController(),
     new cal3eSharedCalendarsController(),
-    new cal3eSubscriptionDelegate()
+    new cal3eSubscriptionDelegate(),
+    new cal3eDialogStateDelegate()
   );
   window.addEventListener('unload', cal3eSubscription.onUnload, false);
 };
