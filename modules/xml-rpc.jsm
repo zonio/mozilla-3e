@@ -483,19 +483,8 @@ function Value(valueElement) {
   var logger;
 
   function normalizeType(valueElement) {
-    if (!valueElement.firstChild) {
-      logger.error('No content in value element: ' +
-                   Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
-                   .createInstance(Components.interfaces.nsIDOMSerializer)
-                   .serializeToString(valueElement));
-      throw Components.Exception(
-        'Empty value element',
-        Components.results.NS_ERROR_UNEXPECTED
-      );
-    }
-    if ([Components.interfaces.nsIDOMNode.TEXT_NODE,
-         Components.interfaces.nsIDOMNode.ELEMENT_NODE]
-        .indexOf(valueElement.firstChild.nodeType) < 0) {
+    if (!hasExplicitType(valueElement) &&
+        !hasImplicitType(valueElement)) {
       logger.error('Unexpected content in value element: ' +
                    Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
                    .createInstance(Components.interfaces.nsIDOMSerializer)
@@ -506,8 +495,7 @@ function Value(valueElement) {
       );
     }
 
-    return valueElement.firstChild.nodeType ===
-      Components.interfaces.nsIDOMNode.ELEMENT_NODE ?
+    return hasExplicitType(valueElement) ?
       valueElement.firstChild.tagName :
       'string';
   }
@@ -548,18 +536,41 @@ function Value(valueElement) {
     return types[normalizeType(valueElement)](valueElement, level + 1);
   }
 
+  function hasExplicitType(valueElement) {
+    return valueElement.firstChild &&
+      (valueElement.firstChild.nodeType ===
+       Components.interfaces.nsIDOMNode.ELEMENT_NODE);
+  }
+
+  function hasImplicitType(valueElement) {
+    return !valueElement.firstChild ||
+      (valueElement.firstChild.nodeType ===
+       Components.interfaces.nsIDOMNode.TEXT_NODE);
+  }
+
+  function hasNoData(valueElement) {
+    return !getDataNode(valueElement);
+  }
+
+  function hasScalarData(valueElement) {
+    return getDataNode(valueElement).nodeType ===
+      Components.interfaces.nsIDOMNode.TEXT_NODE;
+  }
+
+  function getDataNode(valueElement) {
+    if (hasExplicitType(valueElement)) {
+      return valueElement.firstChild.firstChild;
+    } else if (hasImplicitType(valueElement)) {
+      return valueElement.firstChild;
+    }
+  }
+
   function scalarValue(valueElement) {
     var scalarValue;
-    if (!valueElement.firstChild &&
-        !valueElement.firstChild.firstChild) {
-      scalarValue = '';
-    } else if (valueElement.firstChild.nodeType ===
-               Components.interfaces.nsIDOMNode.TEXT_NODE) {
-      scalarValue = valueElement.firstChild.data;
-    } else if (valueElement.firstChild.firstChild &&
-               (valueElement.firstChild.firstChild.nodeType ===
-                Components.interfaces.nsIDOMNode.TEXT_NODE)) {
-      scalarValue = valueElement.firstChild.firstChild.data;
+    if (hasNoData(valueElement)) {
+      scalarValue = null;
+    } else if (hasScalarData(valueElement)) {
+      scalarValue = getDataNode(valueElement).data;
     } else {
       logger.error('Unrecognizable scalar value in value element: ' +
                    Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
@@ -577,8 +588,8 @@ function Value(valueElement) {
   }
 
   function intValue(valueElement) {
-    var value = parseInt(scalarValue(valueElement));
-    if (isNaN(value)) {
+    if (hasScalarData(valueElement) &&
+        isNaN(parseInt(scalarValue(valueElement)))) {
       logger.error('Not an integer found in value element: ' +
                    Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
                    .createInstance(Components.interfaces.nsIDOMSerializer)
@@ -589,11 +600,14 @@ function Value(valueElement) {
       );
     }
 
-    return value;
+    return hasScalarData(valueElement) ?
+      parseInt(scalarValue(valueElement)) :
+      null;
   }
 
   function booleanValue(valueElement) {
-    if (['0', '1'].indexOf(scalarValue(valueElement)) < 0) {
+    if (hasScalarData(valueElement) &&
+        (['0', '1'].indexOf(scalarValue(valueElement)) < 0)) {
       logger.error('Not a boolean found in value element: ' +
                    Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
                    .createInstance(Components.interfaces.nsIDOMSerializer)
@@ -604,16 +618,20 @@ function Value(valueElement) {
       );
     }
 
-    return scalarValue(valueElement) === '1';
+    return hasScalarData(valueElement) ?
+      scalarValue(valueElement) === '1' :
+      null;
   }
 
   function stringValue(valueElement) {
-    return '' + scalarValue(valueElement);
+    return scalarValue(valueElement) !== null ?
+      '' + scalarValue(valueElement) :
+      null;
   }
 
   function doubleValue(valueElement) {
-    var value = parseFloat(scalarValue(valueElement));
-    if (isNaN(value)) {
+    if (hasScalarData(valueElement) &&
+        isNaN(parseFloat(scalarValue(valueElement)))) {
       logger.error('Not a double found in value element: ' +
                    Components.classes['@mozilla.org/xmlextras/xmlserializer;1']
                    .createInstance(Components.interfaces.nsIDOMSerializer)
@@ -624,7 +642,9 @@ function Value(valueElement) {
       );
     }
 
-    return value;
+    return hasScalarData(valueElement) ?
+      parseFloat(scalarValue(valueElement)) :
+      null;
   }
 
   function dateTimeValue(valueElement) {
@@ -643,7 +663,9 @@ function Value(valueElement) {
   }
 
   function base64Value(valueElement) {
-    return atob(scalarValue(valueElement));
+    return hasScalarData(valueElement) ?
+      atob(scalarValue(valueElement)) :
+      null;
   }
 
   function structValue(valueElement, level) {
