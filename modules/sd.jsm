@@ -1,6 +1,6 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * 3e Calendar
- * Copyright © 2011  Zonio s.r.o.
+ * Copyright © 2013  Zonio s.r.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,39 @@
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
-function cal3eSd(resolv, cache) {
+function cal3eSd(providers, cache) {
   var sd = this;
+  var logger;
+
+  function resolveServer(domainName, callback) {
+    providers[0].resolveServer(domainName, callback);
+  }
+
+  function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.sd');
+
+    if (!providers) {
+      providers = [
+        new DnsSd(),
+        new WellKnownSd()
+      ];
+    }
+
+    if (!cache) {
+      cache = new Cache();
+    }
+  }
+
+  sd.resolveServer = resolveServer;
+
+  init();
+}
+cal3eSd.DEFAULT_PORT = 4444;
+cal3eSd.DEFAULT_TTL = 86400;
+cal3eSd.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
+
+function DnsSd(resolv) {
+  var dnsSd = this;
   var logger;
 
   function resolveServer(domainName, callback) {
@@ -112,6 +143,12 @@ function cal3eSd(resolv, cache) {
         .createInstance(Components.interfaces.nsIWorkerFactory)
         .newChromeWorker('resource://calendar3e/modules/resolv.jsm');
     }
+    resolv.postMessage({
+      name: 'init',
+      args: [
+        Components.classes['@mozilla.org/xre/app-info;1']
+          .getService(Components.interfaces.nsIXULRuntime).OS]
+    });
 
     return resolv;
   }
@@ -119,32 +156,33 @@ function cal3eSd(resolv, cache) {
   function init() {
     logger = cal3eLogger.create('extensions.calendar3e.log.sd');
 
-    if (!cache) {
-      cache = new Cache(logger);
-    }
-
     if (!resolv) {
       resolv = getDefaultResolv();
-      resolv.postMessage({
-        name: 'init',
-        args: [
-          Components.classes['@mozilla.org/xre/app-info;1']
-            .getService(Components.interfaces.nsIXULRuntime).OS]
-      });
     }
   }
 
-  sd.resolveServer = resolveServer;
+  dnsSd.resolveServer = resolveServer;
 
   init();
 }
-cal3eSd.DEFAULT_PORT = 4444;
-cal3eSd.DEFAULT_TTL = 86400;
-cal3eSd.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
 
-function Cache(logger) {
+function WellKnownSd() {
+  var wellKnownSd = this;
+
+  function resolveServer(domainName, callback) {
+    callback({
+      'host': domainName,
+      'port': cal3eSd.DEFAULT_PORT
+    });
+  }
+
+  wellKnownSd.resolveServer = resolveServer;
+}
+
+function Cache() {
   var cache = this;
   var store;
+  var logger;
 
   function get(name) {
     cleanup();
@@ -199,6 +237,8 @@ function Cache(logger) {
 
   function init() {
     store = {};
+
+    logger = cal3eLogger.create('extensions.calendar3e.log.sd');
   }
 
   cache.get = get;
