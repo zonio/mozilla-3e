@@ -18,7 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://gre/modules/Services.jsm');
-Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/sd.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 
 function getAttribute(object, name) {
@@ -110,10 +110,10 @@ function buildUri(structuredUri) {
 
 function buildWebcalUri(calendar) {
   var future = new cal3eSynchronization.Future();
-  var dns = new cal3eDns();
+  var sd = new cal3eSd();
 
   var [localPart, domainPart] = getCalendarOwner(calendar).split('@', 2);
-  dns.resolveServer(domainPart, function(result) {
+  sd.resolveServer(domainPart, function(result) {
     var spec = '';
     spec += 'https:/';
     spec += '/' + result['host'] + ':' + result['port'];

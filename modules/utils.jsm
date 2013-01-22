@@ -19,7 +19,7 @@
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
-Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/sd.jsm');
 
 /**
  * Wraps given function to object acting as calIGenericOperationListener
@@ -64,7 +64,7 @@ function nsprTimeToEeeDate(nsprTime) {
 }
 
 function eeeAttachmentToHttpUri(eeeUri, callback) {
-  dns.resolveServer(eeeUri.host, function(record) {
+  sd.resolveServer(eeeUri.host, function(record) {
     var hash = eeeUri.spec.split('/')[4];
     var filename = eeeUri.spec.split('/')[5];
 

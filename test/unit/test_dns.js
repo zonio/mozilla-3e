@@ -17,23 +17,23 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://calendar3e/modules/dns.jsm");
+Components.utils.import("resource://calendar3e/modules/sd.jsm");
 
-function test_successful_dns_resolv() {
-  var dns = new cal3eDns();
-  var [host, port] = dns.resolveServer("nightly.zonio.net");
+function test_successful_sd_resolv() {
+  var sd = new cal3eSd();
+  var [host, port] = sd.resolveServer("nightly.zonio.net");
   do_check_eq(host, "nightly.zonio.net");
   do_check_eq(port, 4445);
 }
 
 function test_default_response() {
-  var dns = new cal3eDns();
-  var [host, port] = dns.resolveServer("3e.nonexistent");
+  var sd = new cal3eSd();
+  var [host, port] = sd.resolveServer("3e.nonexistent");
   do_check_eq(host, "3e.nonexistent");
   do_check_eq(port, 4444);
 }
 
 function run_test() {
-  test_successful_dns_resolv();
+  test_successful_sd_resolv();
   test_default_response();
 }

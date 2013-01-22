@@ -29,7 +29,6 @@ XPI_NAME = calendar3e-provider
 
 EXTRA_JS_MODULES = \
 	debug.jsm \
-	dns.jsm \
 	feature.jsm \
 	identity.jsm \
 	logger.jsm \
@@ -38,6 +37,7 @@ EXTRA_JS_MODULES = \
 	resolv.jsm \
 	request.jsm \
 	response.jsm \
+	sd.jsm \
 	synchronization.jsm \
 	utils.jsm \
 	xml-rpc.jsm \

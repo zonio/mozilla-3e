@@ -63,9 +63,9 @@ pref('extensions.calendar3e.log.request.logDevice', 'console');
 pref('extensions.calendar3e.log.request.severity', 'warn');
 pref('extensions.calendar3e.log.request.name', 'calendar3e.request');
 
-pref('extensions.calendar3e.log.dns.logDevice', 'console');
-pref('extensions.calendar3e.log.dns.severity', 'warn');
-pref('extensions.calendar3e.log.dns.name', 'calendar3e.dns');
+pref('extensions.calendar3e.log.sd.logDevice', 'console');
+pref('extensions.calendar3e.log.sd.severity', 'warn');
+pref('extensions.calendar3e.log.sd.name', 'calendar3e.sd');
 
 pref('extensions.calendar3e.log.xmlRpc.logDevice', 'console');
 pref('extensions.calendar3e.log.xmlRpc.severity', 'warn');

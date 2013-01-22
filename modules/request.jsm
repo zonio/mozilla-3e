@@ -20,7 +20,7 @@
 Components.utils.import('resource://gre/modules/NetUtil.jsm');
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-Components.utils.import('resource://calendar3e/modules/dns.jsm');
+Components.utils.import('resource://calendar3e/modules/sd.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
@@ -552,10 +552,10 @@ Client.getInstance = function Client_getInstance() {
 
 function ServerBuilder() {
   var serverBuilder = this;
-  var dns;
+  var sd;
 
   function fromIdentity(identity, callback) {
-    dns.resolveServer(getHostname(identity), function(record) {
+    sd.resolveServer(getHostname(identity), function(record) {
       callback(new cal3eXmlRpc.Client(Services.io.newURI(
         'https://' + record['host'] + ':' + record['port'] + '/RPC2',
         null,
@@ -569,7 +569,7 @@ function ServerBuilder() {
   }
 
   function init() {
-    dns = new cal3eDns();
+    sd = new cal3eSd();
   }
 
   serverBuilder.fromIdentity = fromIdentity;

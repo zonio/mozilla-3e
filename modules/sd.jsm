@@ -20,8 +20,8 @@
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 
-function cal3eDns(resolv, cache) {
-  var dns = this;
+function cal3eSd(resolv, cache) {
+  var sd = this;
   var logger;
 
   function resolveServer(domainName, callback) {
@@ -64,7 +64,7 @@ function cal3eDns(resolv, cache) {
       })
       .filter(function(resource) {
         return resource.data().match(/^eee /) &&
-          resource.data().match(cal3eDns.EEE_SERVER_RESOURCE_RE);
+          resource.data().match(cal3eSd.EEE_SERVER_RESOURCE_RE);
       });
 
     if (resources.length === 0) {
@@ -72,8 +72,8 @@ function cal3eDns(resolv, cache) {
         logger.warn('No data found for "' + domainName + '", trying default');
       }
       resources.push(new Resolv.DNS.Resource['TXT'](
-        cal3eDns.DEFAULT_TTL,
-        'eee server=' + domainName + ':' + cal3eDns.DEFAULT_PORT
+        cal3eSd.DEFAULT_TTL,
+        'eee server=' + domainName + ':' + cal3eSd.DEFAULT_PORT
       ));
     }
 
@@ -82,7 +82,7 @@ function cal3eDns(resolv, cache) {
 
   function didGetResources(domainName, resources, callback) {
     var records = resources.map(function(resource) {
-      var match = cal3eDns.EEE_SERVER_RESOURCE_RE.exec(resource.data());
+      var match = cal3eSd.EEE_SERVER_RESOURCE_RE.exec(resource.data());
       if (!match[1]) {
         logger.warn('No host found for "' + domainName + '", trying default');
       }
@@ -92,7 +92,7 @@ function cal3eDns(resolv, cache) {
 
       return {
         'host': match[1] || domainName,
-        'port': match[2] || cal3eDns.DEFAULT_PORT
+        'port': match[2] || cal3eSd.DEFAULT_PORT
       };
     });
 
@@ -117,7 +117,7 @@ function cal3eDns(resolv, cache) {
   }
 
   function init() {
-    logger = cal3eLogger.create('extensions.calendar3e.log.dns');
+    logger = cal3eLogger.create('extensions.calendar3e.log.sd');
 
     if (!cache) {
       cache = new Cache(logger);
@@ -134,13 +134,13 @@ function cal3eDns(resolv, cache) {
     }
   }
 
-  dns.resolveServer = resolveServer;
+  sd.resolveServer = resolveServer;
 
   init();
 }
-cal3eDns.DEFAULT_PORT = 4444;
-cal3eDns.DEFAULT_TTL = 86400;
-cal3eDns.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
+cal3eSd.DEFAULT_PORT = 4444;
+cal3eSd.DEFAULT_TTL = 86400;
+cal3eSd.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
 
 function Cache(logger) {
   var cache = this;
@@ -208,5 +208,5 @@ function Cache(logger) {
 }
 
 EXPORTED_SYMBOLS = [
-  'cal3eDns'
+  'cal3eSd'
 ];
