@@ -25,7 +25,63 @@ function cal3eSd(providers, cache) {
   var logger;
 
   function resolveServer(domainName, callback) {
-    providers[0].resolveServer(domainName, callback);
+    getRecordFromProvider(
+      domainName,
+      getDefaultRecordCallback(
+        domainName,
+        getTryToGetRecordCallback(
+          domainName,
+          callback)));
+  }
+
+  function getRecordFromProvider(domainName, callback, idx) {
+    if (!idx) {
+      idx = 0;
+    }
+
+    provider[idx].resolveServer(
+      domainName,
+      getPassOrTryNextCallback(domainName, callback, idx + 1)
+    );
+  }
+
+  function getPassOrTryNextCallback(domainName, callback, idx) {
+    return function passOrTryNextCallback(record) {
+      if (!record && providers[idx]) {
+        getRecordFromProvider(domainName, callback, idx);
+        return;
+      }
+
+      callback(record);
+    };
+  }
+
+  function getTryToGetRecordCallback(domainName, callback) {
+    var tryCount = 0;
+
+    return function tryToGetRecordCallback(record) {
+      if (!record &&
+          (tryCount <
+           Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
+        tryCount += 1;
+        getRecordFromProvider(domainName, callback);
+      }
+
+      callback(record);
+    };
+  }
+
+  function getDefaultRecordCallback(domainName, callback) {
+    return function defaultRecordCallback(record) {
+      if (!record) {
+        record = {
+          'host': domainName,
+          'port': cal3eSd.DEFAULT_PORT
+        };
+      }
+
+      callback(record);
+    };
   }
 
   function init() {
