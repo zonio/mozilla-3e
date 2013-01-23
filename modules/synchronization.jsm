@@ -144,6 +144,10 @@ function Queue() {
     return callables[idx].apply(null, arguments);
   }
 
+  function reset() {
+    idx = 0;
+  }
+
   function getNext() {
     return callables[idx];
   }
@@ -155,6 +159,7 @@ function Queue() {
 
   queue.push = push;
   queue.call = call;
+  queue.reset = reset;
   queue.next = getNext;
 
   init();

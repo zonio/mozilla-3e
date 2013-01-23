@@ -19,44 +19,41 @@
 
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
+Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 
 function cal3eSd(providers, cache) {
   var sd = this;
   var logger;
 
   function resolveServer(domainName, callback) {
-    getRecordFromProvider(
-      domainName,
-      getDefaultRecordCallback(
-        domainName,
-        getTryToGetRecordCallback(
-          domainName,
-          callback)));
+    var queue = new cal3eSynchronization.Queue();
+    queue
+      .push(getPassOrTryNextCallback(queue, domainName, callback))
+      .push(getTryToGetRecordCallback(queue, domainName, callback))
+      .push(getDefaultRecordCallback(queue, domainName, callback));
+    queue.call();
+
+    return future.returnValue();
   }
 
-  function getRecordFromProvider(domainName, callback, idx) {
-    if (!idx) {
-      idx = 0;
-    }
+  function getPassOrTryNextCallback(queue, domainName, callback) {
+    var idx = 0;
 
-    provider[idx].resolveServer(
-      domainName,
-      getPassOrTryNextCallback(domainName, callback, idx + 1)
-    );
-  }
-
-  function getPassOrTryNextCallback(domainName, callback, idx) {
     return function passOrTryNextCallback(record) {
-      if (!record && providers[idx]) {
-        getRecordFromProvider(domainName, callback, idx);
-        return;
-      }
+      providers[idx].resolvServer(domainName, function(result) {
+        idx += 1;
+        if (!result && providers[idx]) {
+          passOrTryNextCallback(record);
+        } else if (result) {
+          record = result;
+        }
 
-      callback(record);
+        queue.next()(record);
+      });
     };
   }
 
-  function getTryToGetRecordCallback(domainName, callback) {
+  function getTryToGetRecordCallback(queue, domainName, callback) {
     var tryCount = 0;
 
     return function tryToGetRecordCallback(record) {
@@ -64,20 +61,23 @@ function cal3eSd(providers, cache) {
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
         tryCount += 1;
-        getRecordFromProvider(domainName, callback);
+        queue.reset();
       }
 
-      callback(record);
+      queue.next()(record);
     };
   }
 
-  function getDefaultRecordCallback(domainName, callback) {
+  function getDefaultRecordCallback(queue, domainName, callback) {
     return function defaultRecordCallback(record) {
       if (!record) {
-        record = {
-          'host': domainName,
-          'port': cal3eSd.DEFAULT_PORT
-        };
+        record = {};
+      }
+
+      if (!record['host']) {
+        record['host'] = domainName;
+      } else if (!record['port']) {
+        record['port'] = cal3eSd.DEFAULT_PORT;
       }
 
       callback(record);
