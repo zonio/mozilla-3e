@@ -19,6 +19,7 @@
 
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
+Components.utils.import('resource://calendar3e/modules/http.jsm');
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 
@@ -265,13 +266,146 @@ function DnsSd(resolv) {
 
 function WellKnownSd() {
   var wellKnownSd = this;
+  var logger;
 
   function resolveServer(domainName, callback) {
-    callback(new Service(domainName));
+    logger.info('Resolving domain name "' + domainName + '" using ' +
+                'well-known URI');
+
+    doXhrSend({
+      'domainName': domainName,
+      'callback': callback
+    });
+  }
+
+  function doXhrSend(context) {
+    var channelCallbacks = new cal3eHttp.ChannelCallbacks(
+      doXhrSend,
+      onXhrLoad,
+      context,
+      null,
+      logger
+    );
+
+    var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
+      .createInstance(Components.interfaces.nsIXMLHttpRequest);
+    xhr.open(
+      'GET',
+      'http://' + context['domainName'] + WellKnownSd.WELL_KNOWN_URI_PATH
+    );
+    xhr.setRequestHeader('Content-Type', 'text/plain');
+    xhr.addEventListener('load', function(event) {
+      onXhrLoad(event, context);
+    }, false);
+    xhr.addEventListener('error', function(event) {
+      if (channelCallbacks.isActive()) {
+        return;
+      }
+
+      onXhrLoad(event, context);
+    }, false);
+    xhr.channel.notificationCallbacks = channelCallbacks;
+
+    xhr.send();
+  }
+
+  function onXhrLoad(eventOrError, context) {
+    didGetResources(
+      context['domainName'],
+      getEeeServiceResourceFromEvent(eventOrError),
+      context['callback']
+    );
+  }
+
+  function getEeeServiceResourceFromEvent(event) {
+    if (!event || !event.target || !event.target.status ||
+        (event.target.status !== 200)) {
+      return null;
+    }
+
+    Services.console.logStringMessage('Well known URI:\n' +
+                                      event.target.responseText);
+
+    var resource = event.target.responseText
+      .split(/\s+/)
+      .reduce(function(brokenData, keyValuePair) {
+        var pair = keyValuePair.split('=', 2);
+        if (pair[0]) {
+          brokenData[pair[0]] = pair[1];
+        }
+
+        return brokenData;
+      }, {});
+    resource['ttl'] = getTtlFromXhr(event.target);
+
+    return resource;
+  }
+
+  function getTtlFromXhr(xhr) {
+    var ttl;
+    var cacheControl =
+      (xhr.getResponseHeader('Cache-Control') || '')
+      .split(/\s*,\s*/)
+      .reduce(function(brokenDirectives, keyValuePair) {
+        var pair = keyValuePair.split(/\s*=\s*/, 2);
+        if (pair[0]) {
+          brokenDirectives[pair[0]] = pair[1];
+        }
+
+        return brokenDirectives;
+      }, {});
+    if (cacheControl['s-maxage']) {
+      ttl = 1000 * cacheControl['s-maxage'];
+    } else if (cacheControl['max-age']) {
+      ttl = 1000 * cacheControl['max-age'];
+    } else if (xhr.getResponseHeader('Expires')) {
+      ttl = new Date(xhr.getResponseHeader('Expires')) - new Date();
+    }
+
+    return ttl;
+  }
+
+  function didGetResources(domainName, resource, callback) {
+    if (!resource) {
+      logger.info('No resource found for "' + domainName + '" on ' +
+                  'well-known URI');
+      callback();
+      return;
+    }
+
+    logger.info('Domain name "' + domainName + '" resolved via well-known ' +
+                'URI as "' + resource['server'] + '" with TTL ' +
+                resource['ttl']);
+
+    var hostPort = (resource['server'] || '').split(':', 2);
+
+    if (!resource['server']) {
+      logger.warn('No server value found for "' + domainName + '" on ' +
+                  'well-known URI');
+    }
+    if (resource['server'] && !hostPort[0]) {
+      logger.warn('No host found for "' + domainName + '" on ' +
+                  'well-known URI');
+    }
+    if (resource['server'] && !hostPort[1]) {
+      logger.warn('No port found for "' + domainName + '" on ' +
+                  'well-known URI');
+    }
+
+    callback(new Service(domainName, hostPort[0],
+                                     hostPort[1],
+                                     resource['ttl']));
+  }
+
+  function init() {
+    logger = cal3eLogger.create('extensions.calendar3e.log.sd');
   }
 
   wellKnownSd.resolveServer = resolveServer;
+
+  init();
 }
+WellKnownSd.WELL_KNOWN_URI_PATH = '/.well-known/eee';
 
 function Service(domainName, host, port, ttl) {
   var service = this;
