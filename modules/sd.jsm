@@ -178,29 +178,22 @@ function DnsSd(resolv) {
       return null;
     }
 
-    var resource = dnsResources
-      .reduce(function(combinedData, resource) {
-        return combinedData + ' ' + resource.data();
-      }, '')
-      .split(/\s+/)
-      .reduce(function(brokenData, keyValuePair) {
-        var pair = keyValuePair.split('=', 2);
-        if (pair[0]) {
-          brokenData[pair[0]] = pair[1];
-        }
+    var parser = new ProviderDataParser(
+      dnsResources.map(function(res) { return res.data() }).join(' '),
+      getTtlFromDnsResources(dnsResources)
+    );
 
-        return brokenData;
-      }, {});
+    return parser.parsedData();
+  }
 
-    resource['ttl'] = 1000 * dnsResources.reduce(function(ttl, dnsResource) {
+  function getTtlFromDnsResources(dnsResources) {
+    return 1000 * dnsResources.reduce(function(ttl, dnsResource) {
       if (ttl > dnsResource.ttl()) {
         ttl = dnsResource.ttl();
       }
 
       return ttl;
     }, Number.POSITIVE_INFINITY);
-
-    return resource;
   }
 
   function didGetResources(domainName, resource, callback) {
@@ -323,22 +316,12 @@ function WellKnownSd() {
       return null;
     }
 
-    Services.console.logStringMessage('Well known URI:\n' +
-                                      event.target.responseText);
+    var parser = new ProviderDataParser(
+      event.target.responseText,
+      getTtlFromXhr(event.target)
+    );
 
-    var resource = event.target.responseText
-      .split(/\s+/)
-      .reduce(function(brokenData, keyValuePair) {
-        var pair = keyValuePair.split('=', 2);
-        if (pair[0]) {
-          brokenData[pair[0]] = pair[1];
-        }
-
-        return brokenData;
-      }, {});
-    resource['ttl'] = getTtlFromXhr(event.target);
-
-    return resource;
+    return parser.parsedData();
   }
 
   function getTtlFromXhr(xhr) {
@@ -445,6 +428,37 @@ function Service(domainName, host, port, ttl) {
   service.port = getPort;
   service.validUntil = getValidUntil;
   service.toString = toString;
+
+  init();
+}
+
+function ProviderDataParser(data, ttl) {
+  var providerDataParser = this;
+  var parsedData;
+
+  function parse() {
+    parsedData = data
+      .split(/\s+/)
+      .reduce(function(brokenData, keyValuePair) {
+        var pair = keyValuePair.split('=', 2);
+        if (pair[0]) {
+          brokenData[pair[0]] = pair[1];
+        }
+
+        return brokenData;
+      }, {});
+    parsedData['ttl'] = ttl;
+  }
+
+  function getParsedData() {
+    return parsedData;
+  }
+
+  function init() {
+    parse();
+  }
+
+  providerDataParser.parsedData = getParsedData;
 
   init();
 }
