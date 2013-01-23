@@ -29,58 +29,39 @@ function cal3eSd(providers, cache) {
     var queue = new cal3eSynchronization.Queue();
     queue
       .push(getPassOrTryNextCallback(queue, domainName, callback))
-      .push(getTryToGetRecordCallback(queue, domainName, callback))
-      .push(getDefaultRecordCallback(queue, domainName, callback));
+      .push(getTryToGetServiceCallback(queue, domainName, callback));
     queue.call();
-
-    return future.returnValue();
   }
 
   function getPassOrTryNextCallback(queue, domainName, callback) {
     var idx = 0;
 
-    return function passOrTryNextCallback(record) {
+    return function passOrTryNextCallback(service) {
       providers[idx].resolvServer(domainName, function(result) {
         idx += 1;
         if (!result && providers[idx]) {
-          passOrTryNextCallback(record);
+          passOrTryNextCallback(service);
         } else if (result) {
-          record = result;
+          service = result;
         }
 
-        queue.next()(record);
+        queue.next()(service);
       });
     };
   }
 
-  function getTryToGetRecordCallback(queue, domainName, callback) {
+  function getTryToGetServiceCallback(queue, domainName, callback) {
     var tryCount = 0;
 
-    return function tryToGetRecordCallback(record) {
-      if (!record &&
+    return function tryToGetServiceCallback(service) {
+      if (!service &&
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
         tryCount += 1;
-        queue.reset();
+        queue.reset().next()(service);
       }
 
-      queue.next()(record);
-    };
-  }
-
-  function getDefaultRecordCallback(queue, domainName, callback) {
-    return function defaultRecordCallback(record) {
-      if (!record) {
-        record = {};
-      }
-
-      if (!record['host']) {
-        record['host'] = domainName;
-      } else if (!record['port']) {
-        record['port'] = cal3eSd.DEFAULT_PORT;
-      }
-
-      callback(record);
+      callback(service);
     };
   }
 
@@ -105,22 +86,14 @@ function cal3eSd(providers, cache) {
 }
 cal3eSd.DEFAULT_PORT = 4444;
 cal3eSd.DEFAULT_TTL = 86400;
-cal3eSd.EEE_SERVER_RESOURCE_RE = /\bserver=([^:]+)(?::(\d{1,5}))?\b/;
 
 function DnsSd(resolv) {
   var dnsSd = this;
+  var resolv;
   var logger;
 
   function resolveServer(domainName, callback) {
     logger.info('Resolving domain name "' + domainName + '"');
-
-    var resources;
-    if (resources = cache.get(domainName)) {
-      didGetResources(domainName, resources, callback);
-      return;
-    }
-
-    logger.info('Asking resolver for "' + domainName + '"');
 
     resolv.addEventListener(
       'message', getOnMessageListener(resolv, domainName, callback), false
@@ -137,56 +110,68 @@ function DnsSd(resolv) {
 
       logger.info('Data from resolver for "' + domainName + '" received');
 
-      var resources = getEeeServerResourcesFromEvent(event, domainName);
-      cache.set(domainName, resources);
-
-      didGetResources(domainName, resources, callback);
+      didGetResources(
+        domainName,
+        getEeeServiceResourceFromEvent(event),
+        callback
+      );
     };
   }
 
-  function getEeeServerResourcesFromEvent(event, domainName) {
-    var resources = event.data.result
+  function getEeeServiceResourceFromEvent(event) {
+    if (event.data.result.length === 0) {
+      return null;
+    }
+
+    var dnsResources = event.data.result
       .map(function(data) {
         return Resolv.DNS.Resource.fromJson(data);
       })
       .filter(function(resource) {
-        return resource.data().match(/^eee /) &&
-          resource.data().match(cal3eSd.EEE_SERVER_RESOURCE_RE);
+        return resource.data().match(/^eee /);
       });
 
-    if (resources.length === 0) {
-      if (event.data.result.length === 0) {
-        logger.warn('No data found for "' + domainName + '", trying default');
-      }
-      resources.push(new Resolv.DNS.Resource['TXT'](
-        cal3eSd.DEFAULT_TTL,
-        'eee server=' + domainName + ':' + cal3eSd.DEFAULT_PORT
-      ));
+    var resource = dnsResources
+      .reduce(function(combinedData, resource) {
+        return combinedData + ' ' + resource.data();
+      }, '')
+      .split(/\s+/)
+      .reduce(function(brokenData, keyValuePair) {
+        var pair = keyValuePair.split('=', 2);
+
+        return brokenData[pair[0]] = pair[1];
+      }, {});
+
+    if (dnsResources.length > 0) {
+      resource['ttl'] = dnsResources[0].ttl();
     }
 
-    return resources;
+    return resource;
   }
 
-  function didGetResources(domainName, resources, callback) {
-    var records = resources.map(function(resource) {
-      var match = cal3eSd.EEE_SERVER_RESOURCE_RE.exec(resource.data());
-      if (!match[1]) {
-        logger.warn('No host found for "' + domainName + '", trying default');
-      }
-      if (!match[2]) {
-        logger.warn('No port found for "' + domainName + '", trying default');
-      }
+  function didGetResources(domainName, resource, callback) {
+    if (!resource) {
+      logger.info('No DNS records found for "' + domainName + '"');
+      callback();
+    }
 
-      return {
-        'host': match[1] || domainName,
-        'port': match[2] || cal3eSd.DEFAULT_PORT
-      };
-    });
+    if (!resource['host']) {
+      logger.warn('No host found for "' + domainName + '", trying default');
+    }
+    if (!resource['port']) {
+      logger.warn('No port found for "' + domainName + '", trying default');
+    }
+    if (!resource['ttl']) {
+      logger.info('No TTL found for "' + domainName + '", trying default');
+    }
 
     logger.info('Domain name "' + domainName + '" resolved as "' +
-                records[0]['host'] + ':' + records[0]['port'] + '"');
+                resource['host'] + ':' + resource['port'] + '" with TTL ' +
+                resource['ttl']);
 
-    callback(records[0]);
+    callback(new Service(domainName, resource['host'],
+                                     resource['port'],
+                                     resource['ttl']));
   }
 
   function getDefaultResolv() {
@@ -226,13 +211,35 @@ function WellKnownSd() {
   var wellKnownSd = this;
 
   function resolveServer(domainName, callback) {
-    callback({
-      'host': domainName,
-      'port': cal3eSd.DEFAULT_PORT
-    });
+    callback(new Service(domainName));
   }
 
   wellKnownSd.resolveServer = resolveServer;
+}
+
+function Service(domainName, host, port, ttl) {
+  var service = this;
+
+  function getDomainName() {
+    return domainName;
+  }
+
+  function getHost() {
+    return host || domainName;
+  }
+
+  function getPort() {
+    return port || cal3eSd.DEFAULT_PORT;
+  }
+
+  function getTtl() {
+    return ttl || cal3eSd.DEFAULT_TTL;
+  }
+
+  service.domainName = getDomainName();
+  service.host = getHost();
+  service.port = getPort();
+  service.ttl = getTtl();
 }
 
 function Cache() {

@@ -146,6 +146,8 @@ function Queue() {
 
   function reset() {
     idx = 0;
+
+    return queue;
   }
 
   function getNext() {
