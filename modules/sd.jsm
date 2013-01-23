@@ -261,6 +261,7 @@ function WellKnownSd() {
 
 function Service(domainName, host, port, ttl) {
   var service = this;
+  var validUntil;
 
   function getDomainName() {
     return domainName;
@@ -274,14 +275,20 @@ function Service(domainName, host, port, ttl) {
     return port || cal3eSd.DEFAULT_PORT;
   }
 
-  function getTtl() {
-    return ttl || cal3eSd.DEFAULT_TTL;
+  function getValidUntil() {
+    return new Date(validUntil);
+  }
+
+  function init() {
+    validUntil = Date.now() + (ttl || cal3eSd.DEFAULT_TTL);
   }
 
   service.domainName = getDomainName;
   service.host = getHost;
   service.port = getPort;
-  service.ttl = getTtl;
+  service.validUntil = getValidUntil;
+
+  init();
 }
 
 function Cache() {
@@ -296,23 +303,16 @@ function Cache() {
       logger.info('Cache hit for "' + name + '"');
     }
 
-    return store[name] ? store[name]['service'] : null;
+    return store[name] ? store[name] : null;
   }
 
   function set(name, service) {
-    store[name] = {
-      'until': getUntil(service),
-      'service': service
-    };
+    store[name] = service;
     cleanup();
 
     if (store[name]) {
       logger.info('Cache set for "' + name + '"');
     }
-  }
-
-  function getUntil(service) {
-    return new Date(Date.now() + service.ttl());
   }
 
   function cleanup() {
@@ -322,7 +322,7 @@ function Cache() {
         continue;
       }
 
-      if (store[name]['until'] < new Date()) {
+      if (store[name].validUntil() < new Date()) {
         delete store[name];
       }
     }
