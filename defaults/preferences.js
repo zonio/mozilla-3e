@@ -23,6 +23,7 @@
 pref('extensions.calendar3e.calendar_sync_interval', 15000);
 pref('extensions.calendar3e.queue_execution_interval', 500);
 pref('extensions.calendar3e.user_error_timeout', 300000);
+pref('extensions.calendar3e.default_sd_ttl', 3000);
 
 pref('extensions.calendar3e.sd_try_limit', 3);
 

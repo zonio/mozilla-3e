@@ -117,8 +117,6 @@ function cal3eSd(providers, cache) {
 
   init();
 }
-cal3eSd.DEFAULT_PORT = 4444;
-cal3eSd.DEFAULT_TTL = 86400;
 
 function DnsSd(resolv) {
   var dnsSd = this;
@@ -272,7 +270,10 @@ function Service(domainName, host, port, ttl) {
   }
 
   function getPort() {
-    return port || cal3eSd.DEFAULT_PORT;
+    return port ||
+      Components.classes['@mozilla.org/network/protocol;1?name=eee']
+      .createInstance(Components.interfaces.nsIProtocolHandler)
+      .defaultPort;
   }
 
   function getValidUntil() {
@@ -280,7 +281,9 @@ function Service(domainName, host, port, ttl) {
   }
 
   function init() {
-    validUntil = Date.now() + (ttl || cal3eSd.DEFAULT_TTL);
+    validUntil = Date.now() +
+      (ttl ||
+       Services.prefs.getIntPref('extensions.calendar3e.default_sd_ttl'));
   }
 
   service.domainName = getDomainName;
