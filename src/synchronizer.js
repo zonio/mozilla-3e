@@ -315,6 +315,7 @@ function Synchronizer(identity, logger) {
   var synchronizer = this;
   var currentOperation;
   var future;
+  var lastAttemptWasSuccessful;
 
   function synchronize() {
     future = new cal3eSynchronization.Future();
@@ -329,6 +330,7 @@ function Synchronizer(identity, logger) {
                       'because of error ' +
                       result.constructor.name + '(' + result.errorCode + ')');
 
+          lastAttemptWasSuccessful = false;
           future.done();
           return;
         } else if (!(result instanceof cal3eResponse.Success)) {
@@ -337,18 +339,22 @@ function Synchronizer(identity, logger) {
                       'because of error ' +
                       result.constructor.name + '(' + result.errorCode + ')');
 
-          var bundle = Services.strings.createBundle(
-            'chrome://calendar3e/locale/cal3eCalendar.properties'
-          );
-          Services.prompt.alert(
-            cal.getCalendarWindow(),
-            bundle.GetStringFromName('cal3eAlertDialog.calendarSync.title'),
-            bundle.formatStringFromName(
-              'cal3eAlertDialog.calendarSync.text',
-              [identity.fullName + ' <' + identity.email + '>'],
-              1
-            )
-          );
+          if (!Services.io.offline) {
+            var bundle = Services.strings.createBundle(
+              'chrome://calendar3e/locale/cal3eCalendar.properties'
+            );
+            Services.prompt.alert(
+              cal.getCalendarWindow(),
+              bundle.GetStringFromName('cal3eAlertDialog.calendarSync.title'),
+              bundle.formatStringFromName(
+                'cal3eAlertDialog.calendarSync.text',
+                [identity.fullName + ' <' + identity.email + '>'],
+                1
+              )
+            );
+          }
+
+          lastAttemptWasSuccessful = false;
           future.done();
           return;
         }
@@ -357,6 +363,7 @@ function Synchronizer(identity, logger) {
                     'calendars of identity "' + identity.email + '"');
         synchronizeCalendarsFromResult(result);
 
+        lastAttemptWasSuccessful = true;
         future.done();
       },
       'owned() OR subscribed()'
@@ -431,6 +438,10 @@ function Synchronizer(identity, logger) {
                 calendar.uri.spec + '"');
 
     setCalendarProperties(calendar, data);
+
+    if (!lastAttemptWasSuccessful) {
+      calendar.refresh();
+    }
   }
 
   function deleteCalendar(calendar) {
@@ -467,8 +478,14 @@ function Synchronizer(identity, logger) {
       }, {});
   }
 
+  function init() {
+    lastAttemptWasSuccessful = true;
+  }
+
   synchronizer.synchronize = synchronize;
   synchronizer.cancel = cancel;
+
+  init();
 }
 
 const NSGetFactory = cal3eObject.asXpcom(calEeeSynchronizationService, {
