@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
 Components.utils.import('resource://calendar3e/modules/resolv.jsm');
 Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
@@ -45,7 +46,7 @@ function cal3eSd(providers, cache) {
     var idx = 0;
 
     return function passOrTryNextProviderCallback(service) {
-      providers[idx].resolvServer(domainName, function(result) {
+      providers[idx].resolveServer(domainName, function(result) {
         idx += 1;
         if (!result && providers[idx]) {
           passOrTryNextProviderCallback(service);
@@ -169,20 +170,20 @@ function DnsSd(resolv) {
       .split(/\s+/)
       .reduce(function(brokenData, keyValuePair) {
         var pair = keyValuePair.split('=', 2);
+        if (pair[0]) {
+          brokenData[pair[0]] = pair[1];
+        }
 
-        return brokenData[pair[0]] = pair[1];
+        return brokenData;
       }, {});
 
-    resource['ttl'] = 1000 * dnsResources.reduce(function(min, resource) {
-      if (!min) {
-        min = Number.POSITIVE_INFINITY;
-      }
-      if (min > resource.ttl()) {
-        min = resource.ttl();
+    resource['ttl'] = 1000 * dnsResources.reduce(function(ttl, dnsResource) {
+      if (ttl > dnsResource.ttl()) {
+        ttl = dnsResource.ttl();
       }
 
-      return min;
-    });
+      return ttl;
+    }, Number.POSITIVE_INFINITY);
 
     return resource;
   }
@@ -193,19 +194,25 @@ function DnsSd(resolv) {
       callback();
     }
 
-    if (!resource['host']) {
+    logger.info('Domain name "' + domainName + '" resolved as "' +
+                resource['server'] + '" with TTL ' +
+                resource['ttl']);
+
+    var hostPort = (resource['server'] || '').split(':', 2);
+
+    if (!resource['server']) {
+      logger.warn('No server value found for "' + domainName + '", ' +
+                  'trying default');
+    }
+    if (resource['server'] && !hostPort[0]) {
       logger.warn('No host found for "' + domainName + '", trying default');
     }
-    if (!resource['port']) {
+    if (resource['server'] && !hostPort[1]) {
       logger.warn('No port found for "' + domainName + '", trying default');
     }
 
-    logger.info('Domain name "' + domainName + '" resolved as "' +
-                resource['host'] + ':' + resource['port'] + '" with TTL ' +
-                resource['ttl']);
-
-    callback(new Service(domainName, resource['host'],
-                                     resource['port'],
+    callback(new Service(domainName, hostPort[0],
+                                     hostPort[1],
                                      resource['ttl']));
   }
 
@@ -271,10 +278,10 @@ function Service(domainName, host, port, ttl) {
     return ttl || cal3eSd.DEFAULT_TTL;
   }
 
-  service.domainName = getDomainName();
-  service.host = getHost();
-  service.port = getPort();
-  service.ttl = getTtl();
+  service.domainName = getDomainName;
+  service.host = getHost;
+  service.port = getPort;
+  service.ttl = getTtl;
 }
 
 function Cache() {
