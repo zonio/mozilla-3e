@@ -26,21 +26,29 @@ function cal3eSd(providers, cache) {
   var logger;
 
   function resolveServer(domainName, callback) {
+    var service;
+    if (service = cache.get(domainName)) {
+      callback(service);
+    }
+
     var queue = new cal3eSynchronization.Queue();
     queue
-      .push(getPassOrTryNextCallback(queue, domainName, callback))
-      .push(getTryToGetServiceCallback(queue, domainName, callback));
-    queue.call();
+      .push(getPassOrTryNextProviderCallback(queue, domainName, callback))
+      .push(getTryToGetServiceCallback(queue, domainName, callback))
+      .push(getDefaultServiceCallback(queue, domainName, callback))
+      .push(getCacheServiceCallback(queue, domainName, callback))
+      .push(getPassServiceCallback(queue, domainName, callback));
+    queue.call(service);
   }
 
-  function getPassOrTryNextCallback(queue, domainName, callback) {
+  function getPassOrTryNextProviderCallback(queue, domainName, callback) {
     var idx = 0;
 
-    return function passOrTryNextCallback(service) {
+    return function passOrTryNextProviderCallback(service) {
       providers[idx].resolvServer(domainName, function(result) {
         idx += 1;
         if (!result && providers[idx]) {
-          passOrTryNextCallback(service);
+          passOrTryNextProviderCallback(service);
         } else if (result) {
           service = result;
         }
@@ -58,9 +66,33 @@ function cal3eSd(providers, cache) {
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
         tryCount += 1;
-        queue.reset().next()(service);
+        queue.reset();
       }
 
+      queue.next()(service);
+    };
+  }
+
+  function getDefaultServiceCallback(queue, domainName, callback) {
+    return function defaultServiceCallback(service) {
+      if (!service) {
+        service = new Service(domainName);
+      }
+
+      queue.next()(service);
+    };
+  }
+
+  function getCacheServiceCallback(queue, domainName, callback) {
+    return function cacheServiceCallback(service) {
+      cache.set(domainName, service);
+
+      queue.next()(service);
+    };
+  }
+
+  function getPassServiceCallback(queue, domainName, callback) {
+    return function passServiceCallback(service) {
       callback(service);
     };
   }
