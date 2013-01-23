@@ -158,15 +158,15 @@ function DnsSd(resolv) {
       logger.info('Data from resolver for "' + domainName + '" received ' +
                   'from DNS');
 
-      didGetResources(
+      didGetProviderData(
         domainName,
-        getEeeServiceResourceFromEvent(event),
+        getProviderDataFromEvent(event),
         callback
       );
     };
   }
 
-  function getEeeServiceResourceFromEvent(event) {
+  function getProviderDataFromEvent(event) {
     var dnsResources = event.data.result
       .map(function(data) {
         return Resolv.DNS.Resource.fromJson(data);
@@ -196,32 +196,18 @@ function DnsSd(resolv) {
     }, Number.POSITIVE_INFINITY);
   }
 
-  function didGetResources(domainName, resource, callback) {
-    if (!resource) {
+  function didGetProviderData(domainName, data, callback) {
+    if (!data) {
       logger.info('No DNS records found for "' + domainName + '"');
       callback();
       return;
     }
 
     logger.info('Domain name "' + domainName + '" resolved via DNS as "' +
-                resource['server'] + '" with TTL ' +
-                resource['ttl']);
+                data['server'] + '" with TTL ' +
+                data['ttl']);
 
-    var hostPort = (resource['server'] || '').split(':', 2);
-
-    if (!resource['server']) {
-      logger.warn('No server value found for "' + domainName + '" in DNS');
-    }
-    if (resource['server'] && !hostPort[0]) {
-      logger.warn('No host found for "' + domainName + '" in DNS');
-    }
-    if (resource['server'] && !hostPort[1]) {
-      logger.warn('No port found for "' + domainName + '" in DNS');
-    }
-
-    callback(new Service(domainName, hostPort[0],
-                                     hostPort[1],
-                                     resource['ttl']));
+    callback(Service.fromProviderData(domainName, data, logger));
   }
 
   function getDefaultResolv() {
@@ -303,14 +289,14 @@ function WellKnownSd() {
   }
 
   function onXhrLoad(eventOrError, context) {
-    didGetResources(
+    didGetProviderData(
       context['domainName'],
-      getEeeServiceResourceFromEvent(eventOrError),
+      getProviderDataFromEvent(eventOrError),
       context['callback']
     );
   }
 
-  function getEeeServiceResourceFromEvent(event) {
+  function getProviderDataFromEvent(event) {
     if (!event || !event.target || !event.target.status ||
         (event.target.status !== 200)) {
       return null;
@@ -348,36 +334,19 @@ function WellKnownSd() {
     return ttl;
   }
 
-  function didGetResources(domainName, resource, callback) {
+  function didGetProviderData(domainName, data, callback) {
     if (!resource) {
-      logger.info('No resource found for "' + domainName + '" on ' +
+      logger.info('No data found for "' + domainName + '" on ' +
                   'well-known URI');
       callback();
       return;
     }
 
     logger.info('Domain name "' + domainName + '" resolved via well-known ' +
-                'URI as "' + resource['server'] + '" with TTL ' +
-                resource['ttl']);
+                'URI as "' + data['server'] + '" with TTL ' +
+                data['ttl']);
 
-    var hostPort = (resource['server'] || '').split(':', 2);
-
-    if (!resource['server']) {
-      logger.warn('No server value found for "' + domainName + '" on ' +
-                  'well-known URI');
-    }
-    if (resource['server'] && !hostPort[0]) {
-      logger.warn('No host found for "' + domainName + '" on ' +
-                  'well-known URI');
-    }
-    if (resource['server'] && !hostPort[1]) {
-      logger.warn('No port found for "' + domainName + '" on ' +
-                  'well-known URI');
-    }
-
-    callback(new Service(domainName, hostPort[0],
-                                     hostPort[1],
-                                     resource['ttl']));
+    callback(Service.fromProviderData(domainName, data, logger));
   }
 
   function init() {
@@ -430,6 +399,22 @@ function Service(domainName, host, port, ttl) {
   service.toString = toString;
 
   init();
+}
+Service.fromProviderData = function fromProviderData(domainName, data,
+                                                     logger) {
+  var hostPort = (data['server'] || '').split(':', 2);
+
+  if (!data['server']) {
+    logger.warn('No server value found for "' + domainName + '"');
+  }
+  if (data['server'] && !hostPort[0]) {
+    logger.warn('No host found for "' + domainName + '"');
+  }
+  if (data['server'] && !hostPort[1]) {
+    logger.warn('No port found for "' + domainName + '"');
+  }
+
+  return new Service(domainName, hostPort[0], hostPort[1], data['ttl']);
 }
 
 function ProviderDataParser(data, ttl) {
