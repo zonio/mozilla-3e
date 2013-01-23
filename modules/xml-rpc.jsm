@@ -17,10 +17,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/ISO8601DateUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/logger.jsm');
+Components.utils.import('resource://calendar3e/modules/http.jsm');
 
 function Client(uri) {
   var client = this;
@@ -63,7 +62,7 @@ function Client(uri) {
       );
     }
 
-    var channelCallbacks = new ChannelCallbacks(
+    var channelCallbacks = new cal3eHttp.ChannelCallbacks(
       doXhrSend,
       passErrorToListener,
       context,
@@ -768,100 +767,6 @@ function Value(valueElement) {
 
   value.type = getType;
   value.value = getValue;
-
-  init();
-}
-
-function ChannelCallbacks(repeatCall, onError, context, window, logger) {
-  var channelCallbacks = this;
-  var badCertListener;
-
-  function getInterface(iid, result) {
-    if (!iid.equals(Components.interfaces.nsIBadCertListener2)) {
-      throw Components.Exception(
-        'Given interface is not supported',
-        Components.results.NS_ERROR_NO_INTERFACE
-      );
-    }
-
-    return badCertListener;
-  }
-
-  function isActive() {
-    return badCertListener.isActive();
-  }
-
-  function init() {
-    badCertListener = new BadCertListener(
-      repeatCall, onError, context, window, logger
-    );
-  }
-
-  channelCallbacks.QueryInterface = XPCOMUtils.generateQI([
-    Components.interfaces.nsIInterfaceRequestor
-  ]);
-  channelCallbacks.getInterface = getInterface;
-  channelCallbacks.isActive = isActive;
-
-  init();
-}
-
-function BadCertListener(repeatCall, onError, context, window, logger) {
-  var badCertListener = this;
-  var active;
-
-  function notifyCertProblem(socketInfo, status, targetSite) {
-    logger.warn('Certificate problem when calling server ' +
-                '"' + targetSite + '"');
-
-    active = true;
-    window.setTimeout(function() {
-      showBadCertDialogAndRetryCall({
-        'exceptionAdded': false,
-        'prefetchCert': true,
-        'location': targetSite
-      });
-    }, 0);
-  }
-
-  function showBadCertDialogAndRetryCall(parameters) {
-    window.openDialog(
-      'chrome://pippki/content/exceptionDialog.xul',
-      '',
-      'chrome,centerscreen,modal',
-      parameters
-    );
-
-    active = false;
-    if (parameters['exceptionAdded']) {
-      logger.info('Repeating call to server "' + parameters['location'] + '"');
-      repeatCall(context);
-    } else {
-      logger.error('Call to untrusted server ' +
-                   '"' + parameters['location'] + '"');
-      onError(Components.Exception(
-        'Server certificate exception not added',
-        Components.results.NS_ERROR_FAILURE
-      ), context);
-    }
-  }
-
-  function isActive() {
-    return active;
-  }
-
-  function init() {
-    if (!window) {
-      window = Services.wm.getMostRecentWindow(null);
-    }
-    active = false;
-  }
-
-  badCertListener.QueryInterface = XPCOMUtils.generateQI([
-    Components.interfaces.nsIInterfaceRequestor
-  ]);
-  badCertListener.notifyCertProblem = notifyCertProblem;
-  badCertListener.isActive = isActive;
 
   init();
 }

@@ -32,6 +32,7 @@ EXTRA_JS_MODULES = \
 	feature.jsm \
 	identity.jsm \
 	logger.jsm \
+	http.jsm \
 	model.jsm \
 	object.jsm \
 	resolv.jsm \
