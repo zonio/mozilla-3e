@@ -32,6 +32,7 @@ function cal3eSd(providers, cache) {
     var service;
     if (service = cache.get(domainName)) {
       getPassServiceCallback(queue, domainName, callback)(service);
+      return;
     }
 
     var queue = new cal3eSynchronization.Queue();
@@ -45,13 +46,16 @@ function cal3eSd(providers, cache) {
   }
 
   function getPassOrTryNextProviderCallback(queue, domainName, callback) {
-    var idx = 0;
+    return function passOrTryNextProviderCallback(service, idx) {
+      if (!idx) {
+        idx = 0;
+      }
 
-    return function passOrTryNextProviderCallback(service) {
       providers[idx].resolveServer(domainName, function(result) {
         idx += 1;
         if (!result && providers[idx]) {
-          passOrTryNextProviderCallback(service);
+          passOrTryNextProviderCallback(service, idx);
+          return;
         } else if (result) {
           service = result;
         }
@@ -65,13 +69,13 @@ function cal3eSd(providers, cache) {
     var tryCount = 0;
 
     return function tryToGetServiceCallback(service) {
-      tryCount += 1;
       if (!service &&
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
         logger.info('Try #' + tryCount + ' to get service parameters fro ' +
                     '"' + domainName + '" failed');
 
+        tryCount += 1;
         queue.reset();
       }
 
@@ -102,7 +106,8 @@ function cal3eSd(providers, cache) {
 
   function getPassServiceCallback(queue, domainName, callback) {
     return function passServiceCallback(service) {
-      logger.info('Passing back service parameters for "' + domainName + '"');
+      logger.info('Passing back service parameters for "' + domainName + '" ' +
+                  'as "' + service + '"');
 
       callback(service);
     };
@@ -201,9 +206,10 @@ function DnsSd(resolv) {
     if (!resource) {
       logger.info('No DNS records found for "' + domainName + '"');
       callback();
+      return;
     }
 
-    logger.info('Domain name "' + domainName + '" resolved as "' +
+    logger.info('Domain name "' + domainName + '" resolved via DNS as "' +
                 resource['server'] + '" with TTL ' +
                 resource['ttl']);
 
@@ -290,6 +296,10 @@ function Service(domainName, host, port, ttl) {
     return new Date(validUntil);
   }
 
+  function toString() {
+    return getHost() + ':' + getPort();
+  }
+
   function init() {
     validUntil = Date.now() +
       (ttl ||
@@ -300,6 +310,7 @@ function Service(domainName, host, port, ttl) {
   service.host = getHost;
   service.port = getPort;
   service.validUntil = getValidUntil;
+  service.toString = toString;
 
   init();
 }
