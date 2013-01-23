@@ -119,10 +119,6 @@ function DnsSd(resolv) {
   }
 
   function getEeeServiceResourceFromEvent(event) {
-    if (event.data.result.length === 0) {
-      return null;
-    }
-
     var dnsResources = event.data.result
       .map(function(data) {
         return Resolv.DNS.Resource.fromJson(data);
@@ -130,6 +126,9 @@ function DnsSd(resolv) {
       .filter(function(resource) {
         return resource.data().match(/^eee /);
       });
+    if (dnsResources.length === 0) {
+      return null;
+    }
 
     var resource = dnsResources
       .reduce(function(combinedData, resource) {
@@ -142,9 +141,16 @@ function DnsSd(resolv) {
         return brokenData[pair[0]] = pair[1];
       }, {});
 
-    if (dnsResources.length > 0) {
-      resource['ttl'] = dnsResources[0].ttl();
-    }
+    resource['ttl'] = 1000 * dnsResources.reduce(function(min, resource) {
+      if (!min) {
+        min = Number.POSITIVE_INFINITY;
+      }
+      if (min > resource.ttl()) {
+        min = resource.ttl();
+      }
+
+      return min;
+    });
 
     return resource;
   }
@@ -160,9 +166,6 @@ function DnsSd(resolv) {
     }
     if (!resource['port']) {
       logger.warn('No port found for "' + domainName + '", trying default');
-    }
-    if (!resource['ttl']) {
-      logger.info('No TTL found for "' + domainName + '", trying default');
     }
 
     logger.info('Domain name "' + domainName + '" resolved as "' +
@@ -254,13 +257,13 @@ function Cache() {
       logger.info('Cache hit for "' + name + '"');
     }
 
-    return store[name] ? store[name]['resources'] : null;
+    return store[name] ? store[name]['service'] : null;
   }
 
-  function set(name, resources) {
+  function set(name, service) {
     store[name] = {
-      'until': getUntil(resources),
-      'resources': resources
+      'until': getUntil(service),
+      'service': service
     };
     cleanup();
 
@@ -269,20 +272,8 @@ function Cache() {
     }
   }
 
-  function getUntil(resources) {
-    var ttl = resources.reduce(function(min, resource) {
-      if (min > resource.ttl()) {
-        min = resource.ttl();
-      }
-
-      return min;
-    }, Number.POSITIVE_INFINITY);
-
-    if ((ttl < 0) || (ttl === Number.POSITIVE_INFINITY)) {
-      ttl = 0;
-    }
-
-    return new Date(Date.now() + 1000 * ttl);
+  function getUntil(service) {
+    return new Date(Date.now() + service.ttl());
   }
 
   function cleanup() {
