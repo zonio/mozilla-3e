@@ -113,10 +113,10 @@ function buildWebcalUri(calendar) {
   var sd = new cal3eSd();
 
   var [localPart, domainPart] = getCalendarOwner(calendar).split('@', 2);
-  sd.resolveServer(domainPart, function(result) {
+  sd.resolveServer(domainPart, function(service) {
     var spec = '';
     spec += 'https:/';
-    spec += '/' + result['host'] + ':' + result['port'];
+    spec += '/' + service.host() + ':' + service.port();
     spec += '/calendars';
     spec += '/' + encodeURIComponent(getCalendarOwner(calendar));
     spec += '/' + encodeURIComponent(getCalendarName(calendar));

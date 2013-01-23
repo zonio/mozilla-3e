@@ -555,9 +555,9 @@ function ServerBuilder() {
   var sd;
 
   function fromIdentity(identity, callback) {
-    sd.resolveServer(getHostname(identity), function(record) {
+    sd.resolveServer(getHostname(identity), function(service) {
       callback(new cal3eXmlRpc.Client(Services.io.newURI(
-        'https://' + record['host'] + ':' + record['port'] + '/RPC2',
+        'https://' + service.host() + ':' + service.port() + '/RPC2',
         null,
         null
       )));

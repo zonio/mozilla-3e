@@ -64,12 +64,12 @@ function nsprTimeToEeeDate(nsprTime) {
 }
 
 function eeeAttachmentToHttpUri(eeeUri, callback) {
-  sd.resolveServer(eeeUri.host, function(record) {
+  sd.resolveServer(eeeUri.host, function(service) {
     var hash = eeeUri.spec.split('/')[4];
     var filename = eeeUri.spec.split('/')[5];
 
     callback(Services.io.newURI(
-      ['https:', '', record['host'] + ':' + record['port'],
+      ['https:', '', service.host() + ':' + service.port(),
        'attach', hash, filename].join('/'),
       null, null
     ));
