@@ -27,9 +27,11 @@ function cal3eSd(providers, cache) {
   var logger;
 
   function resolveServer(domainName, callback) {
+    logger.info('Resolving domain name "' + domainName + '"');
+
     var service;
     if (service = cache.get(domainName)) {
-      callback(service);
+      getPassServiceCallback(queue, domainName, callback)(service);
     }
 
     var queue = new cal3eSynchronization.Queue();
@@ -63,10 +65,13 @@ function cal3eSd(providers, cache) {
     var tryCount = 0;
 
     return function tryToGetServiceCallback(service) {
+      tryCount += 1;
       if (!service &&
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
-        tryCount += 1;
+        logger.info('Try #' + tryCount + ' to get service parameters fro ' +
+                    '"' + domainName + '" failed');
+
         queue.reset();
       }
 
@@ -77,6 +82,9 @@ function cal3eSd(providers, cache) {
   function getDefaultServiceCallback(queue, domainName, callback) {
     return function defaultServiceCallback(service) {
       if (!service) {
+        logger.warn('Cannot resolve service parameter for ' +
+                    '"' + domainName + '"');
+
         service = new Service(domainName);
       }
 
@@ -94,6 +102,8 @@ function cal3eSd(providers, cache) {
 
   function getPassServiceCallback(queue, domainName, callback) {
     return function passServiceCallback(service) {
+      logger.info('Passing back service parameters for "' + domainName + '"');
+
       callback(service);
     };
   }
@@ -124,7 +134,7 @@ function DnsSd(resolv) {
   var logger;
 
   function resolveServer(domainName, callback) {
-    logger.info('Resolving domain name "' + domainName + '"');
+    logger.info('Resolving domain name "' + domainName + '" using DNS');
 
     resolv.addEventListener(
       'message', getOnMessageListener(resolv, domainName, callback), false
@@ -139,7 +149,8 @@ function DnsSd(resolv) {
     return function onMessage(event) {
       resolv.removeEventListener('message', onMessage, false);
 
-      logger.info('Data from resolver for "' + domainName + '" received');
+      logger.info('Data from resolver for "' + domainName + '" received ' +
+                  'from DNS');
 
       didGetResources(
         domainName,
@@ -199,14 +210,13 @@ function DnsSd(resolv) {
     var hostPort = (resource['server'] || '').split(':', 2);
 
     if (!resource['server']) {
-      logger.warn('No server value found for "' + domainName + '", ' +
-                  'trying default');
+      logger.warn('No server value found for "' + domainName + '" in DNS');
     }
     if (resource['server'] && !hostPort[0]) {
-      logger.warn('No host found for "' + domainName + '", trying default');
+      logger.warn('No host found for "' + domainName + '" in DNS');
     }
     if (resource['server'] && !hostPort[1]) {
-      logger.warn('No port found for "' + domainName + '", trying default');
+      logger.warn('No port found for "' + domainName + '" in DNS');
     }
 
     callback(new Service(domainName, hostPort[0],
