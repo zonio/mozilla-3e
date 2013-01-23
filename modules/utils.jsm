@@ -69,8 +69,7 @@ function eeeAttachmentToHttpUri(eeeUri, callback) {
     var filename = eeeUri.spec.split('/')[5];
 
     callback(Services.io.newURI(
-      ['https:', '', service.host() + ':' + service.port(),
-       'attach', hash, filename].join('/'),
+      ['https:', '', service, 'attach', hash, filename].join('/'),
       null, null
     ));
   });

@@ -116,7 +116,7 @@ function buildWebcalUri(calendar) {
   sd.resolveServer(domainPart, function(service) {
     var spec = '';
     spec += 'https:/';
-    spec += '/' + service.host() + ':' + service.port();
+    spec += '/' + service;
     spec += '/calendars';
     spec += '/' + encodeURIComponent(getCalendarOwner(calendar));
     spec += '/' + encodeURIComponent(getCalendarName(calendar));
