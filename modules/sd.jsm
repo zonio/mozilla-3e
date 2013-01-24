@@ -335,7 +335,7 @@ function WellKnownSd() {
   }
 
   function didGetProviderData(domainName, data, callback) {
-    if (!resource) {
+    if (!data) {
       logger.info('No data found for "' + domainName + '" on ' +
                   'well-known URI');
       callback();
