@@ -108,6 +108,7 @@ function calEeeCalendar() {
     }
 
     item = filterOutAttendees(item);
+    item = fixOrganizerAttendee(item);
     item = ensureIdentity(item);
 
     var clientListener = function calEee_adoptItem_onResult(result,
@@ -212,6 +213,8 @@ function calEeeCalendar() {
       );
       return null;
     }
+
+    newItem = fixOrganizerAttendee(newItem);
 
     var clientListener = function calEee_modifyItem_onResult(result,
                                                              operation) {
@@ -628,6 +631,43 @@ function calEeeCalendar() {
     });
 
     return newItem;
+  }
+
+  function fixOrganizerAttendee(item) {
+    var newItem = item.clone();
+
+    if (item.organizer === null) {
+      return newItem;
+    }
+
+    addOrganizerAsAttendee(newItem);
+    fixOrganizer(newItem);
+
+    return newItem;
+  }
+
+  function addOrganizerAsAttendee(item) {
+    var attendees = item.getAttendees({}).filter(function(attendee) {
+      return item.organizer.id === attendee.id;
+    });
+
+    if (attendees.length > 0) {
+      return;
+    }
+
+    var newAttendee = item.organizer.clone();
+    newAttendee.isOrganizer = false;
+    item.addAttendee(newAttendee);
+  }
+
+  function fixOrganizer(item) {
+    ['CUTYPE', 'MEMBER', 'ROLE', 'PARTSTAT', 'RSVP', 'DELEGATED-TO',
+     'DELEGATED-FROM'].forEach(function(property) {
+        item.organizer.deleteProperty(property);
+    });
+    item.organizer.participationStatus = null;
+    item.organizer.role = null;
+    item.organizer.rsvp = null;
   }
 
   function init() {
