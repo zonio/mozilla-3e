@@ -82,7 +82,7 @@ function Logger(logDevice) {
     if (!logDevice) {
       logDevice = new ConsoleLogDevice();
     }
-    formatter = DefautlFormatter;
+    formatter = DefaultFormatter;
     severityThreshold = 'DEBUG';
   }
 
@@ -119,7 +119,7 @@ function DumpLogDevice() {
   device.write = write;
 }
 
-function DefautlFormatter(severity, time, name, message) {
+function DefaultFormatter(severity, time, name, message) {
   function rightAlign(string, length) {
     while (string.length < length) {
       string = ' ' + string;
