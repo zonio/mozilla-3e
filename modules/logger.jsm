@@ -20,6 +20,7 @@
 Components.utils.import('resource://gre/modules/Services.jsm');
 
 function Logger(logDevice) {
+  var logger = this;
   var formatter;
   var severityThreshold;
   var defaultName;
@@ -85,35 +86,37 @@ function Logger(logDevice) {
     severityThreshold = 'DEBUG';
   }
 
-  this.log = log;
-  this.debug = debug;
-  this.info = info;
-  this.warn = warn;
-  this.error = error;
-  this.fatal = fatal;
-  this.setFormatter = setFormatter;
-  this.setSeverityThreshold = setSeverityThreshold;
-  this.setName = setName;
+  logger.log = log;
+  logger.debug = debug;
+  logger.info = info;
+  logger.warn = warn;
+  logger.error = error;
+  logger.fatal = fatal;
+  logger.setFormatter = setFormatter;
+  logger.setSeverityThreshold = setSeverityThreshold;
+  logger.setName = setName;
 
   init();
 }
 
 function ConsoleLogDevice() {
+  var device = this;
 
   function write(message) {
     Services.console.logStringMessage(message);
   }
 
-  this.write = write;
+  device.write = write;
 }
 
 function DumpLogDevice() {
+  var device = this;
 
   function write(message) {
     dump(message + '\n');
   }
 
-  this.write = write;
+  device.write = write;
 }
 
 function DefautlFormatter(severity, time, name, message) {
@@ -141,6 +144,7 @@ function DefautlFormatter(severity, time, name, message) {
 }
 
 function Builder(config) {
+  var builder = this;
 
   function createLogger() {
     var logger = new Logger(getLogDevice());
@@ -177,7 +181,7 @@ function Builder(config) {
     return Services.prefs.getCharPref(config + '.name');
   }
 
-  this.createLogger = createLogger;
+  builder.createLogger = createLogger;
 }
 
 var Severity = {
