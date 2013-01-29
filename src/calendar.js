@@ -467,9 +467,10 @@ function calEeeCalendar() {
         identity,
         getQueryObjectsListener(listener, null, null),
         calendar,
-        "match_uid('" + id + "')");
+        "match_uid('" + id + "') and not deleted()");
     logger.info('[' + operation.id() + '] Querying item with ' +
-                '"match_uid(' + id + ')" in calendar "' + uri.spec + '"');
+                '"match_uid(' + id + ') and not deleted()" in calendar "' +
+                uri.spec + '"');
 
     return operation.component();
   }
@@ -479,7 +480,7 @@ function calEeeCalendar() {
     logger.info('Querying items between "' +
                 (rangeStart ? rangeStart.nativeTime : '(start)') + '" and "' +
                 (rangeEnd ? rangeEnd.nativeTime : '(end)') + '" ' +
-                'in calendar "' + uri.spec + '"');
+                'and not deleted() in calendar "' + uri.spec + '"');
 
     if (!identity) {
       logger.error('Calendar "' + uri.spec + '" has unknown identity');
@@ -529,6 +530,7 @@ function calEeeCalendar() {
           "')"
       );
     }
+    query.push("not deleted()");
 
     var operation = cal3eRequest.Client.getInstance()
       .queryObjects(

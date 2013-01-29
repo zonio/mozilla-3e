@@ -206,7 +206,8 @@ function Client(serverBuilder, authenticationDelegate,
     queue
       .push('ESClient.queryObjects', [
         cal3eModel.calendarCalspec(calendar),
-        "match_uid('" + cal3eUtils.getInstanceId(newItem, newItem) + "')"
+        "match_uid('" + cal3eUtils.getInstanceId(newItem, newItem) + "') " +
+        "and not deleted()"
       ])
       .call(function(queue, listener) {
         var result = cal3eResponse.fromRequestQueue(queue);
