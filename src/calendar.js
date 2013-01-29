@@ -417,9 +417,9 @@ function calEeeCalendar() {
         cal3eUtils
           .getExpandedItems(item.clone(), rangeStart, rangeEnd)
           .forEach(function(item) {
+            organizerLightningHack(item);
             item.calendar = calendar.superCalendar;
             item.parentItem.calendar = calendar.superCalendar;
-            organizerLightningHack(item);
             item.makeImmutable();
 
             listener.onGetResult(
@@ -648,17 +648,22 @@ function calEeeCalendar() {
   }
 
   function addOrganizerAsAttendee(item) {
-    var attendees = item.getAttendees({}).filter(function(attendee) {
+    var attendees = item.getAttendees({});
+    var organizer = attendees.filter(function(attendee) {
       return item.organizer.id === attendee.id;
-    });
+    })[0];
 
-    if (attendees.length > 0) {
+    if (organizer) {
       return;
     }
 
     var newAttendee = item.organizer.clone();
     newAttendee.isOrganizer = false;
-    item.addAttendee(newAttendee);
+    attendees.unshift(newAttendee);
+    item.removeAllAttendees();
+    attendees.forEach(function(attendee) {
+      item.addAttendee(attendee);
+    });
   }
 
   function fixOrganizer(item) {
