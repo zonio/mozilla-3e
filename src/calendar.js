@@ -419,6 +419,7 @@ function calEeeCalendar() {
           .forEach(function(item) {
             item.calendar = calendar.superCalendar;
             item.parentItem.calendar = calendar.superCalendar;
+            organizerLightningHack(item);
             item.makeImmutable();
 
             listener.onGetResult(
@@ -668,6 +669,40 @@ function calEeeCalendar() {
     item.organizer.participationStatus = null;
     item.organizer.role = null;
     item.organizer.rsvp = null;
+  }
+
+  function organizerLightningHack(item) {
+    if (item.organizer === null) {
+      return;
+    }
+
+    var organizerAttendees = item.getAttendees({})
+      .filter(function(attendee) {
+        return attendee.id === item.organizer.id;
+      });
+
+    if (organizerAttendees.length <= 0) {
+      return;
+    }
+
+    var organizerAttendee = organizerAttendees[0];
+
+    ['CUTYPE', 'MEMBER', 'ROLE', 'PARTSTAT', 'RSVP', 'DELEGATED-TO',
+     'DELEGATED-FROM'].forEach(function(property) {
+
+      if (organizerAttendee.getProperty(property) != null) {
+        item.organizer.setProperty(
+          organizerAttendee.getProperty(property).clone());
+      }
+    });
+
+    item.organizer.participationStatus = organizerAttendee.participationStatus;
+    item.organizer.role = organizerAttendee.role;
+    item.organizer.rsvp = organizerAttendee.rsvp;
+
+    item.removeAttendee(organizerAttendee);
+
+    return;
   }
 
   function init() {
