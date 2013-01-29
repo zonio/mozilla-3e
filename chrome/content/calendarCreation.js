@@ -95,6 +95,7 @@ function cal3eOverlayDelegate() {
     initCustomizePage = function() {
       lightningInitCustomizePage();
       ensureLightningIdentityCollapsedState();
+      ensureDefaultColor();
     };
 
     cal3eUri = { value: '' };
@@ -145,6 +146,18 @@ function cal3eOverlayDelegate() {
     }
 
     document.getElementById('calendar-email-identity-row').collapsed = true;
+  }
+
+  function ensureDefaultColor() {
+    if (uri !== cal3eUri) {
+      return;
+    }
+
+    if (document.getElementById('calendar-color').color) {
+      return;
+    }
+
+    document.getElementById('calendar-color').color = '#D20032';
   }
 
   function forceUriChange() {
