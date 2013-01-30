@@ -31,7 +31,7 @@ Components.utils.import('resource://calendar3e/modules/response.jsm');
 
 function calEeeFreeBusyProvider() {
   var freeBusyProvider = this;
-  var TYPES = {
+  var ICAL_TO_MOZ_TYPES = {
     'FREE':
       Components.interfaces.calIFreeBusyInterval.FREE,
     'BUSY':
@@ -39,8 +39,11 @@ function calEeeFreeBusyProvider() {
     'BUSY-UNAVAILABLE':
       Components.interfaces.calIFreeBusyInterval.BUSY_UNAVAILABLE,
     'BUSY-TENTATIVE':
-      Components.interfaces.calIFreeBusyInterval.BUSY_TENTATIVE
+      Components.interfaces.calIFreeBusyInterval.BUSY_TENTATIVE,
+    'UNKNOWN':
+      Components.interfaces.calIFreeBusyInterval.UNKNOWN
   };
+  var MOZ_TO_ICAL_TYPES = {};
   var logger;
 
   function observe(subject, topic, data) {
@@ -90,7 +93,7 @@ function calEeeFreeBusyProvider() {
         result.data +
         'END:VCALENDAR';
 
-      var periodsToReturn = [];
+      var intervalsToReturn = [];
 
       //TODO wrap try over possible exception throwers only
       try {
@@ -101,7 +104,7 @@ function calEeeFreeBusyProvider() {
 
           if (component.startTime &&
               (start.compare(component.startTime) == -1)) {
-            periodsToReturn.push(new cal.FreeBusyInterval(
+            intervalsToReturn.push(new cal.FreeBusyInterval(
               calId,
               Components.interfaces.calIFreeBusyInterval.UNKNOWN,
               start,
@@ -111,7 +114,7 @@ function calEeeFreeBusyProvider() {
 
           if (component.endTime &&
               (end.compare(component.endTime) == 1)) {
-            periodsToReturn.push(new cal.FreeBusyInterval(
+            intervalsToReturn.push(new cal.FreeBusyInterval(
               calId,
               Components.interfaces.calIFreeBusyInterval.UNKNOWN,
               component.endTime,
@@ -121,7 +124,7 @@ function calEeeFreeBusyProvider() {
 
           for (let property in
                cal.ical.propertyIterator(component, 'FREEBUSY')) {
-            periodsToReturn.push(
+            intervalsToReturn.push(
               buildFreeBusyIntervalFromProperty(calId, property)
             );
           }
@@ -133,7 +136,19 @@ function calEeeFreeBusyProvider() {
       }
 
       logger.info('[' + operation.id() + '] Free/busy parsed');
-      listener.onResult(null, periodsToReturn);
+      logger.debug('[' + operation.id() + '] ' + intervalsToReturn.length +
+                   ' free/busy intervals parsed');
+      intervalsToReturn.forEach(function(interval, idx) {
+        logger.debug('[' + operation.id() + '] Interval #' + idx + ': ' +
+                     interval.calId +
+                     ' is ' + MOZ_TO_ICAL_TYPES[interval.freeBusyType] +
+                     ' from ' +
+                     cal3eUtils.calDateTimeToIsoDate(interval.interval.start) +
+                     ' to ' +
+                     cal3eUtils.calDateTimeToIsoDate(interval.interval.end));
+      });
+
+      listener.onResult(null, intervalsToReturn);
     };
 
     var organizer = getEeeOrganizer();
@@ -182,23 +197,28 @@ function calEeeFreeBusyProvider() {
   }
 
   function buildFreeBusyIntervalFromProperty(calId, property) {
-    var parts = property.value.split('/');
-    var begin = cal.createDateTime(parts[0]);
-    var end = parts[1].charAt(0) == 'P' ?
-      begin.clone().addDuration(cal.createDuration(parts[1])) :
-      cal.createDateTime(parts[1]);
+    var period = Components.classes['@mozilla.org/calendar/period;1']
+      .createInstance(Components.interfaces.calIPeriod);
+    period.icalString = property.value;
 
     return new cal.FreeBusyInterval(
       calId,
       property.getParameter('FBTYPE') ?
-        TYPES[property.getParameter('FBTYPE')] :
+        ICAL_TO_MOZ_TYPES[property.getParameter('FBTYPE')] :
         Components.interfaces.calIFreeBusyInterval.BUSY,
-      begin,
-      end
+      period.start,
+      period.end
     );
   }
 
   function init() {
+    for (let icalType in ICAL_TO_MOZ_TYPES) {
+      if (!ICAL_TO_MOZ_TYPES.hasOwnProperty(icalType)) {
+        continue;
+      }
+      MOZ_TO_ICAL_TYPES[ICAL_TO_MOZ_TYPES[icalType]] = icalType;
+    }
+
     logger = cal3eLogger.create('extensions.calendar3e.log.freeBusy');
   }
 

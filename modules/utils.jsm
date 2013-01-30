@@ -43,15 +43,6 @@ function createOperationListener(onResult) {
  * @returns {String}
  */
 function nsprTimeToEeeDate(nsprTime) {
-  function zeropad(number, length) {
-    var string = '' + number;
-    while (string.length < length) {
-      string = '0' + string;
-    }
-
-    return string;
-  }
-
   var jsDate = new Date(nsprTime / 1000);
 
   return '' +
@@ -61,6 +52,42 @@ function nsprTimeToEeeDate(nsprTime) {
     zeropad(jsDate.getUTCHours(), 2) + ':' +
     zeropad(jsDate.getUTCMinutes(), 2) + ':' +
     zeropad(jsDate.getUTCSeconds(), 2);
+}
+
+/**
+ * Takes Mozilla calendar date/time and returns it formatted as ISO
+ * 8601 date/time.
+ *
+ * It preserves date/time's timezone and doesn't try to convert
+ * everything to UTC like ISO8601DateUtils JavaScript module.  So,
+ * this function is great for debugging.
+ *
+ * @param {calIDateTime} dateTime
+ * @returns {String}
+ */
+function calDateTimeToIsoDate(dateTime) {
+  var isoTzOffset = '';
+  if (dateTime.timezoneOffset) {
+    isoTzOffset += dateTime.timezoneOffset >= 0 ? '+' : '-';
+    isoTzOffset += zeropad(Math.floor(
+      Math.abs(dateTime.timezoneOffset) / 3600
+    ), 2);
+    isoTzOffset += ':';
+    isoTzOffset += zeropad(Math.floor(
+      (Math.abs(dateTime.timezoneOffset) % 3600) / 60
+    ), 2);
+  } else {
+    isoTzOffset += 'Z';
+  }
+
+  return '' +
+    zeropad(dateTime.year, 4) + '-' +
+    zeropad(dateTime.month + 1, 2) + '-' +
+    zeropad(dateTime.day, 2) + 'T' +
+    zeropad(dateTime.hour, 2) + ':' +
+    zeropad(dateTime.minute, 2) + ':' +
+    zeropad(dateTime.second, 2) +
+    isoTzOffset;
 }
 
 function eeeAttachmentToHttpUri(eeeUri, callback) {
@@ -128,9 +155,19 @@ function getInstanceId(item, itemInstance) {
     item.id;
 }
 
+function zeropad(number, length) {
+  var string = '' + number;
+  while (string.length < length) {
+    string = '0' + string;
+  }
+
+  return string;
+}
+
 var cal3eUtils = {
   createOperationListener: createOperationListener,
   nsprTimeToEeeDate: nsprTimeToEeeDate,
+  calDateTimeToIsoDate: calDateTimeToIsoDate,
   eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
   fileAttachmentToEeeUri: fileAttachmentToEeeUri,
   isSupportedServer: isSupportedServer,
