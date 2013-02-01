@@ -143,12 +143,28 @@ function DnsSd(resolv) {
     logger.info('Resolving domain name "' + domainName + '" using DNS');
 
     resolv.addEventListener(
-      'message', getOnMessageListener(resolv, domainName, callback), false
+      'message', getDidCreateListener(resolv, domainName, callback), false
     );
     resolv.postMessage({
-      name: 'resources',
-      args: [domainName, 'TXT']
+      name: 'create',
+      args: [
+        Components.classes['@mozilla.org/xre/app-info;1']
+          .getService(Components.interfaces.nsIXULRuntime).OS]
     });
+  }
+
+  function getDidCreateListener(resolv, domainName, callback) {
+    return function didCreateListener(event) {
+      resolv.removeEventListener('message', didCreateListener, false);
+
+      resolv.addEventListener(
+        'message', getOnMessageListener(resolv, domainName, callback), false
+      );
+      resolv.postMessage({
+        name: 'resources',
+        args: [domainName, 'TXT']
+      });
+    };
   }
 
   function getOnMessageListener(resolv, domainName, callback) {
@@ -220,12 +236,6 @@ function DnsSd(resolv) {
         .createInstance(Components.interfaces.nsIWorkerFactory)
         .newChromeWorker('resource://calendar3e/modules/resolv.jsm');
     }
-    resolv.postMessage({
-      name: 'init',
-      args: [
-        Components.classes['@mozilla.org/xre/app-info;1']
-          .getService(Components.interfaces.nsIXULRuntime).OS]
-    });
 
     return resolv;
   }

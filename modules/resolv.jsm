@@ -84,12 +84,16 @@ Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
 
 Resolv.DNS.Resolver = {};
 
-Resolv.DNS.Resolver.factory = function Resolver_factory(worker) {
-  if (!Resolv.DNS.Resolver[OS]) {
-    throw new Error("Unsupported operating system '" + OS + "'.");
+Resolv.DNS.Resolver.factory = function Resolver_factory(osType, worker) {
+  if (!osType) {
+    osType = CURRENT_OS_TYPE;
   }
 
-  return new Resolv.DNS.Resolver[OS](worker);
+  if (!Resolv.DNS.Resolver[osType]) {
+    throw new Error("Unsupported operating system '" + osType + "'.");
+  }
+
+  return new Resolv.DNS.Resolver[osType](worker);
 };
 
 Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
@@ -289,7 +293,15 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
     libresolv = null;
   }
 
+  function init() {
+    if (worker) {
+      worker.postMessage();
+    }
+  }
+
   resolver.extract = extract;
+
+  init();
 };
 
 Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;
@@ -459,14 +471,22 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
     ERROR_SUCCESS = null;
   }
 
+  function init() {
+    function init() {
+      worker.postMessage();
+    }
+  }
+
   resolver.extract = extract;
+
+  init();
 };
 
 Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
 
-var OS, EXPORTED_SYMBOLS, resolv;
+var CURRENT_OS_TYPE, EXPORTED_SYMBOLS, resolv;
 if (typeof Components !== 'undefined') {
-  OS = Components.classes['@mozilla.org/xre/app-info;1']
+  CURRENT_OS_TYPE = Components.classes['@mozilla.org/xre/app-info;1']
     .getService(Components.interfaces.nsIXULRuntime).OS;
   EXPORTED_SYMBOLS = [
     'Resolv'
@@ -475,9 +495,11 @@ if (typeof Components !== 'undefined') {
 if (typeof self !== 'undefined') {
   self.addEventListener('message', function(event) {
     switch (event.data.name) {
-    case 'init':
-      OS = event.data.args[0];
-      resolv = new Resolv.DNS(Resolv.DNS.Resolver.factory(self));
+    case 'create':
+      CURRENT_OS_TYPE = event.data.args[0];
+      resolv = new Resolv.DNS(Resolv.DNS.Resolver.factory(
+        event.data.args[0], self
+      ));
       break;
     default:
       resolv[event.data.name].apply(resolv, event.data.args);
