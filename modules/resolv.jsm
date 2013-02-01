@@ -231,7 +231,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   }
 
   function loadLibrary() {
-    libresolv = ctypes.open(ctypes.libraryName('resolv'));
+    libresolv = findLibresolv();
     res_search = libresolv.declare(
       symbolName(libresolv, 'res_search'),
       ctypes.default_abi,
@@ -271,6 +271,32 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
       ctypes.unsigned_long,
       ctypes.unsigned_char.ptr
     );
+  }
+
+  function findLibresolv() {
+    var library;
+    var lastException;
+
+    [
+      ctypes.libraryName('resolv'),
+      ctypes.libraryName('resolv') + '.2'
+    ].forEach(function(libraryName) {
+      if (library) {
+        return;
+      }
+
+      try {
+        library = ctypes.open(libraryName);
+      } catch (e) {
+        lastException = e;
+      }
+    });
+
+    if (!library) {
+      throw lastException;
+    }
+
+    return library;
   }
 
   function symbolName(library, name) {
