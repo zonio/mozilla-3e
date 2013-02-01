@@ -478,9 +478,10 @@ function calEeeCalendar() {
 
   function getItems(itemFilter, count, rangeStart, rangeEnd, listener) {
     logger.info('Querying items between "' +
-                (rangeStart ? rangeStart.nativeTime : '(start)') + '" and "' +
-                (rangeEnd ? rangeEnd.nativeTime : '(end)') + '" ' +
-                'and not deleted() in calendar "' + uri.spec + '"');
+                (rangeStart ? rangeStart.nativeTime : '(no start)') +
+                '" and "' +
+                (rangeEnd ? rangeEnd.nativeTime : '(no end)') + '" ' +
+                'and in calendar "' + uri.spec + '"');
 
     if (!identity) {
       logger.error('Calendar "' + uri.spec + '" has unknown identity');
