@@ -530,7 +530,7 @@ function calEeeCalendar() {
           "')"
       );
     }
-    query.push("not deleted()");
+    query.push("NOT deleted()");
 
     var operation = cal3eRequest.Client.getInstance()
       .queryObjects(
