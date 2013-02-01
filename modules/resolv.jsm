@@ -19,20 +19,48 @@
 
 if (typeof Components !== 'undefined') {
   Components.utils.import('resource://gre/modules/ctypes.jsm');
+  Components.utils.import('resource://calendar3e/modules/synchronization.jsm');
 }
 
-Resolv = {};
+var CURRENT_OS_TYPE;
+if (typeof Components !== 'undefined') {
+  CURRENT_OS_TYPE = Components.classes['@mozilla.org/xre/app-info;1']
+    .getService(Components.interfaces.nsIXULRuntime).OS;
+}
 
-Resolv.DNS = function DNS(resolver) {
+var Resolv = {};
+
+/**
+ * Asynchronous DNS resolver.
+ *
+ * It uses {@see WorkerResolverClient} as a way to run the {@link
+ * Resolv.DNS.Resolver} module in parallel.  Resources are returned
+ * immediatelly as a future value.
+ *
+ * @example
+ * var resolv = new Resolv.DNS();
+ * var resources;
+ * var futureResources = resolv.resources('example.com', 'TXT');
+ * futureResources.whenDone(function(future) {
+ *   resources = future.value().map(function(jsonResource) {
+ *     return Resolv.DNS.Resource.fromJson(jsonResource);
+ *   });
+ * });
+ * @constructor
+ */
+Resolv.DNS = function DNS(workerClient) {
   var dns = this;
 
   function getResources(name, typeClass) {
-    return resolver.extract(name, typeClass);
+    var resolver = workerClient.call(null, 'factory', [CURRENT_OS_TYPE]);
+    var resources = workerClient.call(resolver, 'extract', [name, typeClass]);
+
+    return resources;
   }
 
   function init() {
-    if (!resolver) {
-      resolver = Resolv.DNS.Resolver.factory();
+    if (!workerClient) {
+      workerClient = new WorkerResolverClient();
     }
   }
 
@@ -43,15 +71,15 @@ Resolv.DNS = function DNS(resolver) {
 
 Resolv.DNS.Resource = {};
 
-Resolv.DNS.Resource.fromJson = function DNS_Resource_fromJson(json) {
+Resolv.DNS.Resource.fromJson = function Resource_fromJson(json) {
   var data = JSON.parse(json);
   var resource = new Resolv.DNS.Resource[data['type']]();
-  resource.apply.apply(resource, data['args']);
+  resource.apply.apply(resource, data['arguments']);
 
   return resource;
 };
 
-Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
+Resolv.DNS.Resource['TXT'] = function Resource_TXT(ttl, rdata) {
   var resource = this;
 
   function getTtl() {
@@ -65,7 +93,7 @@ Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
   function toJson() {
     return JSON.stringify({
       'type': 'TXT',
-      'args': [ttl, rdata]
+      'arguments': [ttl, rdata]
     });
   }
 
@@ -84,7 +112,7 @@ Resolv.DNS.Resource['TXT'] = function DNS_Resource_TXT(ttl, rdata) {
 
 Resolv.DNS.Resolver = {};
 
-Resolv.DNS.Resolver.factory = function Resolver_factory(osType, worker) {
+Resolv.DNS.Resolver.factory = function Resolver_factory(osType) {
   if (!osType) {
     osType = CURRENT_OS_TYPE;
   }
@@ -93,10 +121,10 @@ Resolv.DNS.Resolver.factory = function Resolver_factory(osType, worker) {
     throw new Error("Unsupported operating system '" + osType + "'.");
   }
 
-  return new Resolv.DNS.Resolver[osType](worker);
+  return new Resolv.DNS.Resolver[osType]();
 };
 
-Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
+Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   var resolver = this;
 
   var ns_c_in = 1;
@@ -132,7 +160,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
       anslen
     );
     if (length < 0) {
-      return returnResources(resources);
+      return resources;
     }
 
     var idx = NS_HFIXEDSZ;
@@ -169,16 +197,6 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
       resources.push(new typeConstructor(
         answerTtl, readRdata(answer, idx, rdataLength)
       ));
-    }
-
-    return returnResources(resources);
-  }
-
-  function returnResources(resources) {
-    if (worker) {
-      worker.postMessage({
-        result: resources.map(function(resource) { return resource.toJson() })
-      });
     }
 
     return resources;
@@ -293,21 +311,13 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
     libresolv = null;
   }
 
-  function init() {
-    if (worker) {
-      worker.postMessage(true);
-    }
-  }
-
   resolver.extract = extract;
-
-  init();
 };
 
 Resolv.DNS.Resolver['Linux'] = Resolv.DNS.Resolver.libresolv;
 Resolv.DNS.Resolver['Darwin'] = Resolv.DNS.Resolver.libresolv;
 
-Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
+Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS() {
   var resolver = this;
 
   var VOID = ctypes.void_t;
@@ -356,7 +366,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
       null
     );
     if (ctypes.Int64.compare(dnsStatus, ERROR_SUCCESS)) {
-      return returnResources(resources);
+      return resources;
     }
 
     var result = queryResultsSet.contents;
@@ -378,16 +388,6 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
 
     DnsRecordListFree(queryResultsSet, DnsFreeRecordList);
     closeLibrary();
-
-    return returnResources(resources);
-  }
-
-  function returnResources(resources) {
-    if (worker) {
-      worker.postMessage({
-        result: resources.map(function(resource) { return resource.toJson() })
-      });
-    }
 
     return resources;
   }
@@ -471,39 +471,171 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
     ERROR_SUCCESS = null;
   }
 
-  function init() {
-    function init() {
-      worker.postMessage(true);
-    }
-  }
-
   resolver.extract = extract;
-
-  init();
 };
 
 Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
 
-var CURRENT_OS_TYPE, EXPORTED_SYMBOLS, resolv;
+/**
+ * Convenient client to {@link WorkerResolverServer}.
+ *
+ * This constructor creates a client which can communicate with
+ * workers on the other side of web worker.  If no worker is given,
+ * one is conveniently created using this JavaScript Code module.
+ *
+ * @param {ChromeWorker} worker A worker running WorkerResolverServer.
+ * @example
+ * var workerClient = new WorkerResolverClient();
+ * var futureResolver = workerClient.call(null, 'factory', ['Darwin']);
+ * var resources = workerClient.call(futureResolver, 'extract', [
+ *   'example.com', 'TXT'
+ * ]);
+ * @constructor
+ */
+function WorkerResolverClient(worker) {
+  var client = this;
+  var queue;
+
+  function call(objectName, messageName, args) {
+    var future = new cal3eSynchronization.Future();
+
+    if (objectName) {
+      objectName.whenDone(function(objectName) {
+        queue.push(getDoCall(objectName.value(), messageName, args, future));
+        queue.call();
+      });
+    } else {
+      queue.push(getDoCall(objectName, messageName, args, future));
+      queue.call();
+    }
+
+    return future.returnValue();
+  }
+
+  function getDoCall(objectName, messageName, args, future) {
+    return function doCall() {
+      worker.addEventListener(
+        'message', getDidGetResult(future), false
+      );
+      worker.postMessage({
+        'objectName': objectName,
+        'messageName': messageName,
+        'arguments': args
+      });
+    };
+  }
+
+  function getDidGetResult(future) {
+    return function didGetResult(event) {
+      worker.removeEventListener('message', didGetResult, false);
+
+      future.done(event.data['result']);
+
+      if (queue.next()) {
+        queue.next().call();
+      }
+    };
+  }
+
+  function init() {
+    if (!worker && (typeof ChromeWorker !== 'undefined')) {
+      worker = new ChromeWorker('resource://calendar3e/modules/resolv.jsm');
+    } else if (!worker) {
+      worker = Components.classes['@mozilla.org/threads/workerfactory;1']
+        .createInstance(Components.interfaces.nsIWorkerFactory)
+        .newChromeWorker('resource://calendar3e/modules/resolv.jsm');
+    }
+
+    //TODO we need a new type of queue which cleans older callables
+    queue = new cal3eSynchronization.Queue();
+  }
+
+  client.call = call;
+
+  init();
+}
+
+/**
+ * Server converting worker messages to method calls.
+ *
+ * Worker message should have three properties:
+ * - objectName: string identifying previously stored object
+ * - messageName: string used to call a method
+ * - arguments: passed in the method call
+ *
+ * Object is optional and defaults to defaultObject argument given to
+ * this constructor.
+ *
+ * When the result is returned from method call it is checked whether
+ * value which can be converted to JSON via toJson method.  If there
+ * is such value, it is converted.  If the value is an array, it is
+ * expected to contain elements of the same interface.  It this
+ * interface contains toJson method, each element is converted to JSON
+ * individually.  Value which can't be converted is stored for later
+ * use and its identification it is returned which can be used as
+ * objectName later.
+ *
+ * @param {Object} defaultObject An object to which message is passed
+ * when no other object is specified.
+ * @param {ChromeWorker} worker A worker able to communicate with this
+ * server.
+ * @see WorkerResolverClient
+ * @constructor
+ */
+function WorkerResolverServer(defaultObject, worker) {
+  var server = this;
+  var objects;
+
+  function call(event) {
+    var object = event.data['objectName'] ?
+      fetchObject(event.data['objectName']) :
+      defaultObject;
+
+    var result =
+      object[event.data['messageName']].apply(object, event.data['arguments']);
+
+    var workerResult = {};
+    if (result && result.map && result[0] && result[0].toJson) {
+      workerResult['result'] = result.map(function(result) {
+        return result.toJson();
+      });
+    } else if (result && result.toJson) {
+      workerResult['result'] = result.toJson();
+    } else if (result) {
+      workerResult['result'] = storeObject(result);
+    }
+
+    worker.postMessage(workerResult);
+  }
+
+  function fetchObject(objectName) {
+    var parts = objectName.split('#', 2);
+    var idx = 1 * parts[0];
+
+    return objects[idx];
+  }
+
+  function storeObject(object) {
+    return objects.push(object) - 1 + '#' + object.constructor.name;
+  }
+
+  function init() {
+    objects = [];
+    worker.addEventListener('message', call, false);
+  }
+
+  server.call = call;
+
+  init();
+}
+
+if (typeof self !== 'undefined') {
+  new WorkerResolverServer(Resolv.DNS.Resolver, self);
+}
+
+var EXPORTED_SYMBOLS;
 if (typeof Components !== 'undefined') {
-  CURRENT_OS_TYPE = Components.classes['@mozilla.org/xre/app-info;1']
-    .getService(Components.interfaces.nsIXULRuntime).OS;
   EXPORTED_SYMBOLS = [
     'Resolv'
   ];
-}
-if (typeof self !== 'undefined') {
-  self.addEventListener('message', function(event) {
-    switch (event.data.name) {
-    case 'create':
-      CURRENT_OS_TYPE = event.data.args[0];
-      resolv = new Resolv.DNS(Resolv.DNS.Resolver.factory(
-        event.data.args[0], self
-      ));
-      break;
-    default:
-      resolv[event.data.name].apply(resolv, event.data.args);
-      break;
-    }
-  }, false);
 }

@@ -134,56 +134,29 @@ function cal3eSd(providers, cache) {
   init();
 }
 
-function DnsSd(resolv) {
+function DnsSd(resolvConstructor) {
   var dnsSd = this;
-  var resolv;
   var logger;
 
   function resolveServer(domainName, callback) {
     logger.info('Resolving domain name "' + domainName + '" using DNS');
 
-    resolv.addEventListener(
-      'message', getDidCreateListener(resolv, domainName, callback), false
-    );
-    resolv.postMessage({
-      name: 'create',
-      args: [
-        Components.classes['@mozilla.org/xre/app-info;1']
-          .getService(Components.interfaces.nsIXULRuntime).OS]
-    });
-  }
+    new resolvConstructor()
+      .resources(domainName, 'TXT')
+      .whenDone(function(jsonResources) {
+        logger.info('Data from resolver for "' + domainName + '" received ' +
+                    'from DNS');
 
-  function getDidCreateListener(resolv, domainName, callback) {
-    return function didCreateListener(event) {
-      resolv.removeEventListener('message', didCreateListener, false);
-
-      resolv.addEventListener(
-        'message', getOnMessageListener(resolv, domainName, callback), false
-      );
-      resolv.postMessage({
-        name: 'resources',
-        args: [domainName, 'TXT']
+        didGetProviderData(
+          domainName,
+          getProviderData(jsonResources.value()),
+          callback
+        );
       });
-    };
   }
 
-  function getOnMessageListener(resolv, domainName, callback) {
-    return function onMessage(event) {
-      resolv.removeEventListener('message', onMessage, false);
-
-      logger.info('Data from resolver for "' + domainName + '" received ' +
-                  'from DNS');
-
-      didGetProviderData(
-        domainName,
-        getProviderDataFromEvent(event),
-        callback
-      );
-    };
-  }
-
-  function getProviderDataFromEvent(event) {
-    var dnsResources = event.data.result
+  function getProviderData(jsonResources) {
+    var dnsResources = jsonResources
       .map(function(data) {
         return Resolv.DNS.Resource.fromJson(data);
       })
@@ -226,25 +199,11 @@ function DnsSd(resolv) {
     callback(Service.fromProviderData(domainName, data, logger));
   }
 
-  function getDefaultResolv() {
-    var resolv;
-
-    if (typeof ChromeWorker !== 'undefined') {
-      resolv = new ChromeWorker('resource://calendar3e/modules/resolv.jsm');
-    } else {
-      resolv = Components.classes['@mozilla.org/threads/workerfactory;1']
-        .createInstance(Components.interfaces.nsIWorkerFactory)
-        .newChromeWorker('resource://calendar3e/modules/resolv.jsm');
-    }
-
-    return resolv;
-  }
-
   function init() {
     logger = cal3eLogger.create('extensions.calendar3e.log.sd');
 
-    if (!resolv) {
-      resolv = getDefaultResolv();
+    if (!resolvConstructor) {
+      resolvConstructor = Resolv.DNS;
     }
   }
 
