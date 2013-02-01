@@ -295,7 +295,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv(worker) {
 
   function init() {
     if (worker) {
-      worker.postMessage();
+      worker.postMessage(true);
     }
   }
 
@@ -473,7 +473,7 @@ Resolv.DNS.Resolver.WinDNS = function Resolver_WinDNS(worker) {
 
   function init() {
     function init() {
-      worker.postMessage();
+      worker.postMessage(true);
     }
   }
 
