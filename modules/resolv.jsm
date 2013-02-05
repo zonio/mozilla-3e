@@ -621,11 +621,11 @@ function WorkerResolverServer(defaultObject, worker) {
       object[event.data['messageName']].apply(object, event.data['arguments']);
 
     var workerResult = {};
-    if (result && result.map && result[0] && result[0].toJson) {
+    if (isJsonArray(result)) {
       workerResult['result'] = result.map(function(result) {
         return result.toJson();
       });
-    } else if (result && result.toJson) {
+    } else if (isJson(result)) {
       workerResult['result'] = result.toJson();
     } else if (result) {
       workerResult['result'] = storeObject(result);
@@ -643,6 +643,16 @@ function WorkerResolverServer(defaultObject, worker) {
 
   function storeObject(object) {
     return objects.push(object) - 1 + '#' + object.constructor.name;
+  }
+
+  function isJsonArray(result) {
+    return result && (typeof result === 'object') &&
+      (result.constructor === Array) &&
+      ((result.length === 0) || isJson(result[0]));
+  }
+
+  function isJson(result) {
+    return result && (typeof result.toJson === 'function');
   }
 
   function init() {
