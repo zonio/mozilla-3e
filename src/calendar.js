@@ -45,10 +45,12 @@ function calEeeCalendar() {
       if (cal3eFeature.isSupported('offline_mode')) {
         return true;
       }
+      return false;
     case 'cache.always':
       if (cal3eFeature.isSupported('offline_mode')) {
         return true;
       }
+      return false;
     case 'itip.transport':
       return Components.classes['@zonio.net/calendar3e/itip-transport;1']
         .createInstance(Components.interfaces.calIItipTransport);
