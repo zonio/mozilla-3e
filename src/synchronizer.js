@@ -534,12 +534,24 @@ function Synchronizer(identity, logger) {
 
     if (ownerData && ownerData['username']) {
       calendar.setProperty(
-        'organizerId', ownerData['username']
+        'organizerId', 'mailto:' + ownerData['username']
       );
-    }
-    if (ownerData && cal3eModel.attribute(ownerData, 'realname')) {
       calendar.setProperty(
         'organizerCN', cal3eModel.attribute(ownerData, 'realname')
+      );
+    } else if (calendarData['owner'] === identity.email) {
+      calendar.setProperty(
+        'organizerId', 'mailto:' + identity.email
+      );
+      calendar.setProperty(
+        'organizerCN', identity.fullName
+      );
+    } else {
+      calendar.setProperty(
+        'organizerId', null
+      );
+      calendar.setProperty(
+        'organizerCN', null
       );
     }
   }
