@@ -319,70 +319,136 @@ function Synchronizer(identity, logger) {
 
   function synchronize() {
     future = new cal3eSynchronization.Future();
-    currentOperation = cal3eRequest.Client.getInstance().getCalendars(
-      identity,
-      function Synchronizer_onGetCalendars(result, operation) {
-        currentOperation = null;
-
-        if (result instanceof cal3eResponse.UserError) {
-          logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
-                      'sync calendars of identity "' + identity.email + '" ' +
-                      'because of error ' +
-                      result.constructor.name + '(' + result.errorCode + ')');
-
-          lastAttemptWasSuccessful = false;
-          future.done();
-          return;
-        } else if (!(result instanceof cal3eResponse.Success)) {
-          logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
-                      'sync calendars of identity "' + identity.email + '" ' +
-                      'because of error ' +
-                      result.constructor.name + '(' + result.errorCode + ')');
-
-          if (!Services.io.offline) {
-            var bundle = Services.strings.createBundle(
-              'chrome://calendar3e/locale/cal3eCalendar.properties'
-            );
-            Services.prompt.alert(
-              cal.getCalendarWindow(),
-              bundle.GetStringFromName('cal3eAlertDialog.calendarSync.title'),
-              bundle.formatStringFromName(
-                'cal3eAlertDialog.calendarSync.text',
-                [identity.fullName + ' <' + identity.email + '>'],
-                1
-              )
-            );
-          }
-
-          lastAttemptWasSuccessful = false;
-          future.done();
-          return;
-        }
-
-        logger.info('Synchronization [' + operation.id() + '] - received ' +
-                    'calendars of identity "' + identity.email + '"');
-        synchronizeCalendarsFromResult(result);
-
-        lastAttemptWasSuccessful = true;
-        future.done();
-      },
-      'owned() OR subscribed()'
-    );
-    logger.info('Synchronization [' + currentOperation.id() + '] - syncing ' +
-                'calendars of identity "' + identity.email + '"');
+    loadCalendars(future);
 
     return future.returnValue();
   }
 
-  function synchronizeCalendarsFromResult(result) {
+  function loadCalendars(future) {
+    currentOperation = cal3eRequest.Client.getInstance().getCalendars(
+      identity, getDidLoadCalendars(future), 'owned() OR subscribed()'
+    );
+    logger.info('Synchronization [' + currentOperation.id() + '] - syncing ' +
+                'calendars of identity "' + identity.email + '"');
+  }
+
+  function getDidLoadCalendars(future) {
+    return function didLoadCalendars(result, operation) {
+      currentOperation = null;
+
+      if (result instanceof cal3eResponse.UserError) {
+        logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
+                    'sync calendars of identity "' + identity.email + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
+
+        lastAttemptWasSuccessful = false;
+        future.done();
+        return;
+      } else if (!(result instanceof cal3eResponse.Success)) {
+        logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
+                    'sync calendars of identity "' + identity.email + '" ' +
+                    'because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
+
+        if (!Services.io.offline) {
+          var bundle = Services.strings.createBundle(
+            'chrome://calendar3e/locale/cal3eCalendar.properties'
+          );
+          Services.prompt.alert(
+            cal.getCalendarWindow(),
+            bundle.GetStringFromName('cal3eAlertDialog.calendarSync.title'),
+            bundle.formatStringFromName(
+              'cal3eAlertDialog.calendarSync.text',
+              [identity.fullName + ' <' + identity.email + '>'],
+              1
+            )
+          );
+        }
+
+        lastAttemptWasSuccessful = false;
+        future.done();
+        return;
+      }
+
+      loadOwners(result.data, future);
+    }
+  };
+
+  function loadOwners(calendars, future) {
+    var query = calendars
+      .map(function(calendar) {
+        return calendar['owner'];
+      })
+      .filter(function(owner, idx, owners) {
+        return owners.indexOf(owner) === idx;
+      })
+      .map(function(owner) {
+        return "match_username('" + owner + "')";
+      });
+
+    if (query.length > 0) {
+      currentOperation = cal3eRequest.Client.getInstance().getUsers(
+        identity, getDidLoadOwners(calendars, future), query.join(' OR ')
+      );
+      logger.info('Synchronization [' + currentOperation.id() + '] - ' +
+                  'syncing calendar owners');
+    } else {
+      didLoadEverything([], calendars, future);
+    }
+  }
+
+  function getDidLoadOwners(calendars, future) {
+    return function didLoadOwners(result, operation) {
+      currentOperation = null;
+
+      if (!(result instanceof cal3eResponse.Success)) {
+        logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
+                    'retrieve calendar owners because of error ' +
+                    result.constructor.name + '(' + result.errorCode + ')');
+      } else {
+       logger.info('Synchronization [' + operation.id() + '] - received ' +
+                   'calendar owners');
+      }
+
+      didLoadEverything(
+        (result instanceof cal3eResponse.Success) ? result.data : [],
+        calendars,
+        future
+      );
+    }
+  }
+
+  function didLoadEverything(owners, calendars, future) {
+    var ownersByUsername = owners
+      .reduce(function(ownersByUsername, owner) {
+        ownersByUsername[owner['username']] = owner;
+
+        return ownersByUsername;
+      }, {});
+
+    synchronizeCalendarsFromResult(ownersByUsername, calendars);
+
+    lastAttemptWasSuccessful = true;
+    future.done();
+  }
+
+  function synchronizeCalendarsFromResult(owners, calendars) {
     var knownCalendars = loadEeeCalendarsByUri();
 
-    result.data.forEach(function(data, idx) {
-      var uri = buildCalendarUri(data);
+    calendars.forEach(function(calendarData, idx) {
+      var uri = buildCalendarUri(calendarData);
       if (!knownCalendars.hasOwnProperty(uri.spec)) {
-        addCalendar(data);
+        addCalendar(
+          owners[calendarData['owner']],
+          calendarData
+        );
       } else {
-        updateCalendar(knownCalendars[uri.spec], data);
+        updateCalendar(
+          knownCalendars[uri.spec],
+          owners[calendarData['owner']],
+          calendarData
+        );
       }
       delete knownCalendars[uri.spec];
     });
@@ -410,34 +476,36 @@ function Synchronizer(identity, logger) {
     future.done();
   }
 
-  function buildCalendarUri(data) {
+  function buildCalendarUri(calendarData) {
     return cal3eModel.buildUri({
       'protocol': 'eee',
       'user': identity.email,
-      'owner': data['owner'],
-      'name': data['name']
+      'owner': calendarData['owner'],
+      'name': calendarData['name']
     });
   }
 
-  function addCalendar(data) {
+  function addCalendar(ownerData, calendarData) {
     logger.info('Synchronization - adding the calendar "' +
-                buildCalendarUri(data) + '"');
+                buildCalendarUri(calendarData) + '"');
 
     var manager = Components.classes['@mozilla.org/calendar/manager;1']
       .getService(Components.interfaces.calICalendarManager);
 
-    var calendar = manager.createCalendar('eee', buildCalendarUri(data));
+    var calendar = manager.createCalendar(
+      'eee', buildCalendarUri(calendarData)
+    );
     manager.registerCalendar(calendar);
 
     calendar.setProperty('imip.identity.key', identity.key);
-    setCalendarProperties(calendar, data);
+    setCalendarProperties(calendar, ownerData, calendarData);
   }
 
-  function updateCalendar(calendar, data) {
+  function updateCalendar(calendar, ownerData, calendarData) {
     logger.info('Synchronization - updating the calendar "' +
                 calendar.uri.spec + '"');
 
-    setCalendarProperties(calendar, data);
+    setCalendarProperties(calendar, ownerData, calendarData);
 
     if (!lastAttemptWasSuccessful) {
       calendar.refresh();
@@ -453,13 +521,26 @@ function Synchronizer(identity, logger) {
       .unregisterCalendar(calendar);
   }
 
-  function setCalendarProperties(calendar, data) {
-    calendar.name = cal3eModel.calendarLabel(data);
-    calendar.readOnly = data['perm'] === 'read';
+  function setCalendarProperties(calendar, ownerData, calendarData) {
+    calendar.name = cal3eModel.calendarLabel(calendarData);
+    calendar.readOnly = calendarData['perm'] === 'read';
 
     //TODO validation
-    if (cal3eModel.attribute(data, 'color')) {
-      calendar.setProperty('color', cal3eModel.attribute(data, 'color'));
+    if (cal3eModel.attribute(calendarData, 'color')) {
+      calendar.setProperty(
+        'color', cal3eModel.attribute(calendarData, 'color')
+      );
+    }
+
+    if (ownerData && ownerData['username']) {
+      calendar.setProperty(
+        'organizerId', ownerData['username']
+      );
+    }
+    if (ownerData && cal3eModel.attribute(ownerData, 'realname')) {
+      calendar.setProperty(
+        'organizerCN', cal3eModel.attribute(ownerData, 'realname')
+      );
     }
   }
 
