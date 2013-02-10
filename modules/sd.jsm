@@ -80,7 +80,16 @@ function cal3eSd(providers, cache) {
         queue.reset();
       }
 
-      queue.next()(service);
+      if (Services.io.offline) {
+        Components.classes['@mozilla.org/timer;1']
+          .createInstance(Components.interfaces.nsITimer)
+          .init({ notify: function() { queue.next()(service) } },
+                Services.prefs.getIntPref(
+                  'extensions.calendar3e.sd_offline_try_interval'),
+                Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+      } else {
+        queue.next()(service);
+      }
     };
   }
 
