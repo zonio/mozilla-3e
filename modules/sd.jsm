@@ -70,6 +70,8 @@ function cal3eSd(providers, cache) {
     var tryCount = 0;
 
     return function tryToGetServiceCallback(service) {
+      var nextCall;
+
       if (!service &&
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
@@ -78,18 +80,12 @@ function cal3eSd(providers, cache) {
 
         tryCount += 1;
         queue.reset();
+        nextCall = getDeferredNextCall(queue);
+      } else {
+        nextCall = queue.next();
       }
 
-      if (Services.io.offline) {
-        Components.classes['@mozilla.org/timer;1']
-          .createInstance(Components.interfaces.nsITimer)
-          .init({ notify: function() { queue.next()(service) } },
-                Services.prefs.getIntPref(
-                  'extensions.calendar3e.sd_offline_try_interval'),
-                Components.interfaces.nsITimer.TYPE_ONE_SHOT);
-      } else {
-        queue.next()(service);
-      }
+      nextCall(service);
     };
   }
 
@@ -120,6 +116,17 @@ function cal3eSd(providers, cache) {
                   'as "' + service + '"');
 
       callback(service);
+    };
+  }
+
+  function getDeferredNextCall(queue) {
+    return function(service) {
+      Components.classes['@mozilla.org/timer;1']
+        .createInstance(Components.interfaces.nsITimer)
+        .initWithCallback({ notify: function() { queue.next()(service) } },
+              Services.prefs.getIntPref(
+                'extensions.calendar3e.sd_deferred_interval'),
+              Components.interfaces.nsITimer.TYPE_ONE_SHOT);
     };
   }
 
