@@ -1,0 +1,32 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * 3e Calendar
+ * Copyright © 2013  Zonio s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+freebusy-timebar .freebusy-timebar-hour {
+    -moz-padding-start: 0px;
+    -moz-padding-end: 2px;
+    -moz-margin-start: 0px;
+    -moz-margin-end: 0px;
+}
+
+freebusy-grid .freebusy-grid {
+    -moz-padding-start: 0px;
+    -moz-padding-end: 1px;
+    -moz-margin-start: 0px;
+    -moz-margin-end: 0px;
+}

@@ -4,11 +4,12 @@ calendar3e.jar:
 % locale   calendar3e   en-US       %locale/en-US/
 % locale   calendar3e   cs          %locale/cs/
 % skin     calendar3e   classic/1.0 %skin/
-% overlay chrome://calendar/content/calendarCreation.xul           chrome://calendar3e/content/calendarCreation.xul
-% overlay chrome://calendar/content/calendar-calendars-list.xul    chrome://calendar3e/content/calendarContextMenu.xul
-% overlay chrome://messenger/content/messenger.xul                 chrome://calendar3e/content/calendarList.xul
-% overlay chrome://calendar/content/calendar-properties-dialog.xul chrome://calendar3e/content/calendarProperties.xul
-% overlay chrome://calendar/content/calendar-event-dialog.xul      chrome://calendar3e/content/calendarAttachments.xul
+% overlay chrome://calendar/content/calendarCreation.xul                chrome://calendar3e/content/calendarCreation.xul
+% overlay chrome://calendar/content/calendar-calendars-list.xul         chrome://calendar3e/content/calendarContextMenu.xul
+% overlay chrome://messenger/content/messenger.xul                      chrome://calendar3e/content/calendarList.xul
+% overlay chrome://calendar/content/calendar-properties-dialog.xul      chrome://calendar3e/content/calendarProperties.xul
+% overlay chrome://calendar/content/calendar-event-dialog.xul           chrome://calendar3e/content/calendarAttachments.xul
+% overlay chrome://calendar/content/calendar-event-dialog-attendees.xul chrome://calendar3e/content/calendarAttendees.xul
 
   content/calendarContextMenu.js   (content/calendarContextMenu.js)
   content/calendarContextMenu.xul  (content/calendarContextMenu.xul)
@@ -26,10 +27,12 @@ calendar3e.jar:
   content/calendarAttachments.xul  (content/calendarAttachments.xul)
   content/calendarWebcal.js        (content/calendarWebcal.js)
   content/calendarWebcal.xul       (content/calendarWebcal.xul)
+  content/calendarAttendees.xul    (content/calendarAttendees.xul)
 
-  skin/cal3eGlobal.css (skin/cal3eGlobal.css)
-  skin/cal3eIcon.png   (skin/cal3eIcon.png)
-  skin/cal3eIcon64.png (skin/cal3eIcon64.png)
+  skin/cal3eGlobal.css       (skin/cal3eGlobal.css)
+  skin/cal3eIcon.png         (skin/cal3eIcon.png)
+  skin/cal3eIcon64.png       (skin/cal3eIcon64.png)
+  skin/calendarAttendees.css (skin/calendarAttendees.css)
 
   locale/en-US/cal3eCalendar.dtd        (locale/en-US/cal3eCalendar.dtd)
   locale/en-US/cal3eCalendar.properties (locale/en-US/cal3eCalendar.properties)
