@@ -128,6 +128,8 @@ function cal3eOverlayDelegate() {
     document.getElementById('calendar-uri').parentNode.collapsed = true;
     document.getElementById('calendar-email-identity-row').collapsed = true;
     document.getElementById('calendar3e-account-row').collapsed = false;
+    document.getElementById('cache').checked = false;
+    document.getElementById('cache').disabled = true;
   }
 
   function deactivate() {
