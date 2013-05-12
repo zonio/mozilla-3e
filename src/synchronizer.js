@@ -353,13 +353,15 @@ function Synchronizer(identity, logger) {
 
         if (!Services.io.offline) {
           var bundle = Services.strings.createBundle(
-            'chrome://calendar3e/locale/cal3eCalendar.properties'
+            'chrome://calendar3e/locale/calendar3e.properties'
           );
           Services.prompt.alert(
             cal.getCalendarWindow(),
-            bundle.GetStringFromName('cal3eAlertDialog.calendarSync.title'),
+            bundle.GetStringFromName(
+              'calendar3e.alertDialog.calendarSync.title'
+            ),
             bundle.formatStringFromName(
-              'cal3eAlertDialog.calendarSync.text',
+              'calendar3e.alertDialog.calendarSync.text',
               [identity.fullName + ' <' + identity.email + '>'],
               1
             )

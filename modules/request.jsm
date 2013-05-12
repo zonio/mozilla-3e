@@ -614,7 +614,7 @@ function AuthenticationDelegate() {
 
   function prompt(identity) {
     var stringBundle = Services.strings.createBundle(
-      'chrome://calendar3e/locale/cal3eCalendar.properties'
+      'chrome://calendar3e/locale/calendar3e.properties'
     );
 
     var password = {
@@ -628,9 +628,9 @@ function AuthenticationDelegate() {
       .getPrompt(null, Components.interfaces.nsIAuthPrompt)
       .promptPassword(
         stringBundle.GetStringFromName(
-          'cal3ePasswordDialog.title'),
+          'calendar3e.passwordDialog.title'),
         stringBundle.formatStringFromName(
-          'cal3ePasswordDialog.content', [identity.email], 1),
+          'calendar3e.passwordDialog.content', [identity.email], 1),
         loginUri(identity).spec,
         Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
         password

@@ -45,13 +45,13 @@ function amEnable3e() {
     }
 
     var bundle = Services.strings.createBundle(
-      'chrome://calendar3e/locale/cal3eCalendar.properties'
+      'chrome://calendar3e/locale/calendar3e.properties'
     );
     Services.prompt.alert(
       Services.wm.getMostRecentWindow(null),
-      bundle.GetStringFromName('cal3eAlertDialog.accountEnable.title'),
+      bundle.GetStringFromName('calendar3e.alertDialog.accountEnable.title'),
       bundle.formatStringFromName(
-        'cal3eAlertDialog.accountEnable.text',
+        'calendar3e.alertDialog.accountEnable.text',
         [identity.fullName + ' <' + identity.email + '>'],
         1
       )

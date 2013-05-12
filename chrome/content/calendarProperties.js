@@ -136,13 +136,13 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   var permissionMenuPopup = document.createElement("menupopup");
 
   permissionMenuList.label = stringBundle ?
-    stringBundle.getString('cal3eCalendarProperties.permissions.label') :
+    stringBundle.getString('calendar3e.properties.permissions.label') :
     "Permissions" ;
 
   var readPermissionMenuItem = document.createElement("menuitem");
   readPermissionMenuItem.setAttribute(
     'label',
-    stringBundle ? stringBundle.getString('cal3eCalendarProperties.read.label') : "Read Only");
+    stringBundle ? stringBundle.getString('calendar3e.properties.read.label') : "Read Only");
   readPermissionMenuItem.setAttribute(
     'value',
     'read');
@@ -151,7 +151,7 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
   var writePermissionMenuItem = document.createElement("menuitem");
   writePermissionMenuItem.setAttribute(
     'label',
-    stringBundle ? stringBundle.getString('cal3eCalendarProperties.write.label') : "Read/Write");
+    stringBundle ? stringBundle.getString('calendar3e.properties.write.label') : "Read/Write");
   writePermissionMenuItem.setAttribute(
     'value',
     'write');

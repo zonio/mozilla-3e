@@ -18,7 +18,7 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!DOCTYPE overlay SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
+<!DOCTYPE overlay SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
 
 <overlay id="calendar-list-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
@@ -26,11 +26,11 @@
   <popupset id="calendar-popupset">
     <popup id="list-calendars-context-menu">
       <menuitem id="list-calendars-context-subscribe"
-                label="&cal3eCalendarContext.subscribe.label;"
+                label="&calendar3e.context.subscribe.label;"
                 insertafter="list-calendars-context-delete"
                 oncommand="cal3eSubscription.open();"/>
       <menuitem id="list-calendars-context-webcal"
-                label="&cal3eCalendarContext.webcal.label;"
+                label="&calendar3e.context.webcal.label;"
                 insertafter="list-calendars-context-publish"
                 oncommand="cal3eWebcal.open();"
                 collased="true"/>
@@ -46,7 +46,7 @@
 
   <stringbundleset id="stringbundleset">
     <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+                  src="chrome://calendar3e/locale/calendar3e.properties"/>
   </stringbundleset>
 
 </overlay>

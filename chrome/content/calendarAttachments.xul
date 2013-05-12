@@ -23,7 +23,7 @@
 
   <stringbundleset id="stringbundleset">
     <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+                  src="chrome://calendar3e/locale/calendar3e.properties"/>
   </stringbundleset>
 
   <script type="application/x-javascript"

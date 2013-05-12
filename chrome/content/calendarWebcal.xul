@@ -24,21 +24,20 @@
                  href="chrome://calendar3e/skin/cal3eGlobal.css"?>
 
 <!DOCTYPE dialog [
-  <!ENTITY % cal3eCalendar
-    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
-  %cal3eCalendar;
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
 ]>
 
 <dialog
     id="calendar3e-webcal-dialog"
-    title="&cal3eCalendarWebcal.title;"
+    title="&calendar3e.webcal.title;"
     buttons="accept,extra1"
-    buttonlabelaccept="&cal3eCalendarWebcal.buttons.ok.label;"
-    buttonlabelextra1="&cal3eCalendarWebcal.buttons.copy.label;"
+    buttonlabelaccept="&calendar3e.webcal.buttons.ok.label;"
+    buttonlabelextra1="&calendar3e.webcal.buttons.copy.label;"
     persist="screenX screenY"
     onload="cal3eWebcal.onLoad()"
     ondialogextra1="return cal3eWebcal.onExtra1()"
-    buttonaccesskeyextra1="&cal3eCalendarWebcal.buttons.copy.accesskey;"
+    buttonaccesskeyextra1="&calendar3e.webcal.buttons.copy.accesskey;"
     windowtype="Calendar3e:WebcalDialog"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -46,12 +45,12 @@
           src="chrome://calendar3e/content/calendarWebcal.js"/>
 
   <vbox flex="1">
-    <description>&cal3eCalendarWebcal.description;</description>
+    <description>&calendar3e.webcal.description;</description>
     <textbox id="calendar3e-webcal-uri" readonly="true"/>
   </vbox>
 
   <stringbundleset id="calendar3e-stringbundleset">
     <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+                  src="chrome://calendar3e/locale/calendar3e.properties"/>
   </stringbundleset>
 </dialog>

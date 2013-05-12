@@ -1,0 +1,49 @@
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - 3e Calendar
+   - Copyright © 2011  Zonio s.r.o.
+   -
+   - This program is free software: you can redistribute it and/or modify
+   - it under the terms of the GNU General Public License as published by
+   - the Free Software Foundation, either version 3 of the License, or
+   - (at your option) any later version.
+   -
+   - This program is distributed in the hope that it will be useful,
+   - but WITHOUT ANY WARRANTY; without even the implied warranty of
+   - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   - GNU General Public License for more details.
+   -
+   - You should have received a copy of the GNU General Public License
+   - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<!ENTITY calendar3e.properties.type.label "Typ kalendáře: ">
+<!ENTITY calendar3e.properties.permissions.label "Oprávnění">
+<!ENTITY calendar3e.properties.user.label "Uživatel">
+<!ENTITY calendar3e.properties.add.label "Přidat">
+<!ENTITY calendar3e.properties.remove.label "Odebrat">
+<!ENTITY calendar3e.properties.private.label "Soukromý">
+<!ENTITY calendar3e.properties.public.label "Veřejný">
+<!ENTITY calendar3e.properties.shared.label "Sdílený">
+
+<!ENTITY calendar3e.creation.format.label "3e kalendář">
+
+<!ENTITY calendar3e.context.subscribe.label "Připojit kalendář…">
+<!ENTITY calendar3e.context.webcal.label "Zobrazit URI kalendáře…">
+
+<!ENTITY calendar3e.subscribe.title "Připojit kalendář">
+<!ENTITY calendar3e.subscribe.buttons.accept "Připojit">
+<!ENTITY calendar3e.subscribe.subscriber.label "Účet: ">
+<!ENTITY calendar3e.subscribe.search.label "Filtrovat položky podle: ">
+<!ENTITY calendar3e.subscribe.tree.name "Dostupné kalendáře">
+<!ENTITY calendar3e.subscribe.tree.type "Typ přístupu">
+
+<!ENTITY calendar3e.webcal.title "URI kalendáře">
+<!ENTITY calendar3e.webcal.description "Použijte toto webcal URI pro připojení tohoto kalendáře v aplikacích, které plně nepodporují 3e kalendáře.">
+<!ENTITY calendar3e.webcal.buttons.ok.label "OK">
+<!ENTITY calendar3e.webcal.buttons.copy.label "Zkopírovat do schránky">
+<!ENTITY calendar3e.webcal.buttons.copy.accesskey "C">
+
+<!ENTITY calendar3e.enable.title "3e kalendář">
+<!ENTITY calendar3e.enable.description "Společně s vaším emailovým účtem můžete používat i 3e kalendář. Pokud si nejste jisti, zda máte 3e kalendář, kontaktujte administrátora svého systému či poskytovatele vašeho emailu.">
+<!ENTITY calendar3e.enable.checkbox "Zapnout 3e kalendář">

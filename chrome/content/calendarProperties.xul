@@ -24,8 +24,8 @@
 <?xml-stylesheet type="text/css"
                  href="chrome://calendar3e/skin/cal3eGlobal.css"?>
 <!DOCTYPE overlay [
-  <!ENTITY % cal3eCalendar SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
-  %cal3eCalendar;
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
 ]>
 
 <overlay id="calendar3e-calendar-properties-overlay"
@@ -37,12 +37,12 @@
 #ifdef CALENDAR_3E_PERMISSION
     <row id="calendar3e-permissions-row"
          insertafter="calendar-color-row">
-      <label value="&cal3eCalendarProperties.permissions.label;"/>
+      <label value="&calendar3e.properties.permissions.label;"/>
       <vbox flex="1">
         <listbox id="permissions" flex="1">
           <listhead>
-            <listheader label="&cal3eCalendarProperties.user.label;"/>
-            <listheader label="&cal3eCalendarProperties.permissions.label;"/>
+            <listheader label="&calendar3e.properties.user.label;"/>
+            <listheader label="&calendar3e.properties.permissions.label;"/>
           </listhead>
           <listcols>
             <listcol flex="1"/>
@@ -51,23 +51,23 @@
         </listbox>
         <hbox>
           <button id="calendar3e-permissions-add"
-                  label="&cal3eCalendarProperties.add.label;"/>
+                  label="&calendar3e.properties.add.label;"/>
           <button id="calendar3e-permissions-remove"
-                  label="&cal3eCalendarProperties.remove.label;"/>
+                  label="&calendar3e.properties.remove.label;"/>
         </hbox>
       </vbox>
     </row>
     <row id="calendar3e-type-row"
          insertafter="calendar-color-row">
       <label control="calendar3e-type-group"
-             value="&cal3eCalendarProperties.type.label;"/>
+             value="&calendar3e.properties.type.label;"/>
       <radiogroup id="calendar3e-type-group">
         <radio value="private"
-               label="&cal3eCalendarProperties.private.label;"/>
+               label="&calendar3e.properties.private.label;"/>
         <radio value="public"
-               label="&cal3eCalendarProperties.public.label;"/>
+               label="&calendar3e.properties.public.label;"/>
         <radio value="shared"
-               label="&cal3eCalendarProperties.shared.label;"/>
+               label="&calendar3e.properties.shared.label;"/>
       </radiogroup>
     </row>
 #endif
@@ -78,6 +78,6 @@
 
   <stringbundleset id="calendar3e-stringbundleset">
     <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+                  src="chrome://calendar3e/locale/calendar3e.properties"/>
   </stringbundleset>
 </overlay>

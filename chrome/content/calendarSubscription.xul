@@ -24,16 +24,15 @@
                  href="chrome://calendar3e/skin/cal3eGlobal.css"?>
 
 <!DOCTYPE dialog [
-  <!ENTITY % cal3eCalendar
-    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
-  %cal3eCalendar;
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
 ]>
 
 <dialog
     id="calendar3e-subscription-dialog"
-    title="&cal3eCalendarSubscribe.title;"
+    title="&calendar3e.subscribe.title;"
     buttons="accept,cancel"
-    buttonlabelaccept="&cal3eCalendarSubscribe.buttons.accept;"
+    buttonlabelaccept="&calendar3e.subscribe.buttons.accept;"
     persist="width height screenX screenY"
     onload="cal3eSubscription.onLoad()"
     ondialogaccept="return cal3eSubscription.onDialogAccept();"
@@ -60,12 +59,12 @@
             <row id="calendar3e-subscriber-row">
               <hbox pack="end" align="center">
                 <label control="subscriber-menulist"
-                       value="&cal3eCalendarSubscribe.subscriber.label;"/>
+                       value="&calendar3e.subscribe.subscriber.label;"/>
               </hbox>
             </row>
             <row id="calendar3e-search-row" align="center">
               <label control="search-pattern"
-                     value="&cal3eCalendarSubscribe.search.label;"/>
+                     value="&calendar3e.subscribe.search.label;"/>
               <textbox type="search" id="search-pattern"
                        flex="1" timeout="300"/>
             </row>
@@ -82,10 +81,10 @@
               rows="6" flex="1">
           <treecols id="calendars-tree-cols">
             <treecol id="calendars-tree-calendar-name"
-                     label="&cal3eCalendarSubscribe.tree.name;"
+                     label="&calendar3e.subscribe.tree.name;"
                      primary="true" flex="10" persist="width"/>
             <treecol id="calendars-tree-calendar-access"
-                     label="&cal3eCalendarSubscribe.tree.type;"
+                     label="&calendar3e.subscribe.tree.type;"
                      flex="2"/>
           </treecols>
           <treechildren id="calendars-tree-children"/>
@@ -95,6 +94,6 @@
   </grid>
   <stringbundleset id="calendar3e-stringbundleset">
     <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+                  src="chrome://calendar3e/locale/calendar3e.properties"/>
   </stringbundleset>
 </dialog>

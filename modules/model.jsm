@@ -150,9 +150,9 @@ function getPermissionLabel(calendar) {
   }
 
   return Services.strings
-    .createBundle('chrome://calendar3e/locale/cal3eCalendar.properties')
+    .createBundle('chrome://calendar3e/locale/calendar3e.properties')
     .GetStringFromName(
-      'cal3eModel.permissions.' + calendar['perm']
+      'calendar3e.model.permissions.' + calendar['perm']
     );
 }
 

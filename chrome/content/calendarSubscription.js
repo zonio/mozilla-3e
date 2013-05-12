@@ -69,7 +69,7 @@ function cal3eSubscription(subscriberController, filterController,
 
     document.getElementById('notifications').appendNotification(
       document.getElementById('calendar3e-strings').getString(
-        'cal3eCalendarSubscribe.errors.subscribe'
+        'calendar3e.subscribe.errors.subscribe'
       ),
       0,
       null,
@@ -484,7 +484,7 @@ function cal3eSharedCalendarsController() {
     cal3eXul.addItemsToTree(
       element, [{
         'label': document.getElementById('calendar3e-strings').getString(
-          'cal3eCalendarSubscribe.calendars.noIdentity'
+          'calendar3e.subscribe.calendars.noIdentity'
         )
       }]
     );
@@ -495,7 +495,7 @@ function cal3eSharedCalendarsController() {
     cal3eXul.addItemsToTree(
       element, [{
         'label': document.getElementById('calendar3e-strings').getString(
-          'cal3eCalendarSubscribe.calendars.loading'
+          'calendar3e.subscribe.calendars.loading'
         )
       }]
     );
@@ -506,7 +506,7 @@ function cal3eSharedCalendarsController() {
     cal3eXul.addItemsToTree(
       element, [{
         'label': document.getElementById('calendar3e-strings').getString(
-          'cal3eCalendarSubscribe.calendars.noCalendars'
+          'calendar3e.subscribe.calendars.noCalendars'
         )
       }]
     );
@@ -517,7 +517,7 @@ function cal3eSharedCalendarsController() {
     cal3eXul.addItemsToTree(
       element, [{
         'label': document.getElementById('calendar3e-strings').getString(
-          'cal3eCalendarSubscribe.calendars.noMatch'
+          'calendar3e.subscribe.calendars.noMatch'
         )
       }]
     );
@@ -526,7 +526,7 @@ function cal3eSharedCalendarsController() {
   function fillElementError() {
     document.getElementById('notifications').appendNotification(
       document.getElementById('calendar3e-strings').getString(
-        'cal3eCalendarSubscribe.errors.data'
+        'calendar3e.subscribe.errors.data'
       ),
       0,
       null,

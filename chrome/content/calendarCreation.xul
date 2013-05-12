@@ -19,22 +19,21 @@
    - ***** END LICENSE BLOCK ***** -->
 
 <!DOCTYPE overlay [
-  <!ENTITY % cal3eCalendar
-    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
-  %cal3eCalendar;
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
 ]>
 
 <overlay id="calendar3e-creation-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <radiogroup id="calendar-format">
-    <radio value="eee" label="&cal3eCalendarCreation.format.label;"/>
+    <radio value="eee" label="&calendar3e.creation.format.label;"/>
   </radiogroup>
 
   <wizard id="calendar-wizard">
     <stringbundleset id="calendar3e-stringbundleset">
       <stringbundle id="calendar3e-strings"
-                    src="chrome://calendar3e/locale/cal3eCalendar.properties"/>
+                    src="chrome://calendar3e/locale/calendar3e.properties"/>
     </stringbundleset>
     <script type="application/javascript"
             src="chrome://calendar3e/content/calendarCreation.js"/>

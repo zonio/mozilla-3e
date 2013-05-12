@@ -21,13 +21,12 @@
 <?xml-stylesheet type="text/css"
                  href="chrome://messenger/skin/accountManage.css"?>
 <!DOCTYPE page [
-  <!ENTITY % cal3eCalendar
-    SYSTEM "chrome://calendar3e/locale/cal3eCalendar.dtd">
-  %cal3eCalendar;
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
 ]>
 
 <page xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-      title="&cal3eCalendarEnable.title;"
+      title="&calendar3e.enable.title;"
       onload="amEnable3e.onLoad()">
 
   <script type="application/javascript"
@@ -35,11 +34,11 @@
   <script type="application/javascript"
           src="chrome://calendar3e/content/am-enable3e.js"/>
 
-  <dialogheader title="&cal3eCalendarEnable.title;"/>
+  <dialogheader title="&calendar3e.enable.title;"/>
 
-  <description>&cal3eCalendarEnable.description;</description>
+  <description>&calendar3e.enable.description;</description>
   <checkbox id="cal3e-enable-checkbox"
-            label="&cal3eCalendarEnable.checkbox;"
+            label="&calendar3e.enable.checkbox;"
             checked="true"/>
 
 </page>

@@ -1,0 +1,49 @@
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - 3e Calendar
+   - Copyright © 2011  Zonio s.r.o.
+   -
+   - This program is free software: you can redistribute it and/or modify
+   - it under the terms of the GNU General Public License as published by
+   - the Free Software Foundation, either version 3 of the License, or
+   - (at your option) any later version.
+   -
+   - This program is distributed in the hope that it will be useful,
+   - but WITHOUT ANY WARRANTY; without even the implied warranty of
+   - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   - GNU General Public License for more details.
+   -
+   - You should have received a copy of the GNU General Public License
+   - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<!ENTITY calendar3e.properties.type.label "Calendar Type: ">
+<!ENTITY calendar3e.properties.permissions.label "Permissions">
+<!ENTITY calendar3e.properties.user.label "User">
+<!ENTITY calendar3e.properties.add.label "Add">
+<!ENTITY calendar3e.properties.remove.label "Remove">
+<!ENTITY calendar3e.properties.private.label "Private">
+<!ENTITY calendar3e.properties.public.label "Public">
+<!ENTITY calendar3e.properties.shared.label "Shared">
+
+<!ENTITY calendar3e.creation.format.label "3e Calendar">
+
+<!ENTITY calendar3e.context.subscribe.label "Subscribe Calendar…">
+<!ENTITY calendar3e.context.webcal.label "Show Calendar URI…">
+
+<!ENTITY calendar3e.subscribe.title "Subscribe Calendar">
+<!ENTITY calendar3e.subscribe.buttons.accept "Subscribe">
+<!ENTITY calendar3e.subscribe.subscriber.label "Account: ">
+<!ENTITY calendar3e.subscribe.search.label "Filter items that contain: ">
+<!ENTITY calendar3e.subscribe.tree.name "Available Calendars">
+<!ENTITY calendar3e.subscribe.tree.type "Access Type">
+
+<!ENTITY calendar3e.webcal.title "Calendar URI">
+<!ENTITY calendar3e.webcal.description "Use this webcal URI to subscribe this calendar in calendar apps which do not fully support 3e Calendars.">
+<!ENTITY calendar3e.webcal.buttons.ok.label "OK">
+<!ENTITY calendar3e.webcal.buttons.copy.label "Copy to Clipboard">
+<!ENTITY calendar3e.webcal.buttons.copy.accesskey "C">
+
+<!ENTITY calendar3e.enable.title "3e Calendar">
+<!ENTITY calendar3e.enable.description "You may use 3e Calendar together with your email account. If you are not sure you have 3e Calendar, ask your system administrator or provider of your email service.">
+<!ENTITY calendar3e.enable.checkbox "Enable 3e Calendar">

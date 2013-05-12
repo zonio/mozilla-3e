@@ -82,7 +82,7 @@ function cal3eOverlayDelegate() {
     );
     accountLabel.control = 'calendar3e-account';
     accountLabel.value = document.getElementById('calendar3e-strings')
-      .getString('cal3eCalendarProperties.account.label');
+      .getString('calendar3e.properties.account.label');
 
     var accountMenuList = accountRow.appendChild(
       cal3eXul.createElement(document, 'menulist')

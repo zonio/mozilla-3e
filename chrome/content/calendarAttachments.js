@@ -64,7 +64,7 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
     var mainMenuItem = document.getElementById('options-menu')
       .insertItemAt(
         getMainMenuItemIndex() + 1,
-        bundleString.getString('cal3eCalendarAttachements.attach.label'),
+        bundleString.getString('calendar3e.attachements.attach.label'),
         null
       );
     // XXX This doesn't work: "menuItem.command = 'cal3e_cmd_attach_file';"
@@ -80,11 +80,11 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
     contextMenuItem.setAttribute('command', 'cal3e_cmd_attach_file');
     contextMenuItem.setAttribute(
       'label',
-      bundleString.getString('cal3eCalendarAttachements.attach.label')
+      bundleString.getString('calendar3e.attachements.attach.label')
     );
     contextMenuItem.setAttribute(
       'accesskey',
-      bundleString.getString('cal3eCalendarAttachements.attach.accesskey')
+      bundleString.getString('calendar3e.attachements.attach.accesskey')
     );
     var attachPage = document.getElementById('attachment-popup-attachPage');
     attachPage.parentNode.insertBefore(contextMenuItem, attachPage.nextSibling);

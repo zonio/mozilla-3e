@@ -54,17 +54,17 @@ function cal3eContextMenu() {
   function setMenuLabels(type) {
     if (contextMenuItem) {
       contextMenuItem.label = stringBundle.getString(
-        'cal3eCalendarMenu.context.delete.' + type + '.label'
+        'calendar3e.menu.context.delete.' + type + '.label'
       );
     }
     if (sunbirdMenuItem) {
       sunbirdMenuItem.label = stringBundle.getString(
-        'cal3eCalendarMenu.app.delete.' + type + '.label'
+        'calendar3e.menu.app.delete.' + type + '.label'
       );
     }
     if (lightningMenuItem) {
       lightningMenuItem.label = stringBundle.getString(
-        'cal3eCalendarMenu.app.delete.' + type + '.label'
+        'calendar3e.menu.app.delete.' + type + '.label'
       );
     }
   }
