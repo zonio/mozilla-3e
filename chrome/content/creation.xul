@@ -36,7 +36,7 @@
                     src="chrome://calendar3e/locale/calendar3e.properties"/>
     </stringbundleset>
     <script type="application/javascript"
-            src="chrome://calendar3e/content/calendarCreation.js"/>
+            src="chrome://calendar3e/content/creation.js"/>
   </wizard>
 
 </overlay>

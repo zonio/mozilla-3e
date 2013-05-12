@@ -61,8 +61,8 @@
     <em:name>3e Calendar</em:name>
     <em:version>@CALENDAR_3E_VERSION@</em:version>
     <em:description>Adds support for 3e calendars</em:description>
-    <em:iconURL>chrome://calendar3e/skin/cal3eIcon.png</em:iconURL>
-    <em:icon64URL>chrome://calendar3e/skin/cal3eIcon64.png</em:icon64URL>
+    <em:iconURL>chrome://calendar3e/skin/icon.png</em:iconURL>
+    <em:icon64URL>chrome://calendar3e/skin/icon64.png</em:icon64URL>
     <em:creator>Zonio</em:creator>
     <em:homepageURL>http://www.zonio.net/</em:homepageURL>
     <em:unpack>true</em:unpack>

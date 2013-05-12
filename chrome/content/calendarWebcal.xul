@@ -21,7 +21,7 @@
 <?xml-stylesheet type="text/css"
                  href="chrome://global/skin/"?>
 <?xml-stylesheet type="text/css"
-                 href="chrome://calendar3e/skin/cal3eGlobal.css"?>
+                 href="chrome://calendar3e/skin/global.css"?>
 
 <!DOCTYPE dialog [
   <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
@@ -42,7 +42,7 @@
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarWebcal.js"/>
+          src="chrome://calendar3e/content/webcal.js"/>
 
   <vbox flex="1">
     <description>&calendar3e.webcal.description;</description>

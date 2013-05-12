@@ -38,11 +38,11 @@
   </popupset>
 
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarContextMenu.js"/>
+          src="chrome://calendar3e/content/contextMenu.js"/>
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarSubscription.js"/>
+          src="chrome://calendar3e/content/subscription.js"/>
   <script type="application/javascript"
-          src="chrome://calendar3e/content/calendarWebcal.js"/>
+          src="chrome://calendar3e/content/webcal.js"/>
 
   <stringbundleset id="stringbundleset">
     <stringbundle id="calendar3e-strings"

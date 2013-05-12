@@ -50,7 +50,7 @@ function cal3eWebcal(calendar) {
 
 cal3eWebcal.open = function cal3eWebcal_open() {
   openDialog(
-    'chrome://calendar3e/content/calendarWebcal.xul',
+    'chrome://calendar3e/content/webcal.xul',
     'cal3eWebcal',
     'chrome,titlebar,modal',
     getCompositeCalendar().defaultCalendar

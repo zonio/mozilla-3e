@@ -820,7 +820,7 @@ function cal3eSharedCalendarsController() {
 
 cal3eSubscription.open = function cal3eSubscription_open() {
   openDialog(
-    'chrome://calendar3e/content/calendarSubscription.xul',
+    'chrome://calendar3e/content/subscription.xul',
     'cal3eSubscription',
     'chrome,titlebar,modal,resizable'
   );

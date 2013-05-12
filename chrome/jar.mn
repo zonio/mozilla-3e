@@ -4,35 +4,35 @@ calendar3e.jar:
 % locale   calendar3e   en-US       %locale/en-US/
 % locale   calendar3e   cs          %locale/cs/
 % skin     calendar3e   classic/1.0 %skin/
-% overlay chrome://calendar/content/calendarCreation.xul                chrome://calendar3e/content/calendarCreation.xul
-% overlay chrome://calendar/content/calendar-calendars-list.xul         chrome://calendar3e/content/calendarContextMenu.xul
-% overlay chrome://messenger/content/messenger.xul                      chrome://calendar3e/content/calendarList.xul
-% overlay chrome://calendar/content/calendar-properties-dialog.xul      chrome://calendar3e/content/calendarProperties.xul
-% overlay chrome://calendar/content/calendar-event-dialog.xul           chrome://calendar3e/content/calendarAttachments.xul
-% overlay chrome://calendar/content/calendar-event-dialog-attendees.xul chrome://calendar3e/content/calendarAttendees.xul
+% overlay chrome://calendar/content/creation.xul                chrome://calendar3e/content/creation.xul
+% overlay chrome://calendar/content/calendar-calendars-list.xul         chrome://calendar3e/content/contextMenu.xul
+% overlay chrome://messenger/content/messenger.xul                      chrome://calendar3e/content/list.xul
+% overlay chrome://calendar/content/calendar-properties-dialog.xul      chrome://calendar3e/content/properties.xul
+% overlay chrome://calendar/content/calendar-event-dialog.xul           chrome://calendar3e/content/attachments.xul
+% overlay chrome://calendar/content/calendar-event-dialog-attendees.xul chrome://calendar3e/content/attendees.xul
 
-  content/calendarContextMenu.js   (content/calendarContextMenu.js)
-  content/calendarContextMenu.xul  (content/calendarContextMenu.xul)
-  content/calendarCreation.js      (content/calendarCreation.js)
-  content/calendarCreation.xul     (content/calendarCreation.xul)
-  content/calendarList.js          (content/calendarList.js)
-  content/calendarList.xul         (content/calendarList.xul)
-  content/calendarProperties.js    (content/calendarProperties.js)
-* content/calendarProperties.xul   (content/calendarProperties.xul)
-  content/calendarSubscription.js  (content/calendarSubscription.js)
-  content/calendarSubscription.xul (content/calendarSubscription.xul)
-  content/am-enable3e.js           (content/am-enable3e.js)
-  content/am-enable3e.xul          (content/am-enable3e.xul)
-  content/calendarAttachments.js   (content/calendarAttachments.js)
-  content/calendarAttachments.xul  (content/calendarAttachments.xul)
-  content/calendarWebcal.js        (content/calendarWebcal.js)
-  content/calendarWebcal.xul       (content/calendarWebcal.xul)
-  content/calendarAttendees.xul    (content/calendarAttendees.xul)
+  content/contextMenu.js   (content/contextMenu.js)
+  content/contextMenu.xul  (content/contextMenu.xul)
+  content/creation.js      (content/creation.js)
+  content/creation.xul     (content/creation.xul)
+  content/list.js          (content/list.js)
+  content/list.xul         (content/list.xul)
+  content/properties.js    (content/properties.js)
+* content/properties.xul   (content/properties.xul)
+  content/subscription.js  (content/subscription.js)
+  content/subscription.xul (content/subscription.xul)
+  content/am-enable3e.js   (content/am-enable3e.js)
+  content/am-enable3e.xul  (content/am-enable3e.xul)
+  content/attachments.js   (content/attachments.js)
+  content/attachments.xul  (content/attachments.xul)
+  content/webcal.js        (content/webcal.js)
+  content/webcal.xul       (content/webcal.xul)
+  content/attendees.xul    (content/attendees.xul)
 
-  skin/cal3eGlobal.css       (skin/cal3eGlobal.css)
-  skin/cal3eIcon.png         (skin/cal3eIcon.png)
-  skin/cal3eIcon64.png       (skin/cal3eIcon64.png)
-  skin/calendarAttendees.css (skin/calendarAttendees.css)
+  skin/global.css    (skin/global.css)
+  skin/icon.png      (skin/icon.png)
+  skin/icon64.png    (skin/icon64.png)
+  skin/attendees.css (skin/attendees.css)
 
   locale/en-US/calendar3e.dtd         (locale/en-US/calendar3e.dtd)
   locale/en-US/calendar3e.properties  (locale/en-US/calendar3e.properties)

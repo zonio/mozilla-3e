@@ -22,7 +22,7 @@
 -->
 
 <?xml-stylesheet type="text/css"
-                 href="chrome://calendar3e/skin/cal3eGlobal.css"?>
+                 href="chrome://calendar3e/skin/global.css"?>
 <!DOCTYPE overlay [
   <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
   %calendar3e;
@@ -74,7 +74,7 @@
   </rows>
 
   <script type="text/javascript"
-          src="chrome://calendar3e/content/calendarProperties.js"/>
+          src="chrome://calendar3e/content/properties.js"/>
 
   <stringbundleset id="calendar3e-stringbundleset">
     <stringbundle id="calendar3e-strings"

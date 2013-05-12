@@ -18,24 +18,9 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<overlay id="calendar-new-event-attach"
+<?xml-stylesheet type="text/css"
+                 href="chrome://calendar3e/skin/attendees.css"?>
+
+<overlay id="calendar-attendees-fix"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-
-  <stringbundleset id="stringbundleset">
-    <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/calendar3e.properties"/>
-  </stringbundleset>
-
-  <script type="application/x-javascript"
-          src="chrome://calendar3e/content/calendarAttachments.js"/>
-
-  <commandset id="itemCommands">
-    <command id="cal3e_cmd_attach_file" disable-on-read-only="true"
-             oncommand="attachFile()" />
-    <command id="cal3e_cmd_open_attachment"
-             oncommand="cal3e_openAttachment()" />
-    <command id="cal3e_cmd_save_as" disable-on-read-only="true"
-             oncommand="alert('cal3e_cmd_save_as')" />
-  </commandset>
-
 </overlay>
