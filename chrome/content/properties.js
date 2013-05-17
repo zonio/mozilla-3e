@@ -54,6 +54,8 @@ cal3eProperties.typeChange = function typeChanged() {
  * overlay hides.
  */
 cal3eProperties.hide3eControls = function hide3eControls() {
+  cal3eProperties.destroyTabs();
+
   var uriRow = document.getElementById('calendar-uri-row');
   uriRow.removeAttribute('hidden');
   var emailIdentityRow = document.getElementById('calendar-email-identity-row');
@@ -165,6 +167,44 @@ cal3eProperties._listItemFromUser = function listItemFromAccount(user) {
 };
 
 /**
+ * Takes content of "General Information" tab moves it back to dialog
+ * and removes all tabs.
+ */
+cal3eProperties.destroyTabs = function destroyTabs() {
+  var tabbedVBox = document.getElementById('calendar3e-tabpanel-general-vbox');
+  if (!tabbedVBox) {
+    return;
+  }
+
+  var tabbox = tabbedVBox.parentNode.parentNode.parentNode;
+  var mainVBox = tabbox.parentNode;
+
+  var childNodes = tabbedVBox.childNodes
+  for (var i = 0; i < childNodes.length; i++) {
+    mainVBox.appendChild(childNodes[i]);
+  };
+  mainVBox.removeChild(tabbox);
+}
+
+/**
+ * Takes content of "Calendar properties" dialog
+ * and moves is to tab "General Information".
+ */
+cal3eProperties.moveGeneralToTab = function moveGeneralToTab() {
+  var tabbedVBox = document.getElementById('calendar3e-tabpanel-general-vbox');
+  var child = document.getElementById('calendar-enabled-checkbox');
+  tabbedVBox.appendChild(child.cloneNode(true));
+  child.parentNode.removeChild(child);
+
+  child = document.getElementById('calendar-properties-grid');
+  tabbedVBox.appendChild(child.cloneNode(true));
+  child.parentNode.removeChild(child);
+
+  document.getElementById('calendar-name').defaultValue =
+    cal3eProperties._calendar.name;
+}
+
+/**
  * Displays additional controls for 3e calendars in properties dialog.
  *
  * Otherwise ensures that those controls are hidden.
@@ -174,14 +214,11 @@ cal3eProperties.init = function init() {
   var calendar = window.arguments[0].calendar;
   cal3eProperties._calendar = calendar;
 
-  if ('eee' != calendar.type) {
+  if (calendar.type == 'eee') {
+    cal3eProperties.moveGeneralToTab()
+  } else {
     cal3eProperties.hide3eControls();
   }
-
-  var calendarEeeType = document.getElementById('calendar3e-type-group');
-  calendarEeeType.addEventListener(
-    'command', cal3eProperties.typeChange, false);
-  cal3eProperties.typeChange();
 
   cal3eProperties._init = false;
 };

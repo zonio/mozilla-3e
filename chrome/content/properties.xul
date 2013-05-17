@@ -30,47 +30,63 @@
 
 <overlay id="calendar3e-calendar-properties-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <tabbox>
+    <tabs>
+      <tab label="General Information"/>
+      <tab label="Sharing"/>
+    </tabs>
+    <tabpanels>
+      <tabpanel id="calendar3e-tabpanel-general">
+        <vbox id="calendar3e-tabpanel-general-vbox"></vbox>
+      </tabpanel>
+
+      <tabpanel>
+        <vbox id="calendar3e-tabpanel-sharing" flex="1">
+          <label control="calendar3e-sharing-listbox" value="To share calendar with others setup access permissions for users or groups."></label>
+          <listbox id="calendar3e-sharing-listbox">
+            <listhead>
+              <listheader label="Name"/>
+              <listheader label="Access"/>
+            </listhead>
+            <listcols>
+              <listcol flex="1"/>
+              <listcol flex="1"/>
+            </listcols>
+
+            <listitem>
+              <listcell label="Alice"/>
+              <listcell>
+                <menulist>
+                  <menupopup>
+                    <menuitem label="None" selected="true" />
+                    <menuitem label="Read" />
+                    <menuitem label="Wite" />
+                  </menupopup>
+                </menulist>
+              </listcell>
+            </listitem>
+            <listitem crop="none">
+              <listcell label="Bob"/>
+              <listcell crop="none">
+                <menulist>
+                  <menupopup>
+                    <menuitem label="None" />
+                    <menuitem label="Read" selected="true" />
+                    <menuitem label="Wite" />
+                  </menupopup>
+                </menulist>
+              </listcell>
+            </listitem>
+          </listbox>
+        </vbox>
+      </tabpanel>
+    </tabpanels>
+  </tabbox>
+
   <rows id="calendar-properties-rows">
     <row id="calendar-uri-row" align="center" hidden="true"/>
     <row id="calendar-email-identity-row" hidden="true"/>
     <row id="calendar-readOnly-row" hidden="true"/>
-#ifdef CALENDAR_3E_PERMISSION
-    <row id="calendar3e-permissions-row"
-         insertafter="calendar-color-row">
-      <label value="&calendar3e.properties.permissions.label;"/>
-      <vbox flex="1">
-        <listbox id="permissions" flex="1">
-          <listhead>
-            <listheader label="&calendar3e.properties.user.label;"/>
-            <listheader label="&calendar3e.properties.permissions.label;"/>
-          </listhead>
-          <listcols>
-            <listcol flex="1"/>
-            <listcol/>
-          </listcols>
-        </listbox>
-        <hbox>
-          <button id="calendar3e-permissions-add"
-                  label="&calendar3e.properties.add.label;"/>
-          <button id="calendar3e-permissions-remove"
-                  label="&calendar3e.properties.remove.label;"/>
-        </hbox>
-      </vbox>
-    </row>
-    <row id="calendar3e-type-row"
-         insertafter="calendar-color-row">
-      <label control="calendar3e-type-group"
-             value="&calendar3e.properties.type.label;"/>
-      <radiogroup id="calendar3e-type-group">
-        <radio value="private"
-               label="&calendar3e.properties.private.label;"/>
-        <radio value="public"
-               label="&calendar3e.properties.public.label;"/>
-        <radio value="shared"
-               label="&calendar3e.properties.shared.label;"/>
-      </radiogroup>
-    </row>
-#endif
   </rows>
 
   <script type="text/javascript"
