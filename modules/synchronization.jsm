@@ -71,7 +71,7 @@ function Method() {
     return method;
   }
 
-  function getFuture(functionArguments) {
+  function getPromise(functionArguments) {
     return Array.prototype.slice.apply(functionArguments).pop();
   }
 
@@ -120,7 +120,7 @@ function Method() {
   method.create = create;
   method.waitUntilFinished = waitUntilFinished;
   method.finished = finished;
-  method.future = getFuture;
+  method.promise = getPromise;
 
   init();
 }
@@ -167,56 +167,101 @@ function Queue() {
   init();
 }
 
-function Future() {
-  var future = this;
-  var done;
-  var observers;
-  var value;
+function Promise() {
+  var UNDONE = 0x0;    // 0000
+  var FULFILLED = 0x1; // 0001
+  var FAILED = 0x2;    // 0010
+  var DONE = 0xf;      // 1111
 
-  function done(futureValue) {
-    value = futureValue;
-    done = true;
-    notify();
-    observers = null;
+  var promise = this;
+  var state;
+  var values;
+  var handlers;
+
+  function fulfill(resolveValue) {
+    done(FULFILLED, arguments);
   }
 
-  function whenDone(observer) {
-    if (done) {
-      callObserver(observer);
-    } else {
-      observers.push(observer);
+  function fail(rejectError) {
+    done(FAILED, arguments);
+  }
+
+  function done(newState, newValues) {
+    if (state & DONE) {
+      throw new Error('Promise already done');
     }
 
-    return future;
+    state = newState;
+    values = newValues;
   }
 
-  function notify() {
-    observers.forEach(function(observer) {
-      callObserver(observer);
+  function then(fulfilledHandler, errorHandler) {
+    var promise = new Promise();
+
+    if (fulfilledHandler) {
+      handlers[FULFILLED].push({
+        "promise": promise,
+        "handler": fulfilledHandler,
+        "called": false
+      });
+    }
+    if (errorHandler) {
+      handlers[FAILED].push({
+        "promise": promise,
+        "handler": errorHandler,
+        "called": false
+      });
+    }
+
+    return promise.returnValue();
+  }
+
+  function callHandlers() {
+    if (!handlers[state]) {
+      return;
+    }
+
+    handlers[state].forEach(function (handler) {
+      if (handler["called"] || !handler["handler"].apply) {
+        return;
+      }
+      handler["called"] = true;
+
+      var handlerState;
+      var handlerValue;
+      try {
+        handlerValue = handler["handler"].apply(null, values);
+        handlerState = FULFILLED;
+      } catch (e) {
+        handlerValue = e;
+        handlerState = FAILED;
+      }
+
+      if (handler["promise"] && (handlerState & FULFILLED)) {
+        handler["promise"].fulfill(handlerValue);
+      } else if (handler["promise"] && (handlerState & FAILED)) {
+        handler["promise"].fail(handlerValue);
+      }
     });
-  }
-
-  function callObserver(observer) {
-    observer({ value: getValue });
-  }
-
-  function getValue() {
-    return value;
   }
 
   function getReturnValue() {
     return {
-      whenDone: whenDone
+      then: then
     };
   }
 
   function init() {
-    done = false;
-    observers = [];
+    state = UNDONE;
+    values = [];
+    handlers = {};
+    handlers[FULFILLED] = [];
+    handlers[FAILED] = [];
   }
 
-  future.done = done;
-  future.returnValue = getReturnValue;
+  promise.fulfill = fulfill;
+  promise.fail = fail;
+  promise.returnValue = getReturnValue;
 
   init();
 }
@@ -224,7 +269,7 @@ function Future() {
 var cal3eSynchronization = {
   Method: Method,
   Queue: Queue,
-  Future: Future
+  Promise: Promise
 };
 EXPORTED_SYMBOLS = [
   'cal3eSynchronization'

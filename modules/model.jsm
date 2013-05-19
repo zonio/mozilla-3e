@@ -109,7 +109,7 @@ function buildUri(structuredUri) {
 }
 
 function buildWebcalUri(calendar) {
-  var future = new cal3eSynchronization.Future();
+  var promise = new cal3eSynchronization.Promise();
   var sd = new cal3eSd();
 
   var [localPart, domainPart] = getCalendarOwner(calendar).split('@', 2);
@@ -122,10 +122,10 @@ function buildWebcalUri(calendar) {
     spec += '/' + encodeURIComponent(getCalendarName(calendar));
     spec += '.ics';
 
-    future.done(Services.io.newURI(spec, null, null));
+    promise.fulfill(Services.io.newURI(spec, null, null));
   });
 
-  return future.returnValue();
+  return promise.returnValue();
 }
 
 function decodeUsernameFromUri(username) {

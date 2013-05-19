@@ -41,8 +41,8 @@ var Resolv = {};
  * var resolv = new Resolv.DNS();
  * var resources;
  * var futureResources = resolv.resources('example.com', 'TXT');
- * futureResources.whenDone(function(future) {
- *   resources = future.value().map(function(jsonResource) {
+ * futureResources.then(function(jsonResources) {
+ *   resources = jsonResources.map(function(jsonResource) {
  *     return Resolv.DNS.Resource.fromJson(jsonResource);
  *   });
  * });
@@ -523,25 +523,25 @@ function WorkerResolverClient(worker) {
   var queue;
 
   function call(objectName, messageName, args) {
-    var future = new cal3eSynchronization.Future();
+    var promise = new cal3eSynchronization.Promise();
 
     if (objectName) {
-      objectName.whenDone(function(objectName) {
-        queue.push(getDoCall(objectName.value(), messageName, args, future));
+      objectName.then(function(objectName) {
+        queue.push(getDoCall(objectName, messageName, args, promise));
         queue.call();
       });
     } else {
-      queue.push(getDoCall(objectName, messageName, args, future));
+      queue.push(getDoCall(objectName, messageName, args, promise));
       queue.call();
     }
 
-    return future.returnValue();
+    return promise.returnValue();
   }
 
-  function getDoCall(objectName, messageName, args, future) {
+  function getDoCall(objectName, messageName, args, promise) {
     return function doCall() {
       worker.addEventListener(
-        'message', getDidGetResult(future), false
+        'message', getDidGetResult(promise), false
       );
       worker.postMessage({
         'objectName': objectName,
@@ -551,11 +551,11 @@ function WorkerResolverClient(worker) {
     };
   }
 
-  function getDidGetResult(future) {
+  function getDidGetResult(promise) {
     return function didGetResult(event) {
       worker.removeEventListener('message', didGetResult, false);
 
-      future.done(event.data['result']);
+      promise.fulfill(event.data['result']);
 
       if (queue.next()) {
         queue.next().call();

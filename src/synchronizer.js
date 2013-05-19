@@ -204,7 +204,7 @@ function calEeeSynchronizationService() {
 
     synchronizersByIdentity[identity.key]
       .synchronize()
-      .whenDone(function() {
+      .then(function() {
         timersByIdentity[identity.key].init(
           synchronizationService,
           Services.prefs.getIntPref(
@@ -314,25 +314,25 @@ function calEeeSynchronizationService() {
 function Synchronizer(identity, logger) {
   var synchronizer = this;
   var currentOperation;
-  var future;
+  var promise;
   var lastAttemptWasSuccessful;
 
   function synchronize() {
-    future = new cal3eSynchronization.Future();
-    loadCalendars(future);
+    promise = new cal3eSynchronization.Promise();
+    loadCalendars(promise);
 
-    return future.returnValue();
+    return promise.returnValue();
   }
 
-  function loadCalendars(future) {
+  function loadCalendars(promise) {
     currentOperation = cal3eRequest.Client.getInstance().getCalendars(
-      identity, getDidLoadCalendars(future), 'owned() OR subscribed()'
+      identity, getDidLoadCalendars(promise), 'owned() OR subscribed()'
     );
     logger.info('Synchronization [' + currentOperation.id() + '] - syncing ' +
                 'calendars of identity "' + identity.email + '"');
   }
 
-  function getDidLoadCalendars(future) {
+  function getDidLoadCalendars(promise) {
     return function didLoadCalendars(result, operation) {
       currentOperation = null;
 
@@ -343,7 +343,7 @@ function Synchronizer(identity, logger) {
                     result.constructor.name + '(' + result.errorCode + ')');
 
         lastAttemptWasSuccessful = false;
-        future.done();
+        promise.fulfill();
         return;
       } else if (!(result instanceof cal3eResponse.Success)) {
         logger.warn('Synchronization [' + operation.id() + '] - cannot ' +
@@ -369,15 +369,15 @@ function Synchronizer(identity, logger) {
         }
 
         lastAttemptWasSuccessful = false;
-        future.done();
+        promise.fulfill();
         return;
       }
 
-      loadOwners(result.data, future);
+      loadOwners(result.data, promise);
     }
   };
 
-  function loadOwners(calendars, future) {
+  function loadOwners(calendars, promise) {
     var query = calendars
       .map(function(calendar) {
         return calendar['owner'];
@@ -391,16 +391,16 @@ function Synchronizer(identity, logger) {
 
     if (query.length > 0) {
       currentOperation = cal3eRequest.Client.getInstance().getUsers(
-        identity, getDidLoadOwners(calendars, future), query.join(' OR ')
+        identity, getDidLoadOwners(calendars, promise), query.join(' OR ')
       );
       logger.info('Synchronization [' + currentOperation.id() + '] - ' +
                   'syncing calendar owners');
     } else {
-      didLoadEverything([], calendars, future);
+      didLoadEverything([], calendars, promise);
     }
   }
 
-  function getDidLoadOwners(calendars, future) {
+  function getDidLoadOwners(calendars, promise) {
     return function didLoadOwners(result, operation) {
       currentOperation = null;
 
@@ -416,12 +416,12 @@ function Synchronizer(identity, logger) {
       didLoadEverything(
         (result instanceof cal3eResponse.Success) ? result.data : [],
         calendars,
-        future
+        promise
       );
     }
   }
 
-  function didLoadEverything(owners, calendars, future) {
+  function didLoadEverything(owners, calendars, promise) {
     var ownersByUsername = owners
       .reduce(function(ownersByUsername, owner) {
         ownersByUsername[owner['username']] = owner;
@@ -432,7 +432,7 @@ function Synchronizer(identity, logger) {
     synchronizeCalendarsFromResult(ownersByUsername, calendars);
 
     lastAttemptWasSuccessful = true;
-    future.done();
+    promise.fulfill();
   }
 
   function synchronizeCalendarsFromResult(owners, calendars) {
@@ -475,7 +475,7 @@ function Synchronizer(identity, logger) {
                 identity.email + '"');
 
     currentOperation.cancel();
-    future.done();
+    promise.fulfill();
   }
 
   function buildCalendarUri(calendarData) {

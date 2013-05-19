@@ -159,13 +159,13 @@ function DnsSd(resolvConstructor) {
 
     new resolvConstructor()
       .resources(domainName, 'TXT')
-      .whenDone(function(jsonResources) {
+      .then(function(jsonResources) {
         logger.info('Data from resolver for "' + domainName + '" received ' +
                     'from DNS');
 
         didGetProviderData(
           domainName,
-          getProviderData(jsonResources.value()),
+          getProviderData(jsonResources),
           callback
         );
       });

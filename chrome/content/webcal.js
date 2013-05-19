@@ -29,12 +29,12 @@ function cal3eWebcal(calendar) {
   }
 
   function initCalendarUri() {
-    cal3eModel.buildWebcalUri(calendar).whenDone(setCalendarUri);
+    cal3eModel.buildWebcalUri(calendar).then(setCalendarUri);
   }
 
-  function setCalendarUri(future) {
+  function setCalendarUri(newCalendarUri) {
     document.getElementById('calendar3e-webcal-uri').value =
-      future.value().spec;
+      newCalendarUri.spec;
     document.documentElement.getButton('extra1').disabled = false;
   }
 
