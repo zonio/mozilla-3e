@@ -35,13 +35,13 @@ var Resolv = {};
  *
  * It uses {@see WorkerResolverClient} as a way to run the {@link
  * Resolv.DNS.Resolver} module in parallel.  Resources are returned
- * immediatelly as a future value.
+ * immediatelly as a promise.
  *
  * @example
  * var resolv = new Resolv.DNS();
  * var resources;
- * var futureResources = resolv.resources('example.com', 'TXT');
- * futureResources.then(function(jsonResources) {
+ * var promisedResources = resolv.resources('example.com', 'TXT');
+ * promisedResources.then(function(jsonResources) {
  *   resources = jsonResources.map(function(jsonResource) {
  *     return Resolv.DNS.Resource.fromJson(jsonResource);
  *   });
@@ -512,8 +512,8 @@ Resolv.DNS.Resolver['WINNT'] = Resolv.DNS.Resolver.WinDNS;
  * @param {ChromeWorker} worker A worker running WorkerResolverServer.
  * @example
  * var workerClient = new WorkerResolverClient();
- * var futureResolver = workerClient.call(null, 'factory', ['Darwin']);
- * var resources = workerClient.call(futureResolver, 'extract', [
+ * var resolver = workerClient.call(null, 'factory', ['Darwin']);
+ * var resources = workerClient.call(resolver, 'extract', [
  *   'example.com', 'TXT'
  * ]);
  * @constructor

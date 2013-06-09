@@ -27,46 +27,50 @@ function cal3eSd(providers, cache) {
   var sd = this;
   var logger;
 
-  function resolveServer(domainName, callback) {
+  function resolveServer(domainName) {
     logger.info('Resolving domain name "' + domainName + '"');
+
+    var promise = new cal3eSynchronization.Promise();
 
     var service;
     if (service = cache.get(domainName)) {
-      getPassServiceCallback(queue, domainName, callback)(service);
-      return;
+      getPassServiceCallback(queue, domainName, promise)(service);
+      return promise.returnValue();
     }
 
     var queue = new cal3eSynchronization.Queue();
     queue
-      .push(getPassOrTryNextProviderCallback(queue, domainName, callback))
-      .push(getTryToGetServiceCallback(queue, domainName, callback))
-      .push(getDefaultServiceCallback(queue, domainName, callback))
-      .push(getCacheServiceCallback(queue, domainName, callback))
-      .push(getPassServiceCallback(queue, domainName, callback));
+      .push(getPassOrTryNextProviderCallback(queue, domainName, promise))
+      .push(getTryToGetServiceCallback(queue, domainName, promise))
+      .push(getCacheServiceCallback(queue, domainName, promise))
+      .push(getPassServiceCallback(queue, domainName, promise));
     queue.call(service);
+
+    return promise.returnValue();
   }
 
-  function getPassOrTryNextProviderCallback(queue, domainName, callback) {
+  function getPassOrTryNextProviderCallback(queue, domainName, promise) {
     return function passOrTryNextProviderCallback(service, idx) {
       if (!idx) {
         idx = 0;
       }
 
-      providers[idx].resolveServer(domainName, function(result) {
+      providers[idx].resolveServer(domainName).then(function(result) {
         idx += 1;
-        if (!result && providers[idx]) {
-          passOrTryNextProviderCallback(service, idx);
-          return;
-        } else if (result) {
-          service = result;
-        }
-
+        service = result;
         queue.next()(service);
+      }, function() {
+        idx += 1;
+        if (providers[idx]) {
+          passOrTryNextProviderCallback(null, idx);
+        } else {
+          promise.fail(service);
+        }
       });
     };
   }
 
-  function getTryToGetServiceCallback(queue, domainName, callback) {
+  function getTryToGetServiceCallback(queue, domainName, promise) {
     var tryCount = 0;
 
     return function tryToGetServiceCallback(service) {
@@ -75,7 +79,7 @@ function cal3eSd(providers, cache) {
       if (!service &&
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
-        logger.info('Try #' + tryCount + ' to get service parameters fro ' +
+        logger.info('Try #' + tryCount + ' to get service parameters for ' +
                     '"' + domainName + '" failed');
 
         tryCount += 1;
@@ -89,20 +93,7 @@ function cal3eSd(providers, cache) {
     };
   }
 
-  function getDefaultServiceCallback(queue, domainName, callback) {
-    return function defaultServiceCallback(service) {
-      if (!service) {
-        logger.warn('Cannot resolve service parameter for ' +
-                    '"' + domainName + '"');
-
-        service = new Service(domainName);
-      }
-
-      queue.next()(service);
-    };
-  }
-
-  function getCacheServiceCallback(queue, domainName, callback) {
+  function getCacheServiceCallback(queue, domainName, promise) {
     return function cacheServiceCallback(service) {
       cache.set(domainName, service);
 
@@ -110,12 +101,12 @@ function cal3eSd(providers, cache) {
     };
   }
 
-  function getPassServiceCallback(queue, domainName, callback) {
+  function getPassServiceCallback(queue, domainName, promise) {
     return function passServiceCallback(service) {
       logger.info('Passing back service parameters for "' + domainName + '" ' +
                   'as "' + service + '"');
 
-      callback(service);
+      promise.fulfill(service);
     };
   }
 
@@ -123,10 +114,12 @@ function cal3eSd(providers, cache) {
     return function(service) {
       Components.classes['@mozilla.org/timer;1']
         .createInstance(Components.interfaces.nsITimer)
-        .initWithCallback({ notify: function() { queue.next()(service) } },
-              Services.prefs.getIntPref(
-                'extensions.calendar3e.sd_deferred_interval'),
-              Components.interfaces.nsITimer.TYPE_ONE_SHOT);
+        .initWithCallback(
+          { notify: function() { queue.next()(service) } },
+          Services.prefs.getIntPref(
+            'extensions.calendar3e.sd_deferred_interval'),
+          Components.interfaces.nsITimer.TYPE_ONE_SHOT
+        );
     };
   }
 
@@ -154,9 +147,10 @@ function DnsSd(resolvConstructor) {
   var dnsSd = this;
   var logger;
 
-  function resolveServer(domainName, callback) {
+  function resolveServer(domainName) {
     logger.info('Resolving domain name "' + domainName + '" using DNS');
 
+    var promise = new cal3eSynchronization.Promise();
     new resolvConstructor()
       .resources(domainName, 'TXT')
       .then(function(jsonResources) {
@@ -166,9 +160,11 @@ function DnsSd(resolvConstructor) {
         didGetProviderData(
           domainName,
           getProviderData(jsonResources),
-          callback
+          promise
         );
       });
+
+    return promise.returnValue();
   }
 
   function getProviderData(jsonResources) {
@@ -201,10 +197,10 @@ function DnsSd(resolvConstructor) {
     }, Number.POSITIVE_INFINITY);
   }
 
-  function didGetProviderData(domainName, data, callback) {
+  function didGetProviderData(domainName, data, promise) {
     if (!data) {
       logger.info('No DNS records found for "' + domainName + '"');
-      callback();
+      promise.fail();
       return;
     }
 
@@ -212,7 +208,7 @@ function DnsSd(resolvConstructor) {
                 data['server'] + '" with TTL ' +
                 data['ttl']);
 
-    callback(Service.fromProviderData(domainName, data, logger));
+    promise.fulfill(Service.fromProviderData(domainName, data, logger));
   }
 
   function init() {
@@ -232,14 +228,17 @@ function WellKnownSd() {
   var wellKnownSd = this;
   var logger;
 
-  function resolveServer(domainName, callback) {
+  function resolveServer(domainName) {
     logger.info('Resolving domain name "' + domainName + '" using ' +
                 'well-known URI');
 
+    var promise = new cal3eSynchronization.Promise();
     doXhrSend({
       'domainName': domainName,
-      'callback': callback
+      'promise': promise
     });
+
+    return promise.returnValue();
   }
 
   function doXhrSend(context) {
@@ -277,7 +276,7 @@ function WellKnownSd() {
     didGetProviderData(
       context['domainName'],
       getProviderDataFromEvent(eventOrError),
-      context['callback']
+      context['promise']
     );
   }
 
@@ -319,11 +318,11 @@ function WellKnownSd() {
     return ttl;
   }
 
-  function didGetProviderData(domainName, data, callback) {
+  function didGetProviderData(domainName, data, promise) {
     if (!data) {
       logger.info('No data found for "' + domainName + '" on ' +
                   'well-known URI');
-      callback();
+      promise.fail();
       return;
     }
 
@@ -331,7 +330,7 @@ function WellKnownSd() {
                 'URI as "' + data['server'] + '" with TTL ' +
                 data['ttl']);
 
-    callback(Service.fromProviderData(domainName, data, logger));
+    promise.fulfill(Service.fromProviderData(domainName, data, logger));
   }
 
   function init() {

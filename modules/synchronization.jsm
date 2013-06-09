@@ -26,21 +26,21 @@ function Method() {
   var running;
   var wait;
 
-  function create(callable, future) {
+  function create(callable, promise) {
     return function() {
       var callObject = {};
 
       callObject['function'] = callable;
 
-      if (future && future.apply) {
-        callObject['future'] = future.apply(null, arguments);
-      } else if (future) {
-        callObject['future'] = future;
+      if (promise && promise.apply) {
+        callObject['promise'] = promise.apply(null, arguments);
+      } else if (promise) {
+        callObject['promise'] = promise;
       }
 
       callObject['arguments'] = Array.prototype.slice.apply(arguments);
-      if (callObject['future'] !== undefined) {
-        callObject['arguments'].push(callObject['future']);
+      if (callObject['promise'] !== undefined) {
+        callObject['arguments'].push(callObject['promise']);
       }
 
       calls.push(callObject);
@@ -49,7 +49,7 @@ function Method() {
         scheduleCall();
       }
 
-      return callObject['future'];
+      return callObject['promise'];
     }
   }
 
@@ -233,22 +233,22 @@ function Promise() {
       .forEach(function (handler) {
         handler['called'] = true;
 
-      var handlerState;
-      var handlerValue;
-      try {
+        var handlerState;
+        var handlerValue;
+        try {
           handlerValue = handler['handler'].apply(null, values);
-        handlerState = FULFILLED;
-      } catch (e) {
-        handlerValue = e;
-        handlerState = FAILED;
-      }
+          handlerState = FULFILLED;
+        } catch (e) {
+          handlerValue = e;
+          handlerState = FAILED;
+        }
 
         if (handler['promise'] && (handlerState & FULFILLED)) {
           handler['promise'].fulfill(handlerValue);
         } else if (handler['promise'] && (handlerState & FAILED)) {
           handler['promise'].fail(handlerValue);
-      }
-    });
+        }
+      });
   }
 
   function getReturnValue() {

@@ -90,15 +90,15 @@ function calDateTimeToIsoDate(dateTime) {
     isoTzOffset;
 }
 
-function eeeAttachmentToHttpUri(eeeUri, callback) {
-  sd.resolveServer(eeeUri.host, function(service) {
+function eeeAttachmentToHttpUri(eeeUri) {
+  sd.resolveServer(eeeUri.host).then(function(service) {
     var hash = eeeUri.spec.split('/')[4];
     var filename = eeeUri.spec.split('/')[5];
 
-    callback(Services.io.newURI(
+    return Services.io.newURI(
       ['https:', '', service, 'attach', hash, filename].join('/'),
       null, null
-    ));
+    );
   });
 }
 

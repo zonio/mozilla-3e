@@ -43,7 +43,7 @@ function Client(serverBuilder, authenticationDelegate,
   var logger;
 
   function getUsers(identity, listener, query) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.getUsers', [query])
       .call(onResult, listener);
   }
@@ -52,7 +52,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function getCalendars(identity, listener, query) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.getCalendars', [query])
       .call(onResult, listener);
   }
@@ -61,7 +61,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function getSharedCalendars(identity, listener, query) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.getSharedCalendars', [query])
       .call(onResult, listener);
   }
@@ -70,7 +70,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function createCalendar(identity, listener, calendar) {
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     queue.push('ESClient.createCalendar', [cal3eModel.calendarName(calendar)]);
 
     return queue.call(onResult, listener);
@@ -80,7 +80,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function deleteCalendar(identity, listener, calendar) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.deleteCalendar', [cal3eModel.calendarName(calendar)])
       .call(onResult, listener);
   }
@@ -89,7 +89,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function subscribeCalendar(identity, listener, calendar) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.subscribeCalendar', [
         cal3eModel.calendarCalspec(calendar)])
       .call(onResult, listener);
@@ -99,7 +99,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function unsubscribeCalendar(identity, listener, calendar) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.unsubscribeCalendar', [
         cal3eModel.calendarCalspec(calendar)])
       .call(onResult, listener);
@@ -110,7 +110,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function setCalendarAttribute(identity, listener, calendar, name, value,
                                 isPublic) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.setCalendarAttribute', [
         cal3eModel.calendarCalspec(calendar),
         name,
@@ -123,7 +123,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function queryObjects(identity, listener, calendar, query) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.queryObjects', [
         cal3eModel.calendarCalspec(calendar),
         query])
@@ -135,7 +135,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function addObject(identity, listener, calendar, item) {
     return uploadAttachments(
-      identity, listener, item, synchronizedMethod.future(arguments),
+      identity, listener, item, synchronizedMethod.promise(arguments),
       function(queue) {
         enqueueAddObject(queue, calendar, item);
         queue.call(onResult, listener);
@@ -147,11 +147,11 @@ function Client(serverBuilder, authenticationDelegate,
 
   function updateObject(identity, listener, calendar, newItem, oldItem) {
     var args = Array.prototype.slice.apply(arguments);
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     var synchronizationQueue = this;
 
     return uploadAttachments(
-      identity, listener, newItem, synchronizedMethod.future(arguments),
+      identity, listener, newItem, synchronizedMethod.promise(arguments),
       function(queue) {
         if (oldItem.hasProperty('RECURRENCE-ID') &&
             newItem.hasProperty('RECURRENCE-ID')) {
@@ -175,7 +175,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function deleteObject(identity, listener, calendar, item) {
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
 
     enqueueDeleteObject(queue, calendar, item);
     return queue.call(onResult, listener);
@@ -185,7 +185,7 @@ function Client(serverBuilder, authenticationDelegate,
   );
 
   function freeBusy(identity, listener, attendee, from, to, defaultTimezone) {
-    return synchronizedMethod.future(arguments)
+    return synchronizedMethod.promise(arguments)
       .push('ESClient.freeBusy', [
         attendee,
         cal3eUtils.nsprTimeToEeeDate(from),
@@ -200,7 +200,7 @@ function Client(serverBuilder, authenticationDelegate,
   function findExistingObjectAndPrepareCall(identity, listener, calendar,
                                             newItem, oldItem) {
     var args = Array.prototype.slice.apply(arguments);
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     var synchronizationQueue = this;
 
     queue
@@ -237,7 +237,7 @@ function Client(serverBuilder, authenticationDelegate,
                                      oldItem) {
     var args = Array.prototype.slice.apply(arguments);
     args.unshift(enqueueUpdateObject);
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     var synchronizationQueue = this;
 
     function filterExdates(item) {
@@ -292,7 +292,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function enqueueCrudAndCall(enqueueCrud, identity, listener, calendar,
                               item) {
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     enqueueCrud(queue, calendar, item);
 
     return queue.call(onResult, listener);
@@ -400,7 +400,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function createScenario(main) {
     return function runScenario() {
-      var queue = synchronizedMethod.future(arguments);
+      var queue = synchronizedMethod.promise(arguments);
       logger.info('[' + queue.id() + '] Running scenario "' + main.name + '"');
 
       return new cal3eSynchronization.Queue()
@@ -420,18 +420,26 @@ function Client(serverBuilder, authenticationDelegate,
     synchronizedMethod.waitUntilFinished();
 
     var args = Array.prototype.slice.apply(arguments);
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     var synchronizationQueue = this;
 
-    serverBuilder.fromIdentity(identity, function(server) {
-      queue.setServer(server);
+    serverBuilder.fromIdentity(identity, logger)
+      .then(function(server) {
+        queue.setServer(server);
 
-      if (stopScenarioIfUserError(queue, listener)) {
-        return queue;
-      }
+        if (stopScenarioIfUserError(queue, listener)) {
+          return queue;
+        }
 
-      synchronizationQueue.next().apply(synchronizationQueue, args);
-    });
+        synchronizationQueue.next().apply(synchronizationQueue, args);
+      }, function(error) {
+        logger.warn(
+          '[' + queue.id() + '] Cannot initialize queue because of error: ' +
+            error.name + '(' + error.message + ')'
+        );
+        queue.setError(Component.Exception(error.message));
+        stopScenario(queue, listener);
+      });
 
     return queue;
   }
@@ -440,7 +448,7 @@ function Client(serverBuilder, authenticationDelegate,
   // side
   function checkQueueSecurity(identity, listener) {
     var args = Array.prototype.slice.apply(arguments);
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     var synchronizationQueue = this;
 
     if (stopScenarioIfUserError(queue, listener)) {
@@ -462,7 +470,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function authenticateQueue(identity, listener) {
     var args = Array.prototype.slice.apply(arguments);
-    var queue = synchronizedMethod.future(arguments);
+    var queue = synchronizedMethod.promise(arguments);
     var synchronizationQueue = this;
 
     if (stopScenarioIfUserError(queue, listener)) {
@@ -555,13 +563,11 @@ function ServerBuilder() {
   var serverBuilder = this;
   var sd;
 
-  function fromIdentity(identity, callback) {
-    sd.resolveServer(getHostname(identity), function(service) {
-      callback(new cal3eXmlRpc.Client(Services.io.newURI(
-        'https://' + service + '/RPC2',
-        null,
-        null
-      )));
+  function fromIdentity(identity) {
+    return sd.resolveServer(getHostname(identity)).then(function(service) {
+      return new cal3eXmlRpc.Client(Services.io.newURI(
+        'https://' + service + '/RPC2', null, null
+      ));
     });
   }
 

@@ -47,9 +47,7 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
     var uri = document.getElementById('attachment-link').getSelectedItem(0)
       .attachment.uri;
     if (uri.schemeIs('eee')) {
-      cal3eUtils.eeeAttachmentToHttpUri(uri, function(uri) {
-        loadAttachment(uri);
-      });
+      cal3eUtils.eeeAttachmentToHttpUri(uri).then(loadAttachment);
     } else {
       loadAttachment(uri);
     }
