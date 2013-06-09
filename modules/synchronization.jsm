@@ -193,6 +193,7 @@ function Promise() {
 
     state = newState;
     values = newValues;
+    callHandlers();
   }
 
   function then(fulfilledHandler, errorHandler) {
@@ -200,17 +201,21 @@ function Promise() {
 
     if (fulfilledHandler) {
       handlers[FULFILLED].push({
-        "promise": promise,
-        "handler": fulfilledHandler,
-        "called": false
+        'promise': promise,
+        'handler': fulfilledHandler,
+        'called': false
       });
     }
     if (errorHandler) {
       handlers[FAILED].push({
-        "promise": promise,
-        "handler": errorHandler,
-        "called": false
+        'promise': promise,
+        'handler': errorHandler,
+        'called': false
       });
+    }
+
+    if (state & DONE) {
+      callHandlers();
     }
 
     return promise.returnValue();
@@ -221,26 +226,27 @@ function Promise() {
       return;
     }
 
-    handlers[state].forEach(function (handler) {
-      if (handler["called"] || !handler["handler"].apply) {
-        return;
-      }
-      handler["called"] = true;
+    handlers[state]
+      .filter(function (handler) {
+        return !handler['called'];
+      })
+      .forEach(function (handler) {
+        handler['called'] = true;
 
       var handlerState;
       var handlerValue;
       try {
-        handlerValue = handler["handler"].apply(null, values);
+          handlerValue = handler['handler'].apply(null, values);
         handlerState = FULFILLED;
       } catch (e) {
         handlerValue = e;
         handlerState = FAILED;
       }
 
-      if (handler["promise"] && (handlerState & FULFILLED)) {
-        handler["promise"].fulfill(handlerValue);
-      } else if (handler["promise"] && (handlerState & FAILED)) {
-        handler["promise"].fail(handlerValue);
+        if (handler['promise'] && (handlerState & FULFILLED)) {
+          handler['promise'].fulfill(handlerValue);
+        } else if (handler['promise'] && (handlerState & FAILED)) {
+          handler['promise'].fail(handlerValue);
       }
     });
   }
