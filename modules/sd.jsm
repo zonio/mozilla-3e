@@ -55,16 +55,15 @@ function cal3eSd(providers, cache) {
         idx = 0;
       }
 
-      providers[idx].resolveServer(domainName).then(function(result) {
+      providers[idx].resolveServer(domainName).then(function(service) {
         idx += 1;
-        service = result;
         queue.next()(service);
       }, function() {
         idx += 1;
         if (providers[idx]) {
           passOrTryNextProviderCallback(null, idx);
         } else {
-          promise.fail(service);
+          queue.next()();
         }
       });
     };
@@ -74,8 +73,6 @@ function cal3eSd(providers, cache) {
     var tryCount = 0;
 
     return function tryToGetServiceCallback(service) {
-      var nextCall;
-
       if (!service &&
           (tryCount <
            Services.prefs.getIntPref('extensions.calendar3e.sd_try_limit'))) {
@@ -84,12 +81,12 @@ function cal3eSd(providers, cache) {
 
         tryCount += 1;
         queue.reset();
-        nextCall = getDeferredNextCall(queue);
+        getDeferredNextCall(queue)();
+      } else if (!service) {
+        promise.fail();
       } else {
-        nextCall = queue.next();
+        queue.next()(service);
       }
-
-      nextCall(service);
     };
   }
 
@@ -111,11 +108,11 @@ function cal3eSd(providers, cache) {
   }
 
   function getDeferredNextCall(queue) {
-    return function(service) {
+    return function() {
       Components.classes['@mozilla.org/timer;1']
         .createInstance(Components.interfaces.nsITimer)
         .initWithCallback(
-          { notify: function() { queue.next()(service) } },
+          { notify: function() { queue.next()() } },
           Services.prefs.getIntPref(
             'extensions.calendar3e.sd_deferred_interval'),
           Components.interfaces.nsITimer.TYPE_ONE_SHOT
