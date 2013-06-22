@@ -62,7 +62,7 @@ function amEnable3e() {
     return cal3eIdentity.Collection()
       .getEnabled()
       .filter(function(filteredIdentity) {
-        return (filteredIdentity !== identity) &&
+        return (filteredIdentity.key !== identity.key) &&
           (getIdentityHostname(filteredIdentity) ===
            getIdentityHostname(identity));
       })
