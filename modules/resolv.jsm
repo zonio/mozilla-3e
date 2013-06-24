@@ -199,6 +199,8 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
       ));
     }
 
+    closeLibrary();
+
     return resources;
   }
 
