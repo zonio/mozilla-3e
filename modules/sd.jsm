@@ -51,20 +51,38 @@ function cal3eSd(providers, cache) {
 
   function getPassOrTryNextProviderCallback(queue, domainName, promise) {
     return function passOrTryNextProviderCallback(service, idx) {
-      if (!idx) {
-        idx = 0;
-      }
-
-      providers[idx].resolveServer(domainName).then(function(service) {
-        idx += 1;
-        queue.next()(service);
-      }, function() {
+      function nextTry() {
         idx += 1;
         if (providers[idx]) {
           passOrTryNextProviderCallback(null, idx);
         } else {
           queue.next()();
         }
+      }
+
+      if (!idx) {
+        idx = 0;
+      }
+
+      var timedout = false;
+      var promisedService =
+        providers[idx].resolveServer(domainName).then(function(service) {
+          if (timedout) {
+            return;
+          }
+
+          idx += 1;
+          queue.next()(service);
+        }, function() {
+          if (timedout) {
+            return;
+          }
+
+          nextTry();
+        });
+      providerFailed(promisedService).then(function() {
+        timedout = true;
+        nextTry();
       });
     };
   }
@@ -105,6 +123,32 @@ function cal3eSd(providers, cache) {
 
       promise.fulfill(service);
     };
+  }
+
+  function providerFailed(promisedService) {
+    var timer = Components.classes['@mozilla.org/timer;1']
+      .createInstance(Components.interfaces.nsITimer);
+    var promise = new cal3eSynchronization.Promise();
+
+    function resolved() {
+      logger.info('Service discovered before timeout');
+      timer.cancel();
+      promise.fail();
+    }
+
+    promisedService.then(resolved, resolved);
+
+    timer.initWithCallback(
+      { notify: function() {
+        logger.info('Service not discovered before timeout');
+        promise.fulfill();
+      } },
+      Services.prefs.getIntPref(
+        'extensions.calendar3e.sd_resolve_timeout'),
+      Components.interfaces.nsITimer.TYPE_ONE_SHOT
+    );
+
+    return promise.returnValue();
   }
 
   function getDeferredNextCall(queue) {
