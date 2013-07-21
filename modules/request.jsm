@@ -437,7 +437,7 @@ function Client(serverBuilder, authenticationDelegate,
           '[' + queue.id() + '] Cannot initialize queue because of error: ' +
             error.name + '(' + error.message + ')'
         );
-        queue.setError(Component.Exception(error.message));
+        queue.setError(error);
         stopScenario(queue, listener);
       });
 
@@ -505,7 +505,6 @@ function Client(serverBuilder, authenticationDelegate,
       return false;
     }
 
-
     synchronizedMethod.finished();
 
     var result = error || cal3eResponse.fromRequestQueue(queue);
@@ -568,6 +567,10 @@ function ServerBuilder() {
       return new cal3eXmlRpc.Client(Services.io.newURI(
         'https://' + service + '/RPC2', null, null
       ));
+    }, function() {
+      throw Components.Exception(
+        'No service found for "' + identity.email + '"'
+      );
     });
   }
 

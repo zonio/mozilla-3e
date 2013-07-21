@@ -100,11 +100,14 @@ function cal3eSd(providers, cache) {
         tryCount += 1;
         queue.reset();
         getDeferredNextCall(queue)();
-      } else if (!service) {
-        promise.fail();
-      } else {
-        queue.next()(service);
+        return;
       }
+
+      if (!service) {
+        service = Service.notFound();
+      }
+
+      queue.next()(service);
     };
   }
 
@@ -118,10 +121,14 @@ function cal3eSd(providers, cache) {
 
   function getPassServiceCallback(queue, domainName, promise) {
     return function passServiceCallback(service) {
-      logger.info('Passing back service parameters for "' + domainName + '" ' +
-                  'as "' + service + '"');
-
-      promise.fulfill(service);
+      if (service.isResolved()) {
+        logger.info('Passing back service parameters for ' +
+                    '"' + domainName + '" as "' + service + '"');
+        promise.fulfill(service);
+      } else {
+        logger.info('No service discovered on "' + domainName + '"');
+        promise.fail();
+      }
     };
   }
 
@@ -131,7 +138,6 @@ function cal3eSd(providers, cache) {
     var promise = new cal3eSynchronization.Promise();
 
     function resolved() {
-      logger.info('Service discovered before timeout');
       timer.cancel();
       promise.fail();
     }
@@ -140,7 +146,7 @@ function cal3eSd(providers, cache) {
 
     timer.initWithCallback(
       { notify: function() {
-        logger.info('Service not discovered before timeout');
+        logger.info('Service not resolved before timeout');
         promise.fulfill();
       } },
       Services.prefs.getIntPref(
@@ -152,15 +158,19 @@ function cal3eSd(providers, cache) {
   }
 
   function getDeferredNextCall(queue) {
+    // Timer must be reused otherwise is might be activated for some
+    // strange reason
+    if (!getDeferredNextCall.timer) {
+      getDeferredNextCall.timer = Components.classes['@mozilla.org/timer;1']
+        .createInstance(Components.interfaces.nsITimer);
+    }
+
     return function() {
-      Components.classes['@mozilla.org/timer;1']
-        .createInstance(Components.interfaces.nsITimer)
-        .initWithCallback(
-          { notify: function() { queue.next()() } },
-          Services.prefs.getIntPref(
-            'extensions.calendar3e.sd_deferred_interval'),
-          Components.interfaces.nsITimer.TYPE_ONE_SHOT
-        );
+      getDeferredNextCall.timer.initWithCallback(
+        { notify: function() { queue.next()() }},
+        Services.prefs.getIntPref('extensions.calendar3e.sd_deferred_interval'),
+        Components.interfaces.nsITimer.TYPE_ONE_SHOT
+      );
     };
   }
 
@@ -393,14 +403,15 @@ function Service(domainName, host, port, ttl) {
   }
 
   function getHost() {
-    return host || domainName;
+    return host;
   }
 
   function getPort() {
-    return port ||
-      Components.classes['@mozilla.org/network/protocol;1?name=eee']
-      .createInstance(Components.interfaces.nsIProtocolHandler)
-      .defaultPort;
+    return port;
+  }
+
+  function isResolved() {
+    return getHost() && getPort();
   }
 
   function getValidUntil() {
@@ -408,18 +419,25 @@ function Service(domainName, host, port, ttl) {
   }
 
   function toString() {
-    return getHost() + ':' + getPort();
+    var string = '';
+    if (getHost()) {
+      string += getHost();
+    }
+    if (getPort()) {
+      string += ':' + getPort();
+    }
+
+    return string;
   }
 
   function init() {
-    validUntil = Date.now() +
-      (ttl ||
-       Services.prefs.getIntPref('extensions.calendar3e.default_sd_ttl'));
+    validUntil = Date.now() + ttl;
   }
 
   service.domainName = getDomainName;
   service.host = getHost;
   service.port = getPort;
+  service.isResolved = isResolved;
   service.validUntil = getValidUntil;
   service.toString = toString;
 
@@ -428,6 +446,13 @@ function Service(domainName, host, port, ttl) {
 Service.fromProviderData = function fromProviderData(domainName, data,
                                                      logger) {
   var hostPort = (data['server'] || '').split(':', 2);
+  var defaultPort =
+    Components.classes['@mozilla.org/network/protocol;1?name=eee']
+    .createInstance(Components.interfaces.nsIProtocolHandler)
+    .defaultPort;
+  var defaultTtl = Services.prefs.getIntPref(
+    'extensions.calendar3e.default_sd_ttl'
+  );
 
   if (!data['server']) {
     logger.warn('No server value found for "' + domainName + '"');
@@ -439,7 +464,17 @@ Service.fromProviderData = function fromProviderData(domainName, data,
     logger.warn('No port found for "' + domainName + '"');
   }
 
-  return new Service(domainName, hostPort[0], hostPort[1], data['ttl']);
+  return new Service(
+    domainName,
+    hostPort[0] || domainName,
+    hostPort[1] || defaultPort,
+    data['ttl'] || defaultTtl
+  );
+}
+Service.notFound = function(domainName) {
+  return new Service(domainName, null, null, Services.prefs.getIntPref(
+    'extensions.calendar3e.default_sd_ttl'
+  ));
 }
 
 function ProviderDataParser(data, ttl) {
