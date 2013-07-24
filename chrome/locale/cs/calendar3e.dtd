@@ -17,14 +17,22 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!ENTITY calendar3e.properties.type.label "Typ kalendáře: ">
-<!ENTITY calendar3e.properties.permissions.label "Oprávnění">
-<!ENTITY calendar3e.properties.user.label "Uživatel">
-<!ENTITY calendar3e.properties.add.label "Přidat">
-<!ENTITY calendar3e.properties.remove.label "Odebrat">
-<!ENTITY calendar3e.properties.private.label "Soukromý">
-<!ENTITY calendar3e.properties.public.label "Veřejný">
-<!ENTITY calendar3e.properties.shared.label "Sdílený">
+<!ENTITY calendar3e.properties.general.label "Obecné informace">
+<!ENTITY calendar3e.properties.sharing.label "Sdílení">
+
+<!ENTITY calendar3e.properties.sharing.description "Pro sdílení kalendáře s ostatními nastavte práva pro jednotlivé uživatele nebo skupiny.">
+<!ENTITY calendar3e.properties.sharing.button.remove "Odebrat">
+<!ENTITY calendar3e.properties.sharing.tree.header.name "Jméno">
+<!ENTITY calendar3e.properties.sharing.tree.header.read "Čtení">
+<!ENTITY calendar3e.properties.sharing.tree.header.write "Zápis">
+<!ENTITY calendar3e.properties.sharing.button.add "Přidat">
+
+<!ENTITY calendar3e.permissions.title "Přidat Práva">
+<!ENTITY calendar3e.permissions.button.extra1 "Přidat pouze pro čtení">
+<!ENTITY calendar3e.permissions.button.extra2 "Přidat ke čtení a zápisu">
+<!ENTITY calendar3e.permissions.button.cancel "Zrušit">
+<!ENTITY calendar3e.permissions.listbox.header "Přidat práva pro">
+<!ENTITY calendar3e.permissions.search.description "Hledat:">
 
 <!ENTITY calendar3e.creation.format.label "3e kalendář">
 

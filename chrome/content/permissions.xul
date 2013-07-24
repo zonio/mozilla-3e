@@ -30,11 +30,11 @@
 
 <dialog
     id="calendar3e-permissions-dialog"
-    title="Add Permissions"
+    title="&calendar3e.permissions.title;"
     buttons="cancel,extra1,extra2"
-    buttonlabelextra1="Add Read Only"
-    buttonlabelextra2="Add Read &amp; Write"
-    buttonlabelcancel="Cancel"
+    buttonlabelextra1="&calendar3e.permissions.button.extra1;"
+    buttonlabelextra2="&calendar3e.permissions.button.extra2;"
+    buttonlabelcancel="&calendar3e.permissions.button.cancel;"
     persist="screenX screenY"
     onload="cal3ePermissions.onLoad();"
     ondialogextra1="return cal3ePermissions.addRead();"
@@ -47,12 +47,12 @@
 
   <vbox flex="1">
     <hbox align="center">
-      <label value="Filter items that contain:" control="calendar3e-permissions-search"/>
+      <label value="&calendar3e.permissions.search.description;" control="calendar3e-permissions-search"/>
       <textbox id="calendar3e-permissions-search"/>
     </hbox>
     <listbox rows="7" flex="1">
       <listhead>
-        <listheader label="Add permissions for" flex="1"/>
+        <listheader label="&calendar3e.permissions.listbox.header;" flex="1"/>
       </listhead>
 
       <listcols>

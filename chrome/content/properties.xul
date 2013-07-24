@@ -32,8 +32,8 @@
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <tabbox>
     <tabs>
-      <tab label="General Information"/>
-      <tab label="Sharing"/>
+      <tab label="&calendar3e.properties.general.label;"/>
+      <tab label="&calendar3e.properties.sharing.label;"/>
     </tabs>
     <tabpanels>
       <tabpanel id="calendar3e-tabpanel-general">
@@ -42,12 +42,12 @@
 
       <tabpanel>
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
-          <label control="calendar3e-sharing-listbox" value="To share calendar with others setup access permissions for users or groups."></label>
+          <label control="calendar3e-sharing-listbox" value="&calendar3e.properties.sharing.description;"></label>
           <tree rows="7" hidecolumnpicker="true" editable="true">
             <treecols>
-              <treecol id="name" label="Name" flex="20"/>
-              <treecol id="perm-read" label="Read" type="checkbox" editable="true" flex="1"/>
-              <treecol id="perm-write" label="Write " type="checkbox" editable="true" flex="1"/>
+              <treecol id="name" label="&calendar3e.properties.sharing.tree.header.name;" flex="20"/>
+              <treecol id="perm-read" label="&calendar3e.properties.sharing.tree.header.read;" type="checkbox" editable="true" flex="1"/>
+              <treecol id="perm-write" label="&calendar3e.properties.sharing.tree.header.write; " type="checkbox" editable="true" flex="1"/>
             </treecols>
 
             <treechildren>
@@ -68,8 +68,8 @@
             </treechildren>
           </tree>
           <hbox>
-            <button label="Add" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();"/>
-            <button label="Remove" id="calendar3e-properties-remove-permission"/>
+            <button label="&calendar3e.properties.sharing.button.add;" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();"/>
+            <button label="&calendar3e.properties.sharing.button.remove;" id="calendar3e-properties-remove-permission"/>
           </hbox>
         </vbox>
       </tabpanel>

@@ -17,14 +17,22 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<!ENTITY calendar3e.properties.type.label "Calendar Type: ">
-<!ENTITY calendar3e.properties.permissions.label "Permissions">
-<!ENTITY calendar3e.properties.user.label "User">
-<!ENTITY calendar3e.properties.add.label "Add">
-<!ENTITY calendar3e.properties.remove.label "Remove">
-<!ENTITY calendar3e.properties.private.label "Private">
-<!ENTITY calendar3e.properties.public.label "Public">
-<!ENTITY calendar3e.properties.shared.label "Shared">
+<!ENTITY calendar3e.properties.general.label "General Information">
+<!ENTITY calendar3e.properties.sharing.label "Sharing">
+
+<!ENTITY calendar3e.properties.sharing.description "To share calendar with others setup access permissions for users or groups.">
+<!ENTITY calendar3e.properties.sharing.button.remove "Remove">
+<!ENTITY calendar3e.properties.sharing.tree.header.name "Name">
+<!ENTITY calendar3e.properties.sharing.tree.header.read "Read">
+<!ENTITY calendar3e.properties.sharing.tree.header.write "Write">
+<!ENTITY calendar3e.properties.sharing.button.add "Add">
+
+<!ENTITY calendar3e.permissions.title "Add Permissions">
+<!ENTITY calendar3e.permissions.button.extra1 "Add Read Only">
+<!ENTITY calendar3e.permissions.button.extra2 "Add Read &amp; Write">
+<!ENTITY calendar3e.permissions.button.cancel "Cancel">
+<!ENTITY calendar3e.permissions.listbox.header "Add permissions for">
+<!ENTITY calendar3e.permissions.search.description "Filter items that contain:">
 
 <!ENTITY calendar3e.creation.format.label "3e Calendar">
 
