@@ -36,3 +36,9 @@ grid#calendar3e-subscription-grid {
     width: 40em;
     height: 25em;
 }
+
+treechildren::-moz-tree-checkbox(checked)
+{
+    /* css for checked tree checkbox cells */
+    list-style-image: url("chrome://global/skin/checkbox/cbox-check.gif");
+}

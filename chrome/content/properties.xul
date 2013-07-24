@@ -43,41 +43,30 @@
       <tabpanel>
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
           <label control="calendar3e-sharing-listbox" value="To share calendar with others setup access permissions for users or groups."></label>
-          <listbox id="calendar3e-sharing-listbox">
-            <listhead>
-              <listheader label="Name"/>
-              <listheader label="Access"/>
-            </listhead>
-            <listcols>
-              <listcol flex="1"/>
-              <listcol flex="1"/>
-            </listcols>
+          <tree rows="2" hidecolumnpicker="true" editable="true">
+            <treecols>
+              <treecol id="name" label="Name" flex="20"/>
+              <treecol id="perm-read" label="Read" type="checkbox" editable="true" flex="1"/>
+              <treecol id="perm-write" label="Write " type="checkbox" editable="true" flex="1"/>
+            </treecols>
 
-            <listitem>
-              <listcell label="Alice"/>
-              <listcell>
-                <menulist>
-                  <menupopup>
-                    <menuitem label="None" selected="true" />
-                    <menuitem label="Read" />
-                    <menuitem label="Wite" />
-                  </menupopup>
-                </menulist>
-              </listcell>
-            </listitem>
-            <listitem crop="none">
-              <listcell label="Bob"/>
-              <listcell crop="none">
-                <menulist>
-                  <menupopup>
-                    <menuitem label="None" />
-                    <menuitem label="Read" selected="true" />
-                    <menuitem label="Wite" />
-                  </menupopup>
-                </menulist>
-              </listcell>
-            </listitem>
-          </listbox>
+            <treechildren>
+              <treeitem>
+                <treerow>
+                  <treecell label="Alice"/>
+                  <treecell value="true"/>
+                  <treecell value="true"/>
+                </treerow>
+              </treeitem>
+              <treeitem>
+                <treerow>
+                  <treecell label="Bob"/>
+                  <treecell value="true"/>
+                  <treecell value="false"/>
+                </treerow>
+              </treeitem>
+            </treechildren>
+          </tree>
         </vbox>
       </tabpanel>
     </tabpanels>
