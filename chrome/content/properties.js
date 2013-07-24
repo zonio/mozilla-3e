@@ -38,10 +38,6 @@ cal3eProperties.hide3eControls = function hide3eControls() {
   emailIdentityRow.removeAttribute('hidden');
   var readOnlyRow = document.getElementById('calendar-readOnly-row');
   readOnlyRow.removeAttribute('hidden');
-
-  if (cal3eProperties._init) {
-    window.sizeToContent();
-  }
 };
 
 /**
@@ -88,7 +84,6 @@ cal3eProperties.moveGeneralToTab = function moveGeneralToTab() {
  * Otherwise ensures that those controls are hidden.
  */
 cal3eProperties.init = function init() {
-  cal3eProperties._init = true;
   var calendar = window.arguments[0].calendar;
   cal3eProperties._calendar = calendar;
 
@@ -98,7 +93,7 @@ cal3eProperties.init = function init() {
     cal3eProperties.hide3eControls();
   }
 
-  cal3eProperties._init = false;
+  window.sizeToContent();
 };
 
 window.addEventListener('load', cal3eProperties.init, false);
