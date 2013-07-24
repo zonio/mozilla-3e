@@ -27,7 +27,7 @@ cal3ePermissions.open = function cal3ePermissions_open() {
   openDialog(
     'chrome://calendar3e/content/permissions.xul',
     'cal3ePermissions',
-    'chrome,titlebar,modal'
+    'chrome,titlebar,modal,resizable'
   );
 };
 
