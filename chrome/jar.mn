@@ -19,6 +19,8 @@ calendar3e.jar:
   content/list.xul         (content/list.xul)
   content/properties.js    (content/properties.js)
 * content/properties.xul   (content/properties.xul)
+  content/permissions.js   (content/permissions.js)
+  content/permissions.xul  (content/permissions.xul)
   content/subscription.js  (content/subscription.js)
   content/subscription.xul (content/subscription.xul)
   content/am-enable3e.js   (content/am-enable3e.js)
@@ -32,6 +34,8 @@ calendar3e.jar:
   skin/global.css    (skin/global.css)
   skin/icon.png      (skin/icon.png)
   skin/icon64.png    (skin/icon64.png)
+  skin/user.png      (skin/user.png)
+  skin/group.png     (skin/group.png)
   skin/attendees.css (skin/attendees.css)
 
   locale/en-US/calendar3e.dtd         (locale/en-US/calendar3e.dtd)

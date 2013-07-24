@@ -43,7 +43,7 @@
       <tabpanel>
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
           <label control="calendar3e-sharing-listbox" value="To share calendar with others setup access permissions for users or groups."></label>
-          <tree rows="2" hidecolumnpicker="true" editable="true">
+          <tree rows="7" hidecolumnpicker="true" editable="true">
             <treecols>
               <treecol id="name" label="Name" flex="20"/>
               <treecol id="perm-read" label="Read" type="checkbox" editable="true" flex="1"/>
@@ -67,6 +67,10 @@
               </treeitem>
             </treechildren>
           </tree>
+          <hbox>
+            <button label="Add" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();"/>
+            <button label="Remove" id="calendar3e-properties-remove-permission"/>
+          </hbox>
         </vbox>
       </tabpanel>
     </tabpanels>
@@ -80,6 +84,8 @@
 
   <script type="text/javascript"
           src="chrome://calendar3e/content/properties.js"/>
+  <script type="text/javascript"
+          src="chrome://calendar3e/content/permissions.js"/>
 
   <stringbundleset id="calendar3e-stringbundleset">
     <stringbundle id="calendar3e-strings"

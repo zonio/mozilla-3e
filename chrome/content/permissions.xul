@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - 3e Calendar
+   - Copyright © 2011  Zonio s.r.o.
+   -
+   - This program is free software: you can redistribute it and/or modify
+   - it under the terms of the GNU General Public License as published by
+   - the Free Software Foundation, either version 3 of the License, or
+   - (at your option) any later version.
+   -
+   - This program is distributed in the hope that it will be useful,
+   - but WITHOUT ANY WARRANTY; without even the implied warranty of
+   - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   - GNU General Public License for more details.
+   -
+   - You should have received a copy of the GNU General Public License
+   - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<?xml-stylesheet type="text/css"
+                 href="chrome://global/skin/"?>
+<?xml-stylesheet type="text/css"
+                 href="chrome://calendar3e/skin/global.css"?>
+
+<!DOCTYPE dialog [
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
+]>
+
+<dialog
+    id="calendar3e-permissions-dialog"
+    title="Add Permissions"
+    buttons="cancel,extra1,extra2"
+    buttonlabelextra1="Add Read Only"
+    buttonlabelextra2="Add Read &amp; Write"
+    buttonlabelcancel="Cancel"
+    persist="screenX screenY"
+    onload="cal3ePermissions.onLoad();"
+    ondialogextra1="return cal3ePermissions.addRead();"
+    ondialogextra2="return cal3ePermissions.addReadWrite();"
+    windowtype="Calendar3e:PermissionsDialog"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/javascript"
+          src="chrome://calendar3e/content/permissions.js"/>
+
+  <vbox flex="1">
+    <hbox align="center">
+      <label value="Filter items that contain:" control="calendar3e-permissions-search"/>
+      <textbox id="calendar3e-permissions-search"/>
+    </hbox>
+    <listbox rows="7" flex="1">
+      <listhead>
+        <listheader label="Add permissions for" flex="1"/>
+      </listhead>
+
+      <listcols>
+        <listcol flex="1"/>
+      </listcols>
+
+      <listitem>
+        <listcell label="Carl &lt;carl@alpha.zonio.net&gt;" class="listitem-iconic" image="chrome://calendar3e/skin/user.png"/>
+      </listitem>
+      <listitem>
+        <listcell label="Dave &lt;dave@alpha.zonio.net&gt;" class="listitem-iconic" image="chrome://calendar3e/skin/user.png"/>
+      </listitem>
+      <listitem>
+        <listcell label="Testers" class="listitem-iconic" image="chrome://calendar3e/skin/group.png"/>
+      </listitem>
+    </listbox>
+  </vbox>
+</dialog>
