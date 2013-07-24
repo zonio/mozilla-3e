@@ -36,6 +36,8 @@ calendar3e.jar:
   skin/icon64.png    (skin/icon64.png)
   skin/user.png      (skin/user.png)
   skin/group.png     (skin/group.png)
+  skin/checkbox.gif  (skin/checkbox.gif)
+  skin/checkbox-checked.gif     (skin/checkbox-checked.gif)
   skin/attendees.css (skin/attendees.css)
 
   locale/en-US/calendar3e.dtd         (locale/en-US/calendar3e.dtd)
