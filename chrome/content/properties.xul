@@ -37,7 +37,6 @@
     </tabs>
     <tabpanels>
       <tabpanel id="calendar3e-tabpanel-general">
-        <vbox id="calendar3e-tabpanel-general-vbox"></vbox>
       </tabpanel>
 
       <tabpanel>
@@ -76,11 +75,18 @@
     </tabpanels>
   </tabbox>
 
-  <rows id="calendar-properties-rows">
-    <row id="calendar-uri-row" align="center" hidden="true"/>
-    <row id="calendar-email-identity-row" hidden="true"/>
-    <row id="calendar-readOnly-row" hidden="true"/>
-  </rows>
+  <checkbox id="calendar-enabled-checkbox" hidden="true"/>
+
+  <grid id="calendar-properties-grid" flex="1">
+    <rows id="calendar-properties-rows">
+      <row id="calendar-uri-row" align="center" hidden="true"/>
+      <row id="calendar-email-identity-row" hidden="true"/>
+      <row id="calendar-readOnly-row" hidden="true"/>
+      <row id="calendar-suppressAlarms-row">
+        <spacer hidden="true"/>
+      </row>
+    </rows>
+  </grid>
 
   <script type="text/javascript"
           src="chrome://calendar3e/content/properties.js"/>

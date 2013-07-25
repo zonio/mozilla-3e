@@ -32,12 +32,25 @@ var cal3eProperties = {};
 cal3eProperties.hide3eControls = function hide3eControls() {
   cal3eProperties.destroyTabs();
 
+  var grid = document.getElementById('calendar-properties-grid');
+  grid.removeAttribute('flex');
+  var enableCalendarRow = document.getElementById('calendar-enabled-checkbox');
+  enableCalendarRow.removeAttribute('hidden');
+  var refreshRow = document.getElementById('calendar-refreshInterval-row');
+  refreshRow.removeAttribute('hidden');
   var uriRow = document.getElementById('calendar-uri-row');
   uriRow.removeAttribute('hidden');
   var emailIdentityRow = document.getElementById('calendar-email-identity-row');
   emailIdentityRow.removeAttribute('hidden');
   var readOnlyRow = document.getElementById('calendar-readOnly-row');
   readOnlyRow.removeAttribute('hidden');
+  var cacheRow = document.getElementById('calendar-cache-row');
+  cacheRow.removeAttribute('hidden');
+  var alarmsRow = document.getElementById('calendar-suppressAlarms-row');
+  if (alarmsRow.childNodes[0].hidden) {
+    /* Spacer before checkbox. */
+    alarmsRow.childNodes[0].remoteAttribute('hidden');
+  }
 };
 
 /**
@@ -45,15 +58,15 @@ cal3eProperties.hide3eControls = function hide3eControls() {
  * and removes whole tab layout.
  */
 cal3eProperties.destroyTabs = function destroyTabs() {
-  var tabbedVBox = document.getElementById('calendar3e-tabpanel-general-vbox');
-  if (!tabbedVBox) {
+  var tabGeneral = document.getElementById('calendar3e-tabpanel-general');
+  if (!tabGeneral) {
     return;
   }
 
-  var tabbox = tabbedVBox.parentNode.parentNode.parentNode;
+  var tabbox = tabGeneral.parentNode.parentNode;
   var mainVBox = tabbox.parentNode;
 
-  var childNodes = tabbedVBox.childNodes
+  var childNodes = tabGeneral.childNodes
   for (var i = 0; i < childNodes.length; i++) {
     mainVBox.appendChild(childNodes[i]);
   };
@@ -65,17 +78,22 @@ cal3eProperties.destroyTabs = function destroyTabs() {
  * and moves is to tab "General Information".
  */
 cal3eProperties.moveGeneralToTab = function moveGeneralToTab() {
-  var tabbedVBox = document.getElementById('calendar3e-tabpanel-general-vbox');
-  var child = document.getElementById('calendar-enabled-checkbox');
-  tabbedVBox.appendChild(child.cloneNode(true));
-  child.parentNode.removeChild(child);
+  var tabbedGeneral = document.getElementById('calendar3e-tabpanel-general');
 
-  child = document.getElementById('calendar-properties-grid');
-  tabbedVBox.appendChild(child.cloneNode(true));
+  var child = document.getElementById('calendar-properties-grid');
+  tabbedGeneral.appendChild(child.cloneNode(true));
   child.parentNode.removeChild(child);
 
   document.getElementById('calendar-name').defaultValue =
     cal3eProperties._calendar.name;
+}
+
+cal3eProperties.tweakUI = function tweakUI() {
+  document.getElementById('calendar-refreshInterval-row').hidden = true;
+  var alarmsRow = document.getElementById('calendar-suppressAlarms-row');
+  alarmsRow.childNodes[0].hidden = true; /* Spacer before checkbox */
+
+  cal3eProperties.moveGeneralToTab();
 }
 
 /**
@@ -88,7 +106,7 @@ cal3eProperties.init = function init() {
   cal3eProperties._calendar = calendar;
 
   if (calendar.type == 'eee') {
-    cal3eProperties.moveGeneralToTab()
+    cal3eProperties.tweakUI();
   } else {
     cal3eProperties.hide3eControls();
   }
