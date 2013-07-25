@@ -34,6 +34,7 @@ cal3eProperties.hide3eControls = function hide3eControls() {
 
   var grid = document.getElementById('calendar-properties-grid');
   grid.removeAttribute('flex');
+  grid.removeAttribute('style');
   var enableCalendarRow = document.getElementById('calendar-enabled-checkbox');
   enableCalendarRow.removeAttribute('hidden');
   var refreshRow = document.getElementById('calendar-refreshInterval-row');

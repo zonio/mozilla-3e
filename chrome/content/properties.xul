@@ -42,7 +42,7 @@
       <tabpanel>
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
           <label control="calendar3e-sharing-listbox" value="&calendar3e.properties.sharing.description;"></label>
-          <tree rows="7" hidecolumnpicker="true" editable="true">
+          <tree rows="7" hidecolumnpicker="true" editable="true" class="calendar3e-permissions">
             <treecols>
               <treecol id="name" label="&calendar3e.properties.sharing.tree.header.name;" flex="20"/>
               <treecol id="perm-read" label="&calendar3e.properties.sharing.tree.header.read;" type="checkbox" editable="true" flex="1"/>
@@ -67,8 +67,8 @@
             </treechildren>
           </tree>
           <hbox>
-            <button label="&calendar3e.properties.sharing.button.add;" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();"/>
-            <button label="&calendar3e.properties.sharing.button.remove;" id="calendar3e-properties-remove-permission"/>
+            <button label="&calendar3e.properties.sharing.button.add;" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();" class="permissions"/>
+            <button label="&calendar3e.properties.sharing.button.remove;" id="calendar3e-properties-remove-permission" class="permissions"/>
           </hbox>
         </vbox>
       </tabpanel>
@@ -77,7 +77,7 @@
 
   <checkbox id="calendar-enabled-checkbox" hidden="true"/>
 
-  <grid id="calendar-properties-grid" flex="1">
+  <grid id="calendar-properties-grid" style="margin-left: 0px;" flex="1">
     <rows id="calendar-properties-rows">
       <row id="calendar-uri-row" align="center" hidden="true"/>
       <row id="calendar-email-identity-row" hidden="true"/>
