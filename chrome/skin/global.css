@@ -45,7 +45,7 @@ treechildren::-moz-tree-checkbox(checked) {
   list-style-image: url("chrome://calendar3e/skin/checkbox-checked.gif");
 }
 
-tree.calendar3e-permissions {
+tree#calendar3e-permissions-tree {
   margin-top: 6px;
 }
 

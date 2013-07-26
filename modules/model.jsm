@@ -51,7 +51,6 @@ function getUserLabel(user) {
 
 function getRealnameOrUsername(user) {
   return getAttribute(user, 'realname') || user['username'] || '';
-
 }
 
 function getCalendarName(calendar) {

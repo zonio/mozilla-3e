@@ -18,10 +18,172 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/feature.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
+Components.utils.import("resource://calendar3e/modules/response.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
+Components.utils.import("resource://calendar3e/modules/xul.jsm");
+
+function cal3ePermissionsTreeController(calendar) {
+  var identity;
+  var userPermissions;
+  var groupPermissions;
+  var users;
+  var groups;
+  var element;
+
+  function didError() {
+    document.getElementById('notifications').appendNotification(
+      'Could not get list of permissions.',
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
+    );
+  }
+
+  function loadPermissions() {
+    loadUserPermissions();
+  }
+
+  function loadUserPermissions() {
+    userPermissions = null;
+
+    cal3eRequest.Client.getInstance()
+      .getUserPermissions(identity, userPermissionsDidLoad, calendar);
+  }
+
+  function userPermissionsDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError();
+      return;
+    }
+
+    userPermissions = result.data;
+    loadUsers();
+  }
+
+  function loadUsers() {
+    var query = '';
+    userPermissions.forEach(function(user) {
+      if (query !== '') {
+        query += ' OR ';
+      }
+      query += "match_username('" + user.user + "')";
+    });
+
+    cal3eRequest.Client.getInstance()
+      .getUsers(identity, usersDidLoad, query);
+  }
+
+  function usersDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError();
+      return;
+    }
+
+    users = result.data;
+    loadGroupPermissions();
+  }
+
+  function loadGroupPermissions() {
+    groupPermissions = null;
+
+    cal3eRequest.Client.getInstance()
+      .getGroupPermissions(identity, groupPermissionsDidLoad, calendar);
+  }
+
+  function groupPermissionsDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError();
+      return;
+    }
+
+    groupPermissions = result.data;
+    loadGroups();
+  }
+
+  function loadGroups() {
+    var query = '';
+    groupPermissions.forEach(function(group) {
+      if (query !== '') {
+        query += ' OR ';
+      }
+      query += "match_groupname('" + group.group + "')";
+    });
+
+    cal3eRequest.Client.getInstance()
+      .getGroups(identity, groupsDidLoad, query);
+  }
+
+  function groupsDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError();
+      return;
+    }
+
+    groups = result.data;
+    fillElement();
+  }
+
+  function fillElement() {
+    userPermissions.forEach(function(user) {
+      cal3eXul.addItemsToTree(element, [
+        { label: cal3eModel.userLabel(findUser(user.user)) },
+        { value: true },
+        { value: user.perm === 'write' }
+      ]);
+    });
+
+    groupPermissions.forEach(function(group) {
+      cal3eXul.addItemsToTree(element, [
+        { label: findGroup(group.group)['title'] },
+        { value: true },
+        { value: group.perm === 'write' }
+      ]);
+    });
+  }
+
+  function findUser(username) {
+    for (var i = 0; i < users.length; i++) {
+      if (users[i].username === username) {
+        return users[i];
+      }
+    }
+    return { username: username };
+  }
+
+  function findGroup(groupname) {
+    for (var i = 0; i < groups.length; i++) {
+      if (groups[i].groupname === groupname) {
+        return groups[i];
+      }
+    }
+    return {
+      groupname: groupname,
+      title: 'Unknown Group (' + groupname + ')'
+    };
+  }
+
+  function findAndSetIdentity() {
+    var identities = cal3eIdentity.Collection()
+      .getEnabled()
+      .findByEmail(cal3eModel.calendarUser(calendar));
+
+    identity = identities.length > 0 ? identities[0] : null;
+  }
+
+  function init() {
+    element = document.getElementById('calendar3e-permissions-tree');
+    findAndSetIdentity();
+    loadPermissions();
+  }
+
+  init();
+};
+
 
 var cal3eProperties = {};
 
@@ -106,8 +268,10 @@ cal3eProperties.init = function init() {
   var calendar = window.arguments[0].calendar;
   cal3eProperties._calendar = calendar;
 
+
   if (calendar.type == 'eee') {
     cal3eProperties.tweakUI();
+    var permissions = new cal3ePermissionsTreeController(calendar);
   } else {
     cal3eProperties.hide3eControls();
   }

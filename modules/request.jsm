@@ -122,6 +122,33 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(setCalendarAttribute), createQueue
   );
 
+  function getUserPermissions(identity, listener, calendar) {
+    return synchronizedMethod.promise(arguments)
+      .push('ESClient.getUserPermissions', [cal3eModel.calendarName(calendar)])
+      .call(onResult, listener);
+  }
+  getUserPermissions = synchronizedMethod.create(
+    createScenario(getUserPermissions), createQueue
+  );
+
+  function getGroupPermissions(identity, listener, calendar) {
+    return synchronizedMethod.promise(arguments)
+      .push('ESClient.getGroupPermissions', [cal3eModel.calendarName(calendar)])
+      .call(onResult, listener);
+  }
+  getGroupPermissions = synchronizedMethod.create(
+    createScenario(getGroupPermissions), createQueue
+  );
+
+  function getGroups(identity, listener, query) {
+    return synchronizedMethod.promise(arguments)
+      .push('ESClient.getGroups', [query])
+      .call(onResult, listener);
+  }
+  getGroups = synchronizedMethod.create(
+    createScenario(getGroups), createQueue
+  );
+
   function queryObjects(identity, listener, calendar, query) {
     return synchronizedMethod.promise(arguments)
       .push('ESClient.queryObjects', [
@@ -538,6 +565,9 @@ function Client(serverBuilder, authenticationDelegate,
   client.subscribeCalendar = subscribeCalendar;
   client.unsubscribeCalendar = unsubscribeCalendar;
   client.setCalendarAttribute = setCalendarAttribute;
+  client.getUserPermissions = getUserPermissions;
+  client.getGroupPermissions = getGroupPermissions;
+  client.getGroups = getGroups;
   client.queryObjects = queryObjects;
   client.addObject = addObject;
   client.updateObject = updateObject;
