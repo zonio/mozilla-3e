@@ -44,9 +44,9 @@
           <label control="calendar3e-sharing-listbox" value="&calendar3e.properties.sharing.description;"></label>
           <tree rows="7" hidecolumnpicker="true" editable="true" class="calendar3e-permissions">
             <treecols>
-              <treecol id="name" label="&calendar3e.properties.sharing.tree.header.name;" flex="20"/>
-              <treecol id="perm-read" label="&calendar3e.properties.sharing.tree.header.read;" type="checkbox" editable="true" flex="1"/>
-              <treecol id="perm-write" label="&calendar3e.properties.sharing.tree.header.write; " type="checkbox" editable="true" flex="1"/>
+              <treecol id="calendar3e-properties-tree-name" label="&calendar3e.properties.sharing.tree.header.name;" flex="20"/>
+              <treecol id="calendar3e-properties-tree-read" label="&calendar3e.properties.sharing.tree.header.read;" type="checkbox" editable="true" flex="1"/>
+              <treecol id="calendar3e-properties-tree-write" label="&calendar3e.properties.sharing.tree.header.write; " type="checkbox" editable="true" flex="1"/>
             </treecols>
 
             <treechildren>
