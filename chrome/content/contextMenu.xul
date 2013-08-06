@@ -34,6 +34,8 @@
                 insertafter="list-calendars-context-publish"
                 oncommand="cal3eWebcal.open();"
                 collased="true"/>
+      <menuitem id="list-calendars-context-reload"
+                oncommand="cal3eContextMenu.reloadOverlay();"/>
     </popup>
   </popupset>
 

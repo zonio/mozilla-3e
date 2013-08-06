@@ -64,6 +64,9 @@ function calEeeSynchronizationService() {
       logger.info('Registration - initializing');
       registerAfterMainWindowOpen();
       break;
+    case 'reload-remote-3e-calendars':
+      runSynchronizer(subject);
+      break;
     case 'timer-callback':
       runSynchronizer(findIdentityOfTimer(subject));
       break;

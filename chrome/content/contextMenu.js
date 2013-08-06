@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://calendar3e/modules/model.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
 
 function cal3eContextMenu() {
   var controller = this;
@@ -111,6 +112,16 @@ function cal3eContextMenu() {
   }
 
   init();
+}
+
+cal3eContextMenu.reloadOverlay = function cal3eContextMenu_reloadOverlay() {
+  var synchronizer =
+    Components.classes['@zonio.net/calendar3e/synchronization-service;1']
+      .getService(Components.interfaces.nsIObserver);
+  cal3eIdentity.Collection().getEnabled().forEach(function(identity) {
+    synchronizer.observe(identity, 'reload-remote-3e-calendars', null);
+  });
+  goDoCommand('calendar_reload_remote_calendars');
 }
 
 cal3eContextMenu.onLoad = function cal3eSubscription_onLoad() {
