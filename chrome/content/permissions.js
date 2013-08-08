@@ -17,25 +17,133 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-function cal3ePermissions() {
+Components.utils.import("resource://calendar3e/modules/response.jsm");
+Components.utils.import("resource://calendar3e/modules/identity.jsm");
+Components.utils.import("resource://calendar3e/modules/request.jsm");
+Components.utils.import("resource://calendar3e/modules/model.jsm");
+Components.utils.import("resource://calendar3e/modules/xul.jsm");
+
+function cal3ePermissions(calendar) {
+  var controller = this;
+  var identity;
+  var element;
+  var list;
+
   function listUsersAndGroups() {
-    dump('[3e] cal3ePermissions.listUsersAndGroups() called.\n');
+    loadUsers();
   }
+
+  function didError() {
+    document.getElementById('notifications').appendNotification(
+      'Could not get list of users and groups.',
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
+    );
+  }
+
+  function loadUsers() {
+    cal3eRequest.Client.getInstance()
+      .getUsers(identity, usersDidLoad, '');
+  }
+
+  function usersDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError();
+      return;
+    }
+
+    var users = result.data;
+    users.forEach(function(user) {
+      user['type'] = 'user';
+      user['label'] = cal3eModel.userLabel(user);
+      user.toString = function() {
+        return user.label;
+      }
+    });
+
+    list = users;
+    list.push({
+      username: '*',
+      type: 'group',
+      label: 'All users',
+      toString: function() {
+        return this.label;
+      }
+    })
+    loadGroups();
+  }
+
+  function loadGroups() {
+    cal3eRequest.Client.getInstance()
+      .getGroups(identity, groupsDidLoad, '');
+  }
+
+  function groupsDidLoad(result) {
+    if (!(result instanceof cal3eResponse.Success)) {
+      didError();
+      return;
+    }
+
+    var groups = result.data;
+    groups.forEach(function(group) {
+      group['type'] = 'group';
+      group['label'] = group.title || 'Unknown Group (' + group.groupname + ')';
+      group.toString = function() {
+        return group.label;
+      }
+    });
+
+    list = list.concat(groups);
+    fillElement();
+  }
+
+  function fillElement() {
+    list.sort();
+    list.forEach(function(entity) {
+      cal3eXul.addItemsToTree(element, [
+        { label: entity.label,
+          properties: entity.type === 'user'
+            ? "calendar3e-treecell-icon-user"
+            : "calendar3e-treecell-icon-group"},
+      ]);
+    });
+  }
+
+  function findAndSetIdentity() {
+    var identities = cal3eIdentity.Collection()
+      .getEnabled()
+      .findByEmail(cal3eModel.calendarOwner(calendar));
+    
+    identity = identities.length > 0 ? identities[0] : null;
+  }
+
+  function init() {
+    element = document.getElementById('calendar3e-permissions-tree');
+    findAndSetIdentity();
+  }
+
+  controller.listUsersAndGroups = listUsersAndGroups;
+
+  init();
 };
 
 cal3ePermissions.open = function cal3ePermissions_open() {
+  var calendar = window.arguments[0].calendar;
   openDialog(
     'chrome://calendar3e/content/permissions.xul',
     'cal3ePermissions',
-    'chrome,titlebar,modal,resizable'
+    'chrome,titlebar,modal,resizable',
+    calendar
   );
 };
 
 cal3ePermissions.onLoad = function cal3ePermissions_onLoad() {
   dump('[3e] cal3ePermissions.onLoad called.\n');
-  cal3ePermissions.controller = new cal3ePermissions();
-
-  cal3ePermissions.controller.listUsersAndGroups();
+  var calendar = window.arguments[0];
+  var controller = new cal3ePermissions(calendar);
+  controller.listUsersAndGroups();
 };
 
 cal3ePermissions.addRead = function cal3ePermissions_addRead() {
