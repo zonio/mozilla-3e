@@ -20,6 +20,7 @@
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
+Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
@@ -59,7 +60,7 @@ function cal3ePermissions(calendar) {
       user['type'] = 'user';
       user['label'] = cal3eModel.userLabel(user);
       user.toString = function() {
-        return user.label;
+        return cal3eModel.attribute(user, 'realname') || user.username;
       }
     });
 
@@ -100,7 +101,9 @@ function cal3ePermissions(calendar) {
   }
 
   function fillElement() {
-    list.sort();
+    cal3eUtils.naturalSort.insensitive = true;
+    list.sort(cal3eUtils.naturalSort);
+
     list.forEach(function(entity) {
       cal3eXul.addItemsToTree(element, [
         { label: entity.label,

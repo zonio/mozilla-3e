@@ -85,11 +85,13 @@ function cal3ePermissionsTreeController(calendar) {
     var users = result.data;
     userPermissions.forEach(function(userPermission) {
       userPermission['type'] = 'user';
-      userPermission['label'] =
-        cal3eModel.userLabel(findUser(userPermission.user, users)) ||
-        cal3eModel.userLabel({ username: userPermission.user });
+      userPermission['realname'] =
+        cal3eModel.attribute(findUser(userPermission.user, users), 'realname');
+      userPermission['label'] = userPermission['realname']
+        ? userPermission['realname'] + ' <' + userPermission.user + '>'
+        : userPermission.user;
       userPermission.toString = function() {
-        return userPermission.label;
+        return userPermission.realname || userPermission.label;
       }
     });
 
@@ -148,7 +150,8 @@ function cal3ePermissionsTreeController(calendar) {
 
   function fillElement() {
     var entities = userPermissions.concat(groupPermissions);
-    entities.sort();
+    cal3eUtils.naturalSort.insensitive = true;
+    entities.sort(cal3eUtils.naturalSort);
 
     entities.forEach(function(entity) {
       cal3eXul.addItemsToTree(element, [
@@ -283,7 +286,6 @@ cal3eProperties.tweakUI = function tweakUI() {
 cal3eProperties.init = function init() {
   var calendar = window.arguments[0].calendar;
   cal3eProperties._calendar = calendar;
-
 
   if (calendar.type == 'eee') {
     cal3eProperties.tweakUI();
