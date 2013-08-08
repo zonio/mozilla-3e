@@ -163,6 +163,9 @@ function cal3ePermissionsTreeController(calendar) {
   }
 
   function findUser(username, users) {
+    if (username === '*') {
+      return { username: 'All users' };
+    }
     for (var i = 0; i < users.length; i++) {
       if (users[i].username === username) {
         return users[i];
