@@ -192,7 +192,7 @@ function cal3ePermissionsTreeController(calendar) {
   }
 
   function init() {
-    element = document.getElementById('calendar3e-permissions-tree');
+    element = document.getElementById('calendar3e-sharing-tree');
     findAndSetIdentity();
     loadPermissions();
   }

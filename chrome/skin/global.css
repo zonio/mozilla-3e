@@ -55,7 +55,7 @@ treechildren::-moz-tree-image(calendar3e-treecell-icon-group) {
   list-style-image: url("chrome://calendar3e/skin/group.png");
 }
 
-tree#calendar3e-permissions-tree {
+tree#calendar3e-sharing-tree {
   margin-top: 6px;
 }
 

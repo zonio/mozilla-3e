@@ -41,15 +41,15 @@
 
       <tabpanel>
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
-          <label control="calendar3e-sharing-listbox" value="&calendar3e.properties.sharing.description;"></label>
-          <tree rows="7" hidecolumnpicker="true" editable="true" id="calendar3e-permissions-tree">
+          <label control="calendar3e-sharing-tree" value="&calendar3e.properties.sharing.description;"></label>
+          <tree rows="7" hidecolumnpicker="true" editable="true" id="calendar3e-sharing-tree">
             <treecols>
               <treecol id="calendar3e-properties-tree-name" label="&calendar3e.properties.sharing.tree.header.name;" flex="20"/>
               <treecol id="calendar3e-properties-tree-read" label="&calendar3e.properties.sharing.tree.header.read;" type="checkbox" editable="true" flex="1"/>
               <treecol id="calendar3e-properties-tree-write" label="&calendar3e.properties.sharing.tree.header.write; " type="checkbox" editable="true" flex="1"/>
             </treecols>
 
-            <treechildren id="calendar3e-propertes-tree-children"/>
+            <treechildren id="calendar3e-sharing-tree-children"/>
           </tree>
           <hbox>
             <button label="&calendar3e.properties.sharing.button.add;" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();" class="calendar3e-permissions"/>
