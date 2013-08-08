@@ -59,11 +59,8 @@ function addItemsToTree(element, cells) {
       'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul',
       'treecell'
     );
-    if (cell['label'] !== null) {
-      cellElement.setAttribute('label', cell['label']);
-    }
-    if (cell['value'] !== null) {
-      cellElement.setAttribute('value', cell['value']);
+    for (attr in cell) {
+      cellElement.setAttribute(attr, cell[attr]);
     }
     rowElement.appendChild(cellElement);
   });
