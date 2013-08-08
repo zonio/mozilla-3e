@@ -27,11 +27,9 @@ Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
 function cal3ePermissionsTreeController(calendar) {
-  var identity;
-  var userPermissions;
   var groupPermissions;
-  var users;
-  var groups;
+  var userPermissions;
+  var identity;
   var element;
 
   function didError() {
@@ -84,7 +82,17 @@ function cal3ePermissionsTreeController(calendar) {
       return;
     }
 
-    users = result.data;
+    var users = result.data;
+    userPermissions.forEach(function(userPermission) {
+      userPermission['type'] = 'user';
+      userPermission['label'] =
+        cal3eModel.userLabel(findUser(userPermission.user, users)) ||
+        cal3eModel.userLabel({ username: userPermission.user });
+      userPermission.toString = function() {
+        return userPermission.label;
+      }
+    });
+
     loadGroupPermissions();
   }
 
@@ -124,47 +132,49 @@ function cal3ePermissionsTreeController(calendar) {
       return;
     }
 
-    groups = result.data;
+    var groups = result.data;
+    groupPermissions.forEach(function(groupPermission) {
+      groupPermission['type'] = 'group';
+      groupPermission['label'] =
+        findGroup(groupPermission.group, groups)['title'] ||
+        'Unknown Group (' + groupPermission.group + ')';
+      groupPermission.toString = function() {
+        return groupPermission['label'];
+      }
+    });
+
     fillElement();
   }
 
   function fillElement() {
-    userPermissions.forEach(function(user) {
-      cal3eXul.addItemsToTree(element, [
-        { label: cal3eModel.userLabel(findUser(user.user)) },
-        { value: true },
-        { value: user.perm === 'write' }
-      ]);
-    });
+    var entities = userPermissions.concat(groupPermissions);
+    entities.sort();
 
-    groupPermissions.forEach(function(group) {
+    entities.forEach(function(entity) {
       cal3eXul.addItemsToTree(element, [
-        { label: findGroup(group.group)['title'] },
+        { label: entity.label },
         { value: true },
-        { value: group.perm === 'write' }
+        { value: entity.perm === 'write' }
       ]);
     });
   }
 
-  function findUser(username) {
+  function findUser(username, users) {
     for (var i = 0; i < users.length; i++) {
       if (users[i].username === username) {
         return users[i];
       }
     }
-    return { username: username };
+    return null;
   }
 
-  function findGroup(groupname) {
+  function findGroup(groupname, groups) {
     for (var i = 0; i < groups.length; i++) {
       if (groups[i].groupname === groupname) {
         return groups[i];
       }
     }
-    return {
-      groupname: groupname,
-      title: 'Unknown Group (' + groupname + ')'
-    };
+    return null;
   }
 
   function findAndSetIdentity() {
