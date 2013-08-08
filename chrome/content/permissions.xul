@@ -49,27 +49,17 @@
 
   <vbox flex="1">
     <hbox align="center">
-      <label value="&calendar3e.permissions.search.description;" control="calendar3e-permissions-search"/>
+      <label value="&calendar3e.permissions.search.description;"
+             control="calendar3e-permissions-search"/>
       <textbox id="calendar3e-permissions-search" type="search" flex="1"/>
     </hbox>
-    <listbox rows="7" flex="1">
-      <listhead>
-        <listheader label="&calendar3e.permissions.listbox.header;" flex="1"/>
-      </listhead>
+    <tree rows="7" hidecolumnpicker="true" id="calendar3e-permissions-tree">
+      <treecols>
+        <treecol id="calendar3e-permissions-tree-name" flex="1"
+                 label="&calendar3e.properties.sharing.tree.header.name;"/>
+      </treecols>
 
-      <listcols>
-        <listcol flex="1"/>
-      </listcols>
-
-      <listitem>
-        <listcell label="Carl &lt;carl@alpha.zonio.net&gt;" class="listitem-iconic calendar3e-indent" image="chrome://calendar3e/skin/user.png"/>
-      </listitem>
-      <listitem>
-        <listcell label="Dave &lt;dave@alpha.zonio.net&gt;" class="listitem-iconic calendar3e-indent" image="chrome://calendar3e/skin/user.png"/>
-      </listitem>
-      <listitem>
-        <listcell label="Testers" class="listitem-iconic calendar3e-indent" image="chrome://calendar3e/skin/group.png"/>
-      </listitem>
-    </listbox>
+      <treechildren id="calendar3e-permissions-tree-children"/>
+    </tree>
   </vbox>
 </dialog>
