@@ -152,7 +152,10 @@ function cal3ePermissionsTreeController(calendar) {
 
     entities.forEach(function(entity) {
       cal3eXul.addItemsToTree(element, [
-        { label: entity.label },
+        { label: entity.label,
+          properties: entity.type === 'user'
+            ? "calendar3e-treecell-icon-user"
+            : "calendar3e-treecell-icon-group"},
         { value: true },
         { value: entity.perm === 'write' }
       ]);
