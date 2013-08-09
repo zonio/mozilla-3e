@@ -32,6 +32,7 @@ function cal3ePermissionsTreeController(calendar) {
   var userPermissions;
   var identity;
   var element;
+  var updatedEntities = [];
 
   function didError() {
     document.getElementById('notifications').appendNotification(
@@ -41,6 +42,11 @@ function cal3ePermissionsTreeController(calendar) {
       document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
       null
     );
+  }
+
+  function updateTree() {
+    dump('[3e] cal3ePermissionsTreeController.updateTree called\n');
+    fillElement();
   }
 
   function loadPermissions() {
@@ -85,6 +91,7 @@ function cal3ePermissionsTreeController(calendar) {
 
     var users = result.data;
     userPermissions.forEach(function(userPermission) {
+      userPermission['username'] = userPermission['user']
       userPermission['type'] = 'user';
       userPermission['realname'] =
         cal3eModel.attribute(findUser(userPermission.user, users), 'realname');
@@ -137,6 +144,7 @@ function cal3ePermissionsTreeController(calendar) {
 
     var groups = result.data;
     groupPermissions.forEach(function(groupPermission) {
+      groupPermission['groupname'] = groupPermission['group'];
       groupPermission['type'] = 'group';
       groupPermission['label'] =
         findGroup(groupPermission.group, groups)['title'] ||
@@ -150,10 +158,11 @@ function cal3ePermissionsTreeController(calendar) {
   }
 
   function fillElement() {
-    var entities = userPermissions.concat(groupPermissions);
+    var entities = userPermissions.concat(groupPermissions, updatedEntities);
     cal3eUtils.naturalSort.insensitive = true;
     entities.sort(cal3eUtils.naturalSort);
 
+    cal3eXul.clearTree(element);
     entities.forEach(function(entity) {
       cal3eXul.addItemsToTree(element, [
         { label: entity.label,
@@ -204,6 +213,9 @@ function cal3ePermissionsTreeController(calendar) {
   }
 
   init();
+
+  controller.updateTree = updateTree;
+  controller.updatedEntities = updatedEntities;
 };
 
 
@@ -286,7 +298,7 @@ cal3eProperties.openPermissions = function cal3eProperties_openPermissions() {
     'chrome://calendar3e/content/permissions.xul',
     'cal3ePermissions',
     'chrome,titlebar,modal,resizable',
-    cal3eProperties._calendar, cal3eProperties.permissions.list
+    cal3eProperties._calendar, cal3eProperties.permissions
   );
 };
 

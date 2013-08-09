@@ -35,8 +35,16 @@ function cal3ePermissions() {
   }
 
   function addPermissionForSelection(perm) {
-    dump('[3e] addPermissionForSelection called\n');
     var selection = getSelection();
+
+    for (var i = 0; i < selection.length; i++) {
+      selection[i]['perm'] = perm;
+      cal3ePermissions.cal3eProperties_permissions
+        .updatedEntities.push(selection[i]);
+    }
+
+    cal3ePermissions.cal3eProperties_permissions.updateTree();
+    window.close();
   }
 
   function didError() {
@@ -50,8 +58,18 @@ function cal3ePermissions() {
   }
 
   function loadUsers() {
+    var query = '';
+    cal3ePermissions.cal3eProperties_permissions.list.forEach(function(entity) {
+      if (entity.type === 'user') {
+        if (query !== '') {
+          query += ' AND ';
+        }
+        query += " NOT match_username('" + entity.username + "')";
+      }
+    });
+
     cal3eRequest.Client.getInstance()
-      .getUsers(identity, usersDidLoad, '');
+      .getUsers(identity, usersDidLoad, query);
   }
 
   function usersDidLoad(result) {
@@ -70,20 +88,32 @@ function cal3ePermissions() {
     });
 
     list = users;
-    list.push({
-      username: '*',
-      type: 'group',
-      label: 'All users',
-      toString: function() {
-        return this.label;
-      }
-    })
+    if (!allUsersAreinList()) {
+      list.push({
+        username: '*',
+        type: 'group',
+        label: 'All users',
+        toString: function() {
+          return this.label;
+        }
+      })
+    }
     loadGroups();
   }
 
   function loadGroups() {
+    var query = '';
+    cal3ePermissions.cal3eProperties_permissions.list.forEach(function(entity) {
+      if (entity.type === 'group') {
+        if (query !== '') {
+          query += ' AND ';
+        }
+        query += " NOT match_groupname('" + entity.groupname + "')";
+      }
+    });
+
     cal3eRequest.Client.getInstance()
-      .getGroups(identity, groupsDidLoad, '');
+      .getGroups(identity, groupsDidLoad, query);
   }
 
   function groupsDidLoad(result) {
@@ -110,24 +140,13 @@ function cal3ePermissions() {
     list.sort(cal3eUtils.naturalSort);
 
     list.forEach(function(entity) {
-      if (!findEntity(entity, cal3ePermissions._oldList)) {
-        cal3eXul.addItemsToTree(tree, [
-          { label: entity.label,
-            properties: entity.type === 'user'
-              ? "calendar3e-treecell-icon-user"
-              : "calendar3e-treecell-icon-group"},
-        ]);
-      }
+      cal3eXul.addItemsToTree(tree, [
+        { label: entity.label,
+          properties: entity.type === 'user'
+            ? "calendar3e-treecell-icon-user"
+            : "calendar3e-treecell-icon-group"},
+      ]);
     });
-  }
-
-  function findEntity(entity, entities) {
-    for (var i = 0; i < entities.length; i++) {
-      if (entities[i].label === entity.label) {
-        return true;
-      }
-    };
-    return false;
   }
 
   function getSelection() {
@@ -147,9 +166,20 @@ function cal3ePermissions() {
   function findAndSetIdentity() {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
-      .findByEmail(cal3eModel.calendarOwner(cal3ePermissions._calendar));
+      .findByEmail(cal3eModel.calendarOwner(
+        cal3ePermissions._calendar));
     
     identity = identities.length > 0 ? identities[0] : null;
+  }
+
+  function allUsersAreinList() {
+    var list = cal3ePermissions.cal3eProperties_permissions.list;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].label === 'All users') {
+        return true;
+      }
+    }
+    return false;
   }
 
   function init() {
@@ -164,19 +194,12 @@ function cal3ePermissions() {
 };
 
 cal3ePermissions.onLoad = function cal3ePermissions_onLoad() {
-  dump('[3e] cal3ePermissions.onLoad called.\n');
   cal3ePermissions._calendar = window.arguments[0];
-  cal3ePermissions._oldList = window.arguments[1];
+  cal3ePermissions.cal3eProperties_permissions = window.arguments[1];
   cal3ePermissions.controller = new cal3ePermissions();
   cal3ePermissions.controller.listUsersAndGroups();
 };
 
-cal3ePermissions.addRead = function cal3ePermissions_addRead() {
-  dump('[3e] cal3ePermissions.addRead() called\n');
-  dump('[3e] controller: ' + cal3ePermissions.controller + '\n');
-  cal3ePermissions.controller.addPermissionForSelection('read');
-};
-
-cal3ePermissions.addReadWrite = function cal3ePermissions_addReadWrite() {
-  dump('[3e] cal3ePermissions.addReadWrite() called\n');
+cal3ePermissions.add = function cal3ePermissions_add(perm) {
+  cal3ePermissions.controller.addPermissionForSelection(perm);
 };
