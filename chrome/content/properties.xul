@@ -52,7 +52,7 @@
             <treechildren id="calendar3e-sharing-tree-children"/>
           </tree>
           <hbox>
-            <button label="&calendar3e.properties.sharing.button.add;" id="calendar3e-properties-add-permission" oncommand="cal3ePermissions.open();" class="calendar3e-permissions"/>
+            <button label="&calendar3e.properties.sharing.button.add;" id="calendar3e-properties-add-permission" oncommand="cal3eProperties.openPermissions();" class="calendar3e-permissions"/>
             <button label="&calendar3e.properties.sharing.button.remove;" id="calendar3e-properties-remove-permission" class="calendar3e-permissions"/>
           </hbox>
         </vbox>

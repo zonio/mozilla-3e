@@ -27,6 +27,7 @@ Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
 function cal3ePermissionsTreeController(calendar) {
+  var controller = this;
   var groupPermissions;
   var userPermissions;
   var identity;
@@ -163,6 +164,8 @@ function cal3ePermissionsTreeController(calendar) {
         { value: entity.perm === 'write' }
       ]);
     });
+
+    controller.list = entities;
   }
 
   function findUser(username, users) {
@@ -278,6 +281,15 @@ cal3eProperties.tweakUI = function tweakUI() {
   cal3eProperties.moveGeneralToTab();
 }
 
+cal3eProperties.openPermissions = function cal3eProperties_openPermissions() {
+  openDialog(
+    'chrome://calendar3e/content/permissions.xul',
+    'cal3ePermissions',
+    'chrome,titlebar,modal,resizable',
+    cal3eProperties._calendar, cal3eProperties.permissions.list
+  );
+};
+
 /**
  * Displays additional controls for 3e calendars in properties dialog.
  *
@@ -289,7 +301,7 @@ cal3eProperties.init = function init() {
 
   if (calendar.type == 'eee') {
     cal3eProperties.tweakUI();
-    var permissions = new cal3ePermissionsTreeController(calendar);
+    cal3eProperties.permissions = new cal3ePermissionsTreeController(calendar);
   } else {
     cal3eProperties.hide3eControls();
   }

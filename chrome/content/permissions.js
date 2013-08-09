@@ -24,14 +24,19 @@ Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
-function cal3ePermissions(calendar) {
+function cal3ePermissions() {
   var controller = this;
   var identity;
-  var element;
+  var tree;
   var list;
 
   function listUsersAndGroups() {
     loadUsers();
+  }
+
+  function addPermissionForSelection(perm) {
+    dump('[3e] addPermissionForSelection called\n');
+    var selection = getSelection();
   }
 
   function didError() {
@@ -97,60 +102,79 @@ function cal3ePermissions(calendar) {
     });
 
     list = list.concat(groups);
-    fillElement();
+    fillTree();
   }
 
-  function fillElement() {
+  function fillTree() {
     cal3eUtils.naturalSort.insensitive = true;
     list.sort(cal3eUtils.naturalSort);
 
     list.forEach(function(entity) {
-      cal3eXul.addItemsToTree(element, [
-        { label: entity.label,
-          properties: entity.type === 'user'
-            ? "calendar3e-treecell-icon-user"
-            : "calendar3e-treecell-icon-group"},
-      ]);
+      if (!findEntity(entity, cal3ePermissions._oldList)) {
+        cal3eXul.addItemsToTree(tree, [
+          { label: entity.label,
+            properties: entity.type === 'user'
+              ? "calendar3e-treecell-icon-user"
+              : "calendar3e-treecell-icon-group"},
+        ]);
+      }
     });
+  }
+
+  function findEntity(entity, entities) {
+    for (var i = 0; i < entities.length; i++) {
+      if (entities[i].label === entity.label) {
+        return true;
+      }
+    };
+    return false;
+  }
+
+  function getSelection() {
+    var start = {}, end = {};
+        numRanges = tree.view.selection.getRangeCount(),
+        selection = [];
+    
+    for (var i = 0; i < numRanges; i++) {
+      tree.view.selection.getRangeAt(i, start, end);
+      for (var j = start.value; j <= end.value; j++) {
+        selection.push(list[j]);
+      }
+    }
+    return selection;
   }
 
   function findAndSetIdentity() {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
-      .findByEmail(cal3eModel.calendarOwner(calendar));
+      .findByEmail(cal3eModel.calendarOwner(cal3ePermissions._calendar));
     
     identity = identities.length > 0 ? identities[0] : null;
   }
 
   function init() {
-    element = document.getElementById('calendar3e-permissions-tree');
+    tree = document.getElementById('calendar3e-permissions-tree');
     findAndSetIdentity();
   }
 
   controller.listUsersAndGroups = listUsersAndGroups;
+  controller.addPermissionForSelection = addPermissionForSelection;
 
   init();
 };
 
-cal3ePermissions.open = function cal3ePermissions_open() {
-  var calendar = window.arguments[0].calendar;
-  openDialog(
-    'chrome://calendar3e/content/permissions.xul',
-    'cal3ePermissions',
-    'chrome,titlebar,modal,resizable',
-    calendar
-  );
-};
-
 cal3ePermissions.onLoad = function cal3ePermissions_onLoad() {
   dump('[3e] cal3ePermissions.onLoad called.\n');
-  var calendar = window.arguments[0];
-  var controller = new cal3ePermissions(calendar);
-  controller.listUsersAndGroups();
+  cal3ePermissions._calendar = window.arguments[0];
+  cal3ePermissions._oldList = window.arguments[1];
+  cal3ePermissions.controller = new cal3ePermissions();
+  cal3ePermissions.controller.listUsersAndGroups();
 };
 
 cal3ePermissions.addRead = function cal3ePermissions_addRead() {
   dump('[3e] cal3ePermissions.addRead() called\n');
+  dump('[3e] controller: ' + cal3ePermissions.controller + '\n');
+  cal3ePermissions.controller.addPermissionForSelection('read');
 };
 
 cal3ePermissions.addReadWrite = function cal3ePermissions_addReadWrite() {
