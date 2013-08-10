@@ -26,27 +26,16 @@ Components.utils.import("resource://calendar3e/modules/response.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
-function cal3ePermissionsTreeController(calendar) {
+function cal3ePropertiesSharing(calendar) {
   var controller = this;
+  var updatedPermissions = [];
   var groupPermissions;
   var userPermissions;
   var identity;
-  var element;
-  var updatedEntities = [];
-
-  function didError() {
-    document.getElementById('notifications').appendNotification(
-      'Could not get list of permissions.',
-      0,
-      null,
-      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
-      null
-    );
-  }
+  var tree;
 
   function updateTree() {
-    dump('[3e] cal3ePermissionsTreeController.updateTree called\n');
-    fillElement();
+    fillTree();
   }
 
   function loadPermissions() {
@@ -154,17 +143,17 @@ function cal3ePermissionsTreeController(calendar) {
       }
     });
 
-    fillElement();
+    fillTree();
   }
 
-  function fillElement() {
-    var entities = userPermissions.concat(groupPermissions, updatedEntities);
+  function fillTree() {
+    var entities = userPermissions.concat(groupPermissions, updatedPermissions);
     cal3eUtils.naturalSort.insensitive = true;
     entities.sort(cal3eUtils.naturalSort);
 
-    cal3eXul.clearTree(element);
+    cal3eXul.clearTree(tree);
     entities.forEach(function(entity) {
-      cal3eXul.addItemsToTree(element, [
+      cal3eXul.addItemsToTree(tree, [
         { label: entity.label,
           properties: entity.type === 'user'
             ? "calendar3e-treecell-icon-user"
@@ -207,7 +196,7 @@ function cal3ePermissionsTreeController(calendar) {
   }
 
   function init() {
-    element = document.getElementById('calendar3e-sharing-tree');
+    tree = document.getElementById('calendar3e-sharing-tree');
     findAndSetIdentity();
     loadPermissions();
   }
@@ -215,9 +204,8 @@ function cal3ePermissionsTreeController(calendar) {
   init();
 
   controller.updateTree = updateTree;
-  controller.updatedEntities = updatedEntities;
+  controller.updatedPermissions = updatedPermissions;
 };
-
 
 var cal3eProperties = {};
 
@@ -298,7 +286,7 @@ cal3eProperties.openPermissions = function cal3eProperties_openPermissions() {
     'chrome://calendar3e/content/permissions.xul',
     'cal3ePermissions',
     'chrome,titlebar,modal,resizable',
-    cal3eProperties._calendar, cal3eProperties.permissions
+    cal3eProperties._calendar, cal3eProperties.sharing
   );
 };
 
@@ -313,7 +301,7 @@ cal3eProperties.init = function init() {
 
   if (calendar.type == 'eee') {
     cal3eProperties.tweakUI();
-    cal3eProperties.permissions = new cal3ePermissionsTreeController(calendar);
+    cal3eProperties.sharing = new cal3ePropertiesSharing(calendar);
   } else {
     cal3eProperties.hide3eControls();
   }

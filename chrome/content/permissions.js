@@ -24,42 +24,30 @@ Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
-function cal3ePermissions() {
+function cal3ePermissions(calendar, sharingController) {
   var controller = this;
   var identity;
   var tree;
   var list;
 
+  function addPermissionForSelection(perm) {
+    var selection = getSelection();
+    for (var i = 0; i < selection.length; i++) {
+      selection[i]['perm'] = perm;
+      sharingController.updatedPermissions.push(selection[i]);
+    }
+
+    sharingController.updateTree();
+    window.close();
+  }
+
   function listUsersAndGroups() {
     loadUsers();
   }
 
-  function addPermissionForSelection(perm) {
-    var selection = getSelection();
-
-    for (var i = 0; i < selection.length; i++) {
-      selection[i]['perm'] = perm;
-      cal3ePermissions.cal3eProperties_permissions
-        .updatedEntities.push(selection[i]);
-    }
-
-    cal3ePermissions.cal3eProperties_permissions.updateTree();
-    window.close();
-  }
-
-  function didError() {
-    document.getElementById('notifications').appendNotification(
-      'Could not get list of users and groups.',
-      0,
-      null,
-      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
-      null
-    );
-  }
-
   function loadUsers() {
     var query = '';
-    cal3ePermissions.cal3eProperties_permissions.list.forEach(function(entity) {
+    sharingController.list.forEach(function(entity) {
       if (entity.type === 'user') {
         if (query !== '') {
           query += ' AND ';
@@ -103,7 +91,7 @@ function cal3ePermissions() {
 
   function loadGroups() {
     var query = '';
-    cal3ePermissions.cal3eProperties_permissions.list.forEach(function(entity) {
+    sharingController.list.forEach(function(entity) {
       if (entity.type === 'group') {
         if (query !== '') {
           query += ' AND ';
@@ -166,20 +154,29 @@ function cal3ePermissions() {
   function findAndSetIdentity() {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
-      .findByEmail(cal3eModel.calendarOwner(
-        cal3ePermissions._calendar));
+      .findByEmail(cal3eModel.calendarOwner(calendar));
     
     identity = identities.length > 0 ? identities[0] : null;
   }
 
   function allUsersAreinList() {
-    var list = cal3ePermissions.cal3eProperties_permissions.list;
+    var list = sharingController.list;
     for (var i = 0; i < list.length; i++) {
       if (list[i].label === 'All users') {
         return true;
       }
     }
     return false;
+  }
+
+  function didError() {
+    document.getElementById('notifications').appendNotification(
+      'Could not get list of users and groups.',
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
+    );
   }
 
   function init() {
@@ -194,9 +191,10 @@ function cal3ePermissions() {
 };
 
 cal3ePermissions.onLoad = function cal3ePermissions_onLoad() {
-  cal3ePermissions._calendar = window.arguments[0];
-  cal3ePermissions.cal3eProperties_permissions = window.arguments[1];
-  cal3ePermissions.controller = new cal3ePermissions();
+  var calendar = window.arguments[0];
+  var sharingController = window.arguments[1];
+  cal3ePermissions.controller = new cal3ePermissions(calendar,
+    sharingController);
   cal3ePermissions.controller.listUsersAndGroups();
 };
 
