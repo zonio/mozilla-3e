@@ -31,10 +31,20 @@ function cal3ePropertiesSharing(calendar) {
   var updatedPermissions = [];
   var groupPermissions;
   var userPermissions;
+  var listWithoutNonePermissions;
   var identity;
   var tree;
 
   function updateTree() {
+    fillTree();
+  }
+
+  function removeSelection() {
+    var selection = getSelection();
+    for (var i = 0; i < selection.length; i++) {
+      setPermissionNone(selection[i]);
+    }
+
     fillTree();
   }
 
@@ -147,23 +157,57 @@ function cal3ePropertiesSharing(calendar) {
   }
 
   function fillTree() {
-    var entities = userPermissions.concat(groupPermissions, updatedPermissions);
+    controller.list = userPermissions.concat(groupPermissions, updatedPermissions);
     cal3eUtils.naturalSort.insensitive = true;
-    entities.sort(cal3eUtils.naturalSort);
+    controller.list.sort(cal3eUtils.naturalSort);
+
+    listWithoutNonePermissions = controller.list.filter(function(entity) {
+      return entity['perm'] !== 'none';
+    });
 
     cal3eXul.clearTree(tree);
-    entities.forEach(function(entity) {
+    listWithoutNonePermissions.forEach(function(entity) {
       cal3eXul.addItemsToTree(tree, [
         { label: entity.label,
           properties: entity.type === 'user'
             ? "calendar3e-treecell-icon-user"
             : "calendar3e-treecell-icon-group"},
         { value: true },
-        { value: entity.perm === 'write' }
+        { value: entity.perm === 'write' },
       ]);
     });
+  }
 
-    controller.list = entities;
+  function getSelection() {
+    var start = {}, end = {};
+        numRanges = tree.view.selection.getRangeCount(),
+        selection = [];
+
+    for (var i = 0; i < numRanges; i++) {
+      tree.view.selection.getRangeAt(i, start, end);
+      for (var j = start.value; j <= end.value; j++) {
+        selection.push(listWithoutNonePermissions[j]);
+      }
+    }
+    return selection;
+  }
+
+  function setPermissionNone(entity) {
+    var list = entity['type'] === 'user' ? userPermissions : groupPermissions;
+    removeFromPermissionsList(list, entity);
+    removeFromPermissionsList(updatedPermissions, entity);
+    entity['perm'] = 'none';
+    updatedPermissions.push(entity);
+  }
+
+  function removeFromPermissionsList(list, entity) {
+    for (var i = 0; i < list.length; i++) {
+      if (entity.label === list[i].label) {
+        list.splice(i, 1);
+        return true;
+      }
+    }
+    return false;
   }
 
   function findUser(username, users) {
@@ -204,7 +248,9 @@ function cal3ePropertiesSharing(calendar) {
   init();
 
   controller.updateTree = updateTree;
+  controller.removeSelection = removeSelection;
   controller.updatedPermissions = updatedPermissions;
+  controller.removeFromPermissionsList = removeFromPermissionsList
 };
 
 var cal3eProperties = {};
@@ -288,7 +334,11 @@ cal3eProperties.openPermissions = function cal3eProperties_openPermissions() {
     'chrome,titlebar,modal,resizable',
     cal3eProperties._calendar, cal3eProperties.sharing
   );
-};
+}
+
+cal3eProperties.removePermissions = function cal3eProperties_removePermissions() {
+  cal3eProperties.sharing.removeSelection();
+}
 
 /**
  * Displays additional controls for 3e calendars in properties dialog.

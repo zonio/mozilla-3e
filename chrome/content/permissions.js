@@ -34,6 +34,8 @@ function cal3ePermissions(calendar, sharingController) {
     var selection = getSelection();
     for (var i = 0; i < selection.length; i++) {
       selection[i]['perm'] = perm;
+      sharingController.removeFromPermissionsList(
+        sharingController.updatedPermissions, selection[i]);
       sharingController.updatedPermissions.push(selection[i]);
     }
 
@@ -48,7 +50,7 @@ function cal3ePermissions(calendar, sharingController) {
   function loadUsers() {
     var query = '';
     sharingController.list.forEach(function(entity) {
-      if (entity.type === 'user') {
+      if (entity.type === 'user' && entity.perm !== 'none') {
         if (query !== '') {
           query += ' AND ';
         }
@@ -92,7 +94,7 @@ function cal3ePermissions(calendar, sharingController) {
   function loadGroups() {
     var query = '';
     sharingController.list.forEach(function(entity) {
-      if (entity.type === 'group') {
+      if (entity.type === 'group' && entity.perm !== 'none') {
         if (query !== '') {
           query += ' AND ';
         }
