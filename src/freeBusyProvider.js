@@ -151,7 +151,7 @@ function calEeeFreeBusyProvider() {
       listener.onResult(null, intervalsToReturn);
     };
 
-    var organizer = getEeeOrganizer();
+    var organizer = getEeeOrganizer() || getCalendarSubscriber();
     if (!organizer) {
       listener.onResult(null, null);
       return;
@@ -188,6 +188,20 @@ function calEeeFreeBusyProvider() {
       .findByEmail(organizerEmail);
 
     return identities.length > 0 ? identities[0] : null;
+  }
+
+  function getCalendarSubscriber() {
+    var calendar = Services.wm.getMostRecentWindow('Calendar:EventDialog')
+      .getCurrentCalendar();
+    var key = calendar.getProperty('imip.identity.key');
+
+    var identities = cal3eIdentity.Collection().getEnabled();
+    for (var i = 0; i < identities.length; i++) {
+      if (identities[i].key === key) {
+        return identities[i];
+      }
+    }
+    return null;
   }
 
   function parseAttendeeEmail(calId) {
