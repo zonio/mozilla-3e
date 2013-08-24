@@ -47,7 +47,7 @@
         </stringbundleset>
 
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
-          <label control="calendar3e-sharing-tree"
+          <label id="calendar3e-label-sharing" control="calendar3e-sharing-tree"
                  value="&calendar3e.properties.sharing.description;"/>
           <tree rows="7" hidecolumnpicker="true" editable="true"
                 id="calendar3e-sharing-tree">

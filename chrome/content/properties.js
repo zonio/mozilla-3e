@@ -483,6 +483,18 @@ cal3eProperties.onAccept = function cal3eProperties_onAccept() {
   return onAcceptDialog();
 }
 
+cal3eProperties.disableSharingTab = function cal3eProperties_disableSharingTab() {
+  document.getElementById('calendar3e-label-sharing')
+    .setAttribute('value', document.getElementById('calendar3e-strings')
+      .getString('calendar3e.properties.sharing.notOwner'));
+  document.getElementById('calendar3e-sharing-tree')
+    .setAttribute('disabled', 'true');
+  document.getElementById('calendar3e-properties-add-permission')
+    .setAttribute('disabled', 'true');
+  document.getElementById('calendar3e-properties-remove-permission')
+    .setAttribute('disabled', 'true');
+}
+
 /**
  * Displays additional controls for 3e calendars in properties dialog.
  *
@@ -494,10 +506,14 @@ cal3eProperties.init = function init() {
 
   if (calendar.type == 'eee') {
     cal3eProperties.tweakUI();
-    cal3eProperties.sharing = new cal3ePropertiesSharing(
-      calendar,
-      new cal3ePropertiesSetPermissionsDelegate()
-    );
+    if (cal3eModel.isOwnedCalendar(calendar)) {
+      cal3eProperties.sharing = new cal3ePropertiesSharing(
+        calendar,
+        new cal3ePropertiesSetPermissionsDelegate()
+      );
+    } else {
+      cal3eProperties.disableSharingTab();
+    }
   } else {
     cal3eProperties.hide3eControls();
   }
