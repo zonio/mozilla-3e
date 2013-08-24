@@ -56,7 +56,7 @@
     <hbox align="center">
       <label value="&calendar3e.permissions.search.description;"
              control="calendar3e-permissions-search"/>
-      <textbox id="calendar3e-permissions-search" type="search" flex="1"/>
+      <textbox id="search-pattern" type="search" flex="1"/>
     </hbox>
     <tree rows="7" hidecolumnpicker="true" id="calendar3e-permissions-tree">
       <treecols>
