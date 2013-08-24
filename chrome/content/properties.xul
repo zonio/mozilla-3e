@@ -30,6 +30,7 @@
 
 <overlay id="calendar3e-calendar-properties-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
   <tabbox>
     <tabs>
       <tab label="&calendar3e.properties.general.label;"/>
@@ -40,6 +41,11 @@
       </tabpanel>
 
       <tabpanel>
+        <stringbundleset id="stringbundleset">
+          <stringbundle id="calendar3e-strings"
+                        src="chrome://calendar3e/locale/calendar3e.properties"/>
+        </stringbundleset>
+
         <vbox id="calendar3e-tabpanel-sharing" flex="1">
           <label control="calendar3e-sharing-tree"
                  value="&calendar3e.properties.sharing.description;"/>
@@ -47,13 +53,14 @@
                 id="calendar3e-sharing-tree">
             <treecols>
               <treecol label="&calendar3e.properties.sharing.tree.header.name;"
-                       id="calendar3e-properties-tree-name" flex="20"/>
+                       id="calendar3e-properties-tree-name" editable="false" flex="20"/>
               <treecol label="&calendar3e.properties.sharing.tree.header.read;"
                        id="calendar3e-properties-tree-read" type="checkbox"
-                       editable="true" flex="1"/>
+                       editable="false" flex="1"/>
               <treecol label="&calendar3e.properties.sharing.tree.header.write;"
                        id="calendar3e-properties-tree-write" type="checkbox"
-                       editable="true" flex="1"/>
+                       editable="true" flex="1"
+                       onclick="cal3eProperties.switchWritePerm();"/>
             </treecols>
 
             <treechildren id="calendar3e-sharing-tree-children"/>
@@ -64,6 +71,7 @@
                     id="calendar3e-properties-add-permission"
                     class="calendar3e-permissions"/>
             <button label="&calendar3e.properties.sharing.button.remove;"
+                    oncommand="cal3eProperties.removePermissions();"
                     id="calendar3e-properties-remove-permission"
                     class="calendar3e-permissions"/>
           </hbox>
@@ -89,9 +97,4 @@
           src="chrome://calendar3e/content/properties.js"/>
   <script type="text/javascript"
           src="chrome://calendar3e/content/permissions.js"/>
-
-  <stringbundleset id="calendar3e-stringbundleset">
-    <stringbundle id="calendar3e-strings"
-                  src="chrome://calendar3e/locale/calendar3e.properties"/>
-  </stringbundleset>
 </overlay>

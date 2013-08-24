@@ -26,14 +26,103 @@ Components.utils.import("resource://calendar3e/modules/response.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
 
-function cal3ePropertiesSharing(calendar) {
+function cal3ePropertiesSetPermissionsDelegate() {
+  var setPermissionsDelegate = this;
+
+  function setPermissions(identity, calendar, permissions, callback) {
+    var errors = [];
+    var processed = 0;
+
+    function onNext(error) {
+      processed += 1;
+      if (error) {
+        errors.push(error);
+      }
+
+      if (permissions.length === processed) {
+        callback(errors);
+      }
+    }
+
+    permissions.forEach(function(permission) {
+      setPermission(identity, calendar, permission, onNext);
+    });
+  }
+
+  function setPermission(identity, calendar, entity, onNext) {
+    function didSetPermission(result) {
+      if (!(result instanceof cal3eResponse.Success)) {
+        onNext(result);
+        return;
+      }
+      onNext();
+    }
+
+    if (entity['type'] === 'user') {
+      cal3eRequest.Client.getInstance().setUserPermission(
+        identity,
+        didSetPermission,
+        calendar,
+        entity['username'],
+        entity['perm']
+      );
+    } else {
+      cal3eRequest.Client.getInstance().setGroupPermission(
+        identity,
+        didSetPermission,
+        calendar,
+        entity['groupname'],
+        entity['perm']
+      );
+    }
+  }
+
+  setPermissionsDelegate.setPermissions = setPermissions;
+}
+
+function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
   var controller = this;
   var updatedPermissions = [];
   var groupPermissions;
   var userPermissions;
   var listWithoutNonePermissions;
+  var isLoaded;
   var identity;
   var tree;
+
+  function savePermissions() {
+    checkWritePermChanges();
+    setPermissionsDelegate.setPermissions(
+      identity, calendar, updatedPermissions, didSavePermissions);
+  }
+
+  function didSavePermissions(errors) {
+    if (errors.length > 0) {
+      didSaveError(errors);
+    }
+  }
+
+  function didSaveError(errors) {
+    document.getElementById('notifications').appendNotification(
+      document.getElementById('calendar3e-strings').getString(
+        'calendar3e.properties.errors.permission'),
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
+    );
+  }
+
+  function didLoadError() {
+    document.getElementById('notifications').appendNotification(
+      document.getElementById('calendar3e-strings').getString(
+        'calendar3e.properties.errors.data'),
+      0,
+      null,
+      document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
+      null
+    );
+  }
 
   function updateTree() {
     fillTree();
@@ -48,7 +137,21 @@ function cal3ePropertiesSharing(calendar) {
     fillTree();
   }
 
+  function checkWritePermChanges() {
+    for (var i = 0; i < tree.view.rowCount; i++) {
+      var treeitem = tree.view.getItemAtIndex(i);
+      if ((treeitem.firstChild.lastChild.getAttribute('value') == 'true') !==
+          (listWithoutNonePermissions[i].perm === 'write')) {
+        listWithoutNonePermissions[i].perm =
+          treeitem.firstChild.lastChild.getAttribute('value') == 'true'
+          ? 'write' : 'read';
+        updatedPermissions.push(listWithoutNonePermissions[i]);
+      }
+    }
+  }
+
   function loadPermissions() {
+    fillTree();
     loadUserPermissions();
   }
 
@@ -61,7 +164,7 @@ function cal3ePropertiesSharing(calendar) {
 
   function userPermissionsDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
-      didError();
+      didLoadError();
       return;
     }
 
@@ -84,7 +187,7 @@ function cal3ePropertiesSharing(calendar) {
 
   function usersDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
-      didError();
+      didLoadError();
       return;
     }
 
@@ -114,7 +217,7 @@ function cal3ePropertiesSharing(calendar) {
 
   function groupPermissionsDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
-      didError();
+      didLoadError();
       return;
     }
 
@@ -137,7 +240,7 @@ function cal3ePropertiesSharing(calendar) {
 
   function groupsDidLoad(result) {
     if (!(result instanceof cal3eResponse.Success)) {
-      didError();
+      didLoadError();
       return;
     }
 
@@ -153,10 +256,41 @@ function cal3ePropertiesSharing(calendar) {
       }
     });
 
+    isLoaded = true;
     fillTree();
   }
 
   function fillTree() {
+    if (!isLoaded) {
+      fillTreeLoading();
+    } else if (userPermissions.length === 0 && groupPermissions.length === 0) {
+      fillTreeNoEntities();
+    } else {
+      fillTreeLoaded();
+    }
+  }
+
+  function fillTreeLoading() {
+    cal3eXul.clearTree(tree);
+    cal3eXul.addItemsToTree(tree, [
+      { label: document.getElementById('calendar3e-strings').getString(
+        'calendar3e.properties.sharing.loading') },
+      { properties: 'disabled' },
+      { properties: 'disabled' }
+    ]);
+  }
+
+  function fillTreeNoEntities() {
+    cal3eXul.clearTree(tree);
+    cal3eXul.addItemsToTree(tree, [
+      { label: document.getElementById('calendar3e-strings').getString(
+        'calendar3e.properties.sharing.empty') },
+      { properties: 'disabled' },
+      { properties: 'disabled' }
+    ]);
+  }
+
+  function fillTreeLoaded() {
     controller.list = userPermissions.concat(groupPermissions, updatedPermissions);
     cal3eUtils.naturalSort.insensitive = true;
     controller.list.sort(cal3eUtils.naturalSort);
@@ -170,10 +304,10 @@ function cal3ePropertiesSharing(calendar) {
       cal3eXul.addItemsToTree(tree, [
         { label: entity.label,
           properties: entity.type === 'user'
-            ? "calendar3e-treecell-icon-user"
-            : "calendar3e-treecell-icon-group"},
+            ? 'calendar3e-treecell-icon-user'
+            : 'calendar3e-treecell-icon-group' },
         { value: true },
-        { value: entity.perm === 'write' },
+        { value: entity.perm === 'write' }
       ]);
     });
   }
@@ -240,6 +374,7 @@ function cal3ePropertiesSharing(calendar) {
   }
 
   function init() {
+    isLoaded = false;
     tree = document.getElementById('calendar3e-sharing-tree');
     findAndSetIdentity();
     loadPermissions();
@@ -249,9 +384,10 @@ function cal3ePropertiesSharing(calendar) {
 
   controller.updateTree = updateTree;
   controller.removeSelection = removeSelection;
+  controller.savePermissions = savePermissions;
   controller.updatedPermissions = updatedPermissions;
   controller.removeFromPermissionsList = removeFromPermissionsList
-};
+}
 
 var cal3eProperties = {};
 
@@ -282,7 +418,7 @@ cal3eProperties.hide3eControls = function hide3eControls() {
     /* Spacer before checkbox. */
     alarmsRow.childNodes[0].remoteAttribute('hidden');
   }
-};
+}
 
 /**
  * Takes content of "General Information" tab moves it back to dialog
@@ -320,6 +456,8 @@ cal3eProperties.moveGeneralToTab = function moveGeneralToTab() {
 }
 
 cal3eProperties.tweakUI = function tweakUI() {
+  document.getElementById('calendar-properties-dialog-2')
+    .setAttribute('ondialogaccept', 'return cal3eProperties.onAccept();');
   document.getElementById('calendar-refreshInterval-row').hidden = true;
   var alarmsRow = document.getElementById('calendar-suppressAlarms-row');
   alarmsRow.childNodes[0].hidden = true; /* Spacer before checkbox */
@@ -340,6 +478,11 @@ cal3eProperties.removePermissions = function cal3eProperties_removePermissions()
   cal3eProperties.sharing.removeSelection();
 }
 
+cal3eProperties.onAccept = function cal3eProperties_onAccept() {
+  cal3eProperties.sharing.savePermissions();
+  return onAcceptDialog();
+}
+
 /**
  * Displays additional controls for 3e calendars in properties dialog.
  *
@@ -351,7 +494,10 @@ cal3eProperties.init = function init() {
 
   if (calendar.type == 'eee') {
     cal3eProperties.tweakUI();
-    cal3eProperties.sharing = new cal3ePropertiesSharing(calendar);
+    cal3eProperties.sharing = new cal3ePropertiesSharing(
+      calendar,
+      new cal3ePropertiesSetPermissionsDelegate()
+    );
   } else {
     cal3eProperties.hide3eControls();
   }

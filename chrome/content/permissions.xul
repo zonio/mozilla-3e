@@ -44,6 +44,11 @@
     height="281"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+  <stringbundleset id="calendar3e-stringbundleset">
+    <stringbundle id="calendar3e-strings"
+                  src="chrome://calendar3e/locale/calendar3e.properties"/>
+  </stringbundleset>
+
   <script type="application/javascript"
           src="chrome://calendar3e/content/permissions.js"/>
 

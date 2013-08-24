@@ -44,6 +44,8 @@ function cal3ePermissions(calendar, sharingController) {
   }
 
   function listUsersAndGroups() {
+    isLoaded = false;
+    fillTree();
     loadUsers();
   }
 
@@ -122,13 +124,43 @@ function cal3ePermissions(calendar, sharingController) {
     });
 
     list = list.concat(groups);
+    isLoaded = true;
     fillTree();
   }
 
   function fillTree() {
+    if (!isLoaded) {
+      fillTreeLoading();
+    } else if (list.length === 0) {
+      fillTreeNoEntities();
+    //} else if (getFilteredUsers().length === 0) {
+    //  fillElementNoMatch();
+    } else {
+      fillTreeLoaded();
+    }
+  }
+
+  function fillTreeLoading() {
+    cal3eXul.clearTree(tree);
+    cal3eXul.addItemsToTree(tree, [
+      { label: document.getElementById('calendar3e-strings').getString(
+        'calendar3e.permissions.loading') }
+    ]);
+  }
+
+  function fillTreeNoEntities() {
+    cal3eXul.clearTree(tree);
+    cal3eXul.addItemsToTree(tree, [
+      { label: document.getElementById('calendar3e-strings').getString(
+        'calendar3e.permissions.empty') }
+    ]);
+  }
+
+  function fillTreeLoaded() {
     cal3eUtils.naturalSort.insensitive = true;
     list.sort(cal3eUtils.naturalSort);
 
+    cal3eXul.clearTree(tree);
     list.forEach(function(entity) {
       cal3eXul.addItemsToTree(tree, [
         { label: entity.label,
@@ -173,7 +205,8 @@ function cal3ePermissions(calendar, sharingController) {
 
   function didError() {
     document.getElementById('notifications').appendNotification(
-      'Could not get list of users and groups.',
+      document.getElementById('calendar3e-strings').getString(
+        'calendar3e.permissions.error'),
       0,
       null,
       document.getElementById('notifications').PRIORITY_WARNING_MEDIUM,
