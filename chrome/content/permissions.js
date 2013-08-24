@@ -53,13 +53,11 @@ function cal3ePermissions(calendar, sharingController, filterController) {
   }
 
   function loadUsers() {
-    var query = '';
+    var query = "NOT match_username('" + cal3eModel.calendarOwner(calendar) + "')";
+
     sharingController.list.forEach(function(entity) {
       if (entity.type === 'user' && entity.perm !== 'none') {
-        if (query !== '') {
-          query += ' AND ';
-        }
-        query += " NOT match_username('" + entity.username + "')";
+        query += " AND NOT match_username('" + entity.username + "')";
       }
     });
 
