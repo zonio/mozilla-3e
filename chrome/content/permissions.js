@@ -137,7 +137,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     } else if (list.length === 0) {
       fillTreeNoEntities();
     } else if (getFilteredList().length === 0) {
-      fillElementNoMatch();
+      fillTreeNoMatch();
     } else {
       fillTreeLoaded();
     }
@@ -163,7 +163,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     cal3eXul.clearTree(tree);
     cal3eXul.addItemsToTree(tree, [
       { label: document.getElementById('calendar3e-strings').getString(
-        'calendar3e.permissions.noMatch') }
+        'calendar3e.permissions.empty') }
     ]);
   }
 
@@ -171,7 +171,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     cal3eUtils.naturalSort.insensitive = true;
     list.sort(cal3eUtils.naturalSort);
 
-    filteredList = getFilteredList(); 
+    filteredList = getFilteredList();
 
     cal3eXul.clearTree(tree);
     filteredList.forEach(function(entity) {
@@ -241,16 +241,9 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     });
   }
 
-  function setFilter(newFilter) {
-    dump('[3e] setFilter\n');
-    filter = newFilter;
-    fillTree();
-
-    return controller;
-  }
-
   function filterDidChange() {
-    setFilter(filterController.filter());
+    filter = filterController.filter();
+    fillTree();
   }
 
   function init() {
