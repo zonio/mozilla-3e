@@ -20,6 +20,7 @@
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
+Components.utils.import("resource://calendar3e/modules/filter.jsm");
 Components.utils.import("resource://calendar3e/modules/utils.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
 Components.utils.import("resource://calendar3e/modules/xul.jsm");
@@ -265,81 +266,13 @@ function cal3ePermissions(calendar, sharingController, filterController) {
   init();
 }
 
-function cal3eFilterController() {
-  var controller = this;
-  var filter;
-  var element;
-  var observers;
-
-  function filterDidChange(event) {
-    filter = '' + element.value;
-    notify();
-  }
-
-  function addObserver(observer) {
-    observers.push(observer);
-
-    return controller;
-  }
-
-  function removeObserver(observer) {
-    if (observers.indexOf(observer) < 0) {
-      return controller;
-    }
-
-    observers.splice(observers.indexOf(observer), 1);
-
-    return controller;
-  }
-
-  function notify() {
-    observers.forEach(function(observer) {
-      try {
-        observer(controller);
-      } catch (e) {
-        //TODO log
-      }
-    });
-  }
-
-  function getFilter() {
-    return filter;
-  }
-
-  function init() {
-    filter = '';
-
-    element = document.getElementById('search-pattern');
-    element.addEventListener('input', filterDidChange, false);
-
-    observers = [];
-
-    window.removeEventListener('unload', finalize, false);
-  }
-
-  function finalize() {
-    window.removeEventListener('unload', finalize, false);
-
-    observers = null;
-
-    element.removeEventListener('input', filterDidChange, false);
-    element = null;
-  }
-
-  controller.filter = getFilter;
-  controller.addObserver = addObserver;
-  controller.removeObserver = removeObserver;
-
-  init();
-}
-
 cal3ePermissions.onLoad = function cal3ePermissions_onLoad() {
   var calendar = window.arguments[0];
   var sharingController = window.arguments[1];
   cal3ePermissions.controller = new cal3ePermissions(
     calendar,
     sharingController,
-    new cal3eFilterController());
+    new cal3eFilterController(window));
   cal3ePermissions.controller.listUsersAndGroups();
 }
 

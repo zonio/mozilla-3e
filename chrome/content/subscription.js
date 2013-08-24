@@ -22,6 +22,7 @@ Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
 Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/response.jsm');
+Components.utils.import('resource://calendar3e/modules/filter.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 Components.utils.import('resource://calendar3e/modules/xul.jsm');
 
@@ -345,74 +346,6 @@ function cal3eSubscriberController() {
   }
 
   controller.identity = getIdentity;
-  controller.addObserver = addObserver;
-  controller.removeObserver = removeObserver;
-
-  init();
-}
-
-function cal3eCalendarsFilterController() {
-  var controller = this;
-  var filter;
-  var element;
-  var observers;
-
-  function filterDidChange(event) {
-    filter = '' + element.value;
-    notify();
-  }
-
-  function addObserver(observer) {
-    observers.push(observer);
-
-    return controller;
-  }
-
-  function removeObserver(observer) {
-    if (observers.indexOf(observer) < 0) {
-      return controller;
-    }
-
-    observers.splice(observers.indexOf(observer), 1);
-
-    return controller;
-  }
-
-  function notify() {
-    observers.forEach(function(observer) {
-      try {
-        observer(controller);
-      } catch (e) {
-        //TODO log
-      }
-    });
-  }
-
-  function getFilter() {
-    return filter;
-  }
-
-  function init() {
-    filter = '';
-
-    element = document.getElementById('search-pattern');
-    element.addEventListener('input', filterDidChange, false);
-
-    observers = [];
-
-    window.removeEventListener('unload', finalize, false);
-  }
-
-  function finalize() {
-    window.removeEventListener('unload', finalize, false);
-
-    observers = null;
-
-    element.removeEventListener('input', filterDidChange, false);
-    element = null;
-  }
-
-  controller.filter = getFilter;
   controller.addObserver = addObserver;
   controller.removeObserver = removeObserver;
 
@@ -829,7 +762,7 @@ cal3eSubscription.open = function cal3eSubscription_open() {
 cal3eSubscription.onLoad = function cal3eSubscription_onLoad() {
   cal3eSubscription.controller = new cal3eSubscription(
     new cal3eSubscriberController(),
-    new cal3eCalendarsFilterController(),
+    new cal3eFilterController(window),
     new cal3eSharedCalendarsController(),
     new cal3eSubscriptionDelegate(),
     new cal3eDialogStateDelegate()
