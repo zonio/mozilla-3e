@@ -278,6 +278,7 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
       { properties: 'disabled' },
       { properties: 'disabled' }
     ]);
+    tree.addEventListener('select', deselect);
   }
 
   function fillTreeNoEntities() {
@@ -288,9 +289,11 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
       { properties: 'disabled' },
       { properties: 'disabled' }
     ]);
+    tree.addEventListener('select', deselect);
   }
 
   function fillTreeLoaded() {
+    tree.removeEventListener('select', deselect);
     controller.list = userPermissions.concat(groupPermissions, updatedPermissions);
     cal3eUtils.naturalSort.insensitive = true;
     controller.list.sort(cal3eUtils.naturalSort);
@@ -354,6 +357,10 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
       }
     }
     return null;
+  }
+
+  function deselect() {
+    tree.view.selection.toggleSelect(0);
   }
 
   function findGroup(groupname, groups) {

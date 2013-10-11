@@ -45,6 +45,10 @@ treechildren::-moz-tree-checkbox(checked) {
   list-style-image: url("chrome://calendar3e/skin/checkbox-checked.gif");
 }
 
+treechildren::-moz-tree-checkbox(disabled) {
+  list-style-image: url("chrome://calendar3e/skin/transp.png");
+}
+
 treechildren::-moz-tree-image(calendar3e-treecell-icon-user) {
   margin-left: 6px;
   list-style-image: url("chrome://calendar3e/skin/user.png");
