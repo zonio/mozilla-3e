@@ -263,7 +263,9 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
   function fillTree() {
     if (!isLoaded) {
       fillTreeLoading();
-    } else if (userPermissions.length === 0 && groupPermissions.length === 0) {
+    } else if (userPermissions.length === 0 &&
+               groupPermissions.length === 0 &&
+               updatedPermissions.length === 0) {
       fillTreeNoEntities();
     } else {
       fillTreeLoaded();
@@ -382,6 +384,7 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
 
   function init() {
     isLoaded = false;
+    controller.list = [];
     tree = document.getElementById('calendar3e-sharing-tree');
     findAndSetIdentity();
     loadPermissions();

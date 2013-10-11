@@ -186,7 +186,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     var start = {}, end = {};
         numRanges = tree.view.selection.getRangeCount(),
         selection = [];
-    
+
     for (var i = 0; i < numRanges; i++) {
       tree.view.selection.getRangeAt(i, start, end);
       for (var j = start.value; j <= end.value; j++) {
@@ -200,7 +200,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     var identities = cal3eIdentity.Collection()
       .getEnabled()
       .findByEmail(cal3eModel.calendarOwner(calendar));
-    
+
     identity = identities.length > 0 ? identities[0] : null;
   }
 
