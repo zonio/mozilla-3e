@@ -140,6 +140,26 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(getGroupPermissions), createQueue
   );
 
+  function setUserPermission(identity, listener, calendar, username, perm) {
+    return synchronizedMethod.promise(arguments)
+      .push('ESClient.setUserPermission',
+        [cal3eModel.calendarName(calendar), username, perm])
+      .call(onResult, listener);
+  }
+  setUserPermission = synchronizedMethod.create(
+    createScenario(setUserPermission), createQueue
+  );
+
+  function setGroupPermission(identity, listener, calendar, groupname, perm) {
+    return synchronizedMethod.promise(arguments)
+      .push('ESClient.setGroupPermission',
+        [cal3eModel.calendarName(calendar), groupname, perm])
+      .call(onResult, listener);
+  }
+  setGroupPermission = synchronizedMethod.create(
+    createScenario(setGroupPermission), createQueue
+  );
+
   function getGroups(identity, listener, query) {
     return synchronizedMethod.promise(arguments)
       .push('ESClient.getGroups', [query])
@@ -567,6 +587,8 @@ function Client(serverBuilder, authenticationDelegate,
   client.setCalendarAttribute = setCalendarAttribute;
   client.getUserPermissions = getUserPermissions;
   client.getGroupPermissions = getGroupPermissions;
+  client.setUserPermission = setUserPermission;
+  client.setGroupPermission = setGroupPermission;
   client.getGroups = getGroups;
   client.queryObjects = queryObjects;
   client.addObject = addObject;
