@@ -469,6 +469,7 @@ cal3eProperties.tweakUI = function tweakUI() {
   document.getElementById('calendar-properties-dialog-2')
     .setAttribute('ondialogaccept', 'return cal3eProperties.onAccept();');
   document.getElementById('calendar-refreshInterval-row').hidden = true;
+  document.getElementById('calendar-cache-row').hidden = true;
   var alarmsRow = document.getElementById('calendar-suppressAlarms-row');
   alarmsRow.childNodes[0].hidden = true; /* Spacer before checkbox */
 
