@@ -138,6 +138,12 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
   }
 
   function checkWritePermChanges() {
+    if ((tree.view.rowCount == 1) && !tree.view.getItemAtIndex(0)
+                                      .firstChild.lastChild
+                                      .getAttribute('value')) {
+      return;
+    }
+
     for (var i = 0; i < tree.view.rowCount; i++) {
       var treeitem = tree.view.getItemAtIndex(i);
       if ((treeitem.firstChild.lastChild.getAttribute('value') == 'true') !==
