@@ -31,25 +31,16 @@ Mozilla Build System (e.g., xpcshell-tests).
 3. Get development dependencies (`python ./client.py checkout`)
 4. Create .mozconfig file:
 
-       mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-sdk
-       ac_add_options --enable-optimize
-       ac_add_options --disable-debug
        ac_add_options --enable-application=mail
        ac_add_options --enable-calendar
+       ac_add_options --enable-extensions=calendar3e
 
-5. Build the SDK (`make -f client.mk`)
+5. Build the SDK (`./mozilla/mach build`)
 6. Clone mozilla-3e repository (`git clone
    git://github.com/zonio/mozilla-3e.git
-   calendar/providers/calendar3e`)
-7. Change .mozconfig file:
-
-       mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-calendar3e
-       ac_add_options --enable-application=calendar/providers/calendar3e
-       ac_add_options --enable-chrome-format=omni
-       ac_add_options --with-libxul-sdk=$(pwd)/../obj-sdk/mozilla/dist
-
-8. Build the 3e Calendar extension (`make -f client.mk`)
-9. The extension is in obj-calendar3e/mozilla/dist/xpi-stage
+   mozilla/extensions/calendar3e`)
+7. Build the 3e Calendar extension (`make -f client.mk`)
+8. The extension is in obj-*/mozilla/dist/xpi-stage
 
 There are many moving parts and the way described above is the
 shortest one yet not the most convenient one for intensive
