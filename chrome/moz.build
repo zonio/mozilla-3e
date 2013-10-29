@@ -1,6 +1,6 @@
 # ***** BEGIN LICENSE BLOCK *****
 # 3e Calendar
-# Copyright © 2012 - 2013  Zonio s.r.o.
+# Copyright © 2013  Zonio s.r.o.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,15 +16,3 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # ***** END LICENSE BLOCK *****
-
-DEPTH = ../../../..
-topsrcdir = @top_srcdir@
-srcdir = @srcdir@
-VPATH = @srcdir@
-relativesrcdir = calendar/providers/calendar3e/test
-
-include $(DEPTH)/config/autoconf.mk
-
-XPCSHELL_TESTS = unit
-
-include $(topsrcdir)/config/rules.mk

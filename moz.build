@@ -1,6 +1,6 @@
 # ***** BEGIN LICENSE BLOCK *****
 # 3e Calendar
-# Copyright © 2011  Zonio s.r.o.
+# Copyright © 2013  Zonio s.r.o.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,25 +17,13 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../../../..
-topsrcdir = @top_srcdir@
-srcdir = @srcdir@
-VPATH = @srcdir@
+DIRS += [
+    'modules',
+    'src',
+    'data',
+    'chrome',
+]
 
-include $(DEPTH)/config/autoconf.mk
+TEST_DIRS += ['test']
 
-MODULE = calendar3e
-XPI_NAME = calendar3e-provider
-
-EXTRA_COMPONENTS = \
-	calendar.js \
-	protocol.js \
-	manager.js \
-	synchronizer.js \
-	freeBusyProvider.js \
-	settings.js \
-	module.manifest \
-	itipTransport.js \
-	$(NULL)
-
-include $(topsrcdir)/config/rules.mk
+MODULE = 'calendar3e'

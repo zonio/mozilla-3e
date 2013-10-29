@@ -17,15 +17,12 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../../../..
+DEPTH = @DEPTH@
 topsrcdir = @top_srcdir@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
 include $(DEPTH)/config/autoconf.mk
-
-MODULE = calendar3e
-XPI_NAME = calendar3e-provider
 
 ERROR_XMLS = \
 	$(srcdir)/eeeErrors.xml \

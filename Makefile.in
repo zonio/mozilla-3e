@@ -17,32 +17,32 @@
 #
 # ***** END LICENSE BLOCK *****
 
-DEPTH = ../../..
+DEPTH = @DEPTH@
 topsrcdir = @top_srcdir@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
 include $(DEPTH)/config/autoconf.mk
 
-MODULE = calendar3e
-
 export XPI_NAME = calendar3e-provider
 export USE_EXTENSION_MANIFEST = 1
 XPI_PKGNAME = calendar3e-provider
+XPI_VERSION = $(CALENDAR_3E_VERSION)
 
 XPI_EM_ID = calendar3e@zonio.net
 INSTALL_EXTENSION_ID = $(XPI_EM_ID)
 
 DIST_FILES = install.rdf application.ini
+PREF_JS_EXPORTS = $(srcdir)/defaults/preferences.js
 
 CALENDAR_3E_VERSION = $(shell cat $(srcdir)/config/version.txt)
-CALENDAR_3E_BUILDID = $(shell $(PYTHON) $(topsrcdir)/mozilla/toolkit/xre/make-platformini.py --print-buildid)
-LIGHTNING_VERSION = $(shell cat $(topsrcdir)/calendar/sunbird/config/version.txt)
-THUNDERBIRD_VERSION = $(shell cat $(topsrcdir)/mail/config/version.txt)
-SEAMONKEY_VERSION = $(shell cat $(topsrcdir)/suite/config/version.txt)
+CALENDAR_3E_BUILDID = $(shell $(PYTHON) $(topsrcdir)/toolkit/xre/make-platformini.py --print-buildid)
+LIGHTNING_VERSION = $(shell cat $(topsrcdir)/../calendar/sunbird/config/version.txt)
+THUNDERBIRD_VERSION = $(shell cat $(topsrcdir)/../mail/config/version.txt)
+SEAMONKEY_VERSION = $(shell cat $(topsrcdir)/../suite/config/version.txt)
 
 # Gecko milestone
-GRE_MILESTONE = $(shell $(PYTHON) $(MOZILLA_SRCDIR)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build Milestone)
+GRE_MILESTONE = $(shell $(PYTHON) $(topsrcdir)/config/printconfigsetting.py $(LIBXUL_DIST)/bin/platform.ini Build Milestone)
 ifdef GRE_MILESTONE
 DEFINES += -DGRE_MILESTONE=$(GRE_MILESTONE)
 endif
@@ -59,12 +59,12 @@ DEFINES += -DSOURCE_REPO="$(SOURCE_REPO)"
 endif
 
 # Mozilla source repo and stamps
-MOZ_SOURCE_STAMP = $(firstword $(shell hg -R $(MOZILLA_SRCDIR) parent --template="{node|short}\n" 2>/dev/null))
+MOZ_SOURCE_STAMP = $(firstword $(shell hg -R $(topsrcdir) parent --template="{node|short}\n" 2>/dev/null))
 ifdef MOZ_SOURCE_STAMP
 DEFINES += -DMOZ_SOURCE_STAMP="$(MOZ_SOURCE_STAMP)"
 endif
 
-MOZ_SOURCE_REPO = $(shell hg -R $(MOZILLA_SRCDIR) showconfig paths.default 2>/dev/null | sed -e "s/^ssh:/http:/")
+MOZ_SOURCE_REPO = $(shell hg -R $(topsrcdir) showconfig paths.default 2>/dev/null | sed -e "s/^ssh:/http:/")
 ifdef MOZ_SOURCE_REPO
 DEFINES += -DMOZ_SOURCE_REPO="$(MOZ_SOURCE_REPO)"
 endif
@@ -79,13 +79,6 @@ DEFINES += -DCALENDAR_3E_PERMISSION=$(CALENDAR_3E_PERMISSION)
 endif
 
 include $(topsrcdir)/config/config.mk
-
-PREF_JS_EXPORTS = $(srcdir)/defaults/preferences.js
-DIRS = modules src data chrome
-
-ifdef ENABLE_TESTS
-DIRS += test
-endif
 
 
 DEFINES += -DTHUNDERBIRD_VERSION=$(THUNDERBIRD_VERSION) \
