@@ -678,28 +678,35 @@ function AuthenticationDelegate() {
       'chrome://calendar3e/locale/calendar3e.properties'
     );
 
+    var mozillaStringBundle = Services.strings.createBundle(
+      'chrome://chat/locale/accounts.properties'
+    );
+
     var password = {
       value: findInStorages(identity) ?
         findInStorages(identity).password :
         ''
     };
+
+    var shouldSave = { value: false };
+
     var didEnterPassword =
-      Components.classes['@mozilla.org/embedcomp/window-watcher;1']
-      .getService(Components.interfaces.nsIPromptFactory)
-      .getPrompt(null, Components.interfaces.nsIAuthPrompt)
-      .promptPassword(
-        stringBundle.GetStringFromName(
-          'calendar3e.passwordDialog.title'),
-        stringBundle.formatStringFromName(
-          'calendar3e.passwordDialog.content', [identity.email], 1),
-        loginUri(identity).spec,
-        Components.interfaces.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY,
-        password
-      );
+      Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
+        .getService(Components.interfaces.nsIPromptService)
+        .promptPassword(null,
+          stringBundle.GetStringFromName(
+            'calendar3e.passwordDialog.title'),
+          stringBundle.formatStringFromName(
+            'calendar3e.passwordDialog.content', [identity.email], 1),
+          password,
+          mozillaStringBundle.GetStringFromName(
+            'passwordPromptSaveCheckbox'),
+          shouldSave);
 
     // LoginManagerPrompter doesn't support session storage
     if (didEnterPassword && !findInStorages(identity)) {
-      addToStorage(sessionStorage, identity, password.value);
+      addToStorage(shouldSave.value ? Services.logins : sessionStorage,
+        identity, password.value);
     }
 
     return didEnterPassword ? findInStorages(identity) : null;
