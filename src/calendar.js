@@ -404,7 +404,7 @@ function calEeeCalendar() {
                     'result from calendar "' + uri.spec + '"');
         parser.parseString(result.data);
       } catch (e) {
-        logger.error('[' + operation.id() + '] Canno parse items from query ' +
+        logger.error('[' + operation.id() + '] Cannot parse items from query ' +
                      'result from calendar "' + uri.spec + '" ' +
                      'because of error ' + e);
         calendar.notifyOperationComplete(
@@ -418,6 +418,21 @@ function calEeeCalendar() {
       }
 
       parser.getItems({}).forEach(function(item) {
+        /* Don't show unprocessed event invitations in subscribed calendars
+         * as processed. */
+        if (!cal3eModel.isOwnedCalendar(calendar.superCalendar)) {
+          var attendee = item.getAttendeeById('mailto:' +
+            cal3eModel.calendarUser(calendar.superCalendar));
+
+          if (attendee) {
+            var partstat = attendee.participationStatus ||
+                           attendee.getProperty('PARTSTAT');
+            if (partstat === 'NEEDS-ACTION') {
+              return;
+            }
+          }
+        }
+
         cal3eUtils
           .getExpandedItems(item.clone(), rangeStart, rangeEnd)
           .forEach(function(item) {
