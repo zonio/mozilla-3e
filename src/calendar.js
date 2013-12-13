@@ -151,7 +151,11 @@ function calEeeCalendar() {
         item.id,
         item
       );
-      calendar.mObservers.notify('onAddItem', [item]);
+
+      var itemWithoutOrganizerAmongAttendees = organizerLightningHack(item);
+
+      calendar.mObservers.notify('onAddItem',
+        [itemWithoutOrganizerAmongAttendees]);
     };
 
     var operation = cal3eRequest.Client.getInstance()
@@ -257,7 +261,14 @@ function calEeeCalendar() {
         newItem.id,
         newItem
       );
-      calendar.mObservers.notify('onModifyItem', [newItem, oldItem]);
+
+      var newItemWithoutOrganizerAmongAttendees = organizerLightningHack(
+        newItem
+      );
+
+      calendar.mObservers.notify('onModifyItem',
+        [newItemWithoutOrganizerAmongAttendees, oldItem]
+      );
     };
 
     var operation = cal3eRequest.Client.getInstance()
@@ -436,7 +447,7 @@ function calEeeCalendar() {
         cal3eUtils
           .getExpandedItems(item.clone(), rangeStart, rangeEnd)
           .forEach(function(item) {
-            organizerLightningHack(item);
+            item = organizerLightningHack(item);
             item.calendar = calendar.superCalendar;
             item.parentItem.calendar = calendar.superCalendar;
             item.makeImmutable();
@@ -699,13 +710,15 @@ function calEeeCalendar() {
   }
 
   function organizerLightningHack(item) {
-    if (item.organizer === null) {
-      return;
+    var newItem = item.clone();
+
+    if (newItem.organizer === null) {
+      return newItem;
     }
 
-    var organizerAttendees = item.getAttendees({})
+    var organizerAttendees = newItem.getAttendees({})
       .filter(function(attendee) {
-        return attendee.id === item.organizer.id;
+        return attendee.id === newItem.organizer.id;
       });
 
     if (organizerAttendees.length <= 0) {
@@ -718,18 +731,18 @@ function calEeeCalendar() {
      'DELEGATED-FROM'].forEach(function(property) {
 
       if (organizerAttendee.getProperty(property) != null) {
-        item.organizer.setProperty(
+        newItem.organizer.setProperty(
           organizerAttendee.getProperty(property).clone());
       }
     });
 
-    item.organizer.participationStatus = organizerAttendee.participationStatus;
-    item.organizer.role = organizerAttendee.role;
-    item.organizer.rsvp = organizerAttendee.rsvp;
+    newItem.organizer.participationStatus = organizerAttendee.participationStatus;
+    newItem.organizer.role = organizerAttendee.role;
+    newItem.organizer.rsvp = organizerAttendee.rsvp;
 
-    item.removeAttendee(organizerAttendee);
+    newItem.removeAttendee(organizerAttendee);
 
-    return;
+    return newItem;
   }
 
   function addSentByParameter(item) {
