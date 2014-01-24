@@ -10,6 +10,8 @@ calendar3e.jar:
 % overlay chrome://calendar/content/calendar-properties-dialog.xul      chrome://calendar3e/content/properties.xul
 % overlay chrome://calendar/content/calendar-event-dialog.xul           chrome://calendar3e/content/attachments.xul
 % overlay chrome://calendar/content/calendar-event-dialog-attendees.xul chrome://calendar3e/content/attendees.xul
+% overlay chrome://calendar/content/calendar-event-dialog.xul chrome://calendar3e/content/new-event-dialog.xul
+% overlay chrome://calendar/content/calendar-summary-dialog.xul chrome://calendar3e/content/event-summary-dialog.xul
 
   content/contextMenu.js   (content/contextMenu.js)
   content/contextMenu.xul  (content/contextMenu.xul)
@@ -30,16 +32,20 @@ calendar3e.jar:
   content/webcal.js        (content/webcal.js)
   content/webcal.xul       (content/webcal.xul)
   content/attendees.xul    (content/attendees.xul)
+  content/new-event-dialog.xul (content/new-event-dialog.xul)
+  content/event-summary-dialog.xul (content/event-summary-dialog.xul)
 
   skin/global.css    (skin/global.css)
   skin/icon.png      (skin/icon.png)
   skin/icon64.png    (skin/icon64.png)
   skin/user.png      (skin/user.png)
   skin/group.png     (skin/group.png)
-  skin/transp.png     (skin/transp.png)
+  skin/transp.png    (skin/transp.png)
   skin/checkbox.gif  (skin/checkbox.gif)
   skin/checkbox-checked.gif     (skin/checkbox-checked.gif)
   skin/attendees.css (skin/attendees.css)
+  skin/calendar-event-dialog-attendees.png    (skin/calendar-event-dialog-attendees.png)
+  skin/partstat-icons.css (skin/partstat-icons.css)
 
   locale/en-US/calendar3e.dtd         (locale/en-US/calendar3e.dtd)
   locale/en-US/calendar3e.properties  (locale/en-US/calendar3e.properties)
