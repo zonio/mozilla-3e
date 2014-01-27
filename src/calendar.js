@@ -476,8 +476,8 @@ function calEeeCalendar() {
     };
   }
 
-  function getItem(id, listener) {
-    logger.info('Querying item identified by "' + id + '" ' +
+  function getItem(uid, listener) {
+    logger.info('Querying item identified by "' + uid + '" ' +
                 'in calendar "' + uri.spec + '"');
 
     if (!identity) {
@@ -497,9 +497,9 @@ function calEeeCalendar() {
         identity,
         getQueryObjectsListener(listener, null, null),
         calendar,
-        "match_uid('" + id + "') and not deleted()");
+        "match_id('" + uid + "') and not deleted()");
     logger.info('[' + operation.id() + '] Querying item with ' +
-                '"match_uid(' + id + ') and not deleted()" in calendar "' +
+                '"match_id(' + uid + ') and not deleted()" in calendar "' +
                 uri.spec + '"');
 
     return operation.component();
