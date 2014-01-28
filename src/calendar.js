@@ -722,7 +722,7 @@ function calEeeCalendar() {
       });
 
     if (organizerAttendees.length <= 0) {
-      return;
+      return newItem;
     }
 
     var organizerAttendee = organizerAttendees[0];
