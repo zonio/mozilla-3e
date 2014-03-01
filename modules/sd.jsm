@@ -180,7 +180,8 @@ function cal3eSd(providers, cache) {
     if (!providers) {
       providers = [
         new DnsSd(),
-        new WellKnownSd()
+        new WellKnownSd(),
+        new WellKnownSd(cal3eSd.FALLBACK_BASE_URI)
       ];
     }
 
@@ -192,7 +193,9 @@ function cal3eSd(providers, cache) {
   sd.resolveServer = resolveServer;
 
   init();
+
 }
+cal3eSd.FALLBACK_BASE_URI = 'http://3e.zonio.net/.sd/';
 
 function DnsSd(resolvConstructor) {
   var dnsSd = this;
@@ -275,7 +278,7 @@ function DnsSd(resolvConstructor) {
   init();
 }
 
-function WellKnownSd() {
+function WellKnownSd(baseUri) {
   var wellKnownSd = this;
   var logger;
 
@@ -286,6 +289,7 @@ function WellKnownSd() {
     var promise = new cal3eSynchronization.Promise();
     doXhrSend({
       'domainName': domainName,
+      'uri': wellKnownUri(domainName, baseUri),
       'promise': promise
     });
 
@@ -303,10 +307,7 @@ function WellKnownSd() {
 
     var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
       .createInstance(Components.interfaces.nsIXMLHttpRequest);
-    xhr.open(
-      'GET',
-      'http://' + context['domainName'] + WellKnownSd.WELL_KNOWN_URI_PATH
-    );
+    xhr.open('GET', context['uri']);
     xhr.setRequestHeader('Content-Type', 'text/plain');
     xhr.addEventListener('load', function(event) {
       onXhrLoad(event, context);
@@ -384,6 +385,12 @@ function WellKnownSd() {
     promise.fulfill(Service.fromProviderData(domainName, data, logger));
   }
 
+  function wellKnownUri(domainName, baseUri) {
+    return baseUri ?
+      (baseUri + domainName) :
+      ('http://' + domainName + WellKnownSd.WELL_KNOWN_URI_PATH);
+  }
+
   function init() {
     logger = cal3eLogger.create('extensions.calendar3e.log.sd');
   }
@@ -443,6 +450,7 @@ function Service(domainName, host, port, ttl) {
 
   init();
 }
+
 Service.fromProviderData = function fromProviderData(domainName, data,
                                                      logger) {
   var hostPort = (data['server'] || '').split(':', 2);

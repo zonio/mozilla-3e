@@ -34,7 +34,7 @@ var Resolv = {};
  * Asynchronous DNS resolver.
  *
  * It uses {@see WorkerResolverClient} as a way to run the {@link
- * Resolv.DNS.Resolver} module in parallel.  Resources are returned
+ * Resolv.DNS.Resolver} module in parallel. Resources are returned
  * immediatelly as a promise.
  *
  * @example
