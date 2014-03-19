@@ -550,14 +550,14 @@ function calEeeCalendar() {
     if (rangeStart) {
       query.push(
         "date_from('" +
-          cal3eUtils.nsprTimeToEeeDate(rangeStart.nativeTime) +
+          (new Date(rangeStart.nativeTime / 1000)).toISOString() +
           "')"
       );
     }
     if (rangeEnd) {
       query.push(
         "date_to('" +
-          cal3eUtils.nsprTimeToEeeDate(rangeEnd.nativeTime) +
+          (new Date(rangeEnd.nativeTime / 1000)).toISOString() +
           "')"
       );
     }

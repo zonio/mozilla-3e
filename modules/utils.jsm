@@ -37,24 +37,6 @@ function createOperationListener(onResult) {
 }
 
 /**
- * Takes NSPR time and returns EEE date as used in queries.
- *
- * @param {PRTime} nsprTime
- * @returns {String}
- */
-function nsprTimeToEeeDate(nsprTime) {
-  var jsDate = new Date(nsprTime / 1000);
-
-  return '' +
-    zeropad(jsDate.getUTCFullYear(), 4) + '-' +
-    zeropad(jsDate.getUTCMonth() + 1, 2) + '-' +
-    zeropad(jsDate.getUTCDate(), 2) + ' ' +
-    zeropad(jsDate.getUTCHours(), 2) + ':' +
-    zeropad(jsDate.getUTCMinutes(), 2) + ':' +
-    zeropad(jsDate.getUTCSeconds(), 2);
-}
-
-/**
  * Takes Mozilla calendar date/time and returns it formatted as ISO
  * 8601 date/time.
  *
@@ -210,7 +192,6 @@ function naturalSort(a, b) {
 
 var cal3eUtils = {
   createOperationListener: createOperationListener,
-  nsprTimeToEeeDate: nsprTimeToEeeDate,
   calDateTimeToIsoDate: calDateTimeToIsoDate,
   eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
   fileAttachmentToEeeUri: fileAttachmentToEeeUri,

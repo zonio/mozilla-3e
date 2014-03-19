@@ -235,8 +235,8 @@ function Client(serverBuilder, authenticationDelegate,
     return synchronizedMethod.promise(arguments)
       .push('ESClient.freeBusy', [
         attendee,
-        cal3eUtils.nsprTimeToEeeDate(from),
-        cal3eUtils.nsprTimeToEeeDate(to),
+        (new Date(from / 1000)).toISOString(),
+        (new Date(to / 1000)).toISOString(),
         defaultTimezone])
       .call(onResult, listener);
   }
