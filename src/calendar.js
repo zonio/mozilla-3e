@@ -99,6 +99,7 @@ function calEeeCalendar() {
     item = fixOrganizerAttendee(item);
     item = addSentByParameter(item);
     item = ensureIdentity(item);
+    item = setAlarmsDefaultDescriptions(item);
 
     var clientListener = function calEee_adoptItem_onResult(result,
                                                             operation) {
@@ -195,6 +196,7 @@ function calEeeCalendar() {
 
     newItem = fixOrganizerAttendee(newItem);
     newItem = addSentByParameter(newItem);
+    newItem = setAlarmsDefaultDescriptions(newItem);
 
     var clientListener = function calEee_modifyItem_onResult(result,
                                                              operation) {
@@ -722,6 +724,24 @@ function calEeeCalendar() {
       .forEach(function(attendee) {
         attendee.setProperty('SENT-BY', 'mailto:' + identity.email);
       });
+
+    return newItem;
+  }
+
+  function setAlarmsDefaultDescriptions(item) {
+    var defaultDescription = "Remainder";
+    var newItem = item.clone();
+    var alarms = newItem.getAlarms({});
+
+    alarms.forEach(function(alarm) {
+      alarm.description = defaultDescription;
+    });
+
+    newItem.clearAlarms();
+
+    alarms.forEach(function(alarm) {
+      newItem.addAlarm(alarm);
+    });
 
     return newItem;
   }
