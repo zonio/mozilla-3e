@@ -354,23 +354,6 @@ function Synchronizer(identity, logger) {
                     'because of error ' +
                     result.constructor.name + '(' + result.errorCode + ')');
 
-        if (!Services.io.offline) {
-          var bundle = Services.strings.createBundle(
-            'chrome://calendar3e/locale/calendar3e.properties'
-          );
-          Services.prompt.alert(
-            cal.getCalendarWindow(),
-            bundle.GetStringFromName(
-              'calendar3e.alertDialog.calendarSync.title'
-            ),
-            bundle.formatStringFromName(
-              'calendar3e.alertDialog.calendarSync.text',
-              [identity.fullName + ' <' + identity.email + '>'],
-              1
-            )
-          );
-        }
-
         lastAttemptWasSuccessful = false;
         promise.fulfill();
         return;
