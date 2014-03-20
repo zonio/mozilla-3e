@@ -729,7 +729,7 @@ function calEeeCalendar() {
   }
 
   function setAlarmsDefaultDescriptions(item) {
-    var defaultDescription = "Remainder";
+    var defaultDescription = "Reminder";
     var newItem = item.clone();
     var alarms = newItem.getAlarms({});
 
