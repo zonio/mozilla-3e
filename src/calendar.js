@@ -95,20 +95,6 @@ function calEeeCalendar() {
       return null;
     }
 
-    try {
-      item = item.QueryInterface(Components.interfaces.calIEvent);
-    } catch (e) {
-      logger.error('Item "' + item.title + '" is not an event');
-      calendar.notifyOperationComplete(
-        listener,
-        e.result,
-        Components.interfaces.calIOperationListener.ADD,
-        null,
-        e.message
-      );
-      return null;
-    }
-
     item = filterOutAttendees(item);
     item = fixOrganizerAttendee(item);
     item = addSentByParameter(item);
@@ -203,20 +189,6 @@ function calEeeCalendar() {
         Components.interfaces.calIOperationListener.MODIFY,
         newItem.id,
         'Unknown ID of modified item'
-      );
-      return null;
-    }
-
-    try {
-      newItem = newItem.QueryInterface(Components.interfaces.calIEvent);
-    } catch (e) {
-      logger.error('Item "' + newItem.title + '" is not an event');
-      calendar.notifyOperationComplete(
-        listener,
-        e.result,
-        Components.interfaces.calIOperationListener.MODIFY,
-        null,
-        e.message
       );
       return null;
     }
@@ -320,19 +292,7 @@ function calEeeCalendar() {
       return null;
     }
 
-    try {
-      item = item.QueryInterface(Components.interfaces.calIEvent);
-    } catch (e) {
-      logger.error('Item "' + item.title + '" is not an event');
-      calendar.notifyOperationComplete(
-        listener,
-        e.result,
-        Components.interfaces.calIOperationListener.DELETE,
-        null,
-        e.message
-      );
-      return null;
-    }
+    item = item.QueryInterface(Components.interfaces.calIEvent);
 
     var clientListener = function calEee_deleteItem_onResult(result,
                                                              operation) {
