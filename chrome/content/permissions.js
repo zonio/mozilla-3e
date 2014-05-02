@@ -84,7 +84,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
     if (!allUsersAreinList()) {
       list.push({
         username: '*',
-        type: 'group',
+        type: 'user',
         label: 'All users',
         toString: function() {
           return this.label;

@@ -203,9 +203,13 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
       userPermission['type'] = 'user';
       userPermission['realname'] =
         cal3eModel.attribute(findUser(userPermission.user, users), 'realname');
-      userPermission['label'] = userPermission['realname']
-        ? userPermission['realname'] + ' <' + userPermission.user + '>'
-        : userPermission.user;
+      if (userPermission['user'] == '*') {
+        userPermission['label'] = 'All users';
+      } else {
+        userPermission['label'] = userPermission['realname']
+          ? userPermission['realname'] + ' <' + userPermission.user + '>'
+          : userPermission.user;
+      }
       userPermission.toString = function() {
         return userPermission.realname || userPermission.label;
       }
