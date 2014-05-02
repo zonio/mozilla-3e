@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import("resource://calendar3e/modules/response.jsm");
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/request.jsm");
@@ -82,10 +83,14 @@ function cal3ePermissions(calendar, sharingController, filterController) {
 
     list = users;
     if (!allUsersAreinList()) {
+      var bundle = Services.strings.createBundle(
+        'chrome://calendar3e/locale/calendar3e.properties'
+      );
       list.push({
         username: '*',
         type: 'user',
-        label: 'All users',
+        label: bundle.GetStringFromName(
+          'calendar3e.properties.sharing.allUsers'),
         toString: function() {
           return this.label;
         }
@@ -207,7 +212,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
   function allUsersAreinList() {
     var list = sharingController.list;
     for (var i = 0; i < list.length; i++) {
-      if (list[i].label === 'All users') {
+      if (list[i].username === '*') {
         return true;
       }
     }

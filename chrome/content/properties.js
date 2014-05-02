@@ -18,6 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import("resource://gre/modules/iteratorUtils.jsm");
+Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import("resource://calendar3e/modules/identity.jsm");
 Components.utils.import("resource://calendar3e/modules/feature.jsm");
 Components.utils.import("resource://calendar3e/modules/model.jsm");
@@ -201,11 +202,15 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
     userPermissions.forEach(function(userPermission) {
       userPermission['username'] = userPermission['user']
       userPermission['type'] = 'user';
-      userPermission['realname'] =
-        cal3eModel.attribute(findUser(userPermission.user, users), 'realname');
       if (userPermission['user'] == '*') {
-        userPermission['label'] = 'All users';
+        var bundle = Services.strings.createBundle(
+          'chrome://calendar3e/locale/calendar3e.properties'
+        );
+        userPermission['label'] = bundle.GetStringFromName(
+          'calendar3e.properties.sharing.allUsers');
       } else {
+        userPermission['realname'] =
+          cal3eModel.attribute(findUser(userPermission.user, users), 'realname');
         userPermission['label'] = userPermission['realname']
           ? userPermission['realname'] + ' <' + userPermission.user + '>'
           : userPermission.user;
@@ -360,9 +365,6 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
   }
 
   function findUser(username, users) {
-    if (username === '*') {
-      return { username: 'All users' };
-    }
     for (var i = 0; i < users.length; i++) {
       if (users[i].username === username) {
         return users[i];
