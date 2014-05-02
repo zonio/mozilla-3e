@@ -96,6 +96,7 @@ function cal3ePermissions(calendar, sharingController, filterController) {
         }
       })
     }
+
     loadGroups();
   }
 
@@ -214,10 +215,9 @@ function cal3ePermissions(calendar, sharingController, filterController) {
   }
 
   function allUsersAreinList() {
-    var list = sharingController.list;
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].username === '*') {
-        return true;
+    for (var i = 0; i < sharingController.list.length; i++) {
+      if (sharingController.list[i].username === '*') {
+        return sharingController.list[i].perm !== 'none';
       }
     }
     return false;
