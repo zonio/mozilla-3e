@@ -323,9 +323,13 @@ function cal3ePropertiesSharing(calendar, setPermissionsDelegate) {
     listWithoutNonePermissions.forEach(function(entity) {
       cal3eXul.addItemsToTree(tree, [
         { label: entity.label,
-          properties: entity.type === 'user'
-            ? 'calendar3e-treecell-icon-user'
-            : 'calendar3e-treecell-icon-group' },
+          properties: function() {
+            if (entity.type == 'group' || entity.username == '*') {
+              return 'calendar3e-treecell-icon-group';
+            } else {
+              return 'calendar3e-treecell-icon-user';
+            }
+          }() },
         { value: true },
         { value: entity.perm === 'write' }
       ]);
