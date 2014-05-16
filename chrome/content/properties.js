@@ -506,7 +506,9 @@ cal3eProperties.removePermissions = function cal3eProperties_removePermissions()
 }
 
 cal3eProperties.onAccept = function cal3eProperties_onAccept() {
-  cal3eProperties.sharing.savePermissions();
+  if (cal3eModel.isOwnedCalendar(cal3eProperties._calendar)) {
+    cal3eProperties.sharing.savePermissions();
+  }
   return onAcceptDialog();
 }
 
