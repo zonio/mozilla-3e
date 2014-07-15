@@ -38,4 +38,16 @@
              oncommand="alert('cal3e_cmd_save_as')" />
   </commandset>
 
+  <toolbox id="event-toolbox">
+      <menubar id="event-menubar">
+         <menu id="options-menu">
+            <menupopup id="options-menupopup">
+               <menuitem id="cal3e-attachments-menuitem"
+                  label="Attachments" insertbefore="options-timezone-menuitem">
+               </menuitem>
+            </menupopup>
+         </menu>
+      </menubar>
+  </toolbox>
+
 </overlay>

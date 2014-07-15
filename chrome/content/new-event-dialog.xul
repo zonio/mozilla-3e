@@ -23,5 +23,9 @@
 
 <overlay id="event-dialog"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+   <script type="application/x-javascript"
+       src="chrome://calendar3e/content/new-event-dialog.js"/>
+
 </overlay>
 
