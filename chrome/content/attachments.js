@@ -17,6 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
@@ -30,18 +31,69 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
     buttonUrl.removeAttribute('type');
 
     document.getElementById('options-attachments-menu').hidden = true;
+    document.getElementById('event-grid-attachment-row').hidden = true;
+  }
+
+  function addAttachmentDialog() {
+    const nsIFilePicker = Components.interfaces.nsIFilePicker;
+    var fp = Components.classes["@mozilla.org/filepicker;1"]
+      .createInstance(nsIFilePicker);
+    var title = "Select attachment";
+    fp.init(window, title, nsIFilePicker.modeOpen);
+
+    var retval = fp.show();
+
+    if (retval == nsIFilePicker.returnOK) {
+      // Create attachment for item.
+      var newAttachment = createAttachment();
+      newAttachment.uri = fp.fileURL.clone();
+      addAttachment(newAttachment);
+    }
+  }
+
+  function addAttachment(attachment) {
+    if (!attachment.uri) {
+      return;
+    }
+
+    var documentLink = document.getElementById("cal3e-attachment-link");
+    var item = documentLink.appendChild(createXULElement("listitem"));
+
+    item.setAttribute("crop", "end");
+    //item.setAttribute("class", "listitem-iconic");
+    item.setAttribute("label", filename(attachment.uri));
+    item.attachment = attachment;
+
+    showAttachmentListbox();
+  }
+
+  function showAttachmentListbox() {
+    document.getElementById("cal3e-attachments-row")
+      .removeAttribute("collapsed");
+  }
+
+  function filename(uri) {
+    if (!uri) {
+      return null;
+    }
+
+    var splittedUri = uri.path.split("/");
+    return splittedUri[splittedUri.length - 1];
   }
 
   controller.updateUI = updateUI;
+  controller.attachFile = addAttachmentDialog;
 }
 
-var cal3e_openAttachment;
+var cal3e_attachFile;
+
 cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
   if (getCurrentCalendar().type != 'eee') {
     return;
   }
 
   var controller = new cal3eSelectAttach();
+  cal3e_attachFile = controller.attachFile;
   controller.updateUI();
 };
 
