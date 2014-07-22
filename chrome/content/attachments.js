@@ -29,9 +29,9 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
     buttonUrl.setAttribute('label', 'Attachments');
     buttonUrl.command = 'cal3e_cmd_attach_file';
     buttonUrl.removeAttribute('type');
-
-    document.getElementById('options-attachments-menu').hidden = true;
-    document.getElementById('event-grid-attachment-row').hidden = true;
+    //
+    //document.getElementById('options-attachments-menu').hidden = true;
+    //document.getElementById('event-grid-attachment-row').hidden = true;
   }
 
   function addAttachmentDialog() {
@@ -47,30 +47,40 @@ function cal3eSelectAttach(ltn_updateCapabilities) {
       // Create attachment for item.
       var newAttachment = createAttachment();
       newAttachment.uri = fp.fileURL.clone();
-      addAttachment(newAttachment);
+      addAttachment(newAttachment); /* This function is from lightning. */
     }
   }
 
-  function addAttachment(attachment) {
-    if (!attachment.uri) {
-      return;
-    }
-
-    var documentLink = document.getElementById("cal3e-attachment-link");
-    var item = documentLink.appendChild(createXULElement("listitem"));
-
-    item.setAttribute("crop", "end");
-    //item.setAttribute("class", "listitem-iconic");
-    item.setAttribute("label", filename(attachment.uri));
-    item.attachment = attachment;
-
-    showAttachmentListbox();
-  }
-
-  function showAttachmentListbox() {
-    document.getElementById("cal3e-attachments-row")
-      .removeAttribute("collapsed");
-  }
+  //function addAttachment(attachment) {
+  //  if (!attachment.uri) {
+  //    return;
+  //  }
+  //
+  //  //var documentLink = document.getElementById("cal3e-attachment-link");
+  //  var documentLink = document.getElementById("attachment-link");
+  //  var listItem = documentLink.appendChild(createXULElement("listitem"));
+  //
+  //  listItem.setAttribute("crop", "end");
+  //  //listItem.setAttribute("class", "listitem-iconic");
+  //  listItem.setAttribute("label", filename(attachment.uri));
+  //  listItem.attachment = attachment;
+  //
+  //  var item = window.arguments[0].calendarEvent;
+  //  item.addAttachment(attachment);
+  //
+  //  var attachments = item.getAttachments({});
+  //  dump("attachments.length: " + attachments.length + "\n");
+  //  item.getAttachments({}).forEach(function(attachment) {
+  //    dump("attachment: " + attachment + "\n");
+  //  });
+  //
+  //  showAttachmentListbox();
+  //}
+  //
+  //function showAttachmentListbox() {
+  //  //document.getElementById("cal3e-attachments-row")
+  //  //  .removeAttribute("collapsed");
+  //}
 
   function filename(uri) {
     if (!uri) {

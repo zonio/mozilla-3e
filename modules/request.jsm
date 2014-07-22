@@ -379,8 +379,59 @@ function Client(serverBuilder, authenticationDelegate,
     ]);
   }
 
+  function uploadAttachment2(identity, attachment) {
+    var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
+      .createInstance(Components.interfaces.nsIXMLHttpRequest);
+
+    var splittedPath = attachment.uri.path.split("/");
+    var sha1 = cal3eUtils.computeSha1(attachment.uri);
+    var url = "https://alpha.zonio.dev:4444/attachments/" + sha1 + "/" +
+      splittedPath[splittedPath.length - 1];
+    var localFile = Components.classes["@mozilla.org/file/local;1"]
+      .createInstance(Components.interfaces.nsILocalFile);
+    localFile.initWithPath(attachment.uri.path);
+
+    xhr.addEventListener('error', function(event) {
+      dump("event: " + event + "\n");
+      dump("event.target: " + event.target + "\n");
+      dump("event.target.status: " + event.target.status + "\n");
+      dump("event.target.responseText: " + event.target.responseText + "\n");
+      dump("error\n");
+    }, false);
+
+    xhr.addEventListener('load', function(event) {
+      dump("event: " + event + "\n");
+      dump("event.target: " + event.target + "\n");
+      dump("event.target.status: " + event.target.status + "\n");
+      dump("event.target.responseText: " + event.target.responseText + "\n");
+      dump("success\n");
+    }, false);
+
+    xhr.open('POST', url, false, identity.email, "qwe");
+
+    var tok = identity.email + ':' + "qwe";
+    var basicAuthHash = btoa(tok);
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    xhr.setRequestHeader('Authorization', "Basic " + basicAuthHash);
+
+    NetUtil.asyncFetch(localFile, function(inputStream, status) {
+      if (!Components.isSuccessCode(status)) {
+        dump("Failed tor read attachment.\n");
+        return;
+      }
+      try {
+        xhr.send(inputStream);
+      } catch (exc) {
+        dump("exception: " + exc.message + "\n");
+      }
+      dump("xhr.readyState: " + xhr.readyState + "\n");
+      dump("xhr.channel: " + xhr.channel + "\n");
+    });
+
+  }
+
   function uploadAttachments(identity, listener, item, queue, callback) {
-    if (!cal3eFeature.isSupported('attachments')) {
+    if (true || !cal3eFeature.isSupported('attachments')) {
       callback(queue);
       return queue;
     }
@@ -595,6 +646,7 @@ function Client(serverBuilder, authenticationDelegate,
   client.updateObject = updateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
+  client.uploadAttachment2 = uploadAttachment2;
 }
 var clientInstance;
 Client.getInstance = function Client_getInstance() {

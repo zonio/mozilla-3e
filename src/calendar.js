@@ -101,6 +101,14 @@ function calEeeCalendar() {
     item = ensureIdentity(item);
     item = setAlarmsDefaultDescriptions(item);
 
+    item.getAttachments({}).forEach(function(attachment) {
+      dump("attachment: " + attachment.uri.scheme + "://" + attachment.uri.path + "\n");
+      cal3eRequest.Client.getInstance().uploadAttachment2(identity, attachment);
+      //attachment.uri = cal3eUtils.fileAttachmentToEeeUri(attachment.uri);
+    });
+
+    item = convertAttachmentsUris(item);
+
     var clientListener = function calEee_adoptItem_onResult(result,
                                                             operation) {
       if ((result instanceof cal3eResponse.EeeError) &&
@@ -741,6 +749,20 @@ function calEeeCalendar() {
 
     alarms.forEach(function(alarm) {
       newItem.addAlarm(alarm);
+    });
+
+    return newItem;
+  }
+
+  function convertAttachmentsUris(item) {
+    var newItem = item.clone();
+    newItem.removeAllAttachments();
+
+    item.getAttachments({}).forEach(function (attachment) {
+      var newAttachment = attachment.clone();
+      newAttachment.uri = cal3eUtils.fileAttachmentToEeeUri(
+        attachment.uri, identity.email);
+      newItem.addAttachment(newAttachment);
     });
 
     return newItem;

@@ -193,6 +193,7 @@ function naturalSort(a, b) {
 var cal3eUtils = {
   createOperationListener: createOperationListener,
   calDateTimeToIsoDate: calDateTimeToIsoDate,
+  computeSha1: computeSha1,
   eeeAttachmentToHttpUri: eeeAttachmentToHttpUri,
   fileAttachmentToEeeUri: fileAttachmentToEeeUri,
   isSupportedServer: isSupportedServer,
