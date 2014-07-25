@@ -116,7 +116,8 @@ function fileAttachmentToEeeUri(fileUri, email) {
   var fileName = fileUri.spec.split('/')[fileUri.spec.split('/').length - 1];
 
   return Services.io.newURI(
-    ['eee:', '', email, 'attach', computeSha1(fileUri), fileName].join('/'),
+    ['eee:', '', email, 'attachments', computeSha1(fileUri), fileName]
+      .join('/'),
     null, null
   );
 }
