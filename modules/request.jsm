@@ -379,111 +379,74 @@ function Client(serverBuilder, authenticationDelegate,
     ]);
   }
 
-  function uploadAttachment2(identity, attachment) {
-    var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
-      .createInstance(Components.interfaces.nsIXMLHttpRequest);
-
-    var splittedPath = attachment.uri.path.split("/");
-    var sha1 = cal3eUtils.computeSha1(attachment.uri);
-    var url = "https://alpha.zonio.dev:4444/attachments/" + sha1 + "/" +
-      splittedPath[splittedPath.length - 1];
-    var localFile = Components.classes["@mozilla.org/file/local;1"]
-      .createInstance(Components.interfaces.nsILocalFile);
-    localFile.initWithPath(attachment.uri.path);
-
-    xhr.addEventListener('error', function(event) {
-      dump("event: " + event + "\n");
-      dump("event.target: " + event.target + "\n");
-      dump("event.target.status: " + event.target.status + "\n");
-      dump("event.target.responseText: " + event.target.responseText + "\n");
-      dump("error\n");
-    }, false);
-
-    xhr.addEventListener('load', function(event) {
-      dump("event: " + event + "\n");
-      dump("event.target: " + event.target + "\n");
-      dump("event.target.status: " + event.target.status + "\n");
-      dump("event.target.responseText: " + event.target.responseText + "\n");
-      dump("success\n");
-    }, false);
-
-    xhr.open('POST', url, false, identity.email, "qwe");
-
-    var tok = identity.email + ':' + "qwe";
-    var basicAuthHash = btoa(tok);
-    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-    xhr.setRequestHeader('Authorization', "Basic " + basicAuthHash);
-
-    NetUtil.asyncFetch(localFile, function(inputStream, status) {
-      if (!Components.isSuccessCode(status)) {
-        dump("Failed tor read attachment.\n");
-        return;
-      }
-      try {
-        xhr.send(inputStream);
-      } catch (exc) {
-        dump("exception: " + exc.message + "\n");
-      }
-      dump("xhr.readyState: " + xhr.readyState + "\n");
-      dump("xhr.channel: " + xhr.channel + "\n");
-    });
-
-  }
-
   function uploadAttachments(identity, listener, item, queue, callback) {
-    if (true || !cal3eFeature.isSupported('attachments')) {
-      callback(queue);
-      return queue;
-    }
-
     var attachments = item.getAttachments({});
-    var idx = 0;
+    var host = queue.getServer().uri().host + ":" +
+               queue.getServer().uri().port;
+    var password = authenticationDelegate.password(identity);
 
-    function uploadAttachment() {
-      var xhr = Components.classes[
-        '@mozilla.org/xmlextras/xmlhttprequest;1'
-      ].createInstance(Components.interfaces.nsIXMLHttpRequest);
-      xhr.open('POST', cal3eUtils.fileAttachmentToEeeUri(
-        attachments[idx].uri, identity.email
-      ));
+    item.getAttachments({}).forEach(function(attachment) {
+      logger.info('Uploading attachment ' + attachment.uri.spec);
+
+      var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
+        .createInstance(Components.interfaces.nsIXMLHttpRequest);
+      var splittedPath = attachment.uri.path.split("/");
+      var sha1 = cal3eUtils.computeSha1(attachment.uri);
+      var url = "https://" + host + "/attachments/" + sha1 + "/" +
+        splittedPath[splittedPath.length - 1];
+      var localFile = Components.classes["@mozilla.org/file/local;1"]
+        .createInstance(Components.interfaces.nsILocalFile);
+      localFile.initWithPath(attachment.uri.path);
+
+      xhr.open('POST', url);
+      var basicAuthHash = btoa(identity.email + ':' + password);
+      xhr.setRequestHeader('Authorization', "Basic " + basicAuthHash);
       xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
-      xhr.addEventListener('error', function() {
-        queue.setError(Components.Exception('Upload error.'));
+      xhr.addEventListener('error', function(evt) {
+        logger.error('Attachment ' + attachment.uri.spec +
+            ' could not be uploaded. ' + evt.target.responseText);
+        queue.setError(Components.Exception(evt.target.responseText));
         listener(queue, cal3eResponse.fromMethodQueue(queue));
       }, false);
 
-      xhr.addEventListener('load', function() {
-        if (idx < attachments.length) {
-          uploadAttachment();
-          idx += 1;
+      xhr.addEventListener('load', function(evt) {
+        if (evt.target.status == '409') {
+          logger.warn('Attachment ' + attachment.uri.spec + ' wasn\'t ' +
+            'uploaded. It already exists on server.');
+        } else if (evt.target.status != '200') {
+          logger.error('Attachment ' + attachment.uri.spec +
+            ' could not be uploaded. ' + evt.target.responseText);
+          queue.setError(Components.Exception(evt.target.responseText));
+          listener(queue, cal3eResponse.fromMethodQueue(queue));
+          return;
         } else {
-          callback(queue);
+          logger.info('Attachment ' + attachment.uri.spec +
+            ' successfully uploaded');
         }
       }, false);
 
-      var channel = Services.io.newChannel(cal3eUtils.fileAttachmentToEeeUri(
-        attachments[idx].uri, identity.email
-      ).spec, null, null)
-        .QueryInterface(Components.interfaces.nsIUploadChannel);
-      channel.setUploadStream(
-        Services.io.newChannel(attachments[idx].uri.spec, null, null).open(),
-        'application/octet-stream',
-        -1
-      );
-      channel.asyncOpen({
-        QueryInterface: XPCOMUtils.generateQI([
-          Components.interfaces.nsIStreamListener
-        ]),
-        onStopRequest: function() {
-        },
-        onStartRequest: function() {
-        },
-        onDataAvailable: function() {
+      var localFile = Components.classes["@mozilla.org/file/local;1"]
+        .createInstance(Components.interfaces.nsILocalFile);
+      localFile.initWithPath(attachment.uri.path);
+
+      NetUtil.asyncFetch(localFile, function(inputStream, status) {
+        if (!Components.isSuccessCode(status)) {
+          queue.setError(Components.Exception('Cannot read attachment.'));
+          listener(queue, cal3eResponse.fromMethodQueue(queue));
         }
-      }, null);
-    }
-    uploadAttachment();
+
+        try {
+          xhr.send(inputStream);
+        } catch (error) {
+          logger.error('Attachment ' + attachment.uri.spec +
+            ' could not be uploaded. ' + error.message);
+          queue.setError(Components.Exception('Cannot upload attachment. ' +
+            error.message));
+          listener(queue, cal3eResponse.fromMethodQueue(queue));
+        }
+      });
+    });
 
     attachments.forEach(function(attach) {
       if (attach.uri.schemeIs('file')) {
@@ -493,7 +456,7 @@ function Client(serverBuilder, authenticationDelegate,
       }
     });
 
-    return queue;
+    callback(queue);
   }
 
   function createScenario(main) {
@@ -646,7 +609,6 @@ function Client(serverBuilder, authenticationDelegate,
   client.updateObject = updateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
-  client.uploadAttachment2 = uploadAttachment2;
 }
 var clientInstance;
 Client.getInstance = function Client_getInstance() {
@@ -764,6 +726,11 @@ function AuthenticationDelegate() {
     return didEnterPassword ? findInStorages(identity) : null;
   }
 
+  function password(identity) {
+    var loginInfo = findInStorages(identity) || prompt(identity);
+    return loginInfo ? loginInfo.password : null;
+  }
+
   function invalidate(identity) {
     [sessionStorage, Services.logins].forEach(function(storage) {
       if (!findInStorage(storage, identity)) {
@@ -849,6 +816,7 @@ function AuthenticationDelegate() {
   }
 
   authenticationDelegate.authenticate = authenticate;
+  authenticationDelegate.password = password;
 
   init();
 }
@@ -1173,6 +1141,10 @@ function Queue() {
     return server;
   }
 
+  function getServer() {
+    return server;
+  }
+
   function getLastResponse() {
     return lastResponse;
   }
@@ -1217,6 +1189,7 @@ function Queue() {
   queue.isFault = isFault;
   queue.status = getStatus;
   queue.setServer = setServer;
+  queue.getServer = getServer;
   queue.server = getServer;
   queue.lastResponse = getLastResponse;
   queue.error = getError;
