@@ -386,6 +386,9 @@ function Client(serverBuilder, authenticationDelegate,
     var password = authenticationDelegate.password(identity);
 
     item.getAttachments({}).forEach(function(attachment) {
+      if (!attachment.uri.schemeIs('file')) {
+        return;
+      }
       logger.info('Uploading attachment ' + attachment.uri.spec);
 
       var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
