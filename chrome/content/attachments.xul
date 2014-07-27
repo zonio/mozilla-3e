@@ -18,6 +18,11 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
+<!DOCTYPE page [
+  <!ENTITY % calendar3e SYSTEM "chrome://calendar3e/locale/calendar3e.dtd">
+  %calendar3e;
+]>
+
 <overlay id="calendar-new-event-attach"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
@@ -38,24 +43,16 @@
              oncommand="alert('cal3e_cmd_save_as')" />
   </commandset>
 
-  <toolbox id="event-toolbox">
-      <menubar id="event-menubar">
-         <menu id="options-menu">
-            <menupopup id="options-menupopup">
-               <menuitem id="cal3e-attachments-menuitem"
-                  label="Attachments" insertbefore="options-timezone-menuitem"
-                  command="cal3e_cmd_attach_file">
-               </menuitem>
-            </menupopup>
-         </menu>
-      </menubar>
-  </toolbox>
+  <menupopup id="options-attachments-menupopup">
+    <menuitem id="cal3e-options-attachments-file-menuitem"
+              insertbefore="options-attachments-url-menuitem"
+              command="cal3e_cmd_attach_file"
+              label="&calendar3e.attachments.file;"/>
+  </menupopup>
 
-  <rows id="event-grid-rows">
-     <row id="cal3e-attachments-row" collapsed="true"
-         insertbefore="event-grid-link-separator">
-         <label value="Attachments" disable-on-readonly="true"/>
-         <listbox id="cal3e-attachment-link" rows="2" flex="1"/>
-     </row>
-  </rows>
+  <menupopup id="button-attach-menupopup">
+     <menuitem id="cal3e-button-attach-file" insertbefore="button-attach-url"
+               command="cal3e_cmd_attach_file"
+               label="&calendar3e.attachments.file;" />
+  </menupopup>
 </overlay>

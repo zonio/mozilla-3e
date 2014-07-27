@@ -26,9 +26,7 @@ function cal3eSelectAttach() {
 
   function updateUI() {
     var buttonUrl = document.getElementById('button-url');
-    buttonUrl.setAttribute('label', 'Attachments');
     buttonUrl.command = 'cal3e_cmd_attach_file';
-    buttonUrl.removeAttribute('type');
   }
 
   function addAttachmentDialog() {
