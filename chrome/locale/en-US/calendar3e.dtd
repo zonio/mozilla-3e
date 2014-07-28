@@ -37,6 +37,7 @@
 <!ENTITY calendar3e.creation.format.label "3e Calendar">
 
 <!ENTITY calendar3e.attachments.file "File…">
+<!ENTITY calendar3e.attachments.save "Save as…">
 
 <!ENTITY calendar3e.context.subscribe.label "Subscribe Calendar…">
 <!ENTITY calendar3e.context.webcal.label "Show Calendar URI…">

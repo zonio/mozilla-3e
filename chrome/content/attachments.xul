@@ -37,8 +37,6 @@
   <commandset id="itemCommands">
     <command id="cal3e_cmd_attach_file" disable-on-read-only="true"
              oncommand="cal3e_attachFile()" />
-    <command id="cal3e_cmd_open_attachment"
-             oncommand="cal3e_openAttachment()" />
     <command id="cal3e_cmd_save_as" disable-on-read-only="true"
              oncommand="alert('cal3e_cmd_save_as')" />
   </commandset>
@@ -55,4 +53,13 @@
                command="cal3e_cmd_attach_file"
                label="&calendar3e.attachments.file;" />
   </menupopup>
+
+  <popupset id="event-dialog-popupset">
+    <menupopup id="attachment-popup">
+      <menuitem id="cal3e-attachment-popup-save"
+                insertbefore="attachment-popup-delete"
+                command="cal3e_cmd_cave_as"
+                label="&calendar3e.attachments.save;" />
+    </menupopup>
+  </popupset>
 </overlay>

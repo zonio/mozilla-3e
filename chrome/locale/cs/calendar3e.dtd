@@ -37,6 +37,7 @@
 <!ENTITY calendar3e.creation.format.label "3e kalendář">
 
 <!ENTITY calendar3e.attachments.file "Soubor…">
+<!ENTITY calendar3e.attachments.save "Uložit…">
 
 <!ENTITY calendar3e.context.subscribe.label "Připojit kalendář…">
 <!ENTITY calendar3e.context.webcal.label "Zobrazit URI kalendáře…">

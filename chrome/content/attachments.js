@@ -25,8 +25,12 @@ function cal3eSelectAttach() {
   var controller = this;
 
   function updateUI() {
-    var buttonUrl = document.getElementById('button-url');
-    buttonUrl.command = 'cal3e_cmd_attach_file';
+    document.getElementById('button-url').command = 'cal3e_cmd_attach_file';
+    document.getElementById('attachment-popup-attachPage').hidden = true;
+    document.getElementById('attachment-popup')
+      .getElementsByTagName('menuseparator')[0].hidden = true;
+    document.getElementById('attachment-link')
+      .addEventListener('click', cal3eSelectAttach.onRightClick);
   }
 
   function addAttachmentDialog() {
@@ -51,6 +55,23 @@ function cal3eSelectAttach() {
 }
 
 var cal3e_attachFile;
+
+cal3eSelectAttach.onRightClick =
+  function cal3eSelectAttach_onRightClick(event) {
+  if (event.button !== 2) {
+    return;
+  }
+
+  var selectedItem = document.getElementById('attachment-link').selectedItem;
+
+  if (selectedItem.label.indexOf('eee://') === 0) {
+    document.getElementById('cal3e-attachment-popup-save').hidden = false;
+    document.getElementById('attachment-popup-copy').hidden = true;
+  } else {
+    document.getElementById('cal3e-attachment-popup-save').hidden = true;
+    document.getElementById('attachment-popup-copy').hidden = false;
+  }
+}
 
 cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
   if (getCurrentCalendar().type != 'eee') {
