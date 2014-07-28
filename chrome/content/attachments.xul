@@ -38,7 +38,9 @@
     <command id="cal3e_cmd_attach_file" disable-on-read-only="true"
              oncommand="cal3e_attachFile();" />
     <command id="cal3e_cmd_save_as" disable-on-read-only="true"
-             oncommand="cal3e_saveFile();" />
+             oncommand="cal3e_saveFile(true);" />
+    <command id="cal3e_cmd_open" disable-on-read-only="true"
+             oncommand="cal3e_saveFile(false);" />
   </commandset>
 
   <menupopup id="options-attachments-menupopup">

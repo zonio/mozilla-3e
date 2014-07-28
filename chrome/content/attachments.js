@@ -26,9 +26,14 @@ Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
 function cal3eSelectAttach(calendar) {
   var controller = this;
+  const nsIFilePicker = Components.interfaces.nsIFilePicker;
 
   function updateUI() {
     document.getElementById('button-url').command = 'cal3e_cmd_attach_file';
+    document.getElementById('attachment-link')
+      .removeAttribute('onclick');
+    document.getElementById('attachment-link')
+      .setAttribute('ondblclick', 'cal3e_saveFile(false);');
     document.getElementById('attachment-popup-attachPage').hidden = true;
     document.getElementById('attachment-popup')
       .getElementsByTagName('menuseparator')[0].hidden = true;
@@ -37,7 +42,6 @@ function cal3eSelectAttach(calendar) {
   }
 
   function addAttachmentDialog() {
-    const nsIFilePicker = Components.interfaces.nsIFilePicker;
     var fp = Components.classes["@mozilla.org/filepicker;1"]
       .createInstance(nsIFilePicker);
     var title = "Select attachment";
@@ -53,16 +57,81 @@ function cal3eSelectAttach(calendar) {
     }
   }
 
-  function saveFile() {
+  function saveFile(doSave) {
     var eeeUri = document.getElementById('attachment-link')
       .selectedItem.label;
+    var splittedUri = eeeUri.split('/');
+    var filename = splittedUri[splittedUri.length - 1];
+    var file;
 
-    var listener = function(httpStatus, responseText) {
+    if (doSave) {
+      file = saveAttachmentDialog(filename);
+      if (!file) {
+        return;
+      }
+    } else {
+      file = Components.classes['@mozilla.org/file/directory_service;1']
+        .getService(Components.interfaces.nsIProperties)
+        .get('TmpD', Ci.nsIFile);
+      file.append(filename);
+    }
+
+    var listener = function(httpStatusCode, responseText) {
       dump('Attachment ' + eeeUri + ' downloaded.\n');
+      if (httpStatusCode != '200') {
+        dump('Error\n');
+        return;
+      }
+
+      var stream = Components.classes[
+        '@mozilla.org/network/safe-file-output-stream;1'
+      ].createInstance(Components.interfaces.nsIFileOutputStream);
+
+      stream.init(file, 0x04 | 0x08 | 0x20, 384, 0); // readwrite, create, truncate
+      stream.write(responseText, responseText.length);
+
+      if (stream instanceof Components.interfaces.nsISafeOutputStream) {
+        stream.finish();
+      } else {
+        stream.close();
+      }
+
+      if (!doSave) {
+        openFile(file);
+      }
     }
 
     cal3eRequest.Client.getInstance()
       .downloadAttachment(findIdentity(), listener, eeeUri);
+  }
+
+  function saveAttachmentDialog(defaultFilename) {
+    var fp = Components.classes['@mozilla.org/filepicker;1']
+      .createInstance(nsIFilePicker);
+    fp.init(window, 'Save', nsIFilePicker.modeSave);
+    fp.defaultString = defaultFilename;
+
+    var result = fp.show();
+    if (result == nsIFilePicker.returnCancel) {
+      return false;
+    }
+
+    return fp.file;
+  }
+
+  function openFile(file) {
+    var externalLoader = Components.classes[
+      '@mozilla.org/uriloader/external-protocol-service;1'
+    ].getService(Components.interfaces.nsIExternalProtocolService);
+
+    var ioService = Components.classes['@mozilla.org/network/io-service;1']
+      .getService(Components.interfaces.nsIIOService);
+
+    try {
+      externalLoader.loadUrl(ioService.newURI('file://' + file.path, null, null));
+    } catch (error) {
+      dump('Cannot open file. ' + error.message + '\n');
+    }
   }
 
   function findIdentity() {
@@ -92,6 +161,7 @@ cal3eSelectAttach.onRightClick =
   if (selectedItem.label.indexOf('eee://') === 0) {
     document.getElementById('cal3e-attachment-popup-save').hidden = false;
     document.getElementById('attachment-popup-copy').hidden = true;
+    document.getElementById('attachment-popup-open').command = 'cal3e_cmd_open';
   } else {
     document.getElementById('cal3e-attachment-popup-save').hidden = true;
     document.getElementById('attachment-popup-copy').hidden = false;
