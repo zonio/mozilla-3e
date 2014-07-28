@@ -19,9 +19,12 @@
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
+Components.utils.import('resource://calendar3e/modules/identity.jsm');
+Components.utils.import('resource://calendar3e/modules/model.jsm');
+Components.utils.import('resource://calendar3e/modules/request.jsm');
 Components.utils.import('resource://calendar3e/modules/utils.jsm');
 
-function cal3eSelectAttach() {
+function cal3eSelectAttach(calendar) {
   var controller = this;
 
   function updateUI() {
@@ -50,11 +53,33 @@ function cal3eSelectAttach() {
     }
   }
 
+  function saveFile() {
+    var eeeUri = document.getElementById('attachment-link')
+      .selectedItem.label;
+
+    var listener = function(httpStatus, responseText) {
+      dump('Attachment ' + eeeUri + ' downloaded.\n');
+    }
+
+    cal3eRequest.Client.getInstance()
+      .downloadAttachment(findIdentity(), listener, eeeUri);
+  }
+
+  function findIdentity() {
+    var identities = cal3eIdentity.Collection()
+      .getEnabled()
+      .findByEmail(cal3eModel.calendarUser(calendar));
+
+    return identities.length > 0 ? identities[0] : null;
+  }
+
   controller.updateUI = updateUI;
   controller.attachFile = addAttachmentDialog;
+  controller.saveFile = saveFile;
 }
 
 var cal3e_attachFile;
+var cal3e_saveFile;
 
 cal3eSelectAttach.onRightClick =
   function cal3eSelectAttach_onRightClick(event) {
@@ -78,8 +103,9 @@ cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
     return;
   }
 
-  var controller = new cal3eSelectAttach();
+  var controller = new cal3eSelectAttach(window.arguments[0].calendar);
   cal3e_attachFile = controller.attachFile;
+  cal3e_saveFile = controller.saveFile;
   controller.updateUI();
 };
 

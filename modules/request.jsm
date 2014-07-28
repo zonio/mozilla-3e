@@ -192,6 +192,15 @@ function Client(serverBuilder, authenticationDelegate,
     createScenario(addObject), createQueue
   );
 
+  function downloadAttachment(identity, listener, attachmentEeeUri) {
+    return _downloadAttachment(
+      identity, listener, attachmentEeeUri,
+      synchronizedMethod.promise(arguments));
+  }
+  downloadAttachment = synchronizedMethod.create(
+    createScenario(downloadAttachment), createQueue
+  );
+
   function updateObject(identity, listener, calendar, newItem, oldItem) {
     var args = Array.prototype.slice.apply(arguments);
     var queue = synchronizedMethod.promise(arguments);
@@ -462,6 +471,42 @@ function Client(serverBuilder, authenticationDelegate,
     callback(queue);
   }
 
+  function _downloadAttachment(identity, listener, eeeUri, queue) {
+    logger.info('Downloading attachment ' + eeeUri);
+    var host = queue.getServer().uri().host + ':' +
+               queue.getServer().uri().port;
+    var password = authenticationDelegate.password(identity);
+
+    var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
+      .createInstance(Components.interfaces.nsIXMLHttpRequest);
+    var splittedPath = eeeUri.split('/');
+    var url = 'https://' + host + '/attachments/' +
+      splittedPath[splittedPath.length - 2] + '/' +
+      splittedPath[splittedPath.length - 1];
+
+    xhr.open('GET', url);
+    var basicAuthHash = btoa(identity.email + ':' + password);
+    xhr.setRequestHeader('Authorization', 'Basic ' + basicAuthHash);
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+
+    xhr.addEventListener('error', function(evt) {
+      logger.error('Attachment ' + eeeUri + ' cannot be downloaded. ' +
+        evt.target.responseText);
+    }, false);
+
+    xhr.addEventListener('load', function(evt) {
+      logger.info('Attachment ' + eeeUri + ' successfuly donwloaded.');
+      listener(evt.target.status, evt.target.responseText);
+    }, false);
+
+    try {
+      xhr.send();
+    } catch (error) {
+      logger.error('Attachment ' + attachment.uri.spec +
+        ' could not be donwloaded. ' + error.message);
+    }
+  }
+
   function createScenario(main) {
     return function runScenario() {
       var queue = synchronizedMethod.promise(arguments);
@@ -612,6 +657,7 @@ function Client(serverBuilder, authenticationDelegate,
   client.updateObject = updateObject;
   client.deleteObject = deleteObject;
   client.freeBusy = freeBusy;
+  client.downloadAttachment = downloadAttachment;
 }
 var clientInstance;
 Client.getInstance = function Client_getInstance() {
