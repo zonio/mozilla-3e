@@ -1193,10 +1193,6 @@ function Queue() {
     return server;
   }
 
-  function getServer() {
-    return server;
-  }
-
   function getLastResponse() {
     return lastResponse;
   }
