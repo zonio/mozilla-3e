@@ -390,7 +390,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function uploadAttachments(identity, listener, item, queue, callback) {
     var attachments = item.getAttachments({});
-    var host = queue.getServer().uri().host + ":" +
+    var host = queue.getServer().uri().host + ':' +
                queue.getServer().uri().port;
     var password = authenticationDelegate.password(identity);
 
@@ -402,17 +402,17 @@ function Client(serverBuilder, authenticationDelegate,
 
       var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
         .createInstance(Components.interfaces.nsIXMLHttpRequest);
-      var splittedPath = attachment.uri.path.split("/");
+      var splittedPath = attachment.uri.path.split('/');
       var sha1 = cal3eUtils.computeSha1(attachment.uri);
-      var url = "https://" + host + "/attachments/" + sha1 + "/" +
+      var url = 'https://' + host + '/attachments/' + sha1 + '/' +
         splittedPath[splittedPath.length - 1];
-      var localFile = Components.classes["@mozilla.org/file/local;1"]
+      var localFile = Components.classes['@mozilla.org/file/local;1']
         .createInstance(Components.interfaces.nsILocalFile);
       localFile.initWithPath(attachment.uri.path);
 
       xhr.open('POST', url);
       var basicAuthHash = btoa(identity.email + ':' + password);
-      xhr.setRequestHeader('Authorization', "Basic " + basicAuthHash);
+      xhr.setRequestHeader('Authorization', 'Basic ' + basicAuthHash);
       xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
       xhr.addEventListener('error', function(evt) {
@@ -438,7 +438,7 @@ function Client(serverBuilder, authenticationDelegate,
         }
       }, false);
 
-      var localFile = Components.classes["@mozilla.org/file/local;1"]
+      var localFile = Components.classes['@mozilla.org/file/local;1']
         .createInstance(Components.interfaces.nsILocalFile);
       localFile.initWithPath(attachment.uri.path);
 
@@ -757,7 +757,7 @@ function AuthenticationDelegate() {
     var shouldSave = { value: false };
 
     var didEnterPassword =
-      Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
+      Components.classes['@mozilla.org/embedcomp/prompt-service;1']
         .getService(Components.interfaces.nsIPromptService)
         .promptPassword(null,
           stringBundle.GetStringFromName(
@@ -1005,7 +1005,7 @@ function QueueValidationDelegate() {
 
   function setUserError(queue, error) {
     return queue.setError(
-      Components.Exception("User error '" + error.errorCode + "'")
+      Components.Exception('User error "' + error.errorCode + '"')
     );
   }
 

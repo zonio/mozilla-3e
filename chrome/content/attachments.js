@@ -17,7 +17,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
 Components.utils.import('resource://calendar3e/modules/feature.jsm');
 Components.utils.import('resource://calendar3e/modules/identity.jsm');
 Components.utils.import('resource://calendar3e/modules/model.jsm');
@@ -42,9 +42,9 @@ function cal3eSelectAttach(calendar) {
   }
 
   function addAttachmentDialog() {
-    var fp = Components.classes["@mozilla.org/filepicker;1"]
+    var fp = Components.classes['@mozilla.org/filepicker;1']
       .createInstance(nsIFilePicker);
-    var title = "Select attachment";
+    var title = 'Select attachment';
     fp.init(window, title, nsIFilePicker.modeOpen);
 
     var retval = fp.show();
