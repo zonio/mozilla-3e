@@ -54,6 +54,7 @@ function cal3eSelectAttach(calendar) {
       // Create attachment for item.
       var newAttachment = createAttachment();
       newAttachment.uri = fp.fileURL.clone();
+      newAttachment.set
       addAttachment(newAttachment); /* This function is from lightning. */
     }
   }
@@ -154,9 +155,22 @@ function cal3eSelectAttach(calendar) {
     return identities.length > 0 ? identities[0] : null;
   }
 
+  function pretifyEeeAttachmentsLabels() {
+    var listbox = document.getElementById('attachment-link');
+
+    for (var idx = 0; idx < listbox.itemCount; idx++) {
+      var listitem = listbox.getItemAtIndex(idx);
+      if (listitem.label.indexOf('eee://') === 0) {
+        var splittedUri = listitem.label.split('/');
+        listitem.label = splittedUri[splittedUri.length - 1];
+      }
+    }
+  }
+
   controller.updateUI = updateUI;
   controller.attachFile = addAttachmentDialog;
   controller.saveFile = saveFile;
+  controller.pretifyEeeAttachmentsLabels = pretifyEeeAttachmentsLabels;
 }
 
 var cal3e_attachFile;
@@ -189,6 +203,7 @@ cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
   cal3e_attachFile = controller.attachFile;
   cal3e_saveFile = controller.saveFile;
   controller.updateUI();
+  controller.pretifyEeeAttachmentsLabels();
 };
 
 window.addEventListener('load', cal3eSelectAttach.onLoad, false);
