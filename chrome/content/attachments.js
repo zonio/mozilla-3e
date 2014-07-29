@@ -76,7 +76,7 @@ function cal3eSelectAttach(calendar) {
       file.append(filename);
     }
 
-    var listener = function(httpStatusCode, responseText) {
+    var listener = function(httpStatusCode, response) {
       dump('Attachment ' + eeeUri + ' downloaded.\n');
       if (httpStatusCode != '200') {
         dump('Error\n');
@@ -87,8 +87,17 @@ function cal3eSelectAttach(calendar) {
         '@mozilla.org/network/safe-file-output-stream;1'
       ].createInstance(Components.interfaces.nsIFileOutputStream);
 
-      stream.init(file, 0x04 | 0x08 | 0x20, 384, 0); // readwrite, create, truncate
-      stream.write(responseText, responseText.length);
+      stream.init(file, 0x02 | 0x08 | 0x20, 384, 0); // readwrite, create, truncate
+
+      var maxArgs = 65535;
+      var processed = 0;
+      while (processed < response.length) {
+        var responseSlice = Array.prototype.slice.call(
+          response, processed, processed + maxArgs);
+        var dataSlice = String.fromCharCode.apply(String, responseSlice);
+        stream.write(dataSlice, dataSlice.length);
+        processed += maxArgs;
+      }
 
       if (stream instanceof Components.interfaces.nsISafeOutputStream) {
         stream.finish();

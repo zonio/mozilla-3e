@@ -485,6 +485,9 @@ function Client(serverBuilder, authenticationDelegate,
       splittedPath[splittedPath.length - 1];
 
     xhr.open('GET', url);
+    /* Response must be array buffer else binary data are currupted when
+     * using stream to save them to disk. */
+    xhr.responseType = 'arraybuffer';
     var basicAuthHash = btoa(identity.email + ':' + password);
     xhr.setRequestHeader('Authorization', 'Basic ' + basicAuthHash);
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
@@ -495,8 +498,8 @@ function Client(serverBuilder, authenticationDelegate,
     }, false);
 
     xhr.addEventListener('load', function(evt) {
-      logger.info('Attachment ' + eeeUri + ' successfuly donwloaded.');
-      listener(evt.target.status, evt.target.responseText);
+      logger.info('Attachment ' + eeeUri + ' successfuly downloaded.');
+      listener(evt.target.status, new Int8Array(evt.target.response));
     }, false);
 
     try {
