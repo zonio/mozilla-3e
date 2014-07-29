@@ -44,7 +44,8 @@ function cal3eSelectAttach(calendar) {
   function addAttachmentDialog() {
     var fp = Components.classes['@mozilla.org/filepicker;1']
       .createInstance(nsIFilePicker);
-    var title = 'Select attachment';
+    var title = document.getElementById('calendar3e-strings')
+      .getString('calendar3e.attachements.attach.label');
     fp.init(window, title, nsIFilePicker.modeOpen);
 
     var retval = fp.show();
@@ -117,7 +118,9 @@ function cal3eSelectAttach(calendar) {
   function saveAttachmentDialog(defaultFilename) {
     var fp = Components.classes['@mozilla.org/filepicker;1']
       .createInstance(nsIFilePicker);
-    fp.init(window, 'Save', nsIFilePicker.modeSave);
+    var title = document.getElementById('calendar3e-strings')
+      .getString('calendar3e.attachements.saveas.label');
+    fp.init(window, title, nsIFilePicker.modeSave);
     fp.defaultString = defaultFilename;
 
     var result = fp.show();
