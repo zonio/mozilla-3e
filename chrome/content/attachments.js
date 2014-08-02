@@ -56,12 +56,14 @@ function cal3eSelectAttach(calendar) {
       newAttachment.uri = fp.fileURL.clone();
       newAttachment.set
       addAttachment(newAttachment); /* This function is from lightning. */
+      pretifyAttachmentLabel(
+        document.getElementById('attachment-link').selectedItem);
     }
   }
 
-  function saveFile(doSave) {
+  function saveFile(doSave, logger) {
     var eeeUri = document.getElementById('attachment-link')
-      .selectedItem.label;
+      .selectedItem.value;
     var splittedUri = eeeUri.split('/');
     var filename = splittedUri[splittedUri.length - 1];
     var file;
@@ -160,11 +162,16 @@ function cal3eSelectAttach(calendar) {
 
     for (var idx = 0; idx < listbox.itemCount; idx++) {
       var listitem = listbox.getItemAtIndex(idx);
-      if (listitem.label.indexOf('eee://') === 0) {
-        var splittedUri = listitem.label.split('/');
-        listitem.label = splittedUri[splittedUri.length - 1];
+      if (listitem.label && listitem.label.indexOf('eee://') === 0) {
+        pretifyAttachmentLabel(listitem);
       }
     }
+  }
+
+  function pretifyAttachmentLabel(listitem) {
+    listitem.value = listitem.label;
+    var splittedUri = listitem.label.split('/');
+    listitem.label = splittedUri[splittedUri.length - 1];
   }
 
   controller.updateUI = updateUI;
@@ -184,7 +191,7 @@ cal3eSelectAttach.onRightClick =
 
   var selectedItem = document.getElementById('attachment-link').selectedItem;
 
-  if (selectedItem.label.indexOf('eee://') === 0) {
+  if (selectedItem.value.indexOf('eee://') === 0) {
     document.getElementById('cal3e-attachment-popup-save').hidden = false;
     document.getElementById('attachment-popup-copy').hidden = true;
     document.getElementById('attachment-popup-open').command = 'cal3e_cmd_open';
@@ -203,7 +210,7 @@ cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
   cal3e_attachFile = controller.attachFile;
   cal3e_saveFile = controller.saveFile;
   controller.updateUI();
-  controller.pretifyEeeAttachmentsLabels();
+  setTimeout(controller.pretifyEeeAttachmentsLabels, 200);
 };
 
 window.addEventListener('load', cal3eSelectAttach.onLoad, false);
