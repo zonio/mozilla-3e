@@ -58,7 +58,9 @@ function cal3eSelectAttach(calendar) {
       newAttachment.set
       addAttachment(newAttachment); /* This function is from lightning. */
       var listbox = document.getElementById('attachment-link');
-      pretifyAttachmentLabel(listbox.getItemAtIndex(listbox.itemCount - 1))
+      var lastListitem = listbox.getItemAtIndex(listbox.itemCount - 1);
+      pretifyAttachmentLabel(lastListitem);
+      listbox.ensureElementIsVisible(lastListitem);
     }
   }
 
