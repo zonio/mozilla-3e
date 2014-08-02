@@ -56,8 +56,8 @@ function cal3eSelectAttach(calendar) {
       newAttachment.uri = fp.fileURL.clone();
       newAttachment.set
       addAttachment(newAttachment); /* This function is from lightning. */
-      pretifyAttachmentLabel(
-        document.getElementById('attachment-link').selectedItem);
+      var listbox = document.getElementById('attachment-link');
+      pretifyAttachmentLabel(listbox.getItemAtIndex(listbox.itemCount - 1))
     }
   }
 
@@ -65,7 +65,7 @@ function cal3eSelectAttach(calendar) {
     var eeeUri = document.getElementById('attachment-link')
       .selectedItem.value;
     var splittedUri = eeeUri.split('/');
-    var filename = splittedUri[splittedUri.length - 1];
+    var filename = decodeURIComponent(splittedUri[splittedUri.length - 1]);
     var file;
 
     if (doSave) {
@@ -170,7 +170,7 @@ function cal3eSelectAttach(calendar) {
 
   function pretifyAttachmentLabel(listitem) {
     listitem.value = listitem.label;
-    var splittedUri = listitem.label.split('/');
+    var splittedUri = decodeURI(listitem.label).split('/');
     listitem.label = splittedUri[splittedUri.length - 1];
   }
 

@@ -398,7 +398,8 @@ function Client(serverBuilder, authenticationDelegate,
       if (!attachment.uri.schemeIs('file')) {
         return;
       }
-      logger.info('Uploading attachment ' + attachment.uri.spec);
+      logger.info('Uploading attachment ' +
+        decodeURIComponent(attachment.uri.spec));
 
       var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
         .createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -406,9 +407,6 @@ function Client(serverBuilder, authenticationDelegate,
       var sha1 = cal3eUtils.computeSha1(attachment.uri);
       var url = 'https://' + host + '/attachments/' + sha1 + '/' +
         splittedPath[splittedPath.length - 1];
-      var localFile = Components.classes['@mozilla.org/file/local;1']
-        .createInstance(Components.interfaces.nsILocalFile);
-      localFile.initWithPath(attachment.uri.path);
 
       xhr.open('POST', url);
       var basicAuthHash = btoa(identity.email + ':' + password);
@@ -416,46 +414,46 @@ function Client(serverBuilder, authenticationDelegate,
       xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
       xhr.addEventListener('error', function(evt) {
-        logger.error('Attachment ' + attachment.uri.spec +
+        logger.error('Attachment ' + decodeURIComponent(attachment.uri.spec) +
             ' could not be uploaded. ' + evt.target.responseText);
         queue.setError(Components.Exception(evt.target.responseText));
-        listener(queue, cal3eResponse.fromMethodQueue(queue));
+        listener(queue, cal3eResponse.fromRequestQueue(queue));
       }, false);
 
       xhr.addEventListener('load', function(evt) {
         if (evt.target.status == '409') {
-          logger.warn('Attachment ' + attachment.uri.spec + ' wasn\'t ' +
-            'uploaded. It already exists on server.');
+          logger.warn('Attachment ' + decodeURIComponent(attachment.uri.spec) +
+          ' wasn\'t uploaded. It already exists on server.');
         } else if (evt.target.status != '200') {
-          logger.error('Attachment ' + attachment.uri.spec +
+          logger.error('Attachment ' + decodeURIComponent(attachment.uri.spec) +
             ' could not be uploaded. ' + evt.target.responseText);
           queue.setError(Components.Exception(evt.target.responseText));
-          listener(queue, cal3eResponse.fromMethodQueue(queue));
+          listener(queue, cal3eResponse.fromRequestQueue(queue));
           return;
         } else {
-          logger.info('Attachment ' + attachment.uri.spec +
+          logger.info('Attachment ' + decodeURIComponent(attachment.uri.spec) +
             ' successfully uploaded');
         }
       }, false);
 
       var localFile = Components.classes['@mozilla.org/file/local;1']
         .createInstance(Components.interfaces.nsILocalFile);
-      localFile.initWithPath(attachment.uri.path);
+      localFile.initWithPath(decodeURIComponent(attachment.uri.path));
 
       NetUtil.asyncFetch(localFile, function(inputStream, status) {
         if (!Components.isSuccessCode(status)) {
           queue.setError(Components.Exception('Cannot read attachment.'));
-          listener(queue, cal3eResponse.fromMethodQueue(queue));
+          listener(queue, cal3eResponse.fromRequestQueue(queue));
         }
 
         try {
           xhr.send(inputStream);
         } catch (error) {
-          logger.error('Attachment ' + attachment.uri.spec +
+          logger.error('Attachment ' + decodeURIComponent(attachment.uri.spec) +
             ' could not be uploaded. ' + error.message);
           queue.setError(Components.Exception('Cannot upload attachment. ' +
             error.message));
-          listener(queue, cal3eResponse.fromMethodQueue(queue));
+          listener(queue, cal3eResponse.fromRequestQueue(queue));
         }
       });
     });
