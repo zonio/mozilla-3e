@@ -39,6 +39,7 @@ function cal3eSelectAttach(calendar) {
       .getElementsByTagName('menuseparator')[0].hidden = true;
     document.getElementById('attachment-link')
       .addEventListener('click', cal3eSelectAttach.onRightClick);
+    document.getElementById('attachment-link').setAttribute('rows', 5);
   }
 
   function addAttachmentDialog() {
