@@ -73,6 +73,11 @@ function cal3eSelectAttach(calendar) {
     var eeeUri = document.getElementById('attachment-link')
       .selectedItem.value;
 
+    if (eeeUri.indexOf('eee://') !== 0) {
+      openAttachment();
+      return;
+    }
+
     var splittedUri = eeeUri.split('/');
     var filename = decodeURIComponent(splittedUri[splittedUri.length - 1]);
     var file;
