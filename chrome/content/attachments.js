@@ -38,7 +38,7 @@ function cal3eSelectAttach(calendar) {
     document.getElementById('attachment-popup')
       .getElementsByTagName('menuseparator')[0].hidden = true;
     document.getElementById('attachment-link')
-      .addEventListener('click', cal3eSelectAttach.onRightClick);
+      .addEventListener('click', cal3eSelectAttach.onPopupShowing);
     document.getElementById('attachment-link').setAttribute('rows', 5);
   }
 
@@ -195,7 +195,7 @@ function cal3eSelectAttach(calendar) {
 var cal3e_attachFile;
 var cal3e_saveFile;
 
-cal3eSelectAttach.onRightClick =
+cal3eSelectAttach.onPopupShowing =
   function cal3eSelectAttach_onRightClick(event) {
   if (event.button !== 2) {
     return;
