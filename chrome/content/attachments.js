@@ -34,9 +34,6 @@ function cal3eSelectAttach(calendar) {
       .removeAttribute('onclick');
     document.getElementById('attachment-link')
       .setAttribute('ondblclick', 'cal3e_saveFile(false);');
-    document.getElementById('attachment-popup-attachPage').hidden = true;
-    document.getElementById('attachment-popup')
-      .getElementsByTagName('menuseparator')[0].hidden = true;
     document.getElementById('attachment-link')
       .addEventListener('click', cal3eSelectAttach.onPopupShowing);
     document.getElementById('attachment-link').setAttribute('rows', 5);
@@ -75,6 +72,7 @@ function cal3eSelectAttach(calendar) {
   function saveFile(doSave, logger) {
     var eeeUri = document.getElementById('attachment-link')
       .selectedItem.value;
+
     var splittedUri = eeeUri.split('/');
     var filename = decodeURIComponent(splittedUri[splittedUri.length - 1]);
     var file;
@@ -197,16 +195,24 @@ var cal3e_saveFile;
 
 cal3eSelectAttach.onPopupShowing =
   function cal3eSelectAttach_onRightClick(event) {
-  if (event.button !== 2) {
+  if (getCurrentCalendar().type != 'eee') {
     return;
   }
 
-  var selectedItem = document.getElementById('attachment-link').selectedItem;
+  document.getElementById('attachment-popup-attachPage').hidden = true;
+  document.getElementById('attachment-popup')
+    .getElementsByTagName('menuseparator')[0].hidden = true;
 
-  if (selectedItem.value.indexOf('eee://') === 0) {
+  var itemUriScheme = document.getElementById('attachment-link')
+    .selectedItem.attachment.uri.scheme;
+
+  if (itemUriScheme === 'eee') {
     document.getElementById('cal3e-attachment-popup-save').hidden = false;
     document.getElementById('attachment-popup-copy').hidden = true;
     document.getElementById('attachment-popup-open').command = 'cal3e_cmd_open';
+  } else if (itemUriScheme === 'file') {
+    document.getElementById('cal3e-attachment-popup-save').hidden = true;
+    document.getElementById('attachment-popup-copy').hidden = true;
   } else {
     document.getElementById('cal3e-attachment-popup-save').hidden = true;
     document.getElementById('attachment-popup-copy').hidden = false;
