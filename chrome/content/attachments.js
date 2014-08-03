@@ -47,21 +47,29 @@ function cal3eSelectAttach(calendar) {
       .createInstance(nsIFilePicker);
     var title = document.getElementById('calendar3e-strings')
       .getString('calendar3e.attachements.attach.label');
-    fp.init(window, title, nsIFilePicker.modeOpen);
+    fp.init(window, title, nsIFilePicker.modeOpenMultiple);
 
     var retval = fp.show();
 
     if (retval == nsIFilePicker.returnOK) {
-      // Create attachment for item.
-      var newAttachment = createAttachment();
-      newAttachment.uri = fp.fileURL.clone();
-      newAttachment.set
-      addAttachment(newAttachment); /* This function is from lightning. */
-      var listbox = document.getElementById('attachment-link');
-      var lastListitem = listbox.getItemAtIndex(listbox.itemCount - 1);
-      pretifyAttachmentLabel(lastListitem);
-      listbox.ensureElementIsVisible(lastListitem);
+      var ioService = Components.classes['@mozilla.org/network/io-service;1']
+        .getService(Components.interfaces.nsIIOService);
+      var files = [f for (f in fixIterator(fp.files,
+        Components.interfaces.nsILocalFile))];
+
+      files.forEach(function(file) {
+        var newAttachment = createAttachment();
+        newAttachment.uri = ioService.newURI('file://' + file.path, null, null);
+        addAttachment(newAttachment);
+      });
     }
+
+    setTimeout(function() {
+      pretifyAttachmentsLabels();
+      var listbox = document.getElementById('attachment-link');
+      listbox.ensureElementIsVisible(
+        listbox.getItemAtIndex(listbox.itemCount - 1));
+      }, 500)
   }
 
   function saveFile(doSave, logger) {
@@ -160,27 +168,28 @@ function cal3eSelectAttach(calendar) {
     return identities.length > 0 ? identities[0] : null;
   }
 
-  function pretifyEeeAttachmentsLabels() {
+  function pretifyAttachmentsLabels() {
     var listbox = document.getElementById('attachment-link');
 
     for (var idx = 0; idx < listbox.itemCount; idx++) {
       var listitem = listbox.getItemAtIndex(idx);
-      if (listitem.label && listitem.label.indexOf('eee://') === 0) {
+      var uriScheme = listitem.attachment.uri.scheme;
+      if (uriScheme === 'eee' || uriScheme === 'file') {
         pretifyAttachmentLabel(listitem);
       }
     }
   }
 
   function pretifyAttachmentLabel(listitem) {
-    listitem.value = listitem.label;
-    var splittedUri = decodeURI(listitem.label).split('/');
-    listitem.label = splittedUri[splittedUri.length - 1];
+    listitem.value = listitem.attachment.uri.spec;
+    var splittedUri = listitem.attachment.uri.spec.split('/');
+    listitem.label = decodeURIComponent(splittedUri[splittedUri.length - 1]);
   }
 
   controller.updateUI = updateUI;
   controller.attachFile = addAttachmentDialog;
   controller.saveFile = saveFile;
-  controller.pretifyEeeAttachmentsLabels = pretifyEeeAttachmentsLabels;
+  controller.pretifyAttachmentsLabels = pretifyAttachmentsLabels;
 }
 
 var cal3e_attachFile;
@@ -213,7 +222,7 @@ cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
   cal3e_attachFile = controller.attachFile;
   cal3e_saveFile = controller.saveFile;
   controller.updateUI();
-  setTimeout(controller.pretifyEeeAttachmentsLabels, 200);
+  setTimeout(controller.pretifyAttachmentsLabels, 500);
 };
 
 window.addEventListener('load', cal3eSelectAttach.onLoad, false);
