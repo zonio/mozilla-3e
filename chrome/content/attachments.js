@@ -83,7 +83,7 @@ function cal3eSelectAttach(calendar) {
     } else {
       file = Components.classes['@mozilla.org/file/directory_service;1']
         .getService(Components.interfaces.nsIProperties)
-        .get('TmpD', Ci.nsIFile);
+        .get('TmpD', Components.interfaces.nsIFile);
       file.append(filename);
     }
 
@@ -142,15 +142,8 @@ function cal3eSelectAttach(calendar) {
   }
 
   function openFile(file) {
-    var externalLoader = Components.classes[
-      '@mozilla.org/uriloader/external-protocol-service;1'
-    ].getService(Components.interfaces.nsIExternalProtocolService);
-
-    var ioService = Components.classes['@mozilla.org/network/io-service;1']
-      .getService(Components.interfaces.nsIIOService);
-
     try {
-      externalLoader.loadUrl(ioService.newURI('file://' + file.path, null, null));
+      file.launch();
     } catch (error) {
       dump('Cannot open file. ' + error.message + '\n');
     }
