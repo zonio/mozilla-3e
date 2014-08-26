@@ -71,6 +71,12 @@ function cal3eSelectAttach(calendar) {
       return;
     }
 
+    if (!doSave) {
+      if (cal3eSelectAttach.isOldGecko()) {
+        return;
+      }
+    }
+
     var splittedUri = eeeUri.split('/');
     var filename = decodeURIComponent(splittedUri[splittedUri.length - 1]);
     var file;
@@ -190,6 +196,10 @@ cal3eSelectAttach.onPopupShowing =
     return;
   }
 
+  if(cal3eSelectAttach.isOldGecko()) {
+    document.getElementById('attachment-popup-open').hidden = true;
+  }
+
   document.getElementById('attachment-popup-attachPage').hidden = true;
   document.getElementById('attachment-popup')
     .getElementsByTagName('menuseparator')[0].hidden = true;
@@ -197,17 +207,36 @@ cal3eSelectAttach.onPopupShowing =
   var itemUriScheme = document.getElementById('attachment-link')
     .selectedItem.attachment.uri.scheme;
 
+  var popupCopy = document.getElementById('attachment-popup-copy');
+
   if (itemUriScheme === 'eee') {
     document.getElementById('cal3e-attachment-popup-save').hidden = false;
-    document.getElementById('attachment-popup-copy').hidden = true;
+    if (popupCopy) {
+      popupCopy.hidden = true;
+    }
     document.getElementById('attachment-popup-open').command = 'cal3e_cmd_open';
   } else if (itemUriScheme === 'file') {
     document.getElementById('cal3e-attachment-popup-save').hidden = true;
-    document.getElementById('attachment-popup-copy').hidden = true;
+    if (popupCopy) {
+      popupCopy.hidden = true;
+    }
   } else {
     document.getElementById('cal3e-attachment-popup-save').hidden = true;
-    document.getElementById('attachment-popup-copy').hidden = false;
+    if (popupCopy) {
+      popupCopy.hidden = false;
+    }
   }
+}
+
+cal3eSelectAttach.isOldGecko = function cal3eSelectAttach_isOldGecko() {
+  var appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
+    .getService(Components.interfaces.nsIXULAppInfo);
+
+  var versionChecker = Components.classes[
+      "@mozilla.org/xpcom/version-comparator;1"
+    ].getService(Components.interfaces.nsIVersionComparator);
+
+  return versionChecker.compare(appInfo.version, "14") < 0;
 }
 
 cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
