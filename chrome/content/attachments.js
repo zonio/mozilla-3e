@@ -44,21 +44,14 @@ function cal3eSelectAttach(calendar) {
       .createInstance(nsIFilePicker);
     var title = document.getElementById('calendar3e-strings')
       .getString('calendar3e.attachements.attach.label');
-    fp.init(window, title, nsIFilePicker.modeOpenMultiple);
+    fp.init(window, title, nsIFilePicker.modeOpen);
 
     var retval = fp.show();
 
     if (retval == nsIFilePicker.returnOK) {
-      var ioService = Components.classes['@mozilla.org/network/io-service;1']
-        .getService(Components.interfaces.nsIIOService);
-      var files = [f for (f in fixIterator(fp.files,
-        Components.interfaces.nsILocalFile))];
-
-      files.forEach(function(file) {
-        var newAttachment = createAttachment();
-        newAttachment.uri = ioService.newURI('file://' + file.path, null, null);
-        addAttachment(newAttachment);
-      });
+      var newAttachment = createAttachment();
+      newAttachment.uri = fp.fileURL.clone();
+      addAttachment(newAttachment);
     }
 
     setTimeout(function() {
