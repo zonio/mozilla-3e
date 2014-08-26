@@ -738,10 +738,6 @@ function AuthenticationDelegate() {
       'chrome://calendar3e/locale/calendar3e.properties'
     );
 
-    var mozillaStringBundle = Services.strings.createBundle(
-      'chrome://chat/locale/accounts.properties'
-    );
-
     var password = {
       value: findInStorages(identity) ?
         findInStorages(identity).password :
@@ -759,8 +755,8 @@ function AuthenticationDelegate() {
           stringBundle.formatStringFromName(
             'calendar3e.passwordDialog.content', [identity.email], 1),
           password,
-          mozillaStringBundle.GetStringFromName(
-            'passwordPromptSaveCheckbox'),
+          stringBundle.GetStringFromName(
+            'calendar3e.passwordDialog.saveCheckbox'),
           shouldSave);
 
     // LoginManagerPrompter doesn't support session storage
