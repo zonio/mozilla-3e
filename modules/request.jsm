@@ -436,11 +436,7 @@ function Client(serverBuilder, authenticationDelegate,
         }
       }, false);
 
-      var localFile = Components.classes['@mozilla.org/file/local;1']
-        .createInstance(Components.interfaces.nsILocalFile);
-      localFile.initWithPath(decodeURIComponent(attachment.uri.path));
-
-      NetUtil.asyncFetch(localFile, function(inputStream, status) {
+      NetUtil.asyncFetch(attachment.uri, function(inputStream, status) {
         if (!Components.isSuccessCode(status)) {
           queue.setError(Components.Exception('Cannot read attachment.'));
           listener(queue, cal3eResponse.fromRequestQueue(queue));
