@@ -233,7 +233,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
   function loadLibrary() {
     libresolv = findLibresolv();
     res_search = libresolv.declare(
-      symbolName(libresolv, 'res_search'),
+      symbolName(libresolv, 'search'),
       ctypes.default_abi,
       ctypes.int,
       ctypes.char.ptr,
@@ -303,7 +303,7 @@ Resolv.DNS.Resolver.libresolv = function Resolver_libresolv() {
     var foundPrefix = null;
     var lastException;
 
-    ['', '__', 'res_9_'].forEach(function(prefix) {
+    ['', '__', 'res_', '__res_', 'res_9_'].forEach(function(prefix) {
       if (foundPrefix !== null) {
         return;
       }
