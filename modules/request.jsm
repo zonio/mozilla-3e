@@ -194,7 +194,7 @@ function Client(serverBuilder, authenticationDelegate,
 
   function downloadAttachment(identity, listener, attachmentEeeUri) {
     return _downloadAttachment(
-      identity, listener, attachmentEeeUri,
+      listener, attachmentEeeUri,
       synchronizedMethod.promise(arguments));
   }
   downloadAttachment = synchronizedMethod.create(
@@ -465,11 +465,10 @@ function Client(serverBuilder, authenticationDelegate,
     callback(queue);
   }
 
-  function _downloadAttachment(identity, listener, eeeUri, queue) {
+  function _downloadAttachment(listener, eeeUri, queue) {
     logger.info('Downloading attachment ' + eeeUri);
     var host = queue.getServer().uri().host + ':' +
                queue.getServer().uri().port;
-    var password = authenticationDelegate.password(identity);
 
     var xhr = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1']
       .createInstance(Components.interfaces.nsIXMLHttpRequest);
@@ -482,8 +481,6 @@ function Client(serverBuilder, authenticationDelegate,
     /* Response must be array buffer else binary data are currupted when
      * using stream to save them to disk. */
     xhr.responseType = 'arraybuffer';
-    var basicAuthHash = btoa(identity.email + ':' + password);
-    xhr.setRequestHeader('Authorization', 'Basic ' + basicAuthHash);
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
     xhr.addEventListener('error', function(evt) {
