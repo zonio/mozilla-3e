@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - 3e Calendar
+   - Copyright © 2012 - 2013  Zonio s.r.o.
+   -
+   - This program is free software: you can redistribute it and/or modify
+   - it under the terms of the GNU General Public License as published by
+   - the Free Software Foundation, either version 3 of the License, or
+   - (at your option) any later version.
+   -
+   - This program is distributed in the hope that it will be useful,
+   - but WITHOUT ANY WARRANTY; without even the implied warranty of
+   - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   - GNU General Public License for more details.
+   -
+   - You should have received a copy of the GNU General Public License
+   - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+<overlay id="event-dialog"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+   <script type="application/javascript"
+           src="chrome://calendar3e/content/imip-bar-over.js"/>
+
+<!--
+  <commandset id="itemCommands">
+    <command id="cal3e_cmd_imip_bar_over" disable-on-read-only="true"
+             oncommand="cal3e_imip_bar_over();" />
+  </commandset>
+-->
+<!--  <lightning-notification-bar id="imip-bar">
+    <toolbox id="imip-view-toolbox">
+      <toolbar id="imip-view-toolbar">
+         <menupopup id="imipAcceptDropdown">
+          <menuitem id="imipAcceptButton_Accept"
+                    tooltiptext="&lightning.imipbar.btnAccept2.tooltiptext;"
+                    label="Hovno, prdel"
+                    oncommand="imip_bar_over();"/>
+          <menuitem id="imipAcceptButton_Tentative"
+                    tooltiptext="&lightning.imipbar.btnTentative2.tooltiptext;"
+                    label="&lightning.imipbar.btnTentative.label;"
+                    oncommand="ltnImipBar.executeAction('TENTATIVE');"/>
+         </menupopup>
+-->
+
+<!--
+<lightning-notification-bar id="imip-bar">
+   <button id="imip-button1" label="Hovno, prdel" oncommand="imip_bar_over();" />
+</lightning-notification-bar>
+-->
+<!--        <textbox value="default"></textbox>
+      </toolbar>
+    </toolbox>
+  </lightning-notification-bar>-->
+</overlay>
+
+
+

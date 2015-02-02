@@ -18,11 +18,8 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 
-<?xml-stylesheet type="text/css"
-                 href="chrome://calendar3e/skin/partstat-icons.css"?>
-
-<overlay id="event-dialog"
+<overlay id="calendar-event-summary-dialog-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/javascript"
+          src="chrome://calendar3e/content/event-summary-dialog.js"/>
 </overlay>
-
-

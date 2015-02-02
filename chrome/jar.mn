@@ -34,6 +34,7 @@ calendar3e.jar:
   content/attendees.xul        (content/attendees.xul)
   content/new-event-dialog.xul (content/new-event-dialog.xul)
   content/event-summary-dialog.xul (content/event-summary-dialog.xul)
+  content/event-summary-dialog.js (content/event-summary-dialog.js)
 
   skin/global.css    (skin/global.css)
   skin/icon.png      (skin/icon.png)
