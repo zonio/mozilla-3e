@@ -22,11 +22,13 @@ Components.utils.import('resource://calendar3e/modules/attachment.jsm');
 
 function cal3eEventSummary(window, calendar) {
   var eventSummaryDialog = this;
+  var bundle = null;
   const nsIFilePicker = Components.interfaces.nsIFilePicker;
 
   function createMenuItemOpen() {
     var menuItem = document.createElement('menuitem');
-    menuItem.setAttribute('label', 'Open...');
+    menuItem.setAttribute('label',
+      bundle.GetStringFromName('calendar3e.attachements.open.label'));
     menuItem.setAttribute('onclick', 'cal3e_openFile();');
 
     return menuItem;
@@ -34,7 +36,8 @@ function cal3eEventSummary(window, calendar) {
 
   function createMenuItemSave() {
     var menuItem = document.createElement('menuitem');
-    menuItem.setAttribute('label', 'Save...');
+    menuItem.setAttribute('label',
+      bundle.GetStringFromName('calendar3e.attachements.saveas.label'));
     menuItem.setAttribute('onclick', 'cal3e_saveFile();');
 
     return menuItem;
@@ -55,6 +58,7 @@ function cal3eEventSummary(window, calendar) {
     listBox.setAttribute('flex', '1');
     listBox.setAttribute('rows', '3');
     listBox.setAttribute('context', 'event-summary-attachment-popup');
+    listBox.setAttribute('ondblclick', 'cal3e_openFile();');
 
     attachments.forEach(function(attachment) {
       var listItem = document.createElement('listitem');
@@ -106,8 +110,30 @@ function cal3eEventSummary(window, calendar) {
     return box;
   }
 
+  function createStringBundle() {
+    var stringBundle = document.createElement('stringbundle');
+    stringBundle.setAttribute('id', 'calendar3e-strings');
+    stringBundle.setAttribute('src',
+      'chrome://calendar3e/locale/calendar3e.properties');
+
+    return stringBundle;
+  }
+
+  function createStringBundleSet() {
+    var stringBundleSet = document.createElement('stringbundleset');
+    stringBundleSet.appendChild(createStringBundle());
+
+    return stringBundleSet;
+  }
+
   function showAttachments(attachments) {
     var dialog = document.getElementById('calendar-event-summary-dialog');
+
+    dialog.appendChild(createStringBundleSet());
+
+    bundle = Services.strings.createBundle(
+      'chrome://calendar3e/locale/calendar3e.properties'
+    );
 
     dialog.appendChild(createPopupMenu());
     dialog.appendChild(createAttachmentsBox(attachments));
@@ -117,17 +143,19 @@ function cal3eEventSummary(window, calendar) {
 }
 
 function cal3e_saveFile() {
-  var eeeUri = document.getElementById('item-attachments-listbox')
-    .selectedItem.value;
+  var uri = document.getElementById('item-attachments-listbox').selectedItem;
 
-  cal3eAttachment.save(eeeUri, window, window.arguments[0].calendar);
+  if (uri) {
+    cal3eAttachment.save(uri.value, window, window.arguments[0].calendar);
+  }
 }
 
 function cal3e_openFile() {
-  var eeeUri = document.getElementById('item-attachments-listbox')
-    .selectedItem.value;
+  var uri = document.getElementById('item-attachments-listbox').selectedItem;
 
-  cal3eAttachment.open(eeeUri, window, window.arguments[0].calendar);
+  if (uri) {
+    cal3eAttachment.open(uri.value, window, window.arguments[0].calendar);
+  }
 }
 
 cal3eEventSummary.onLoad = function cal3eSubscription_onLoad() {
