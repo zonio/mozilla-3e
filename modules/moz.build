@@ -18,6 +18,7 @@
 # ***** END LICENSE BLOCK *****
 
 EXTRA_JS_MODULES += [
+    'attachment.jsm',
     'debug.jsm',
     'feature.jsm',
     'filter.jsm',

@@ -18,11 +18,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 Components.utils.import('resource://gre/modules/XPCOMUtils.jsm');
-Components.utils.import('resource://calendar3e/modules/feature.jsm');
-Components.utils.import('resource://calendar3e/modules/identity.jsm');
-Components.utils.import('resource://calendar3e/modules/model.jsm');
-Components.utils.import('resource://calendar3e/modules/request.jsm');
-Components.utils.import('resource://calendar3e/modules/utils.jsm');
+Components.utils.import('resource://calendar3e/modules/attachment.jsm');
 
 function cal3eSelectAttach(calendar) {
   var controller = this;
@@ -33,7 +29,7 @@ function cal3eSelectAttach(calendar) {
     document.getElementById('attachment-link')
       .removeAttribute('onclick');
     document.getElementById('attachment-link')
-      .setAttribute('ondblclick', 'cal3e_saveFile(false);');
+      .setAttribute('ondblclick', 'cal3e_openFile();');
     document.getElementById('attachment-link')
       .addEventListener('click', cal3eSelectAttach.onPopupShowing);
     document.getElementById('attachment-link').setAttribute('rows', 5);
@@ -62,107 +58,6 @@ function cal3eSelectAttach(calendar) {
       }, 500)
   }
 
-  function saveFile(doSave, logger) {
-    var eeeUri = document.getElementById('attachment-link')
-      .selectedItem.value;
-
-    if (eeeUri.indexOf('eee://') !== 0) {
-      openAttachment();
-      return;
-    }
-
-    if (!doSave) {
-      if (cal3eSelectAttach.isOldGecko()) {
-        return;
-      }
-    }
-
-    var splittedUri = eeeUri.split('/');
-    var filename = decodeURIComponent(splittedUri[splittedUri.length - 1]);
-    var file;
-
-    if (doSave) {
-      file = saveAttachmentDialog(filename);
-      if (!file) {
-        return;
-      }
-    } else {
-      file = Components.classes['@mozilla.org/file/directory_service;1']
-        .getService(Components.interfaces.nsIProperties)
-        .get('TmpD', Components.interfaces.nsIFile);
-      file.append(filename);
-    }
-
-    var listener = function(httpStatusCode, response) {
-      dump('Attachment ' + eeeUri + ' downloaded.\n');
-      if (httpStatusCode != '200') {
-        dump('Error\n');
-        return;
-      }
-
-      var stream = Components.classes[
-        '@mozilla.org/network/safe-file-output-stream;1'
-      ].createInstance(Components.interfaces.nsIFileOutputStream);
-
-      stream.init(file, 0x02 | 0x08 | 0x20, 384, 0); // readwrite, create, truncate
-
-      var maxArgs = 65535;
-      var processed = 0;
-      while (processed < response.length) {
-        var responseSlice = Array.prototype.slice.call(
-          response, processed, processed + maxArgs);
-        var dataSlice = String.fromCharCode.apply(String, responseSlice);
-        stream.write(dataSlice, dataSlice.length);
-        processed += maxArgs;
-      }
-
-      if (stream instanceof Components.interfaces.nsISafeOutputStream) {
-        stream.finish();
-      } else {
-        stream.close();
-      }
-
-      if (!doSave) {
-        openFile(file);
-      }
-    }
-
-    cal3eRequest.Client.getInstance()
-      .downloadAttachment(findIdentity(), listener, eeeUri);
-  }
-
-  function saveAttachmentDialog(defaultFilename) {
-    var fp = Components.classes['@mozilla.org/filepicker;1']
-      .createInstance(nsIFilePicker);
-    var title = document.getElementById('calendar3e-strings')
-      .getString('calendar3e.attachements.saveas.label');
-    fp.init(window, title, nsIFilePicker.modeSave);
-    fp.defaultString = defaultFilename;
-
-    var result = fp.show();
-    if (result == nsIFilePicker.returnCancel) {
-      return false;
-    }
-
-    return fp.file;
-  }
-
-  function openFile(file) {
-    try {
-      file.launch();
-    } catch (error) {
-      dump('Cannot open file. ' + error.message + '\n');
-    }
-  }
-
-  function findIdentity() {
-    var identities = cal3eIdentity.Collection()
-      .getEnabled()
-      .findByEmail(cal3eModel.calendarUser(calendar));
-
-    return identities.length > 0 ? identities[0] : null;
-  }
-
   function pretifyAttachmentsLabels() {
     var listbox = document.getElementById('attachment-link');
 
@@ -183,12 +78,26 @@ function cal3eSelectAttach(calendar) {
 
   controller.updateUI = updateUI;
   controller.attachFile = addAttachmentDialog;
-  controller.saveFile = saveFile;
   controller.pretifyAttachmentsLabels = pretifyAttachmentsLabels;
 }
 
 var cal3e_attachFile;
-var cal3e_saveFile;
+
+function cal3e_saveFile() {
+  var uri = document.getElementById('attachment-link').selectedItem;
+
+  if (uri) {
+    cal3eAttachment.save(uri.value, window, window.arguments[0].calendar);
+  }
+}
+
+function cal3e_openFile() {
+  var uri = document.getElementById('attachment-link').selectedItem;
+
+  if (uri) {
+    cal3eAttachment.open(uri.value, window, window.arguments[0].calendar);
+  }
+}
 
 cal3eSelectAttach.onPopupShowing =
   function cal3eSelectAttach_onRightClick(event) {
@@ -246,7 +155,6 @@ cal3eSelectAttach.onLoad = function cal3eSelectAttach_onLoad() {
 
   var controller = new cal3eSelectAttach(window.arguments[0].calendar);
   cal3e_attachFile = controller.attachFile;
-  cal3e_saveFile = controller.saveFile;
   controller.updateUI();
   setTimeout(controller.pretifyAttachmentsLabels, 500);
 };
